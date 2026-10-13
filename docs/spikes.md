@@ -60,3 +60,6 @@ Bugs found and fixed by the spikes: (a) timestamp-only pull cursor skipped docum
 
 ## Final stack (from this evidence)
 Flutter + Riverpod + go_router; Drift on SQLite with FTS5 (native; WASM on web, to be proven); REST cloud layer behind interfaces; `pdf` + Flutter text rendering for Tamil; Firebase Emulator Suite for all tests.
+
+## S1b - Browser (Chrome) check of the REST layer (2026-10-13)
+Run from a page in Chrome (the in-app browser) against the emulator, from a different origin than the servers: Auth sign-up, send-verification, verify, token refresh all **200**; Firestore commit (with `Authorization` header, so a CORS pre-flight), get and runQuery all **200**; cross-origin responses were readable. **Pass against the emulator.** Not verified: the real production endpoints from a browser (CORS on `firestore.googleapis.com` REST and `identitytoolkit.googleapis.com` is expected to work but needs the real project), and a Flutter web build (needs Developer Mode).
