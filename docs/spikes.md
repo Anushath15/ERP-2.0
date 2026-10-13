@@ -63,3 +63,6 @@ Flutter + Riverpod + go_router; Drift on SQLite with FTS5 (native; WASM on web, 
 
 ## S1b - Browser (Chrome) check of the REST layer (2026-10-13)
 Run from a page in Chrome (the in-app browser) against the emulator, from a different origin than the servers: Auth sign-up, send-verification, verify, token refresh all **200**; Firestore commit (with `Authorization` header, so a CORS pre-flight), get and runQuery all **200**; cross-origin responses were readable. **Pass against the emulator.** Not verified: the real production endpoints from a browser (CORS on `firestore.googleapis.com` REST and `identitytoolkit.googleapis.com` is expected to work but needs the real project), and a Flutter web build (needs Developer Mode).
+
+## S4b - Convergence (2026-10-13, `test/s4_convergence_test.dart`)
+Two devices work offline (opening stock, 150-167 bills, purchases, adjustments, payments), sync in random order with 20% dropped requests, 20% lost replies and **delayed duplicate re-sends of old batches** (8-19 per run). Final check: both devices derive **identical stock per product, balance per customer, sales total and bill count**; a third fresh device restoring from the cloud gets the same numbers; no invoice number repeats. **3 of 3 seeds pass.**

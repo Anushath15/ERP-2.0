@@ -11,7 +11,7 @@ _Last updated: 2026-10-13_
 - Spikes: S1 (REST auth + Firestore + security rules, 6/6), S2 (SQLite/Drift performance, passed budgets), S3 (PDF, Tamil finding), S4 (sync chaos, 5/5). Details: [spikes.md](spikes.md).
 
 ## Doing / blocked
-- **GitHub repo not created yet:** `gh` is not signed in. Owner: run `gh auth login` (OWNER-SETUP step 2). Everything is committed locally and will be pushed after.
+- **GitHub repo not created yet:** `gh` not signed in (owner said he will sign in himself). First step of the next session: `gh auth status`, create the public repo ERP-2.0, push.
 - **Windows Developer Mode is off:** Flutter cannot build any project with plugins on this PC (symlinks). Owner: OWNER-SETUP step 1. Because of this the official Firebase SDK check (S1), Android and Web performance (S2) and a real print (S3) are Not verified.
 - **Android SDK:** `D:\Android\Sdk` and `D:\AndroidStudio` existed at the start of this session and were gone by the time I checked again. I did not touch them. A fresh SDK is being installed in `D:\dev\android-sdk`.
 

@@ -13,3 +13,4 @@
 | Android SDK on this PC disappeared mid-session | Happened | Android builds blocked here | Fresh SDK being installed in `D:\dev\android-sdk`; CI builds APK |
 | Owner away when questions arise | Certain | Slow decisions | Take the most reasonable reading, record it in PROGRESS.md decisions |
 | Public repo leaks shop data | Low | Severe | `.gitignore`, secret scan before every push, synthetic data only |
+| Stolen device keeps read access up to 1 hour (no Functions to revoke tokens) | Low | Medium | End access fast: change the account password, remove the e-mail from the allowed list; optional PIN. See failure-modes #27 and OWNER-GUIDE (Phase 4) |
