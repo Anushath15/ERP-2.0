@@ -64,3 +64,9 @@ Zero extra reads. Tested on the emulator (`allowlist_test.dart`: allowed e-mail 
 
 ### Recommendation
 **Use (b) for one shop with 0-3 staff.** It saves about 1,200 reads/day per device and removes a moving part (a rule that reads data), and "remove the person's e-mail from the list" is a clear way to end access. Cost: a rules redeploy per staff change; the app's Staff screen shows the exact lines to change and I do the deploy (or the owner runs one script). Keep (a) as the documented option for when the shop has more than a few staff or wants to add people without a deploy: it is already written and tested, and the app's `RemoteStore` does not care which rules file is deployed.
+
+## Added: part payments, customer payments and WhatsApp reminders
+- A part-paid bill is still ONE bill document (the received amount and balance are fields), so credit sales cost no extra writes. Credit ledger entries that follow from bills and payments are derived on each device, not uploaded.
+- Later customer payments are one small `payments` document each (already counted in the normal day: "40 later payments"). Write-offs, adjustments and credit notes are rare (a few a week).
+- **Reminders: one small write per reminder opened.** A busy shop might open about 20 a day: **20 writes a day (0.1% of the limit)**, and each device that pulls them reads 20 more. Over a year about 7,000 reminder documents (about 12 MB, 1% of storage). A first restore reads reminder history last and only the most recent 90 days first, so it adds about 1,800 reads, not 7,000.
+- Reminder records are held back 10 seconds before upload so "Not sent? Undo" can remove them; this adds no writes.

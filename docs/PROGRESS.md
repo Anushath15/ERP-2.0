@@ -12,6 +12,7 @@ _Last updated: 2026-10-13_
 
 ## Phase 1 status (UI and UX, no database, no Firebase)
 Done: design system, all 37 screens (first-run wizard, sign in, forgot password, Home, POS billing, estimates, saved estimates, sales register, sales returns, delivery, products, categories, stock left, purchases, purchase returns, stock changes, customers, dealers, money to collect, staff, expenses, daily closing, reports, export, import old data, warranty, house projects, notifications, settings, database health, help, about, More menu, and the four print previews: A4 invoice, 80 mm, 58 mm, estimate with its own date), English only, dark/light/match-computer, accents, high contrast, text size 80-200%, billing text size, density, two fonts, animations (Full/Gentle/Off), optional sounds.
+**Added in this round: customer credit and WhatsApp reminders** (screens + all rules as tested pure Dart; Phase 2 wiring is written in [data-model.md](data-model.md)): part payment becomes credit in the pinned POS footer, Credit and Dues, customer page (ageing, bill-wise dues, ledger, reminder history), Receive payment, write-off (owner), statement, payment receipt, WhatsApp reminder preview, Settings > Reminders, Received/Balance on print and bill view, Paid / Part paid / Unpaid chips.
 Evidence and numbers: see the report in the last message and [perf-results.md](perf-results.md), [motion-guide.md](motion-guide.md), [design-system.md](design-system.md).
 
 ## Phase 0 recap
@@ -39,7 +40,17 @@ Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents
 14. Width is judged as the text sees it (window width divided by text size), so big text switches to the roomier phone layout. Change: `effectiveWidth` in `lib/core/responsive.dart`.
 15. Sounds use the computer's beep in this preview (no audio plugin yet): the volume slider is stored but has no effect until real audio is added in Phase 2.
 16. Per-device display settings are saved as a small JSON file in the user's data folder (`%APPDATA%\SenthilERP2\device.json`) or browser local storage; phones keep them only while the app runs until Phase 2 adds the database.
+17. Credit sale needs a named customer (pick or quick-add name and phone) before saving; a walk-in with a balance cannot be saved. Change: `_save` in `lib/features/billing/billing_screen.dart`.
+18. Overpayment shows change to give back by default; "Keep as advance" is a tick, only for a named customer. A payment above the dues becomes an advance.
+19. Receive payment goes to the OLDEST bills first; "Choose bills" overrides. Overdue = older than 30 days. Change: `overdueAmount(termDays)` in `lib/domain/credit/dues.dart`.
+20. Credit limit default is off; Settings > Credit limit: Off / Warn / Block (owner chooses).
+21. Write-off is owner-only, needs a reason, and cannot exceed what is owed.
+22. A reminder record means "Open WhatsApp was pressed", never "delivered"; the screens say "Reminders opened in WhatsApp". Undo for 8 seconds; 24-hour guard asks before a repeat (hours in Settings > Reminders).
+23. The app never sends by itself and never bulk-sends. Offline: button disabled with the reason, "Copy message" offered. Default country code +91.
+24. Phase 1 opens links with small built-in code (no plugin); Phase 2 swaps in `url_launcher` once Developer Mode is on (Android needs it).
+25. Reminder events are held 10 seconds before upload so Undo needs no cloud delete; about 20 small writes a day (quota-budget.md).
 
 ## Open questions for the owner
 - Which Google account owns the Firebase project (OWNER-SETUP step 3)?
+- Is the WhatsApp message wording (Friendly and Firm) right for your customers? Edit in Settings > Reminders.
 - Is the Phase 1 look right? Corrections go in as a list; I apply them before Phase 2.
