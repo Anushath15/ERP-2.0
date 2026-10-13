@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'tokens.dart';
 
 const _latin = 'NotoSans';
-const _tamil = 'NotoSansTamil';
 
 ThemeData buildTheme(Brightness b) {
   final c = b == Brightness.dark ? AppColors.dark : AppColors.light;
@@ -22,7 +21,6 @@ ThemeData buildTheme(Brightness b) {
   );
   TextStyle t(double size, FontWeight w, {Color? color}) => TextStyle(
         fontFamily: _latin,
-        fontFamilyFallback: const [_tamil],
         fontSize: size,
         fontWeight: w,
         color: color ?? c.text,
@@ -53,7 +51,6 @@ ThemeData buildTheme(Brightness b) {
     scaffoldBackgroundColor: c.bg,
     canvasColor: c.surface,
     fontFamily: _latin,
-    fontFamilyFallback: const [_tamil],
     textTheme: text,
     primaryTextTheme: text,
     extensions: [c],

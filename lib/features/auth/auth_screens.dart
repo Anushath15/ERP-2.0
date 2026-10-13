@@ -11,7 +11,6 @@ class _AuthFrame extends ConsumerWidget {
   final double maxWidth;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final s = ref.watch(settingsProvider);
     final l = tr(context);
     return Scaffold(
       body: SafeArea(
@@ -21,7 +20,6 @@ class _AuthFrame extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                TextButton(onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(languageCode: x.languageCode == 'en' ? 'ta' : 'en')), child: Text(s.languageCode == 'en' ? 'தமிழ்' : 'English')),
                 IconButton(
                   tooltip: Theme.of(context).brightness == Brightness.dark ? l.themeLight : l.themeDark,
                   onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(theme: Theme.of(context).brightness == Brightness.dark ? ThemeMode.light : ThemeMode.dark)),
@@ -202,9 +200,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(l.wizWelcomeText, style: th.bodyLarge),
           const SizedBox(height: 16),
-          Text(l.setLanguage, style: th.titleSmall),
           const SizedBox(height: 8),
-          SegmentedButton<String>(showSelectedIcon: false, segments: const [ButtonSegment(value: 'en', label: Text('English')), ButtonSegment(value: 'ta', label: Text('தமிழ்'))], selected: {s.languageCode}, onSelectionChanged: (v) => set((x) => x.copyWith(languageCode: v.first))),
           const SizedBox(height: 16),
           Text(l.setTheme, style: th.titleSmall),
           const SizedBox(height: 8),

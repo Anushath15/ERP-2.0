@@ -177,10 +177,6 @@ class TopBar extends ConsumerWidget {
           onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(theme: dark ? ThemeMode.light : ThemeMode.dark)),
           icon: Icon(dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
         ),
-        TextButton(
-          onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(languageCode: x.languageCode == 'en' ? 'ta' : 'en')),
-          child: Text(s.languageCode == 'en' ? 'தமிழ்' : 'English'),
-        ),
         PopupMenuButton<String>(
           tooltip: l.account,
           icon: const Icon(Icons.account_circle_outlined),

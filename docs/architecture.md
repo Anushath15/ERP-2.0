@@ -22,13 +22,13 @@ Reports, ledgers and 50,000+ bills need fast SQL joins offline (S2 numbers). Fir
 Firebase Spark: Auth (email/password + Google) and Firestore. No Functions, no Storage, no billing account. Cloud access goes through `AuthRepository` and `RemoteStore` interfaces; the implementation is plain REST (spike S1 decision), so no native Firebase plugin is needed.
 
 ## Printing and scanning
-`pdf` + `printing` for A4, 80 mm, 58 mm, preview and save-as-PDF. Text containing Tamil is rasterised with Flutter's text engine (spike S3). Barcodes generated in Dart. Keyboard-wedge scanners on desktop (they type, Enter ends the code); `mobile_scanner` on Android. Direct ESC/POS and Bluetooth printers: after v2.0.
+`pdf` + `printing` for A4, 80 mm, 58 mm, preview and save-as-PDF. Barcodes generated in Dart. Keyboard-wedge scanners on desktop (they type, Enter ends the code); `mobile_scanner` on Android. Direct ESC/POS and Bluetooth printers: after v2.0.
 
 ## Import / export
 `excel` package for xlsx, CSV, PDF reports. ERP 1.0 importer (see PRD) reads a backup path given by the owner, dry-run first.
 
-## Localisation
-ARB files, English and Tamil from the first screen. Product names, notes and customer names are never translated. Bundled Noto Sans and Noto Sans Tamil fonts (SIL OFL) so Tamil works offline.
+## Text
+All visible text is English and lives in one file (`tool/strings.txt`, turned into `lib/strings.dart` by `tool/gen_strings.dart`). Names and notes a person types are stored and shown exactly as typed; nothing is translated. Fonts: Inter (default) and Atkinson Hyperlegible, bundled so the app needs no downloads (SIL Open Font License).
 
 ## Build and CI
 GitHub Actions: analyze, test, build Windows, Android, Web, macOS (unsigned). Config files with Firebase keys come from GitHub secrets, never from the repo.

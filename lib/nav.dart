@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'l10n/app_localizations.dart';
+import 'strings.dart';
 
 class NavItem {
   const NavItem(this.path, this.icon, this.label, {this.key});
   final String path;
   final IconData icon;
-  final String Function(AppLocalizations) label;
+  final String Function(Strings) label;
   final String? key;
 }
 
 class NavGroup {
   const NavGroup(this.label, this.items);
-  final String Function(AppLocalizations) label;
+  final String Function(Strings) label;
   final List<NavItem> items;
 }
 

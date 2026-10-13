@@ -90,13 +90,13 @@ const _cities = ['Coimbatore', 'Tiruppur', 'Erode', 'Salem', 'Madurai', 'Karur',
 List<Customer> seedCustomers({int count = 5000}) {
   final r = Random(77);
   return List.generate(count, (i) {
-    final withDue = r.nextInt(100) < 18;
+    final withDue = r.nextInt(100) < 3;
     return Customer(
       id: 'c${i + 1}',
       name: '${_first[r.nextInt(_first.length)]} ${_second[r.nextInt(_second.length)]}${i >= 300 ? ' ${i % 97 + 1}' : ''}',
       phone: '98${(40000000 + r.nextInt(59999999)).toString()}',
       city: _cities[r.nextInt(_cities.length)],
-      balancePaise: withDue ? 50000 + r.nextInt(4500000) : 0,
+      balancePaise: withDue ? 50000 + r.nextInt(1500000) : 0,
     );
   });
 }
@@ -120,7 +120,7 @@ class BillBook {
 
     final number = count - index;
     final date = base.subtract(Duration(minutes: 11 * index + next(8)));
-    final total = 15000 + next(2400000);
+    final total = 8000 + next(next(1800000) + 1);
     final walkIn = next(100) < 45;
     final cust = walkIn ? 'Walk-in customer' : customers[next(customers.length)].name;
     final k = next(100);

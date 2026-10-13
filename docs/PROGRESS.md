@@ -8,7 +8,7 @@ _Last updated: 2026-10-13_
 - Environment: Flutter 3.47.7 (Dart 3.13.5) in `D:\dev\flutter`, GitHub CLI, Firebase CLI 15.33, Visual Studio Build Tools 2022 (C++), Chrome, JDK 21.
 - ERP 1 archived: `erp-rc7` copied to `D:\Senthil Enterprises\ERP-1.0.1` (robocopy, 11,998 files, git history 244 commits, same head `25c4af5`, same working-tree changes, directory compare shows no differences). The original is untouched.
 - Repo skeleton (MIT, SECURITY, README, .gitignore) and plan documents in `docs/`.
-- Spikes: S1 (REST auth + Firestore + security rules, 6/6), S2 (SQLite/Drift performance, passed budgets), S3 (PDF, Tamil finding), S4 (sync chaos, 5/5). Details: [spikes.md](spikes.md).
+- Spikes: S1 (REST auth + Firestore + security rules, 6/6), S2 (SQLite/Drift performance, passed budgets), S3 (PDF printing), S4 (sync chaos, 5/5). Details: [spikes.md](spikes.md).
 
 ## Doing / blocked
 - **GitHub repo not created yet:** `gh` not signed in (owner said he will sign in himself). First step of the next session: `gh auth status`, create the public repo ERP-2.0, push.
@@ -25,7 +25,7 @@ Phase 1 (UI/UX first, fake data, no backend) starts after Phase 0 is committed a
 4. Invoice series is per device (`A-`, `B-`).
 5. Start-up check is `quick_check`; full `integrity_check` weekly / on the Health page.
 6. Stock valuation default: average cost, unpriced stock = 0.
-7. Tamil on printed documents is rendered by Flutter's text engine and placed as an image.
+7. Tamil removed by owner, English only. All text, fonts and print code are English; a name someone types is stored and shown exactly as typed.
 8. Nothing was sent to the HP printer (no test page without the owner's say-so).
 9. The folder `D:\Senthil Enterprises\ERP-2.0` did not exist, so I created it.
 

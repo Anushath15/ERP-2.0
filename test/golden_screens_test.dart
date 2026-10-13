@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:erp2/app.dart';
 import 'package:erp2/features/billing/cart.dart';
@@ -7,9 +8,9 @@ import 'helpers.dart';
 
 /// Golden images of the key screens. Update with: flutter test --update-goldens test/golden_screens_test.dart
 void main() {
-  Future<void> fillBill(WidgetTester tester, dynamic c, DocMode mode, {int lines = 8}) async {
-    final products = c.read(productsProvider) as List;
-    final n = c.read(cartProvider(mode).notifier) as CartNotifier;
+  Future<void> fillBill(WidgetTester tester, ProviderContainer c, DocMode mode, {int lines = 8}) async {
+    final products = c.read(productsProvider);
+    final n = c.read(cartProvider(mode).notifier);
     for (var i = 0; i < lines; i++) {
       n.add(products[i * 5 + 2]);
     }
@@ -21,12 +22,6 @@ void main() {
     final c = await pumpApp(tester, size: desktop1366, location: '/bill');
     await fillBill(tester, c, DocMode.invoice);
     await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/billing_desktop_dark_en.png'));
-  });
-
-  testWidgets('billing, desktop 1366x768, light, Tamil', (tester) async {
-    final c = await pumpApp(tester, size: desktop1366, location: '/bill', theme: ThemeMode.light, lang: 'ta');
-    await fillBill(tester, c, DocMode.invoice);
-    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/billing_desktop_light_ta.png'));
   });
 
   testWidgets('billing, phone 390x844, bill tab', (tester) async {

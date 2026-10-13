@@ -43,7 +43,7 @@ Low-end Android, throttled: **Not verified** (needs a Flutter app build with plu
 
 ## S3 - Printing
 - A4 invoice, 80 mm and 58 mm receipts generated from the `pdf` package (pure Dart): A4 with 26 lines 220-280 ms, 80 mm 50-60 ms, 58 mm 20 ms. Wrapping of long names, Indian digit grouping, Code128 barcode: **Pass** (viewed in the browser pane).
-- **Tamil: Fail for vowel signs.** The `pdf` package does not do complex-script shaping. Simple words looked right but pre-base vowel signs (for example கெ, கொ, கோ, கௌ) came out in the wrong order. Fallback chosen: render any text containing Tamil with Flutter's own text engine to an image and place the image in the PDF (golden-tested in Phase 2).
+- **Non-Latin text:** the `pdf` package does not shape complex scripts. This no longer matters: the owner decided the software is English only (Latin letters, digits, the rupee sign and punctuation). A test checks that the rupee sign and common punctuation print correctly.
 - Real printer: an "HP Smart Tank 580-590 series" is attached to this PC but **nothing was printed** (no test page was sent without the owner's say-so). Real 80 mm thermal printer: **Not verified**.
 
 ## S4 - Sync chaos (emulator, `test/s4_chaos_test.dart`)
@@ -59,7 +59,7 @@ Low-end Android, throttled: **Not verified** (needs a Flutter app build with plu
 Bugs found and fixed by the spikes: (a) timestamp-only pull cursor skipped documents of a 500-batch; (b) a re-sent append-only record was rejected by the rules and failed the whole batch (rules now allow a re-stamp); (c) the emulator answers 500 for a rejected multi-write batch, which looked retryable forever (now split after 2 attempts); (d) `getAfter()` is needed in the rules when the shop and its owner row are created in one batch.
 
 ## Final stack (from this evidence)
-Flutter + Riverpod + go_router; Drift on SQLite with FTS5 (native; WASM on web, to be proven); REST cloud layer behind interfaces; `pdf` + Flutter text rendering for Tamil; Firebase Emulator Suite for all tests.
+Flutter + Riverpod + go_router; Drift on SQLite with FTS5 (native; WASM on web, to be proven); REST cloud layer behind interfaces; `pdf` package for printing; Firebase Emulator Suite for all tests.
 
 ## S1b - Browser (Chrome) check of the REST layer (2026-10-13)
 Run from a page in Chrome (the in-app browser) against the emulator, from a different origin than the servers: Auth sign-up, send-verification, verify, token refresh all **200**; Firestore commit (with `Authorization` header, so a CORS pre-flight), get and runQuery all **200**; cross-origin responses were readable. **Pass against the emulator.** Not verified: the real production endpoints from a browser (CORS on `firestore.googleapis.com` REST and `identitytoolkit.googleapis.com` is expected to work but needs the real project), and a Flutter web build (needs Developer Mode).

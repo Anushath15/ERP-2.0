@@ -38,16 +38,13 @@ Future<void> main(List<String> args) async {
   final fontDir = args.isNotEmpty ? args[0] : 'D:/dev/fonts_dl';
   final base = pw.Font.ttf(ByteData.view(File('$fontDir/NotoSans.ttf').readAsBytesSync().buffer));
   final bold = pw.Font.ttf(ByteData.view(File('$fontDir/NotoSansBold.ttf').readAsBytesSync().buffer));
-  final tamil = pw.Font.ttf(ByteData.view(File('$fontDir/NotoSansTamil.ttf').readAsBytesSync().buffer));
-  final theme = pw.ThemeData.withFont(base: base, bold: bold, fontFallback: [tamil]);
+  final theme = pw.ThemeData.withFont(base: base, bold: bold);
 
   final lines = [
     Line('Havells FR wire 1.5 sq mm 90 m red', 2, 'coil', 185000, 18),
     Line('Anchor Roma 6A switch white', 12, 'pcs', 4500, 18),
     Line('Astral CPVC elbow 3/4 inch', 25.5, 'pcs', 3250, 18),
-    Line('PVC நீர் குழாய் 1 அங்குலம் (Tamil name)', 6, 'm', 7200, 18),
     Line('Fevicol SH 1 kg', 1, 'pcs', 21000, 18),
-    Line('கொடுக்கப்பட்ட கோப்பை கெட்டி கை கௌரவம் ஸ்ரீ க்ஷ', 1, 'pcs', 5000, 18),
     for (var i = 0; i < 20; i++) Line('Demo item number ${i + 1} with a rather long product name that must wrap fully, never an ellipsis', 1, 'pcs', 1000 + i * 137, 18),
   ];
   var total = lines.fold<int>(0, (s, l) => s + l.amount);
@@ -63,7 +60,7 @@ Future<void> main(List<String> args) async {
         pw.Text('DEMO ENTERPRISES', style: pw.TextStyle(font: bold, fontSize: 18)),
         pw.Text('TAX INVOICE', style: pw.TextStyle(font: bold, fontSize: 14)),
       ]),
-      pw.Text('12 Sample Street, Sample Town, Tamil Nadu   GSTIN: 33AAAAA0000A1Z5 (demo)'),
+      pw.Text('12 Sample Street, Sample Town, Sample State   GSTIN: 33AAAAA0000A1Z5 (demo)'),
       pw.Divider(),
       pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
         pw.Text('Bill No: A-000123'),

@@ -25,7 +25,6 @@ Future<ProviderContainer> pumpApp(
   required Viewport size,
   String location = '/',
   ThemeMode theme = ThemeMode.dark,
-  String lang = 'en',
   double textScale = 1.0,
 }) async {
   tester.view.physicalSize = Size(size.w, size.h);
@@ -36,7 +35,7 @@ Future<ProviderContainer> pumpApp(
     child: ErpApp(initialLocation: location),
   ));
   final container = ProviderScope.containerOf(tester.element(find.byType(ErpApp)));
-  container.read(settingsProvider.notifier).set((s) => s.copyWith(theme: theme, languageCode: lang, textScale: textScale));
+  container.read(settingsProvider.notifier).set((s) => s.copyWith(theme: theme, textScale: textScale));
   await tester.pumpAndSettle();
   return container;
 }

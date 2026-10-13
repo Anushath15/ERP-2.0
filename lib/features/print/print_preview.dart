@@ -9,7 +9,7 @@ import '../../design/widgets.dart';
 import '../../domain_lite/bill_calc.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
-import '../../l10n/app_localizations.dart';
+import '../../strings.dart';
 import '../billing/cart.dart';
 
 /// A sample document so the preview works from the menu too (no bill needed).
@@ -39,7 +39,6 @@ class PrintPreviewScreen extends ConsumerStatefulWidget {
 
 class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
   late PaperSize _paper = widget.initialPaper ?? ref.read(settingsProvider).paper;
-  late bool _tamil = ref.read(settingsProvider).receiptTamil;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +49,6 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
     final products = ref.watch(productsProvider);
     doc ??= samplePrintDoc(products, now, mode: widget.sampleMode ?? DocMode.invoice, edited: widget.sampleMode == DocMode.estimation);
     final settings = ref.watch(settingsProvider);
-    final rl = lookupAppLocalizations(Locale(_tamil ? 'ta' : 'en'));
     final phone = context.isPhone;
 
     final controls = Wrap(spacing: 10, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -63,12 +61,6 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
         ],
         selected: {_paper},
         onSelectionChanged: (s) => setState(() => _paper = s.first),
-      ),
-      SegmentedButton<bool>(
-        showSelectedIcon: false,
-        segments: [ButtonSegment(value: false, label: Text(l.langEnglish)), ButtonSegment(value: true, label: Text(l.langTamil))],
-        selected: {_tamil},
-        onSelectionChanged: (s) => setState(() => _tamil = s.first),
       ),
     ]);
     final actions = [
@@ -99,7 +91,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
                     child: FittedBox(
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.topCenter,
-                      child: SizedBox(width: paperW, child: Paper(doc: doc!, paper: _paper, l: rl, shopName: settings.shopName, gstin: settings.gstin)),
+                      child: SizedBox(width: paperW, child: Paper(doc: doc!, paper: _paper, l: l, shopName: settings.shopName, gstin: settings.gstin)),
                     ),
                   ),
                 ),
@@ -119,7 +111,7 @@ class Paper extends StatelessWidget {
   const Paper({super.key, required this.doc, required this.paper, required this.l, required this.shopName, required this.gstin});
   final PrintDoc doc;
   final PaperSize paper;
-  final AppLocalizations l;
+  final Strings l;
   final String shopName, gstin;
 
   @override
@@ -127,7 +119,7 @@ class Paper extends StatelessWidget {
     final c = context.c;
     final a4 = paper == PaperSize.a4;
     final fs = a4 ? 12.0 : (paper == PaperSize.mm80 ? 11.0 : 10.0);
-    TextStyle s({bool b = false, double? size}) => TextStyle(fontFamily: 'NotoSans', fontFamilyFallback: const ['NotoSansTamil'], color: c.onPaper, fontSize: size ?? fs, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
+    TextStyle s({bool b = false, double? size}) => TextStyle(fontFamily: 'NotoSans', color: c.onPaper, fontSize: size ?? fs, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
     final est = doc.mode == DocMode.estimation;
     final title = est ? l.rcEstimate : l.rcTaxInvoice;
     final cgst = doc.calc.cgst, sgst = doc.calc.sgst;

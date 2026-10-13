@@ -10,5 +10,5 @@ Plain words, short labels, icon + text, one main action per screen. Say "Money t
 - Keyboard first on desktop: F-keys, Ctrl+S, Ctrl+Shift+N, Esc, arrows + Enter in tables. Big touch targets (48 dp) on Android; lists and bottom sheets on phones.
 - Billing screen: pinned totals and actions, inner scrolling, no blank gap, from 1920x1080 down to phone width.
 - Sync status is always visible and honest (Synced / Syncing / Offline - saved on this PC / Needs attention).
-- English and Tamil from the start; names and notes stay as typed.
+- English only. Names and notes a person types stay exactly as typed.
 - A small design system (colour, spacing, type, component tokens) is written in `docs/design-system.md` in Phase 1.

@@ -4,7 +4,7 @@ analyzer:
   exclude:
     - spikes/**
     - build/**
-    - lib/l10n/app_localizations*.dart
+    - lib/strings.dart
     - android/**
     - web/**
     - windows/**

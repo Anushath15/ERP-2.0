@@ -11,7 +11,7 @@ import '../../design/widgets.dart';
 import '../../domain_lite/bill_calc.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
-import '../../l10n/app_localizations.dart';
+import '../../strings.dart';
 import '../billing/cart.dart';
 
 /// Deterministic fake lines for a saved document (the prototype stores only summaries).
@@ -25,7 +25,7 @@ List<CartLine> demoLines(String key, int count, List<Product> products) {
   return [for (var i = 0; i < count; i++) CartLine(product: products[next(products.length)], qtyMilli: 1000 * (1 + next(5)))];
 }
 
-(String, BadgeKind) statusInfo(DocStatus s, AppLocalizations l) => switch (s) {
+(String, BadgeKind) statusInfo(DocStatus s, Strings l) => switch (s) {
       DocStatus.paid => (l.statusPaid, BadgeKind.success),
       DocStatus.partly => (l.statusPartly, BadgeKind.warning),
       DocStatus.due => (l.statusDue, BadgeKind.danger),

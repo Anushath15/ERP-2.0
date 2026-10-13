@@ -53,12 +53,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     final printing = SectionCard(title: l.setPrinting, child: Column(children: [
       row(l.setPaper, l.setPaperHelp, SegmentedButton<PaperSize>(showSelectedIcon: false, segments: [ButtonSegment(value: PaperSize.a4, label: Text(l.paperA4)), ButtonSegment(value: PaperSize.mm80, label: Text(l.paper80)), ButtonSegment(value: PaperSize.mm58, label: Text(l.paper58))], selected: {s.paper}, onSelectionChanged: (v) => set((x) => x.copyWith(paper: v.first)))),
-      row(l.setReceiptTamil, l.setReceiptTamilHelp, Switch(value: s.receiptTamil, onChanged: (v) => set((x) => x.copyWith(receiptTamil: v)))),
       row(l.setPrinter, l.setPrinterHelp, OutlinedButton(onPressed: () => context.push('/print'), child: Text(l.printPreview))),
     ]));
 
     final look = SectionCard(title: l.setLook, child: Column(children: [
-      row(l.setLanguage, null, SegmentedButton<String>(showSelectedIcon: false, segments: const [ButtonSegment(value: 'en', label: Text('English')), ButtonSegment(value: 'ta', label: Text('தமிழ்'))], selected: {s.languageCode}, onSelectionChanged: (v) => set((x) => x.copyWith(languageCode: v.first)))),
       row(l.setTheme, null, SegmentedButton<ThemeMode>(showSelectedIcon: false, segments: [ButtonSegment(value: ThemeMode.dark, label: Text(l.themeDark), icon: const Icon(Icons.dark_mode_outlined)), ButtonSegment(value: ThemeMode.light, label: Text(l.themeLight), icon: const Icon(Icons.light_mode_outlined))], selected: {s.theme}, onSelectionChanged: (v) => set((x) => x.copyWith(theme: v.first)))),
       row(l.setTextSize, l.setTextSizeHelp, SegmentedButton<double>(showSelectedIcon: false, segments: [ButtonSegment(value: 0.9, label: Text(l.sizeSmall)), ButtonSegment(value: 1.0, label: Text(l.sizeNormal)), ButtonSegment(value: 1.15, label: Text(l.sizeLarge)), ButtonSegment(value: 1.3, label: Text(l.sizeHuge))], selected: {s.textScale}, onSelectionChanged: (v) => set((x) => x.copyWith(textScale: v.first)))),
       Padding(padding: const EdgeInsets.only(top: 4), child: Align(alignment: Alignment.centerLeft, child: Text(l.textSample, style: th.bodyLarge))),

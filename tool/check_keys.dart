@@ -1,14 +1,14 @@
-// Lists t.<key> / l.<key> uses in lib/ that are missing from l10n_src/strings.txt.
+// Lists t.<key> / l.<key> uses in lib/ that are missing from tool/strings.txt.
 import 'dart:io';
 
 void main() {
-  final have = File('l10n_src/strings.txt')
+  final have = File('tool/strings.txt')
       .readAsLinesSync()
       .where((l) => l.trim().isNotEmpty && !l.startsWith('#'))
       .map((l) => l.split(' | ').first.trim())
       .toSet();
   final used = <String, String>{};
-  for (final f in Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart') && !f.path.contains('l10n'))) {
+  for (final f in Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart') && !f.path.endsWith('strings.dart'))) {
     for (final m in RegExp(r'(?<![\w.])(?:l|rl)\.([a-zA-Z]\w*)').allMatches(f.readAsStringSync())) {
       used.putIfAbsent(m.group(1)!, () => f.path);
     }

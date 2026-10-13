@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'design/theme.dart';
 import 'fake/store.dart';
-import 'l10n/app_localizations.dart';
 import 'router.dart';
 
 class ErpApp extends ConsumerStatefulWidget {
@@ -27,9 +25,6 @@ class _ErpAppState extends ConsumerState<ErpApp> {
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       themeMode: s.theme,
-      locale: Locale(s.languageCode),
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: const [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
       builder: (context, child) {
         final mq = MediaQuery.of(context);
         return MediaQuery(data: mq.copyWith(textScaler: TextScaler.linear(mq.textScaler.scale(1) * s.textScale)), child: child ?? const SizedBox.shrink());

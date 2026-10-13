@@ -1,0 +1,204 @@
+// Generates a screenshot of EVERY screen (phone, tablet, desktop x dark/light) into docs/ui-review/
+// plus an index.md, so the owner can review without running the app.
+// Run:  UI_REVIEW=1 flutter test test/ui_review/generate_test.dart
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
+import 'package:erp2/app.dart';
+import 'package:erp2/features/billing/cart.dart';
+import 'package:erp2/fake/store.dart';
+import '../helpers.dart';
+
+class Shot {
+  const Shot(this.id, this.title, this.route, {this.setup, this.phoneOnly = false});
+  final String id, title, route;
+  final Future<void> Function(WidgetTester t, ProviderContainer c)? setup;
+  final bool phoneOnly;
+}
+
+Future<void> fill(WidgetTester t, ProviderContainer c, DocMode mode) async {
+  final products = c.read(productsProvider);
+  final n = c.read(cartProvider(mode).notifier);
+  for (var i = 0; i < 7; i++) {
+    n.add(products[i * 11 + 4]);
+  }
+  n.add(products.firstWhere((p) => p.outOfStock));
+  await t.pumpAndSettle();
+}
+
+Future<void> tapText(WidgetTester t, String text, {bool last = false}) async {
+  final f = last ? find.text(text).last : find.text(text).first;
+  await t.tap(f);
+  await t.pumpAndSettle();
+}
+
+final shots = <Shot>[
+  const Shot('signin', 'Sign in', '/signin'),
+  const Shot('forgot-password', 'Forgot password', '/forgot'),
+  const Shot('first-run-wizard', 'First-run wizard', '/wizard'),
+  const Shot('dashboard', 'Dashboard (Home)', '/'),
+  Shot('billing', 'POS billing (bill with 8 lines, one out of stock)', '/bill', setup: (t, c) => fill(t, c, DocMode.invoice)),
+  Shot('estimate', 'New estimate', '/estimate', setup: (t, c) => fill(t, c, DocMode.estimation)),
+  const Shot('saved-estimates', 'Saved estimates', '/estimates'),
+  const Shot('sales-register', 'Sales register (20,000 bills)', '/sales'),
+  const Shot('sales-returns', 'Sales returns', '/sales-returns'),
+  const Shot('delivery', 'Delivery', '/delivery'),
+  const Shot('products', 'Products (757)', '/products'),
+  const Shot('categories', 'Categories', '/categories'),
+  const Shot('inventory', 'Stock left (Inventory)', '/inventory'),
+  const Shot('purchases', 'Purchases', '/purchases'),
+  const Shot('purchase-returns', 'Purchase returns', '/purchase-returns'),
+  const Shot('stock-changes', 'Stock changes (adjustments)', '/adjustments'),
+  const Shot('customers', 'Customers (5,000)', '/customers'),
+  const Shot('dealers', 'Dealers', '/dealers'),
+  const Shot('credit', 'Money to collect (credit and dues)', '/credit'),
+  const Shot('staff', 'Staff', '/staff'),
+  const Shot('expenses', 'Expenses', '/expenses'),
+  const Shot('daily-closing', 'Daily closing', '/closing'),
+  const Shot('reports', 'Reports and analytics', '/reports'),
+  const Shot('export', 'Export center', '/export'),
+  const Shot('import', 'Import old data (ERP 1.0)', '/import'),
+  const Shot('warranty', 'Warranty', '/warranty'),
+  const Shot('house-projects', 'House projects', '/projects'),
+  const Shot('notifications', 'Notifications', '/notifications'),
+  const Shot('settings', 'Settings', '/settings'),
+  const Shot('database-health', 'Database health', '/health'),
+  const Shot('help', 'Help', '/help'),
+  const Shot('about', 'About', '/about'),
+  const Shot('more-menu', 'More (phone menu)', '/more', phoneOnly: true),
+  const Shot('print-a4', 'Print preview: A4 invoice', '/preview/a4'),
+  const Shot('print-80mm', 'Print preview: 80 mm receipt', '/preview/80'),
+  const Shot('print-58mm', 'Print preview: 58 mm receipt', '/preview/58'),
+  const Shot('print-estimate', 'Print preview: estimate (with its own date)', '/preview/estimate'),
+  // dialogs and sheets
+  Shot('dlg-quick-add-product', 'Dialog: add a product from the bill (bill stays untouched)', '/bill', setup: (t, c) async {
+    await fill(t, c, DocMode.invoice);
+    await t.tap(find.byIcon(Icons.add).first);
+    await t.pumpAndSettle();
+  }),
+  Shot('dlg-no-product-found', 'Product search with no match: + Add row', '/bill', setup: (t, c) async {
+    await t.enterText(find.byType(TextField).first, 'pvc 3 inch nipple');
+    await t.pumpAndSettle();
+  }),
+  Shot('dlg-choose-customer', 'Dialog: choose customer (5,000, searchable)', '/bill', setup: (t, c) async {
+    await fill(t, c, DocMode.invoice);
+    final seg = find.byType(SegmentedButton<int>);
+    if (seg.evaluate().isNotEmpty) {
+      await t.tap(find.descendant(of: seg, matching: find.byIcon(Icons.receipt_long_outlined)));
+      await t.pumpAndSettle();
+    }
+    await t.tap(find.byIcon(Icons.person_outline).first);
+    await t.pumpAndSettle();
+  }),
+  Shot('dlg-bill-detail', 'Bill details with Print again / Return / Cancel (owner only)', '/sales', setup: (t, c) async {
+    await t.tap(find.textContaining('A-020000').first);
+    await t.pumpAndSettle();
+  }),
+  Shot('dlg-estimate-actions', 'Saved estimate: View, Edit, Copy, Make into bill, Delete with reason', '/estimates', setup: (t, c) async {
+    await t.tap(find.textContaining('EST-00300').first);
+    await t.pumpAndSettle();
+  }),
+  const Shot('dlg-add-product-form', 'Form: add product (Ctrl+Shift+N)', '/products?add=1'),
+  Shot('dlg-customer-detail', 'Customer details with Receive payment', '/customers', setup: (t, c) async {
+    final cust = c.read(customersProvider).firstWhere((x) => x.balancePaise > 0);
+    await t.enterText(find.byType(TextField).first, cust.name);
+    await t.pumpAndSettle();
+    await t.tap(find.text(cust.name).first);
+    await t.pumpAndSettle();
+  }),
+];
+
+class Combo {
+  const Combo(this.size, this.w, this.h);
+  final String size;
+  final double w, h;
+}
+
+const combos = [Combo('phone', 390, 844), Combo('tablet', 820, 1180), Combo('desktop', 1440, 900)];
+
+void main() {
+  final run = Platform.environment['UI_REVIEW'] == '1';
+  final outRoot = Directory('docs/ui-review');
+  final written = <String, bool>{};
+
+  for (final combo in combos) {
+    for (final theme in ['dark', 'light']) {
+      {
+        testWidgets('screenshots ${combo.size} $theme', skip: !run, timeout: const Timeout(Duration(minutes: 20)), (tester) async {
+          final dir = Directory('${outRoot.path}/${combo.size}/$theme')..createSync(recursive: true);
+          for (final s in shots) {
+            if (s.phoneOnly && combo.size != 'phone') continue;
+            final key = GlobalKey();
+            await tester.pumpWidget(const SizedBox.shrink());
+            tester.view.physicalSize = Size(combo.w, combo.h);
+            tester.view.devicePixelRatio = 1.0;
+            await tester.pumpWidget(ProviderScope(
+              key: UniqueKey(),
+              overrides: [clockProvider.overrideWithValue(fixedNow)],
+              child: RepaintBoundary(key: key, child: ErpApp(initialLocation: s.route)),
+            ));
+            final c = ProviderScope.containerOf(tester.element(find.byType(ErpApp)));
+            c.read(settingsProvider.notifier).set((x) => x.copyWith(theme: theme == 'dark' ? ThemeMode.dark : ThemeMode.light));
+            await tester.pumpAndSettle();
+            if (s.setup != null) {
+              try {
+                await s.setup!(tester, c);
+              } catch (e) {
+                // a missing tap target must not stop the whole run; the shot is still taken
+                stdout.writeln('setup issue in ${s.id} (${combo.size}): $e');
+              }
+            }
+            final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(key));
+            late Uint8List png;
+            await tester.runAsync(() async {
+              final image = await boundary.toImage(pixelRatio: 1.0);
+              final data = await image.toByteData(format: ui.ImageByteFormat.png);
+              png = data!.buffer.asUint8List();
+              image.dispose();
+            });
+            final decoded = img.decodePng(png)!;
+            File('${dir.path}/${s.id}.jpg').writeAsBytesSync(img.encodeJpg(decoded, quality: 72));
+            written['${combo.size}/$theme/${s.id}'] = true;
+            expect(tester.takeException(), isNull, reason: '${s.id} ${combo.size} $theme');
+          }
+        });
+      }
+    }
+  }
+
+  test('write index.md', skip: !run, () {
+    final b = StringBuffer()
+      ..writeln('# UI review screenshots')
+      ..writeln()
+      ..writeln('Every screen of the Phase 1 prototype (sample data only) at three widths: **phone** (390 px), **tablet** (820 px) and **desktop** (1440 px), in dark and light colours. Open a picture to see it full size.')
+      ..writeln()
+      ..writeln('Folder layout: `docs/ui-review/<phone|tablet|desktop>/<dark|light>/<screen>.jpg`')
+      ..writeln()
+      ..writeln('| Screen | Desktop dark EN | Desktop light TA | Tablet dark EN | Phone dark EN | Phone light TA |')
+      ..writeln('|---|---|---|---|---|---|');
+    for (final s in shots) {
+      String link(String size, String mode) => s.phoneOnly && size != 'phone' ? '-' : '[$size ${mode.toUpperCase().replaceAll('-', ' ')}]($size/$mode/${s.id}.jpg)';
+      b.writeln('| ${s.title} | ${link('desktop', 'dark')} | ${link('desktop', 'light')} | ${link('tablet', 'dark')} | ${link('phone', 'dark')} | ${link('phone', 'light')} |');
+    }
+    b
+      ..writeln()
+      ..writeln('All 6 combinations (3 widths x 2 colours) exist for every screen, in the same folders.')
+      ..writeln()
+      ..writeln('## Previews')
+      ..writeln();
+    for (final s in shots.where((s) => !s.phoneOnly)) {
+      b
+        ..writeln('### ${s.title}')
+        ..writeln()
+        ..writeln('<img src="desktop/dark/${s.id}.jpg" width="520"> <img src="phone/dark/${s.id}.jpg" width="170">')
+        ..writeln();
+    }
+    File('${outRoot.path}/index.md').writeAsStringSync(b.toString());
+  });
+}
+

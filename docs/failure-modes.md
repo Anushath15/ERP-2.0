@@ -28,7 +28,7 @@ Columns: what goes wrong, what the shop sees, how the app prevents or survives i
 | 22 | Backup file bad or missing | Cannot restore | Backup verified by reading it back (open + `integrity_check` + row counts); keep 30; copy before migration/restore | Backup verify test | Planned (P2) |
 | 23 | Another person's data requested | Data leak | Rules deny all but members; tested for cross-shop reads | S1 rules tests (other shop read/write, unverified email, id mismatch, oversize, unknown collection) | **Proven** |
 | 24 | Windows permissions / antivirus locks DB file | Cannot save | Database in the user's data folder, retry-with-message, never in the install folder | Manual on shop PC | Not verified |
-| 25 | PDF Tamil text mis-shaped | Garbled Tamil on prints | Spike S3 found the `pdf` package does not shape Tamil vowel signs. Print any text containing Tamil through Flutter's text engine rendered to an image | Golden test of rendered Tamil run | Planned (P2) |
+| 25 | Name typed with unusual letters | Odd characters on a printout | The software is English only. Fonts cover Latin letters, digits, the rupee sign and common punctuation; other text is stored and shown as typed, and may print with the system fallback | Test: the rupee sign and punctuation print correctly | Planned |
 
 ## Added 2026-10-13
 | # | Cause | Effect | Prevention / survival | Test | Status |

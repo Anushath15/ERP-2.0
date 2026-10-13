@@ -3,7 +3,6 @@
 | Risk | Likelihood | Impact | Mitigation / status |
 |---|---|---|---|
 | Windows Developer Mode off blocks plugin builds on this PC | Certain now | Blocks Flutter builds with plugins locally | Owner turns it on (OWNER-SETUP step 1); CI is unaffected |
-| Tamil shaping in PDFs | Found | Garbled Tamil on prints | Rasterise Tamil runs (spike S3) |
 | Whole-table reports are 1-2 s | Found | Slow report screens | Cache tables, isolate, progress bar |
 | Web (WASM) Drift speed / OPFS support unproven | Medium | Slow web app | Spike in Phase 2 before wiring; web may be reports-only if slow |
 | Google sign-in over REST on desktop | Medium | Only email+password on some platforms | Baseline is email+password; try Google on the real project |

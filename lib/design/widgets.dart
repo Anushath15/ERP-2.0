@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../core/responsive.dart';
-import '../l10n/app_localizations.dart';
+import '../strings.dart';
 import 'tokens.dart';
 
-AppLocalizations tr(BuildContext context) => AppLocalizations.of(context);
+Strings tr(BuildContext context) => const Strings();
 
 enum BadgeKind { success, warning, danger, info, neutral }
 

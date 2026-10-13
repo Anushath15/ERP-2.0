@@ -96,10 +96,8 @@ enum SyncState { synced, syncing, offline, attention }
 class AppSettings {
   const AppSettings({
     this.theme = ThemeMode.dark,
-    this.languageCode = 'en',
     this.textScale = 1.0,
     this.paper = PaperSize.a4,
-    this.receiptTamil = false,
     this.pricesIncludeGst = true,
     this.shopName = 'Senthil Enterprises',
     this.gstin = '33AAAAA0000A1Z5',
@@ -108,19 +106,16 @@ class AppSettings {
     this.signedIn = true,
   });
   final ThemeMode theme;
-  final String languageCode;
   final double textScale;
   final PaperSize paper;
-  final bool receiptTamil, pricesIncludeGst, firstRunDone, signedIn;
+  final bool pricesIncludeGst, firstRunDone, signedIn;
   final String shopName, gstin;
   final SyncState sync;
 
-  AppSettings copyWith({ThemeMode? theme, String? languageCode, double? textScale, PaperSize? paper, bool? receiptTamil, bool? pricesIncludeGst, String? shopName, String? gstin, SyncState? sync, bool? firstRunDone, bool? signedIn}) => AppSettings(
+  AppSettings copyWith({ThemeMode? theme, double? textScale, PaperSize? paper, bool? pricesIncludeGst, String? shopName, String? gstin, SyncState? sync, bool? firstRunDone, bool? signedIn}) => AppSettings(
         theme: theme ?? this.theme,
-        languageCode: languageCode ?? this.languageCode,
         textScale: textScale ?? this.textScale,
         paper: paper ?? this.paper,
-        receiptTamil: receiptTamil ?? this.receiptTamil,
         pricesIncludeGst: pricesIncludeGst ?? this.pricesIncludeGst,
         shopName: shopName ?? this.shopName,
         gstin: gstin ?? this.gstin,

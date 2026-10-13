@@ -36,10 +36,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.4.3
   go_router: ^18.0.2
-  intl: ^0.20.3
-  flutter_localizations:
-    sdk: flutter
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -62,17 +58,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-  generate: true
   fonts:
     - family: NotoSans
       fonts:
         - asset: assets/fonts/NotoSans-Regular.ttf
         - asset: assets/fonts/NotoSans-Bold.ttf
-          weight: 700
-    - family: NotoSansTamil
-      fonts:
-        - asset: assets/fonts/NotoSansTamil-Regular.ttf
-        - asset: assets/fonts/NotoSansTamil-Bold.ttf
           weight: 700
 
   # To add assets to your application, add an assets section, like this:
