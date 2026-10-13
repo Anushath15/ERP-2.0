@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart' show ThemeMode;
 import '../core/device_store.dart';
+import '../domain/credit/reminder.dart';
 import '../design/motion_level.dart';
 import '../design/tokens.dart' show Accent, DensityMode, FontChoice;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +28,7 @@ class CustomersNotifier extends Notifier<List<Customer>> {
   @override
   List<Customer> build() => seedCustomers();
   void add(Customer c) => state = [c, ...state];
+  void updatePhone(String id, String phone) => state = [for (final c in state) c.id == id ? c.copyWith(phone: phone) : c];
 }
 
 final customersProvider = NotifierProvider<CustomersNotifier, List<Customer>>(CustomersNotifier.new);
@@ -96,6 +98,9 @@ enum PaperSize { a4, mm80, mm58 }
 
 enum SyncState { synced, syncing, offline, attention }
 
+/// What to do when a bill would take a customer over their credit limit (the owner chooses in Settings).
+enum CreditLimitMode { off, warn, block }
+
 /// Everything in here is remembered on THIS device only (see DeviceStore). Shop details are demo data in the prototype.
 class AppSettings {
   const AppSettings({
@@ -115,6 +120,14 @@ class AppSettings {
     this.soundVolume = 0.7,
     this.paper = PaperSize.a4,
     this.pricesIncludeGst = true,
+    this.creditLimitMode = CreditLimitMode.warn,
+    this.reminderTone = ReminderTone.friendly,
+    this.templateFriendly = defaultFriendlyTemplate,
+    this.templateFirm = defaultFirmTemplate,
+    this.shopPhone = '98765 43210',
+    this.upiId = 'senthil@okbank',
+    this.guardHours = 24,
+    this.countryCode = '91',
     this.shopName = 'Senthil Enterprises',
     this.gstin = '33AAAAA0000A1Z5',
     this.sync = SyncState.synced,
@@ -133,6 +146,11 @@ class AppSettings {
   final double soundVolume;
   final PaperSize paper;
   final bool pricesIncludeGst, firstRunDone, signedIn;
+  // shop settings for credit and reminders (shop-wide, they sync in Phase 2; not per-device)
+  final CreditLimitMode creditLimitMode;
+  final ReminderTone reminderTone;
+  final String templateFriendly, templateFirm, shopPhone, upiId, countryCode;
+  final int guardHours;
   final String shopName, gstin;
   final SyncState sync;
 
@@ -153,6 +171,14 @@ class AppSettings {
     double? soundVolume,
     PaperSize? paper,
     bool? pricesIncludeGst,
+    CreditLimitMode? creditLimitMode,
+    ReminderTone? reminderTone,
+    String? templateFriendly,
+    String? templateFirm,
+    String? shopPhone,
+    String? upiId,
+    int? guardHours,
+    String? countryCode,
     String? shopName,
     String? gstin,
     SyncState? sync,
@@ -176,6 +202,14 @@ class AppSettings {
         soundVolume: soundVolume ?? this.soundVolume,
         paper: paper ?? this.paper,
         pricesIncludeGst: pricesIncludeGst ?? this.pricesIncludeGst,
+        creditLimitMode: creditLimitMode ?? this.creditLimitMode,
+        reminderTone: reminderTone ?? this.reminderTone,
+        templateFriendly: templateFriendly ?? this.templateFriendly,
+        templateFirm: templateFirm ?? this.templateFirm,
+        shopPhone: shopPhone ?? this.shopPhone,
+        upiId: upiId ?? this.upiId,
+        guardHours: guardHours ?? this.guardHours,
+        countryCode: countryCode ?? this.countryCode,
         shopName: shopName ?? this.shopName,
         gstin: gstin ?? this.gstin,
         sync: sync ?? this.sync,

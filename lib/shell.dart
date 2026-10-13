@@ -131,7 +131,7 @@ class SideNav extends StatelessWidget {
           child: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
             for (final g in navGroups) ...[
               if (wide) Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 4), child: Text(g.label(l).toUpperCase(), style: th.labelSmall)) else const SizedBox(height: 8),
-              for (final i in g.items) _NavTile(item: i, selected: i.path == location, wide: wide),
+              for (final i in g.items) _NavTile(item: i, selected: i.path == location || (i.path != '/' && location.startsWith('${i.path}/')), wide: wide),
             ],
           ]),
         ),

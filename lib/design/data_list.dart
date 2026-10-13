@@ -31,6 +31,7 @@ class DataListScreen<T> extends StatefulWidget {
     required this.phoneTitle,
     this.phoneSubtitle,
     this.phoneTrailing,
+    this.phoneActions,
     this.filters = const [],
     this.addLabel,
     this.onAdd,
@@ -51,6 +52,7 @@ class DataListScreen<T> extends StatefulWidget {
   final Widget Function(BuildContext, T) phoneTitle;
   final String Function(T)? phoneSubtitle;
   final Widget Function(BuildContext, T)? phoneTrailing;
+  final Widget Function(BuildContext, T)? phoneActions; // extra row under a phone card (buttons, badges)
   final List<FilterSpec<T>> filters;
   final String? addLabel;
   final VoidCallback? onAdd;
@@ -181,6 +183,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       widget.phoneTitle(ctx, e),
                       if (widget.phoneSubtitle != null) Padding(padding: const EdgeInsets.only(top: 3), child: Text(widget.phoneSubtitle!(e), style: th.bodySmall)),
+                      if (widget.phoneActions != null) Padding(padding: const EdgeInsets.only(top: 8), child: widget.phoneActions!(ctx, e)),
                     ]),
                   ),
                   if (widget.phoneTrailing != null) Padding(padding: const EdgeInsets.only(left: 10), child: widget.phoneTrailing!(ctx, e)),

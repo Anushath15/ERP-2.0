@@ -5,7 +5,7 @@ import '../../fake/models.dart';
 enum DocMode { invoice, estimation }
 
 class CartState {
-  const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise, this.touchedId, this.touchedNew = false, this.touchSeq = 0, this.touchedAtMs = 0});
+  const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise, this.touchedId, this.touchedNew = false, this.touchSeq = 0, this.touchedAtMs = 0, this.receivedPaise, this.keepAdvance = false});
   final List<CartLine> lines;
   final Customer? customer;
   final PayMode pay;
@@ -13,12 +13,18 @@ class CartState {
   final DateTime? editingDate, editedOn;
   final int? paidPaise;
 
+  /// Amount received from the customer. null means "the full Grand Total" (a normal cash sale needs no typing).
+  final int? receivedPaise;
+
+  /// For a named customer who paid MORE than the total: keep the extra as an advance instead of giving change.
+  final bool keepAdvance;
+
   /// The line that was just added or changed, used ONLY for the small on-screen animations (slide-in, pulse).
   final String? touchedId;
   final bool touchedNew;
   final int touchSeq, touchedAtMs;
 
-  CartState copyWith({List<CartLine>? lines, Customer? customer, bool clearCustomer = false, PayMode? pay, String? editingNumber, DateTime? editingDate, DateTime? editedOn, ({String id, bool isNew})? touch}) => CartState(
+  CartState copyWith({List<CartLine>? lines, Customer? customer, bool clearCustomer = false, PayMode? pay, String? editingNumber, DateTime? editingDate, DateTime? editedOn, ({String id, bool isNew})? touch, int? received, bool clearReceived = false, bool? keepAdvance}) => CartState(
         lines: lines ?? this.lines,
         customer: clearCustomer ? null : (customer ?? this.customer),
         pay: pay ?? this.pay,
@@ -26,6 +32,8 @@ class CartState {
         editingDate: editingDate ?? this.editingDate,
         editedOn: editedOn ?? this.editedOn,
         paidPaise: paidPaise,
+        receivedPaise: clearReceived ? null : (received ?? receivedPaise),
+        keepAdvance: keepAdvance ?? this.keepAdvance,
         touchedId: touch?.id ?? touchedId,
         touchedNew: touch != null ? touch.isNew : touchedNew,
         touchSeq: touch != null ? touchSeq + 1 : touchSeq,
@@ -71,6 +79,11 @@ class CartNotifier extends Notifier<CartState> {
 
   void setPay(PayMode m) => state = state.copyWith(pay: m);
 
+  /// null = the full Grand Total.
+  void setReceived(int? paise) => state = paise == null ? state.copyWith(clearReceived: true, keepAdvance: false) : state.copyWith(received: paise);
+
+  void setKeepAdvance(bool v) => state = state.copyWith(keepAdvance: v);
+
   void clear() => state = const CartState();
 
   /// Start editing a saved estimation in place (it keeps its number and its own date).
@@ -93,7 +106,7 @@ BillCalc calcFor(CartState s, {required bool inclusive}) => calcBill(s.lines, in
 
 /// Snapshot used by the print preview screens.
 class PrintDoc {
-  const PrintDoc({required this.mode, required this.number, required this.date, required this.customer, required this.lines, required this.calc, this.editedOn, required this.pay});
+  const PrintDoc({required this.mode, required this.number, required this.date, required this.customer, required this.lines, required this.calc, this.editedOn, required this.pay, this.receivedPaise, this.changePaise = 0, this.advanceKeptPaise = 0});
   final DocMode mode;
   final String number;
   final DateTime date;
@@ -102,6 +115,13 @@ class PrintDoc {
   final List<CartLine> lines;
   final BillCalc calc;
   final PayMode pay;
+
+  /// Money received at the counter (null = not shown, e.g. an estimate or an old bill without the detail).
+  final int? receivedPaise;
+  final int changePaise, advanceKeptPaise;
+
+  /// The unpaid part, added to the customer's credit (0 when paid in full).
+  int get balancePaise => receivedPaise == null ? 0 : (calc.grandTotal - receivedPaise! > 0 ? calc.grandTotal - receivedPaise! : 0);
 }
 
 class PrintDocNotifier extends Notifier<PrintDoc?> {

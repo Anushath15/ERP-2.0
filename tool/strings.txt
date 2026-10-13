@@ -138,7 +138,7 @@ filterClear | Nothing owed
 filterWeOwe | We owe
 statusPaid | Paid
 statusPartly | Part paid
-statusDue | Not paid
+statusDue | Unpaid
 statusCancelled | Cancelled
 statusPending | Pending
 statusDelivered | Delivered
@@ -211,7 +211,7 @@ roundOff | Round off
 grandTotal | Grand total
 payCash | Cash
 payUpi | UPI
-payCard | Card
+payCard | Card or other
 payCredit | Credit
 estimateNoStock | An estimate does not change your stock.
 saveBill | Save bill
@@ -601,3 +601,157 @@ soundErrorHelp | A different tone for a mistake
 soundVolume | Volume
 soundNote | In this preview sounds use the computer beep, so the volume control only starts working when real sound is added.
 toggleMenu | Show or hide the menu
+# ---- credit: payment area in billing
+amountReceived | Amount received
+fullAmount | Full amount
+nothingReceived | Nothing received: put it all on credit
+paidInFull | Paid in full
+balanceToCredit | Balance {amount} will be added to {name}'s credit
+balanceNeedsCustomer | Balance {amount} needs a customer. Choose one to save.
+changeGiveBack | Change to give back {amount}
+keepAsAdvance | Keep as advance
+giveChangeInstead | Give change instead
+advanceKeptFor | {amount} kept as advance for {name}
+needCustomerTitle | Who is this credit for?
+needCustomerText | {amount} of this bill is not paid. Choose a customer or add a new one, so the balance can be added to their credit account. The bill is not saved yet.
+creditLimitWarnTitle | Over the credit limit
+creditLimitWarnText | {name} owes {owes}. With this bill it becomes {newBalance}, above the limit of {limit}. Save anyway?
+creditLimitBlockTitle | Credit limit reached
+creditLimitBlockText | {name} would go over the credit limit of {limit}. The owner has chosen not to allow this. Take more payment, or change the limit in Settings.
+saveAnyway | Save anyway
+errPhone | Please type a correct mobile number, like 98765 43210
+receivedLabel | Received
+balanceDueLabel | Balance due
+addedToCreditNote | (added to credit)
+changeReturned | Change returned
+advanceKeptLabel | Kept as advance
+rcReceived | Received
+rcBalanceDue | Balance due (added to credit)
+rcPaidInFull | Paid in full
+rcChange | Change returned
+rcAdvance | Kept as advance
+# ---- credit and dues screen
+statOverdue | Overdue
+statAdvances | Advances we hold
+filterOverdue | Overdue
+filterOverLimit | Over limit
+filterAdvance | Advance
+colOverdue | Overdue
+colOldest | Oldest bill
+colReminders | Reminders
+remindedMany | Reminded {count} times, last {date}
+remindedOnce | Reminded once, on {date}
+notReminded | Not reminded yet
+actRemind | Remind on WhatsApp
+actStatement | Statement
+advanceAmount | Advance {amount}
+daysCount | {days} days
+sortOldest | Oldest bill first
+creditNoAccount | Nothing on credit
+# ---- customer screen
+custBalance | Money to collect
+custAdvance | Advance (their money we hold)
+custLimit | Credit limit
+limitUsed | {percent}% used
+custLastPayment | Last payment
+custNoPayment | No payment yet
+custReminders | Reminders opened in WhatsApp
+custWhatsapp | WhatsApp number
+custNoNumber | No number saved
+sectionBillWise | Bills still to pay
+age0 | 0-30 days
+age31 | 31-60 days
+age61 | 61-90 days
+age90 | Over 90 days
+openingBalanceRow | Balance carried in (not from your bills)
+billPaidOf | paid {paid} of {total}
+sectionLedger | Credit account
+colType | What
+colCharged | Charged
+colCredited | Received / credit
+colRunning | Balance
+lkOpening | Opening balance
+lkBillCredit | Bill on credit
+lkPayment | Payment received
+lkAdvance | Advance received
+lkReturn | Return credit note
+lkAdjust | Adjustment
+lkWriteOff | Written off
+lkBillCancel | Bill cancelled
+sectionReminders | Reminders opened in WhatsApp
+remindersTooltip | Counts each time Open WhatsApp was pressed. The program cannot see whether the message was really sent.
+noRemindersYet | No reminders opened yet
+reminderLine | {date}  ·  {amount} was due
+writeOff | Write off
+writeOffTitle | Write off from {name}
+writeOffHelp | Only the owner can do this. The amount is taken off what the customer owes and a reason is kept. It cannot be undone.
+writeOffMax | Most you can write off: {amount}
+writeOffDone | {amount} written off
+editNumber | Change number
+saveNumber | Save number
+numberSaved | Number saved
+# ---- receive payment
+recvFor | Payment from {name}
+fieldDate | Date
+recvAuto | Applied to the oldest bills first
+recvChoose | I will choose the bills
+recvSettles | Settles bills: {amount}
+recvAdvance | More than the dues: {amount} will be kept as an advance
+recvBillRow | {bill}  ·  {date}  ·  pending {amount}
+recvWillPay | pays {amount}
+recvNothingDue | Nothing is pending. The whole amount will be kept as an advance.
+recvDone | Payment of {amount} received from {name}
+printReceipt | Print receipt
+rcPaymentReceipt | PAYMENT RECEIPT
+rcReceiptNo | Receipt no
+rcReceivedFrom | Received from
+rcAppliedTo | Applied to
+rcBalanceNow | Balance now
+rcAdvanceNow | Advance now
+# ---- statement
+statementTitle | Statement of account
+stRangeMonth | This month
+stRange3 | Last 3 months
+stRangeAll | Whole history
+stOpening | Opening balance
+stCharges | Charged
+stCredits | Received and credits
+stClosing | Closing balance
+statementHint | Everything charged to and received from this customer, with the balance after each line.
+# ---- reminder dialog
+remTitle | Remind {name} on WhatsApp
+remHelp | Check the message and change it if you like, then press Open WhatsApp. You press Send inside WhatsApp. This program never sends anything by itself.
+toneFriendly | Friendly
+toneFirm | Firm
+remMessage | Message
+remCopy | Copy message
+remCopied | Message copied
+remOpen | Open WhatsApp
+remNumber | WhatsApp number
+remNoNumber | This customer has no WhatsApp number yet. Add one to continue.
+remNumberBad | That does not look like a mobile number. Try 98765 43210.
+remGuardTitle | Already reminded
+remGuard | Reminded {when}. Send again?
+remGuardYes | Send again
+remOpened | Opened in WhatsApp. Reminders opened for this customer: {count}
+remNotSent | Not sent? Undo
+remUndone | Reminder removed
+remFailed | Could not open WhatsApp. Use Copy message instead.
+remSending | Opening WhatsApp
+# ---- settings: reminders and credit
+setReminders | Reminders
+setRemNote | The program never sends WhatsApp messages by itself. It opens WhatsApp with your message ready, and you press Send. Each opening is counted as a reminder.
+setRemTone | Message style
+setRemTemplate | Message text
+setRemUse | You can use these words in the text. They are filled in for each customer:
+setRemReset | Use the standard text
+setShopPhone | Shop phone (shown in the message)
+setUpi | UPI ID (shown in the message)
+setGuard | Ask before reminding again within (hours)
+setCountry | Default country code
+setCreditTitle | Credit
+setLimitMode | When a bill goes over the credit limit
+limitOff | Do nothing
+limitWarn | Warn me
+limitBlock | Do not allow
+remsTooltipOpen | Opens WhatsApp with this message ready. You press Send there.

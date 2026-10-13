@@ -10,7 +10,7 @@ import 'widgets.dart';
 enum FieldType { text, number, money, multiline, dropdown, date, phone, email }
 
 class FieldSpec {
-  const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false});
+  const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check});
   final String key, label;
   final FieldType type;
   final List<(String, String)> options; // (value, label)
@@ -18,6 +18,9 @@ class FieldSpec {
   final bool required;
   final String? hint;
   final bool autofocus;
+
+  /// Extra check for what was typed: returns a message, or null when fine. Only runs when the field is not empty.
+  final String? Function(String)? check;
 }
 
 /// Opens a form as a dialog (desktop / tablet) or a bottom sheet (phone). Returns the entered values, or null if cancelled.
@@ -80,7 +83,11 @@ class _FormBodyState extends State<_FormBody> {
 
   Widget _field(FieldSpec f) {
     final l = tr(context);
-    String? validate(String? v) => f.required && (v == null || v.trim().isEmpty) ? l.fieldRequired : null;
+    String? validate(String? v) {
+      if (f.required && (v == null || v.trim().isEmpty)) return l.fieldRequired;
+      if (f.check != null && v != null && v.trim().isNotEmpty) return f.check!(v.trim());
+      return null;
+    }
     switch (f.type) {
       case FieldType.dropdown:
         return DropdownButtonFormField<String>(
@@ -113,7 +120,7 @@ class _FormBodyState extends State<_FormBody> {
           validator: validate,
         );
       case FieldType.phone:
-        return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, keyboardType: TextInputType.phone, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]'))], decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate);
+        return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, keyboardType: TextInputType.phone, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ()\-.]'))], decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate);
       case FieldType.email:
         return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate);
       case FieldType.text:

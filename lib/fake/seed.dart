@@ -91,13 +91,15 @@ const _cities = ['Coimbatore', 'Tiruppur', 'Erode', 'Salem', 'Madurai', 'Karur',
 List<Customer> seedCustomers({int count = 5000}) {
   final r = Random(77);
   return List.generate(count, (i) {
-    final withDue = r.nextInt(100) < 3;
+    final roll = r.nextInt(100);
+    final withDue = roll < 3;
+    final advance = roll == 3; // about 1 in 100 customers has paid in advance
     return Customer(
       id: 'c${i + 1}',
       name: '${_first[r.nextInt(_first.length)]} ${_second[r.nextInt(_second.length)]}${i >= 300 ? ' ${i % 97 + 1}' : ''}',
-      phone: '98${(40000000 + r.nextInt(59999999)).toString()}',
+      phone: i % 25 == 7 ? '' : '98${(40000000 + r.nextInt(59999999)).toString()}', // a few customers have no number saved
       city: _cities[r.nextInt(_cities.length)],
-      balancePaise: withDue ? 50000 + r.nextInt(1500000) : 0,
+      balancePaise: withDue ? 50000 + r.nextInt(1500000) : (advance ? -(100000 + r.nextInt(1200000)) : 0),
     );
   });
 }

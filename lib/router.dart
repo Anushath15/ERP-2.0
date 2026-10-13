@@ -5,6 +5,7 @@ import 'fake/store.dart';
 import 'features/auth/auth_screens.dart';
 import 'features/billing/billing_screen.dart';
 import 'features/billing/cart.dart';
+import 'features/credit/credit_screens.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/money/money_screens.dart';
 import 'features/people/people_screens.dart';
@@ -43,6 +44,8 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/purchase-returns', pageBuilder: (c, s) => _p(c, s, const PurchaseReturnsScreen())),
           GoRoute(path: '/adjustments', pageBuilder: (c, s) => _p(c, s, const AdjustmentsScreen())),
           GoRoute(path: '/customers', pageBuilder: (c, s) => _p(c, s, const CustomersScreen())),
+          GoRoute(path: '/customers/:id', pageBuilder: (c, s) => _p(c, s, CustomerScreen(customerId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
+          GoRoute(path: '/customers/:id/statement', pageBuilder: (c, s) => _p(c, s, StatementScreen(customerId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/dealers', pageBuilder: (c, s) => _p(c, s, const DealersScreen())),
           GoRoute(path: '/credit', pageBuilder: (c, s) => _p(c, s, const CreditScreen())),
           GoRoute(path: '/staff', pageBuilder: (c, s) => _p(c, s, const StaffScreen())),
@@ -60,6 +63,7 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/about', pageBuilder: (c, s) => _p(c, s, const AboutScreen())),
           GoRoute(path: '/more', pageBuilder: (c, s) => _p(c, s, const MoreScreen())),
           GoRoute(path: '/print', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen())),
+          GoRoute(path: '/preview/payment', pageBuilder: (c, s) => _p(c, s, const PaymentReceiptScreen())),
           GoRoute(path: '/preview/a4', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen(initialPaper: PaperSize.a4, sampleMode: DocMode.invoice))),
           GoRoute(path: '/preview/80', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen(initialPaper: PaperSize.mm80, sampleMode: DocMode.invoice))),
           GoRoute(path: '/preview/58', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen(initialPaper: PaperSize.mm58, sampleMode: DocMode.invoice))),

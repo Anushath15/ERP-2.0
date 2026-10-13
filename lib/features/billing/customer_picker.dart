@@ -5,6 +5,7 @@ import '../../core/responsive.dart';
 import '../../design/motion.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
+import '../../fake/credit_store.dart';
 import '../../fake/store.dart';
 import 'billing_screen.dart' show showQuickCustomer;
 
@@ -76,7 +77,7 @@ class _CustomerPickerState extends ConsumerState<_CustomerPicker> {
             return ListTile(
               title: Text(c.name, style: th.titleSmall),
               subtitle: Text('${c.phone}  ·  ${c.city}'),
-              trailing: c.balancePaise > 0 ? StatusBadge(formatPaise(c.balancePaise, symbol: true), kind: BadgeKind.warning) : null,
+              trailing: (ref.watch(creditProvider)[c.id]?.balance ?? 0) > 0 ? StatusBadge(formatPaise(ref.watch(creditProvider)[c.id]!.balance, symbol: true), kind: BadgeKind.warning) : null,
               onTap: () => Navigator.pop(context, c),
             );
           },

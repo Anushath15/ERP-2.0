@@ -10,6 +10,7 @@ import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../domain_lite/bill_calc.dart';
 import '../../fake/models.dart';
+import '../../fake/credit_store.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 import '../billing/cart.dart';
@@ -82,7 +83,8 @@ class SalesRegisterScreen extends ConsumerWidget {
       ],
       filters: [
         FilterSpec(l.statusPaid, (b) => st(b) == DocStatus.paid),
-        FilterSpec(l.statusDue, (b) => st(b) == DocStatus.due || st(b) == DocStatus.partly),
+        FilterSpec(l.statusPartly, (b) => st(b) == DocStatus.partly),
+        FilterSpec(l.statusDue, (b) => st(b) == DocStatus.due),
         FilterSpec(l.statusCancelled, (b) => st(b) == DocStatus.cancelled),
       ],
       sorts: [(l.sortAmountHigh, (a, b) => b.totalPaise.compareTo(a.totalPaise))],
@@ -114,6 +116,8 @@ class SalesRegisterScreen extends ConsumerWidget {
           const Divider(),
           KeyValue(l.grandTotal, '₹ ${formatPaise(b.totalPaise)}', bold: true),
           KeyValue(l.colPayMode, mode(b.mode)),
+          KeyValue(l.receivedLabel, '₹ ${formatPaise(cancelledNow ? 0 : b.paidPaise)}'),
+          if (!cancelledNow) KeyValue(l.balanceDueLabel, '₹ ${formatPaise(b.totalPaise - b.paidPaise)}  ${b.totalPaise > b.paidPaise ? l.addedToCreditNote : ''}', bold: b.totalPaise > b.paidPaise),
           KeyValue(l.colStatus, statusInfo(st(b), l).$1),
           if (cancelledNow) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.cancelledNote, style: th.bodySmall)),
         ], actions: [
@@ -138,6 +142,8 @@ class SalesRegisterScreen extends ConsumerWidget {
                 final ok = await confirmDialog(context, title: l.cancelBillConfirmTitle, message: l.cancelBillConfirmText(b.number, formatPaise(b.totalPaise, symbol: true)), confirmLabel: l.cancelBill, danger: true);
                 if (ok) {
                   ref.read(cancelledBillsProvider.notifier).add(b.number);
+                  // the bill's credit is reversed too (nothing happens for bills that never added credit)
+                  ref.read(creditProvider.notifier).cancelBill(billNo: b.number, reason: v['reason']!, at: ref.read(clockProvider));
                   if (context.mounted) toast(context, l.billCancelled(b.number));
                 }
               },

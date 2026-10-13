@@ -41,6 +41,8 @@ class Customer {
   final String id, name, phone, city;
   final int balancePaise; // money they owe us
   final int creditLimitPaise;
+
+  Customer copyWith({String? name, String? phone, String? city}) => Customer(id: id, name: name ?? this.name, phone: phone ?? this.phone, city: city ?? this.city, balancePaise: balancePaise, creditLimitPaise: creditLimitPaise);
 }
 
 class CartLine {

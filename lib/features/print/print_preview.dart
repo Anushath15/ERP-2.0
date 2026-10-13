@@ -26,6 +26,8 @@ PrintDoc samplePrintDoc(List<Product> products, DateTime now, {DocMode mode = Do
     lines: lines,
     calc: calcBill(lines),
     pay: PayMode.cash,
+    // the sample invoice shows a part payment: ₹1,000 received, the rest added to credit
+    receivedPaise: mode == DocMode.invoice ? 100000 : null,
   );
 }
 
@@ -176,7 +178,7 @@ class Paper extends StatelessWidget {
       );
     }
 
-    Widget totalRow(String k, String v, {bool b = false, double? size}) => Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(k, style: s(b: b, size: size)), Text(v, style: s(b: b, size: size))]);
+    Widget totalRow(String k, String v, {bool b = false, double? size, Key? key}) => Row(key: key, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Flexible(child: Text(k, style: s(b: b, size: size))), const SizedBox(width: 6), Text(v, style: s(b: b, size: size))]);
 
     final divider = Divider(color: c.onPaper.withValues(alpha: 0.5), height: a4 ? 14 : 10, thickness: 1);
     final body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -208,6 +210,13 @@ class Paper extends StatelessWidget {
             totalRow(l.rcRoundOff, '${doc.calc.roundOff >= 0 ? '+' : ''}${formatPaise(doc.calc.roundOff)}'),
             const SizedBox(height: 4),
             totalRow(l.rcGrandTotal, '₹ ${formatPaise(doc.calc.grandTotal)}', b: true, size: a4 ? 15 : fs + 2),
+            if (!est && doc.receivedPaise != null) ...[
+              const SizedBox(height: 4),
+              totalRow('${l.rcReceived} (${_pay(doc.pay)})', formatPaise(doc.receivedPaise! > doc.calc.grandTotal ? doc.calc.grandTotal : doc.receivedPaise!), key: const ValueKey('paperReceived')),
+              if (doc.balancePaise > 0) totalRow(l.rcBalanceDue, '₹ ${formatPaise(doc.balancePaise)}', b: true, key: const ValueKey('paperBalance')) else Align(alignment: Alignment.centerRight, child: Text(l.rcPaidInFull, style: s(b: true), key: const ValueKey('paperPaid'))),
+              if (doc.advanceKeptPaise > 0) totalRow(l.rcAdvance, formatPaise(doc.advanceKeptPaise)),
+              if (doc.changePaise > 0) totalRow(l.rcChange, formatPaise(doc.changePaise)),
+            ],
           ]),
         ),
       ),

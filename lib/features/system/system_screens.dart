@@ -9,6 +9,7 @@ import '../../design/widgets.dart';
 import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
+import 'reminder_settings.dart';
 
 // ------------------------------------------------------------------ settings
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -60,6 +61,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     const look = AppearanceCard();
     const anim = AnimationsCard();
     const sounds = SoundsCard();
+    const reminders = RemindersCard();
+    const creditCard = CreditSettingsCard();
 
     final backup = SectionCard(title: l.setBackup, child: Column(children: [
       row(l.lastBackup, l.lastBackupValue(formatDateTime(now.subtract(const Duration(hours: 5)))), FilledButton.icon(onPressed: () => toast(context, l.backupDone), icon: const Icon(Icons.save_alt), label: Text(l.backupNow))),
@@ -95,16 +98,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       row(l.signOutEverywhere, l.signOutEverywhereHelp, OutlinedButton(onPressed: () => toast(context, l.demoOnly), child: Text(l.changePassword))),
     ]));
 
-    final cards = [look, anim, shop, tax, printing, sounds, backup, sync, security];
+    final cards = [look, anim, shop, tax, printing, creditCard, reminders, sounds, backup, sync, security];
     return PageFrame(
       title: l.navSettings,
       child: context.isDesktop
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(children: [for (final c in [shop, tax, printing, sounds, security]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [shop, tax, printing, creditCard, reminders, security]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
-                Expanded(child: Column(children: [for (final c in [look, anim, backup, sync]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [look, anim, sounds, backup, sync]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),
             )
           : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in cards) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),

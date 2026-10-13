@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/date_fmt.dart';
+import 'package:flutter/services.dart';
 import '../../core/money.dart';
+import '../../domain/credit/payment_split.dart';
 import '../../core/responsive.dart';
 import '../../design/effects.dart';
 import '../../design/form_sheet.dart';
@@ -13,7 +15,8 @@ import 'cart.dart';
 
 /// Header of the bill: customer + number/date, plus the "editing" bar for saved estimations.
 class BillHeader extends StatelessWidget {
-  const BillHeader({super.key, required this.mode, required this.cart, required this.number, required this.date, required this.onPickCustomer});
+  const BillHeader({super.key, required this.mode, required this.cart, required this.number, required this.date, required this.onPickCustomer, this.balance = 0});
+  final int balance; // the customer's credit balance now (negative = advance)
   final DocMode mode;
   final CartState cart;
   final String number;
@@ -53,8 +56,10 @@ class BillHeader extends StatelessWidget {
           Text(formatDate(date), style: th.bodySmall),
         ]),
       ]),
-      if (cust != null && cust.balancePaise > 0)
-        Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(l.customerOwes(formatPaise(cust.balancePaise, symbol: true)), kind: BadgeKind.warning, icon: Icons.account_balance_wallet_outlined)),
+      if (cust != null && balance > 0)
+        Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(l.customerOwes(formatPaise(balance, symbol: true)), kind: BadgeKind.warning, icon: Icons.account_balance_wallet_outlined)),
+      if (cust != null && balance < 0)
+        Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(l.advanceAmount(formatPaise(-balance, symbol: true)), kind: BadgeKind.success, icon: Icons.savings_outlined)),
     ]);
   }
 }
@@ -288,11 +293,14 @@ class _QtyStepper extends StatelessWidget {
 /// With very large text the GST detail collapses into one short row and the buttons stack, but Grand total and the
 /// three buttons are always fully visible.
 class BillFooter extends StatelessWidget {
-  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onSave, required this.onSavePrint, required this.onPreview, required this.onClear});
+  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, required this.onSave, required this.onSavePrint, required this.onPreview, required this.onClear});
   final DocMode mode;
   final CartState cart;
   final BillCalc calc;
   final void Function(PayMode) onPay;
+  final void Function(int? paise) onReceived; // null = the full Grand Total
+  final void Function(bool keep) onKeepAdvance;
+  final String? customerName; // null = walk-in
   final VoidCallback onSave, onSavePrint, onPreview, onClear;
 
   @override
@@ -304,6 +312,8 @@ class BillFooter extends StatelessWidget {
     final empty = cart.lines.isEmpty;
     final invoice = mode == DocMode.invoice;
     final big = context.textFactor >= 1.4;
+    // very large text on a short window: the GST detail line is dropped so Grand total, Received and the buttons keep their room
+    final tight = big && MediaQuery.sizeOf(context).height <= 800;
 
     // One line, always the same height (so the footer never moves), shrinking to fit instead of wrapping or clipping.
     final lineH = MediaQuery.textScalerOf(context).scale(th.bodySmall!.fontSize ?? 12) * 1.5;
@@ -333,16 +343,7 @@ class BillFooter extends StatelessWidget {
     ]));
 
     final Widget pay = invoice
-        ? SlideSegments<PayMode>(
-            options: [
-              (PayMode.cash, l.payCash, Icons.payments_outlined),
-              (PayMode.upi, l.payUpi, Icons.qr_code_2),
-              (PayMode.card, l.payCard, Icons.credit_card),
-              (PayMode.credit, l.payCredit, Icons.schedule),
-            ],
-            selected: cart.pay,
-            onChanged: onPay,
-          )
+        ? PaymentArea(cart: cart, calc: calc, customerName: customerName, onPay: onPay, onReceived: onReceived, onKeepAdvance: onKeepAdvance)
         : Row(children: [Icon(Icons.info_outline, size: 18, color: c.textMuted), const SizedBox(width: 8), Expanded(child: Text(l.estimateNoStock, style: th.bodySmall))]);
 
     final saveLabel = invoice ? l.saveBill : l.saveEstimate;
@@ -377,16 +378,163 @@ class BillFooter extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(color: c.surface, border: Border(top: BorderSide(color: c.border))),
-      padding: EdgeInsets.fromLTRB(phone ? 10 : 14, 8, phone ? 10 : 14, 10),
+      padding: EdgeInsets.fromLTRB(phone ? 10 : 14, tight ? 4 : 8, phone ? 10 : 14, tight ? 6 : 10),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        details,
-        const SizedBox(height: 2),
+        if (!tight) ...[details, const SizedBox(height: 2)],
         total,
-        const SizedBox(height: 6),
+        SizedBox(height: tight ? 2 : 6),
         pay,
-        const SizedBox(height: 8),
+        SizedBox(height: tight ? 4 : 8),
         buttons,
       ]),
     );
+  }
+}
+
+/// Payment area of the pinned footer: Amount received (defaults to the Grand Total), Full amount, a one-line status that says what
+/// happens to any balance or change, and the payment mode for the part that was received. Every row has a fixed height, so the
+/// footer never moves when the message changes.
+class PaymentArea extends StatefulWidget {
+  const PaymentArea({super.key, required this.cart, required this.calc, required this.customerName, required this.onPay, required this.onReceived, required this.onKeepAdvance});
+  final CartState cart;
+  final BillCalc calc;
+  final String? customerName;
+  final void Function(PayMode) onPay;
+  final void Function(int? paise) onReceived;
+  final void Function(bool keep) onKeepAdvance;
+  @override
+  State<PaymentArea> createState() => _PaymentAreaState();
+}
+
+class _PaymentAreaState extends State<PaymentArea> {
+  late final TextEditingController _ctl = TextEditingController(text: _fmt(_expected));
+  final _focus = FocusNode();
+  int? _typed; // the amount the person last typed, so we never overwrite their typing
+
+  int get _total => widget.calc.grandTotal;
+  int get _expected => widget.cart.receivedPaise ?? _total;
+  static String _fmt(int paise) => (paise / 100).toStringAsFixed(2);
+
+  @override
+  void didUpdateWidget(PaymentArea old) {
+    super.didUpdateWidget(old);
+    // follow the cart: a new Grand Total (when "full") or a button that set the amount
+    if ((parseRupeesToPaise(_ctl.text) ?? -1) != _expected && !(widget.cart.receivedPaise != null && widget.cart.receivedPaise == _typed)) {
+      _ctl.value = TextEditingValue(text: _fmt(_expected), selection: TextSelection.collapsed(offset: _fmt(_expected).length));
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctl.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = tr(context);
+    final c = context.c;
+    final th = Theme.of(context).textTheme;
+    final scaler = MediaQuery.textScalerOf(context);
+    final received = widget.cart.receivedPaise ?? _total;
+    final split = splitPayment(total: _total, received: received);
+    final name = widget.customerName;
+    String money(int p) => formatPaise(p, symbol: true);
+
+    // one status line, fixed height
+    String text;
+    Color color;
+    IconData icon;
+    if (split.balance > 0) {
+      if (name == null) {
+        text = l.balanceNeedsCustomer(money(split.balance));
+        color = c.danger;
+        icon = Icons.person_add_alt;
+      } else {
+        text = l.balanceToCredit(money(split.balance), name);
+        color = c.warning;
+        icon = Icons.schedule;
+      }
+    } else if (split.change > 0) {
+      if (name != null && widget.cart.keepAdvance) {
+        text = l.advanceKeptFor(money(split.change), name);
+        color = c.info;
+        icon = Icons.savings_outlined;
+      } else {
+        text = l.changeGiveBack(money(split.change));
+        color = c.info;
+        icon = Icons.currency_exchange;
+      }
+    } else {
+      text = l.paidInFull;
+      color = c.success;
+      icon = Icons.check_circle_outline;
+    }
+    final lineH = scaler.scale(th.bodyMedium?.fontSize ?? 14) * 1.5;
+    final fieldH = scaler.scale(16) * 1.5 + 30;
+
+    return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SizedBox(
+        height: fieldH.clamp(48, 140),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Expanded(
+            flex: 5,
+            child: TextField(
+              key: const ValueKey('receivedField'),
+              controller: _ctl,
+              focusNode: _focus,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+              textAlignVertical: TextAlignVertical.center,
+              style: th.titleMedium,
+              onChanged: (v) {
+                _typed = parseRupeesToPaise(v) ?? 0;
+                widget.onReceived(_typed);
+              },
+              decoration: InputDecoration(labelText: l.amountReceived, prefixText: '₹ ', isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: 3,
+            child: OutlinedButton(
+              key: const ValueKey('fullAmount'),
+              style: OutlinedButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 6)),
+              onPressed: () => widget.onReceived(null),
+              child: FittedBox(fit: BoxFit.scaleDown, child: Text(l.fullAmount, maxLines: 1)),
+            ),
+          ),
+          Tooltip(message: l.nothingReceived, child: IconButton(key: const ValueKey('nothingReceived'), onPressed: () => widget.onReceived(0), icon: const Icon(Icons.schedule))),
+        ]),
+      ),
+      const SizedBox(height: 4),
+      SizedBox(
+        height: lineH,
+        child: Row(children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 6),
+          Expanded(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(text, key: const ValueKey('balanceLine'), maxLines: 1, style: th.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w700)))),
+          if (split.change > 0 && name != null)
+            TextButton(key: const ValueKey('advanceToggle'), style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 6)), onPressed: () => widget.onKeepAdvance(!widget.cart.keepAdvance), child: FittedBox(fit: BoxFit.scaleDown, child: Text(widget.cart.keepAdvance ? l.giveChangeInstead : l.keepAsAdvance, maxLines: 1))),
+        ]),
+      ),
+      const SizedBox(height: 4),
+      Opacity(
+        opacity: received == 0 ? 0.45 : 1,
+        child: IgnorePointer(
+          ignoring: received == 0,
+          child: SlideSegments<PayMode>(
+            options: [
+              (PayMode.cash, l.payCash, Icons.payments_outlined),
+              (PayMode.upi, l.payUpi, Icons.qr_code_2),
+              (PayMode.card, l.payCard, Icons.credit_card),
+            ],
+            selected: widget.cart.pay == PayMode.credit ? PayMode.cash : widget.cart.pay,
+            onChanged: widget.onPay,
+          ),
+        ),
+      ),
+    ]);
   }
 }
