@@ -202,7 +202,7 @@ class CreditNotifier extends PartyLedgerNotifier {
   String get receiptPrefix => 'RCP';
 
   @override
-  Map<String, CreditAccount> build() => seedCredit(ref.watch(customersProvider), ref.watch(clockProvider));
+  Map<String, CreditAccount> build() => seedCredit(ref.read(customersProvider), ref.watch(clockProvider));
 
   int get totalToCollect => state.values.fold<int>(0, (s, a) => a.balance > 0 ? s + a.balance : s);
   int get totalAdvances => state.values.fold<int>(0, (s, a) => a.balance < 0 ? s - a.balance : s);
@@ -224,7 +224,7 @@ final creditProvider = NotifierProvider<CreditNotifier, Map<String, CreditAccoun
 
 class ReminderLogNotifier extends Notifier<ReminderLog> {
   @override
-  ReminderLog build() => seedReminders(ref.watch(creditProvider), ref.watch(clockProvider));
+  ReminderLog build() => seedReminders(ref.read(creditProvider), ref.watch(clockProvider));
   int _n = 500;
 
   ReminderRecord record({required String customerId, required int amountDue, required String message, required DateTime at}) {

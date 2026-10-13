@@ -4,6 +4,7 @@ import 'package:erp2/domain/credit/dues.dart';
 import 'package:erp2/domain/credit/ledger.dart';
 import 'package:erp2/fake/credit_store.dart';
 import 'package:erp2/fake/store.dart';
+import 'package:erp2/fake/models.dart';
 import 'helpers.dart';
 
 // Settle fully (with Undo), manual credit, reversal of wrong entries, opening balances and the profile facts, on the fake store.
@@ -118,5 +119,19 @@ void main() {
     a = c.read(creditProvider)[id]!;
     expect(a.balance, 30000);
     expect(a.bills.fold<int>(0, (s, b) => s + b.outstanding), 30000);
+  });
+
+  test('adding a customer (or taking a payment) must not reset the credit data or the reminder history already made', () {
+    final c = fresh();
+    final n = setup(c);
+    final rem = c.read(reminderLogProvider.notifier);
+    rem.record(customerId: id, amountDue: 30000, message: 'm', at: fixedNow);
+    final remindersBefore = c.read(reminderLogProvider).countFor(id);
+    expect(remindersBefore, greaterThanOrEqualTo(1));
+    n.addManualCredit(customerId: id, amount: 123, at: fixedNow, reason: 'x');
+    c.read(customersProvider.notifier).add(const Customer(id: 'new1', name: 'New Person', phone: '', city: '', balancePaise: 0));
+    expect(n.balanceOf(id), 30123, reason: 'the credit data was not rebuilt from the seed');
+    n.receivePayment(customerId: id, customerName: 'Z', amount: 100, mode: 'cash', at: fixedNow);
+    expect(c.read(reminderLogProvider).countFor(id), remindersBefore, reason: 'the reminder history survives a credit change');
   });
 }

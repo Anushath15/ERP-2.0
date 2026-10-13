@@ -33,14 +33,14 @@ class CustomersNotifier extends Notifier<List<Customer>> {
 
 final customersProvider = NotifierProvider<CustomersNotifier, List<Customer>>(CustomersNotifier.new);
 
-final billBookProvider = Provider<BillBook>((ref) => BillBook(ref.watch(clockProvider), customers: ref.watch(customersProvider)));
+final billBookProvider = Provider<BillBook>((ref) => BillBook(ref.watch(clockProvider), customers: ref.read(customersProvider)));
 
 /// All 20,000 bills, built once on first use.
 final billsProvider = Provider<List<BillSummary>>((ref) => ref.watch(billBookProvider).all());
 
 class EstimationsNotifier extends Notifier<List<EstimationDoc>> {
   @override
-  List<EstimationDoc> build() => seedEstimations(ref.watch(clockProvider), ref.watch(customersProvider));
+  List<EstimationDoc> build() => seedEstimations(ref.watch(clockProvider), ref.read(customersProvider));
   void add(EstimationDoc e) => state = [e, ...state];
   void replace(EstimationDoc e) => state = [for (final x in state) x.number == e.number ? e : x];
   void remove(String number) => state = [for (final x in state) if (x.number != number) x];
@@ -55,7 +55,7 @@ class RecsNotifier extends Notifier<List<Rec>> {
   @override
   List<Rec> build() {
     final now = ref.watch(clockProvider);
-    final customers = ref.watch(customersProvider);
+    final customers = ref.read(customersProvider);
     final products = ref.watch(productsProvider);
     switch (kind) {
       case 'dealers':
