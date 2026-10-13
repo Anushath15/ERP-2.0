@@ -52,3 +52,15 @@ Spike S4 with very harsh chaos (15% lost requests, 15% lost replies, 5% crashes)
 
 ## To confirm with the real project (Not verified)
 Real per-request billing of rules lookups, and the real daily counters, can only be observed on the real project over several weeks. The owner checks Firebase console > Usage once a week during the pilot.
+
+## Do security-rule lookups count as reads? (checked 2026-10-13)
+Yes. Official billing page: "You are charged for reads that are necessary to evaluate your Cloud Firestore Security Rules", one read per dependent document per request however many times the rules mention it, and they are billed even when the request is rejected (rules-conditions page). The docs do not say how a batched write of N documents is billed; the emulator cannot show billing. We therefore assume the cautious case: one lookup per distinct document per request.
+
+### Design (a): membership documents (`firebase/firestore.rules`)
+Each write request reads the member row (1) and the revoked-device row (1 per distinct device id): about 2 reads per upload batch. Each pull query reads the member row: 1 per query. A device pulling 6 collections every 10 minutes: 6 x 144 = about 860 reads a day, plus uploads about 300. About **1,200 reads/day per device, 3,600 for three devices (7% of the limit)**. Adding staff is instant (the owner adds an e-mail in the app). Per-device revoke works.
+
+### Design (b): allowed e-mails inside the rules file (`firebase/firestore.allowlist.rules`)
+Zero extra reads. Tested on the emulator (`allowlist_test.dart`: allowed e-mail reads/writes, duplicate re-send accepted, other user denied, tampering denied). Adding or removing a person = edit three lists and redeploy rules (`firebase deploy --only firestore:rules`). No per-device revoke list (ending a device = change the password).
+
+### Recommendation
+**Use (b) for one shop with 0-3 staff.** It saves about 1,200 reads/day per device and removes a moving part (a rule that reads data), and "remove the person's e-mail from the list" is a clear way to end access. Cost: a rules redeploy per staff change; the app's Staff screen shows the exact lines to change and I do the deploy (or the owner runs one script). Keep (a) as the documented option for when the shop has more than a few staff or wants to add people without a deploy: it is already written and tested, and the app's `RemoteStore` does not care which rules file is deployed.
