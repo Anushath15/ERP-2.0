@@ -209,6 +209,12 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
         if (cart.lines.isNotEmpty) _save();
       },
+      // preview only: fills the bill with 100 sample lines so the owner can check that the pinned footer stays put
+      const SingleActivator(LogicalKeyboardKey.keyL, control: true, shift: true): () {
+        for (var i = 0; i < 100 && i * 3 < products.length; i++) {
+          notifier.add(products[i * 3]);
+        }
+      },
       const SingleActivator(LogicalKeyboardKey.f9): () {
         if (cart.lines.isNotEmpty) _save(print: true);
       },

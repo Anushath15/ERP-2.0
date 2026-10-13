@@ -160,6 +160,7 @@ inBillQty | In bill: {qty}
 searchProductHint | Type name or scan barcode
 addProduct | Add product
 editProduct | Change product
+keyFill100 | Preview only: fill the bill with 100 sample lines
 addProductShortcut | Add a new product (Ctrl+Shift+N)
 noProductFound | No product found.
 addNamed | + Add {name}

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
@@ -73,4 +74,16 @@ void main() {
       });
     }
   }
+
+  testWidgets('Ctrl+Shift+L fills the bill with 100 lines (preview helper for the owner)', (tester) async {
+    final c = await pumpApp(tester, size: desktop1366, location: '/bill');
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyL);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(c.read(cartProvider(DocMode.invoice)).lines.length, 100);
+    expect(tester.takeException(), isNull);
+  });
 }
