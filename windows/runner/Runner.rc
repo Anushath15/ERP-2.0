@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "in.senthil" "\0"
-            VALUE "FileDescription", "erp2" "\0"
+            VALUE "FileDescription", "ASK ERP 2.0" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "erp2" "\0"
+            VALUE "InternalName", "ASK_ERP_2" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 in.senthil. All rights reserved." "\0"
-            VALUE "OriginalFilename", "erp2.exe" "\0"
-            VALUE "ProductName", "erp2" "\0"
+            VALUE "OriginalFilename", "ASK_ERP_2.exe" "\0"
+            VALUE "ProductName", "ASK ERP 2.0" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

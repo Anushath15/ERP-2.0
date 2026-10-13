@@ -3,8 +3,8 @@
 **Everything you see is made-up sample data. Nothing is saved when you close the program, and nothing is ever sent: no WhatsApp message, no print, no cloud.** You cannot damage anything. Close and reopen to start fresh.
 
 ## 1. Open it
-- **Windows:** unzip the `ERP2-prototype-windows-...zip` from the `dist` folder and double-click `erp2.exe`. (If Windows shows a blue "protected your PC" box, press More info, then Run anyway: the program is not signed yet.)
-- **Web:** unzip the `ERP2-prototype-web-...zip`, open `index.html` through a local web server (the guide in `PROGRESS.md` shows how), or just use the Windows one.
+- **Windows:** unzip the `ASK-ERP-2.0-windows-...zip` from the `dist` folder and double-click `ASK_ERP_2.exe`. (If Windows shows a blue "protected your PC" box, press More info, then Run anyway: the program is not signed yet.)
+- **Web:** unzip the `ASK-ERP-2.0-web-...zip`, open `index.html` through a local web server (the guide in `PROGRESS.md` shows how), or just use the Windows one.
 
 ## 2. A ₹150 bill where the customer gives ₹100
 1. Press **New bill** on the left.

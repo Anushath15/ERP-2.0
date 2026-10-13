@@ -6,6 +6,7 @@ import '../../core/responsive.dart';
 import '../../design/form_sheet.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
+import '../../design/app_logo.dart';
 import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
@@ -232,7 +233,7 @@ class AboutScreen extends StatelessWidget {
       child: SingleChildScrollView(child: Align(alignment: Alignment.topLeft, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 640), child: Column(children: [
         SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Container(width: 56, height: 56, decoration: BoxDecoration(color: context.c.primary, borderRadius: BorderRadius.circular(14)), child: Icon(Icons.storefront, color: context.c.onPrimary, size: 32)),
+            const AppLogo(size: 64),
             const SizedBox(width: 14),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l.appName, style: th.headlineSmall), Text(l.aboutVersion('2.0.0-preview.1'), style: th.bodySmall)])),
           ]),

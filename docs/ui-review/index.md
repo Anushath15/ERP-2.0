@@ -21,3 +21,9 @@ UI_REVIEW=1 flutter test test/ui_review/generate_test.dart
 | Phone: New bill | ![](phone/dark/billing.jpg) |
 | Phone: Money to collect | ![](phone/dark/credit.jpg) |
 | New bill at 200% text | ![](text-sizes/desktop/dark/pos_200.jpg) |
+
+## Name and logo
+The app is **ASK ERP 2.0**, with the same logo as ERP 1.0 (`assets/branding/ask-logo.png`; every icon is built from it by `dart run tool/make_icons.dart`).
+
+![Taskbar with the ASK icon](brand-taskbar.png)
+![Title bar: ASK ERP 2.0](brand-titlebar.png)

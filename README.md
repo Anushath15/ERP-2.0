@@ -1,4 +1,4 @@
-﻿# ERP 2.0 - Senthil Enterprises
+﻿# ASK ERP 2.0 - Senthil Enterprises
 
 A fast shop-management app (billing, estimations, stock, purchases, customers,
 dealers, credit, expenses, reports) for a hardware / electrical / plumbing shop in India.
@@ -12,7 +12,7 @@ is available it quietly copies your data to a free online backup. It costs nothi
 
 ## Try it (no coding needed)
 1. Open the newest **pre-release** on the [Releases page](https://github.com/Anushath15/ERP-2.0/releases).
-2. Download the **Windows zip**, unzip it and double-click `erp2.exe` (or use the **web zip**).
+2. Download the **Windows zip**, unzip it and double-click `ASK_ERP_2.exe` (or use the **web zip**).
 3. Follow the 15-minute walkthrough in [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md).
 
 Pictures of the main screens: [docs/ui-review](docs/ui-review/index.md) (the full set is attached to each release).

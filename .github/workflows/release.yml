@@ -32,9 +32,9 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           New-Item -ItemType Directory dist | Out-Null
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath "dist\ERP2-prototype-windows-$tag.zip"
-          Compress-Archive -Path build\web\* -DestinationPath "dist\ERP2-prototype-web-$tag.zip"
-          Compress-Archive -Path docs\ui-review\* -DestinationPath "dist\ERP2-ui-review-screenshots-$tag.zip"
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath "dist\ASK-ERP-2.0-windows-$tag.zip"
+          Compress-Archive -Path build\web\* -DestinationPath "dist\ASK-ERP-2.0-web-$tag.zip"
+          Compress-Archive -Path docs\ui-review\* -DestinationPath "dist\ASK-ERP-2.0-screenshots-$tag.zip"
       - uses: softprops/action-gh-release@v2
         with:
           prerelease: true

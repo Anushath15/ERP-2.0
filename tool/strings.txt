@@ -1,6 +1,6 @@
 # key | English text      ({name} = filled in by the app; never use an apostrophe, write the words out)
 # ---- common
-appName | Senthil Enterprises
+appName | ASK ERP 2.0
 back | Back
 cancel | Cancel
 close | Close
@@ -19,7 +19,6 @@ view | View
 duplicate | Make a copy
 duplicated | A copy was made
 print | Print
-preview | Preview
 account | Account
 fieldRequired | Please fill this in
 searchHere | Search here
@@ -224,9 +223,9 @@ clearBillText | All items in this bill will be removed.
 billSaved | Bill {number} saved
 estimateSaved | Estimate {number} saved
 # ---- print
-printPreview | Print preview
-previewInvoiceHint | This is how the bill will look on paper
-previewEstimateHint | This is how the estimate will look on paper
+printPreview | Print
+previewInvoiceHint | Check the bill on paper, then press Print
+previewEstimateHint | Check the estimate on paper, then press Print
 paperA4 | A4
 paper80 | 80 mm
 paper58 | 58 mm

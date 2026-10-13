@@ -23,7 +23,7 @@ Future<Uint8List> buildStatementPdf({
   pw.Widget cell(String t, double w, {bool b = false, bool right = true}) => pw.SizedBox(width: w, child: pw.Text(t, textAlign: right ? pw.TextAlign.right : pw.TextAlign.left, style: s(b: b)));
   String m(int v) => v == 0 ? '' : formatPaise(v);
 
-  final doc = pw.Document(title: '${l.statementTitle} ${customer.name}', author: shopName);
+  final doc = pw.Document(title: '${l.statementTitle} ${customer.name}', author: shopName, creator: 'ASK ERP 2.0', producer: 'ASK ERP 2.0');
   doc.addPage(pw.MultiPage(
     pageFormat: PdfPageFormat.a4,
     margin: const pw.EdgeInsets.all(36),

@@ -9,6 +9,7 @@ import 'design/motion.dart';
 import 'design/text_zoom.dart';
 import 'design/tokens.dart';
 import 'design/widgets.dart';
+import 'design/app_logo.dart';
 import 'fake/store.dart';
 import 'nav.dart';
 
@@ -114,12 +115,7 @@ class SideNav extends StatelessWidget {
           height: 56,
           child: Row(mainAxisAlignment: wide ? MainAxisAlignment.start : MainAxisAlignment.center, children: [
             if (wide) const SizedBox(width: 16),
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(color: c.primary, borderRadius: BorderRadius.circular(9)),
-              child: Icon(Icons.storefront, color: c.onPrimary, size: 20),
-            ),
+            const AppLogo(size: 34),
             if (wide) ...[
               const SizedBox(width: 10),
               Expanded(child: Text(l.appName, style: th.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis)),

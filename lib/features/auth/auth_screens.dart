@@ -5,6 +5,7 @@ import '../../core/sound.dart';
 import '../../design/effects.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
+import '../../design/app_logo.dart';
 import '../../fake/store.dart';
 
 class _AuthFrame extends ConsumerWidget {
@@ -37,7 +38,7 @@ class _AuthFrame extends ConsumerWidget {
   }
 }
 
-Widget _logo(BuildContext context) => Container(width: 64, height: 64, decoration: BoxDecoration(color: context.c.primary, borderRadius: BorderRadius.circular(16)), child: Icon(Icons.storefront, color: context.c.onPrimary, size: 36));
+Widget _logo(BuildContext context) => const AppLogo(size: 72);
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
