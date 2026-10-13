@@ -55,7 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     final printing = SectionCard(title: l.setPrinting, child: Column(children: [
       row(l.setPaper, l.setPaperHelp, SegmentedButton<PaperSize>(showSelectedIcon: false, segments: [ButtonSegment(value: PaperSize.a4, label: Text(l.paperA4)), ButtonSegment(value: PaperSize.mm80, label: Text(l.paper80)), ButtonSegment(value: PaperSize.mm58, label: Text(l.paper58))], selected: {s.paper}, onSelectionChanged: (v) => set((x) => x.copyWith(paper: v.first)))),
-      row(l.setPrinter, l.setPrinterHelp, OutlinedButton(onPressed: () => context.push('/print'), child: Text(l.printPreview))),
+      row(l.setPrinter, l.setPrinterHelp, const SizedBox.shrink()),
     ]));
 
     const look = AppearanceCard();
@@ -196,7 +196,7 @@ class HelpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = tr(context);
     final th = Theme.of(context).textTheme;
-    final keys = <(String, String)>[('F2', l.keyNewBill), ('F3', l.keyNewEstimate), ('F4', l.navSalesRegister), ('F5', l.navProducts), ('F8', l.preview), ('F9', l.saveAndPrint), ('Ctrl+S', l.keySave), ('Ctrl+Shift+N', l.keyNewProduct), ('Ctrl+Shift+L', l.keyFill100), ('Esc', l.keyCancel), ('↑ ↓ Enter', l.keyPick)];
+    final keys = <(String, String)>[('F2', l.keyNewBill), ('F3', l.keyNewEstimate), ('F4', l.navSalesRegister), ('F5', l.navProducts), ('F9', l.saveAndPrint), ('Ctrl+S', l.keySave), ('Ctrl+Shift+N', l.keyNewProduct), ('Ctrl+Shift+L', l.keyFill100), ('Esc', l.keyCancel), ('↑ ↓ Enter', l.keyPick)];
     final faq = <(String, String)>[(l.faq1q, l.faq1a), (l.faq2q, l.faq2a), (l.faq3q, l.faq3a), (l.faq4q, l.faq4a), (l.faq5q, l.faq5a)];
     final steps = [l.helpStep1, l.helpStep2, l.helpStep3, l.helpStep4];
     return PageFrame(

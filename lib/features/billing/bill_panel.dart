@@ -293,7 +293,7 @@ class _QtyStepper extends StatelessWidget {
 /// With very large text the GST detail collapses into one short row and the buttons stack, but Grand total and the
 /// three buttons are always fully visible.
 class BillFooter extends StatelessWidget {
-  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, required this.onSave, required this.onSavePrint, required this.onPreview, required this.onClear});
+  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, required this.onSave, required this.onSavePrint, required this.onClear});
   final DocMode mode;
   final CartState cart;
   final BillCalc calc;
@@ -301,7 +301,7 @@ class BillFooter extends StatelessWidget {
   final void Function(int? paise) onReceived; // null = the full Grand Total
   final void Function(bool keep) onKeepAdvance;
   final String? customerName; // null = walk-in
-  final VoidCallback onSave, onSavePrint, onPreview, onClear;
+  final VoidCallback onSave, onSavePrint, onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -355,20 +355,17 @@ class BillFooter extends StatelessWidget {
       Widget? ic(IconData i) => narrow ? null : Icon(i);
       final save = Tooltip(message: 'Ctrl+S', child: PressScale(child: FilledButton.icon(onPressed: empty ? null : onSave, icon: ic(Icons.save_outlined), label: lbl(saveLabel))));
       final savePrint = Tooltip(message: 'F9', child: PressScale(child: FilledButton.tonalIcon(onPressed: empty ? null : onSavePrint, icon: ic(Icons.print_outlined), label: lbl(l.saveAndPrint))));
-      final preview = Tooltip(message: 'F8', child: PressScale(child: OutlinedButton.icon(onPressed: empty ? null : onPreview, icon: ic(Icons.visibility_outlined), label: lbl(l.preview))));
       if (stacked) {
         return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           save,
           const SizedBox(height: 6),
-          Row(children: [Expanded(flex: 3, child: savePrint), const SizedBox(width: 8), Expanded(flex: 2, child: preview)]),
+          savePrint,
         ]);
       }
       return Row(children: [
         Expanded(flex: 3, child: save),
         const SizedBox(width: 8),
         Expanded(flex: 3, child: savePrint),
-        const SizedBox(width: 8),
-        Expanded(flex: 2, child: preview),
         if (!narrow) ...[
           const SizedBox(width: 8),
           Tooltip(message: 'Esc', child: IconButton(onPressed: empty ? null : onClear, icon: const Icon(Icons.layers_clear_outlined), tooltip: l.clearBill)),

@@ -26,7 +26,7 @@ import 'product_picker.dart';
 
 /// POS billing, also used for estimations (mode = estimation).
 /// Layout rule: the product table and the bill lines scroll INSIDE themselves. The footer (grand total, payment mode,
-/// Save, Save and Print, Preview) is pinned and never moves, however many lines the bill has.
+/// Save, Save and Print) is pinned and never moves, however many lines the bill has.
 class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({super.key, required this.mode});
   final DocMode mode;
@@ -176,11 +176,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     setState(() => _phoneTab = 0);
   }
 
-  void _preview() {
-    ref.read(printDocProvider.notifier).set(_snapshot());
-    context.push('/print');
-  }
-
   Future<void> _clear() async {
     final l = tr(context);
     final ok = await confirmDialog(context, title: l.clearBillTitle, message: l.clearBillText, confirmLabel: l.clearBill, danger: true);
@@ -203,7 +198,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd, onScan: () => playSound(ref, SoundKind.scan)));
 
     Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount));
-    final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, onSave: _save, onSavePrint: () => _save(print: true), onPreview: _preview, onClear: _clear);
+    final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear);
 
     final shortcuts = <ShortcutActivator, VoidCallback>{
       const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {
@@ -217,9 +212,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       },
       const SingleActivator(LogicalKeyboardKey.f9): () {
         if (cart.lines.isNotEmpty) _save(print: true);
-      },
-      const SingleActivator(LogicalKeyboardKey.f8): () {
-        if (cart.lines.isNotEmpty) _preview();
       },
     };
 

@@ -53,7 +53,6 @@ void main() {
             'balanceLine': tester.getRect(find.byKey(const ValueKey('balanceLine'))),
             'save': tester.getRect(find.text('Save bill')),
             'print': tester.getRect(find.text('Save and print')),
-            'preview': tester.getRect(find.text('Preview')),
           };
         }
 
@@ -69,7 +68,7 @@ void main() {
             }
           }
         }
-        final lowest = ['save', 'print', 'preview'].map((k) => base[k]!.bottom).reduce(math.max);
+        final lowest = ['save', 'print'].map((k) => base[k]!.bottom).reduce(math.max);
         expect(size.h - lowest, lessThan(48), reason: 'no blank gap under the buttons');
       });
     }

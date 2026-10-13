@@ -6,7 +6,7 @@ import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
 
-/// The billing page must keep Grand Total, payment mode, Save, Save and Print and Preview PINNED
+/// The billing page must keep Grand Total, payment mode, Save and Save and Print PINNED
 /// (same place, fully inside the window) however many lines the bill has, at every text size, with no blank gap at the bottom.
 /// The Grand total text shrinks to fit a long amount, so compare its vertical centre; buttons by their top edge.
 double pos(Rect r, String k) => k == 'total' ? r.center.dy : r.top;
@@ -38,7 +38,6 @@ void main() {
               'total': tester.getRect(find.byKey(const ValueKey('grandTotal'))),
               'save': tester.getRect(find.text(saveLabel)),
               'print': tester.getRect(find.text('Save and print')),
-              'preview': tester.getRect(find.text('Preview')),
             };
           }
 
@@ -52,7 +51,7 @@ void main() {
             expect(hundred[k]!.top, greaterThanOrEqualTo(0), reason: '$k must stay inside the window');
             expect(hundred[k]!.height, greaterThan(5), reason: '$k must stay visible, not squeezed to nothing');
           }
-          final lowest = [for (final k in ['save', 'print', 'preview']) hundred[k]!.bottom].reduce(math.max);
+          final lowest = [for (final k in ['save', 'print']) hundred[k]!.bottom].reduce(math.max);
           expect(size.h - lowest, lessThan(48), reason: 'no blank gap under the buttons');
           expect(find.byType(Scrollbar), findsWidgets);
         });
