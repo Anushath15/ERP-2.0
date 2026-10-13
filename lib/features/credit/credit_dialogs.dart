@@ -49,11 +49,21 @@ Future<T?> _showPanel<T>(BuildContext context, Widget child) {
 
 // ===================================================================== receive payment
 
-Future<PaymentReceipt?> showReceivePayment(BuildContext context, Customer customer) => _showPanel<PaymentReceipt>(context, ReceivePaymentPanel(customer: customer));
+/// Who a payment dialog is for.
+class PartyRef {
+  const PartyRef(this.id, this.name, this.kind);
+  final String id, name;
+  final PartyKind kind;
+}
+
+Future<PaymentReceipt?> showReceivePayment(BuildContext context, Customer customer) => showPartyPayment(context, PartyRef(customer.id, customer.name, PartyKind.customer));
+
+/// "Receive payment" for a customer, "Pay dealer" for a dealer: same rules (oldest bill first, or the bills you choose; extra becomes an advance).
+Future<PaymentReceipt?> showPartyPayment(BuildContext context, PartyRef party) => _showPanel<PaymentReceipt>(context, ReceivePaymentPanel(party: party));
 
 class ReceivePaymentPanel extends ConsumerStatefulWidget {
-  const ReceivePaymentPanel({super.key, required this.customer});
-  final Customer customer;
+  const ReceivePaymentPanel({super.key, required this.party});
+  final PartyRef party;
   @override
   ConsumerState<ReceivePaymentPanel> createState() => _ReceivePaymentPanelState();
 }
@@ -70,7 +80,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
   @override
   void initState() {
     super.initState();
-    final bal = ref.read(creditProvider.notifier).balanceOf(widget.customer.id);
+    final bal = bookOf(ref, widget.party.kind).balanceOf(widget.party.id);
     _amount = TextEditingController(text: bal > 0 ? (bal / 100).toStringAsFixed(2) : '');
   }
 
@@ -86,7 +96,8 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
     final l = tr(context);
     final th = Theme.of(context).textTheme;
     final c = context.c;
-    final acct = ref.watch(creditProvider)[widget.customer.id] ?? const CreditAccount();
+    final dealer = widget.party.kind == PartyKind.dealer;
+    final acct = watchBook(ref, widget.party.kind)[widget.party.id] ?? const CreditAccount();
     final unpaid = unpaidBills(acct.bills);
     final amount = parseRupeesToPaise(_amount.text) ?? 0;
     final canAllocate = amount > 0 && (!_manual || _chosen.isNotEmpty || unpaid.isEmpty);
@@ -98,7 +109,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
         setState(() => _error = l.fieldRequired);
         return;
       }
-      final rec = ref.read(creditProvider.notifier).receivePayment(customerId: widget.customer.id, customerName: widget.customer.name, amount: amount, mode: _mode, at: _date, note: _note.text.trim(), onlyBills: _manual ? _chosen : null);
+      final rec = bookOf(ref, widget.party.kind).receivePayment(customerId: widget.party.id, customerName: widget.party.name, amount: amount, mode: _mode, at: _date, note: _note.text.trim(), onlyBills: _manual ? _chosen : null);
       if (context.mounted) Navigator.pop(context, rec);
     }
 
@@ -108,7 +119,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 8, 4),
           child: Row(children: [
-            Expanded(child: Text(l.receivePayment, style: th.titleLarge)),
+            Expanded(child: Text(dealer ? l.payDealer : l.receivePayment, style: th.titleLarge)),
             IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
           ]),
         ),
@@ -116,7 +127,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text(l.recvFor(widget.customer.name), style: th.bodySmall),
+              Text(dealer ? l.dealerPayFor(widget.party.name) : l.recvFor(widget.party.name), style: th.bodySmall),
               const SizedBox(height: 10),
               TextField(
                 key: const ValueKey('payAmount'),
@@ -141,7 +152,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: TextField(controller: _note, decoration: InputDecoration(labelText: l.fieldNote))),
+                Expanded(child: TextField(controller: _note, decoration: InputDecoration(labelText: dealer ? l.dealerPayRef : l.fieldNote))),
               ]),
               const SizedBox(height: 14),
               SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(_manual ? l.recvChoose : l.recvAuto), value: _manual, onChanged: unpaid.isEmpty ? null : (v) => setState(() => _manual = v)),

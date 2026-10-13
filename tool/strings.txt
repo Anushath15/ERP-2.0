@@ -132,7 +132,7 @@ productNameHint | Type the name exactly as you want it
 filterInStock | In stock
 filterLow | Almost finished
 filterOut | Out of stock
-filterOwing | Owes money
+filterOwing | Credit
 filterClear | Nothing owed
 filterWeOwe | We owe
 statusPaid | Paid
@@ -311,6 +311,8 @@ toDealers | To dealers
 nobodyOwes | Nobody owes you money
 dealersSubtitle | The people you buy from
 addDealer | Add dealer
+statTotalWeOwe | Total we owe dealers
+statDealersOwed | Dealers we owe
 payDealer | Pay dealer
 staffSubtitle | Who can use this shop on the computer and phone
 addStaff | Add person
@@ -774,3 +776,66 @@ limitOff | Do nothing
 limitWarn | Warn me
 limitBlock | Do not allow
 remsTooltipOpen | Opens WhatsApp with this message ready. You press Send there.
+
+# ---- profiles (customers and dealers), settle fully, manual credit, reversal
+profDetails | Details
+profCreditStart | Credit started
+profNextDue | Next due
+profOverdueSince | Overdue since {date}
+profLastCredit | Last credit added
+profNone | None yet
+amountOnDate | {amount} on {date}
+profAccountStarted | Account started
+profLastPurchase | Last purchase
+profNextPay | Next payment due
+profWeOweBalance | We owe
+profAdvanceWith | Paid ahead to the dealer
+profNothingDue | Nothing due
+settleFully | Settle fully
+settleTitle | Settle {name} fully
+settleText | Record the whole balance of {amount} as received. Choose how it was paid.
+settleTextDealer | Record the whole balance of {amount} as paid to {name}. Choose how it was paid.
+settleNote | Reason or note (kept with the entry)
+settleConfirm | Settle {amount}
+settleDone | {amount} settled for {name}
+settleDoneDealer | {amount} paid to {name}
+settleUndo | Undo
+settleUndone | Taken back
+addCredit | Add credit
+addCreditTitle | Add credit for {name}
+addCreditHelp | Use this when goods were taken without a bill, or for an old amount. It is added to what they owe and the reason is kept. A wrong entry is reversed, never deleted.
+addCreditDone | {amount} credit added for {name}
+addCreditCustomer | Add credit customer
+addCreditCustomerTitle | New customer who owes money
+openingBalance | Amount owed now
+creditStartDate | Credit start date
+creditStartHelp | The date the oldest unpaid amount began. It decides how old the credit is.
+creditLimitField | Credit limit
+partyAdded | {name} added, owes {amount}
+partyEdited | Details saved
+editParty | Edit details
+rangePick | Pick dates
+reverse | Reverse
+reverseTitle | Reverse this entry?
+reverseText | The wrong entry stays in the ledger. A new entry cancels it out, and any bills it settled become unpaid again.
+reverseReason | Why is it wrong?
+reverseDone | Entry reversed
+reversedBadge | Reversed
+downloadStatement | Download statement
+dealerPayTitle | Pay {name}
+dealerPayFor | Payment to {name}
+dealerPayRef | Note or reference (UTR, cheque number)
+payDealerDone | {amount} paid to {name}
+addAccountAdjustment | Add adjustment
+addAdjustmentTitle | Adjust the account of {name}
+addAdjustmentHelp | For freight, a discount, a correction. Plus means we owe more, minus means we owe less. The reason is kept. A wrong entry is reversed, never deleted.
+adjDirection | What changes
+adjMore | We owe more
+adjLess | We owe less
+adjDone | Adjustment of {amount} saved
+dealerLedgerTitle | Account: purchases and payments
+dealerBillsTitle | Purchases still to pay
+dealerNoAccount | No purchases or payments yet.
+dealerGone | Dealer not found
+dealerNobodyDue | You owe nothing to this dealer
+lkAdjustMore | Adjustment (more)

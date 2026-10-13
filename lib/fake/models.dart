@@ -37,12 +37,12 @@ class Product {
 }
 
 class Customer {
-  const Customer({required this.id, required this.name, required this.phone, required this.city, required this.balancePaise, this.creditLimitPaise = 5000000});
-  final String id, name, phone, city;
+  const Customer({required this.id, required this.name, required this.phone, required this.city, required this.balancePaise, this.creditLimitPaise = 5000000, this.address = ''});
+  final String id, name, phone, city, address;
   final int balancePaise; // money they owe us
   final int creditLimitPaise;
 
-  Customer copyWith({String? name, String? phone, String? city}) => Customer(id: id, name: name ?? this.name, phone: phone ?? this.phone, city: city ?? this.city, balancePaise: balancePaise, creditLimitPaise: creditLimitPaise);
+  Customer copyWith({String? name, String? phone, String? city, String? address, int? creditLimitPaise}) => Customer(id: id, name: name ?? this.name, phone: phone ?? this.phone, city: city ?? this.city, balancePaise: balancePaise, creditLimitPaise: creditLimitPaise ?? this.creditLimitPaise, address: address ?? this.address);
 }
 
 class CartLine {

@@ -17,6 +17,7 @@ Future<Uint8List> buildStatementPdf({
   required String shopPhone,
   required DateTime today,
   required Strings l,
+  bool dealer = false,
 }) async {
   final regular = pw.Font.ttf(await rootBundle.load('assets/fonts/Inter-Variable.ttf'));
   pw.TextStyle s({bool b = false, double size = 9.5}) => pw.TextStyle(font: regular, fontSize: size, fontWeight: b ? pw.FontWeight.bold : pw.FontWeight.normal);
@@ -50,7 +51,7 @@ Future<Uint8List> buildStatementPdf({
           padding: const pw.EdgeInsets.symmetric(vertical: 2),
           child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
             cell(formatDate(ln.at), 60, right: false),
-            pw.Expanded(child: pw.Text('${ledgerKindLabel(l, ln.kind)}${ln.billNo == null ? '' : ' ${ln.billNo}'}${ln.note.isEmpty ? '' : ' (${ln.note})'}', style: s())),
+            pw.Expanded(child: pw.Text('${ledgerKindLabel(l, ln.kind, dealer: dealer)}${ln.billNo == null ? '' : ' ${ln.billNo}'}${ln.note.isEmpty ? '' : ' (${ln.note})'}', style: s())),
             cell(m(ln.chargePaise), 70),
             cell(m(ln.creditPaise), 70),
             cell(formatPaise(ln.runningPaise), 70),

@@ -101,7 +101,7 @@ void main() {
       await app(tester, '/customers/${s.c.id}', size: const ScreenSpec('tall', 1920, 3600));
       expect(find.text(s.c.name), findsWidgets);
       expect(find.text('Money to collect'), findsWidgets);
-      expect(find.text('Credit limit'), findsOneWidget);
+      expect(find.text('Credit limit'), findsWidgets);
       expect(find.text('Last payment'), findsOneWidget);
       expect(find.text('WhatsApp number'), findsOneWidget);
       expect(find.text('Bills still to pay'), findsOneWidget);
@@ -153,7 +153,7 @@ void main() {
     testWidgets('amount defaults to the dues; the oldest bill is settled first; the receipt can be opened', (tester) async {
       final s = sample();
       final c = await app(tester, '/customers/${s.c.id}');
-      await tester.tap(find.widgetWithText(FilledButton, 'Receive payment').first);
+      await tester.tap(find.byKey(const ValueKey('receiveOrPay')));
       await tester.pumpAndSettle();
       final field = tester.widget<TextField>(find.byKey(const ValueKey('payAmount')));
       expect(field.controller!.text, (s.a.balance / 100).toStringAsFixed(2));
@@ -179,7 +179,7 @@ void main() {
     testWidgets('paying more than the dues keeps the rest as an advance; the dialog says so', (tester) async {
       final s = sample();
       final c = await app(tester, '/customers/${s.c.id}');
-      await tester.tap(find.widgetWithText(FilledButton, 'Receive payment').first);
+      await tester.tap(find.byKey(const ValueKey('receiveOrPay')));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const ValueKey('payAmount')), ((s.a.balance + 12345) / 100).toStringAsFixed(2));
       await tester.pump();
@@ -192,7 +192,7 @@ void main() {
     testWidgets('"I will choose the bills": only the chosen bills are settled', (tester) async {
       final s = sample();
       final c = await app(tester, '/customers/${s.c.id}');
-      await tester.tap(find.widgetWithText(FilledButton, 'Receive payment').first);
+      await tester.tap(find.byKey(const ValueKey('receiveOrPay')));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(Switch).first);
       await tester.pumpAndSettle();

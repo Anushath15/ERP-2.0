@@ -28,6 +28,7 @@ class CustomersNotifier extends Notifier<List<Customer>> {
   @override
   List<Customer> build() => seedCustomers();
   void add(Customer c) => state = [c, ...state];
+  void update(Customer c) => state = [for (final x in state) x.id == c.id ? c : x];
   void updatePhone(String id, String phone) => state = [for (final c in state) c.id == id ? c.copyWith(phone: phone) : c];
 }
 

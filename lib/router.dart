@@ -6,6 +6,8 @@ import 'features/auth/auth_screens.dart';
 import 'features/billing/billing_screen.dart';
 import 'features/billing/cart.dart';
 import 'features/credit/credit_screens.dart';
+import 'features/credit/profile_screen.dart';
+import 'fake/credit_store.dart' show PartyKind;
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/money/money_screens.dart';
 import 'features/people/people_screens.dart';
@@ -44,9 +46,10 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/purchase-returns', pageBuilder: (c, s) => _p(c, s, const PurchaseReturnsScreen())),
           GoRoute(path: '/adjustments', pageBuilder: (c, s) => _p(c, s, const AdjustmentsScreen())),
           GoRoute(path: '/customers', pageBuilder: (c, s) => _p(c, s, const CustomersScreen())),
-          GoRoute(path: '/customers/:id', pageBuilder: (c, s) => _p(c, s, CustomerScreen(customerId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
+          GoRoute(path: '/customers/:id', pageBuilder: (c, s) => _p(c, s, ProfileScreen(partyId: s.pathParameters['id']!, kind: PartyKind.customer), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/customers/:id/statement', pageBuilder: (c, s) => _p(c, s, StatementScreen(customerId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/dealers', pageBuilder: (c, s) => _p(c, s, const DealersScreen())),
+          GoRoute(path: '/dealers/:id', pageBuilder: (c, s) => _p(c, s, ProfileScreen(partyId: s.pathParameters['id']!, kind: PartyKind.dealer), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/credit', pageBuilder: (c, s) => _p(c, s, const CreditScreen())),
           GoRoute(path: '/staff', pageBuilder: (c, s) => _p(c, s, const StaffScreen())),
           GoRoute(path: '/expenses', pageBuilder: (c, s) => _p(c, s, const ExpensesScreen())),

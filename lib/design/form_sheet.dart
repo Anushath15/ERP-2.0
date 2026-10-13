@@ -103,7 +103,7 @@ class _FormBodyState extends State<_FormBody> {
           decoration: InputDecoration(labelText: f.label, suffixIcon: const Icon(Icons.calendar_today)),
           onTap: () async {
             final now = DateTime.now();
-            final d = await showDatePicker(context: context, firstDate: DateTime(now.year - 3), lastDate: DateTime(now.year + 3), initialDate: now);
+            final d = await showDatePicker(context: context, firstDate: DateTime(now.year - 15), lastDate: DateTime(now.year + 3), initialDate: parseDmy(_ctl[f.key]!.text) ?? now);
             if (d != null) _ctl[f.key]!.text = formatDate(d);
           },
         );

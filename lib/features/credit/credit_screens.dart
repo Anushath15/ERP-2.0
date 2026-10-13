@@ -17,6 +17,7 @@ import '../../fake/models.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 import 'credit_dialogs.dart';
+import 'party_dialogs.dart';
 import 'statement_pdf.dart';
 
 /// One line of the Credit and Dues list.
@@ -92,7 +93,11 @@ class CreditScreen extends ConsumerWidget {
         },
         child: Text(l.receivePayment),
       );
-      return FittedBox(fit: BoxFit.scaleDown, alignment: compact ? Alignment.centerLeft : Alignment.centerRight, child: Row(mainAxisSize: MainAxisSize.min, children: [recv, wa, stmt]));
+      final settle = r.balance > 0
+          ? OutlinedButton(key: ValueKey('settle-${r.customer.id}'), onPressed: () => showSettleFully(ctx, PartyRef(r.customer.id, r.customer.name, PartyKind.customer)), child: Text(l.settleFully))
+          : const SizedBox.shrink();
+      final addCredit = IconButton(key: ValueKey('addCredit-${r.customer.id}'), tooltip: l.addCredit, onPressed: () => showAddCredit(ctx, r.customer), icon: const Icon(Icons.add_card_outlined));
+      return FittedBox(fit: BoxFit.scaleDown, alignment: compact ? Alignment.centerLeft : Alignment.centerRight, child: Row(mainAxisSize: MainAxisSize.min, children: [settle, if (r.balance > 0) const SizedBox(width: 6), recv, addCredit, wa, stmt]));
     }
 
     return DataListScreen<CreditRow>(
@@ -113,6 +118,8 @@ class CreditScreen extends ConsumerWidget {
         FilterSpec(l.filterAdvance, (r) => r.isAdvance),
       ],
       sorts: [(l.sortOldest, (a, b) => (b.oldestDays ?? -1).compareTo(a.oldestDays ?? -1))],
+      addLabel: l.addCreditCustomer,
+      onAdd: () => showAddCreditCustomer(context),
       onTap: (ctx, r) => ctx.go('/customers/${r.customer.id}'),
       columns: [
         ColumnSpec(l.fieldName, (c, r) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(r.customer.name, style: th.titleSmall), Text(r.customer.phone.isEmpty ? l.custNoNumber : r.customer.phone, style: th.bodySmall)]), flex: 4),
@@ -120,165 +127,13 @@ class CreditScreen extends ConsumerWidget {
         ColumnSpec(l.colOverdue, (c, r) => r.overdue > 0 ? Cell(formatPaise(r.overdue), color: c.c.danger) : const Cell('-', muted: true), width: 90, numeric: true),
         ColumnSpec(l.colOldest, (c, r) => r.oldestDays == null ? const Cell('-', muted: true) : Cell(l.daysCount(r.oldestDays.toString()), muted: true), width: 70),
         ColumnSpec(l.colReminders, (c, r) => reminderBadge(c, r.reminders, r.lastReminded), flex: 3),
-        ColumnSpec('', (c, r) => actions(c, r), width: 250, numeric: true),
+        ColumnSpec('', (c, r) => actions(c, r), width: 400, numeric: true),
       ],
       phoneTitle: (c, r) => Row(children: [Expanded(child: Text(r.customer.name, style: th.titleSmall)), r.isAdvance ? StatusBadge(l.advanceAmount(formatPaise(-r.balance, symbol: true)), kind: BadgeKind.success) : Text(formatPaise(r.balance, symbol: true), style: th.titleSmall?.copyWith(color: c.c.warning))]),
       phoneSubtitle: (r) => r.overdue > 0 ? '${r.customer.phone.isEmpty ? l.custNoNumber : r.customer.phone}  ·  ${l.statOverdue}: ${formatPaise(r.overdue, symbol: true)}' : (r.customer.phone.isEmpty ? l.custNoNumber : r.customer.phone),
       phoneActions: (c, r) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [reminderBadge(c, r.reminders, r.lastReminded), const SizedBox(height: 6), actions(c, r, compact: true)]),
       emptyTitle: l.nobodyOwes,
       emptyIcon: Icons.celebration_outlined,
-    );
-  }
-}
-
-// ===================================================================== customer screen
-
-class CustomerScreen extends ConsumerWidget {
-  const CustomerScreen({super.key, required this.customerId});
-  final String customerId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = tr(context);
-    final th = Theme.of(context).textTheme;
-    final c = context.c;
-    final customer = ref.watch(customersProvider).where((x) => x.id == customerId).firstOrNull;
-    final acct = ref.watch(creditProvider)[customerId] ?? const CreditAccount();
-    final log = ref.watch(reminderLogProvider);
-    final now = ref.watch(clockProvider);
-    final settings = ref.watch(settingsProvider);
-    if (customer == null) {
-      return PageFrame(title: l.navCustomers, child: EmptyState(icon: Icons.person_off_outlined, title: l.nothingFound, action: FilledButton(onPressed: () => context.go('/customers'), child: Text(l.back))));
-    }
-    final bal = acct.balance;
-    final unpaid = unpaidBills(acct.bills);
-    final age = ageing(acct.bills, now);
-    final overdue = overdueAmount(acct.bills, now);
-    final limit = customer.creditLimitPaise;
-    final usedPct = limit == 0 ? 0 : (bal > 0 ? (bal * 100 ~/ limit) : 0);
-    final reminders = log.forCustomer(customerId);
-    final lines = withRunningBalance(acct.ledger).reversed.toList();
-
-    Widget stat(String label, String value, IconData icon, {Color? tone, String? hint}) => StatCard(label: label, value: value, icon: icon, tone: tone, hint: hint);
-
-    final stats = LayoutBuilder(builder: (ctx, bc) {
-      final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 3 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
-      final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
-      final cards = <Widget>[
-        stat(bal < 0 ? l.custAdvance : l.custBalance, '₹ ${formatPaise(bal.abs())}', bal < 0 ? Icons.savings_outlined : Icons.south_west, tone: bal < 0 ? c.success : (bal > 0 ? c.warning : null)),
-        stat(l.statOverdue, '₹ ${formatPaise(overdue)}', Icons.schedule, tone: overdue > 0 ? c.danger : null),
-        stat(l.custLimit, '₹ ${formatPaise(limit)}', Icons.speed, tone: bal > limit ? c.danger : null, hint: l.limitUsed(usedPct.toString())),
-        stat(l.custLastPayment, acct.lastPaymentAt == null ? l.custNoPayment : formatDate(acct.lastPaymentAt!), Icons.payments_outlined),
-        StatCard(label: l.custReminders, value: '${reminders.length}', icon: Icons.chat_outlined, hint: reminders.isEmpty ? l.notReminded : remindedText(l, reminders.length, reminders.first.at)),
-        stat(l.custWhatsapp, customer.phone.isEmpty ? l.custNoNumber : (normalizePhone(customer.phone, defaultCountry: settings.countryCode) == null ? customer.phone : prettyPhone(normalizePhone(customer.phone, defaultCountry: settings.countryCode)!)), Icons.chat_bubble_outline),
-      ];
-      return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
-    });
-
-    final actions = Wrap(spacing: 8, runSpacing: 8, children: [
-      FilledButton.icon(
-        onPressed: () async {
-          final rec = await showReceivePayment(context, customer);
-          if (rec != null && context.mounted) {
-            toastAction(context, l.recvDone(formatPaise(rec.amountPaise, symbol: true), customer.name), l.printReceipt, () => openReceiptPreview(context, ref, rec), seconds: 6);
-          }
-        },
-        icon: const Icon(Icons.payments_outlined),
-        label: Text(l.receivePayment),
-      ),
-      Tooltip(message: settings.sync == SyncState.offline ? canOpenWhatsapp(online: false, digits: null).reason! : l.remindersTooltip, child: OutlinedButton.icon(onPressed: bal > 0 ? () => remindCustomer(context, customer) : null, icon: const Icon(Icons.chat_outlined), label: Text(l.actRemind))),
-      OutlinedButton.icon(onPressed: () => context.go('/customers/$customerId/statement'), icon: const Icon(Icons.description_outlined), label: Text(l.actStatement)),
-      if (bal > 0) OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: c.danger), onPressed: () => showWriteOff(context, ref, customer), icon: const Icon(Icons.remove_circle_outline), label: Text(l.writeOff)),
-    ]);
-
-    final ageChips = Wrap(spacing: 8, runSpacing: 8, children: [
-      for (final e in [(l.age0, age.d0to30, BadgeKind.success), (l.age31, age.d31to60, BadgeKind.info), (l.age61, age.d61to90, BadgeKind.warning), (l.age90, age.d90plus, BadgeKind.danger)]) StatusBadge('${e.$1}: ${formatPaise(e.$2, symbol: true)}', kind: e.$2 == 0 ? BadgeKind.neutral : e.$3),
-    ]);
-
-    final billsCard = SectionCard(
-      title: l.sectionBillWise,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        ageChips,
-        const SizedBox(height: 10),
-        if (acct.unbilledBalance > 0)
-          Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(children: [Expanded(child: Text(l.openingBalanceRow, style: th.bodyMedium)), Text(formatPaise(acct.unbilledBalance, symbol: true), style: th.titleSmall)])),
-        if (unpaid.isEmpty && acct.unbilledBalance <= 0) Text(l.nobodyOwes, style: th.bodyMedium),
-        for (final b in unpaid)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${b.billNo}  ·  ${formatDate(b.date)}', style: th.titleSmall), Text(l.billPaidOf(formatPaise(b.paidPaise, symbol: true), formatPaise(b.totalPaise, symbol: true)), style: th.bodySmall)])),
-              const SizedBox(width: 8),
-              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(formatPaise(b.outstanding, symbol: true), style: th.titleSmall?.copyWith(color: c.warning)), Text(l.daysCount(daysOld(b.date, now).toString()), style: th.bodySmall)]),
-            ]),
-          ),
-      ]),
-    );
-
-    final phone = context.isPhone;
-    final ledgerCard = SectionCard(
-      title: l.sectionLedger,
-      child: lines.isEmpty
-          ? Text(l.creditNoAccount, style: th.bodyMedium)
-          : Column(children: [
-              if (!phone)
-                Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(children: [
-                  SizedBox(width: 92, child: Text(l.colDate, style: th.labelMedium?.copyWith(color: c.textMuted))),
-                  Expanded(flex: 3, child: Text(l.colType, style: th.labelMedium?.copyWith(color: c.textMuted))),
-                  SizedBox(width: 96, child: Text(l.colCharged, textAlign: TextAlign.right, style: th.labelMedium?.copyWith(color: c.textMuted))),
-                  SizedBox(width: 110, child: Text(l.colCredited, textAlign: TextAlign.right, style: th.labelMedium?.copyWith(color: c.textMuted))),
-                  SizedBox(width: 110, child: Text(l.colRunning, textAlign: TextAlign.right, style: th.labelMedium?.copyWith(color: c.textMuted))),
-                ])),
-              for (final ln in lines) ...[
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: phone
-                      ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Row(children: [Expanded(child: Text('${ledgerKindLabel(l, ln.entry.kind)}${ln.entry.billNo == null ? '' : '  ·  ${ln.entry.billNo}'}', style: th.titleSmall)), Text(formatPaise(ln.entry.amountPaise.abs(), symbol: true), style: th.titleSmall?.copyWith(color: ln.entry.amountPaise > 0 ? c.warning : c.success))]),
-                          Text('${formatDate(ln.entry.at)}  ·  ${l.colRunning}: ${formatPaise(ln.runningPaise, symbol: true)}${ln.entry.note.isEmpty ? '' : '\n${ln.entry.note}'}', style: th.bodySmall),
-                        ])
-                      : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          SizedBox(width: 92, child: Text(formatDate(ln.entry.at), style: th.bodyMedium)),
-                          Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${ledgerKindLabel(l, ln.entry.kind)}${ln.entry.billNo == null ? '' : '  ·  ${ln.entry.billNo}'}', style: th.titleSmall), if (ln.entry.note.isNotEmpty) Text(ln.entry.note, style: th.bodySmall)])),
-                          SizedBox(width: 96, child: Text(ln.entry.amountPaise > 0 ? formatPaise(ln.entry.amountPaise) : '', textAlign: TextAlign.right, style: th.bodyMedium?.copyWith(color: c.warning))),
-                          SizedBox(width: 110, child: Text(ln.entry.amountPaise < 0 ? formatPaise(-ln.entry.amountPaise) : '', textAlign: TextAlign.right, style: th.bodyMedium?.copyWith(color: c.success))),
-                          SizedBox(width: 110, child: Text(formatPaise(ln.runningPaise), textAlign: TextAlign.right, style: th.titleSmall)),
-                        ]),
-                ),
-              ],
-            ]),
-    );
-
-    final remindersCard = SectionCard(
-      title: l.sectionReminders,
-      trailing: Tooltip(message: l.remindersTooltip, child: const Icon(Icons.info_outline, size: 20)),
-      child: reminders.isEmpty
-          ? Text(l.noRemindersYet, style: th.bodyMedium)
-          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              for (final r in reminders)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Row(children: [const Icon(Icons.chat_outlined, size: 18), const SizedBox(width: 8), Expanded(child: Text(l.reminderLine('${formatDate(r.at)} ${formatTime(r.at)}', formatPaise(r.amountDuePaise, symbol: true)), style: th.bodyMedium)), Text(r.by, style: th.bodySmall)]),
-                ),
-            ]),
-    );
-
-    return PageFrame(
-      title: customer.name,
-      subtitle: '${customer.phone.isEmpty ? l.custNoNumber : customer.phone}  ·  ${customer.city}',
-      actions: [TextButton.icon(onPressed: () => context.go('/customers'), icon: const Icon(Icons.arrow_back), label: Text(l.navCustomers))],
-      child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
-        stats,
-        const SizedBox(height: 12),
-        actions,
-        const SizedBox(height: 12),
-        billsCard,
-        const SizedBox(height: 12),
-        ledgerCard,
-        const SizedBox(height: 12),
-        remindersCard,
-      ]),
     );
   }
 }

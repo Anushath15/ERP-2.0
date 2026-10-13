@@ -5,6 +5,7 @@ import '../../core/money.dart';
 import '../../design/data_list.dart';
 import '../../design/detail_sheet.dart';
 import '../../design/form_sheet.dart';
+import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
 import '../../fake/credit_store.dart';
@@ -42,6 +43,10 @@ class CustomersScreen extends ConsumerWidget {
           if (context.mounted) toast(context, l.saved);
         }
       },
+      stats: [
+        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(items.fold<int>(0, (s, c) => bal(c) > 0 ? s + bal(c) : s))}', icon: Icons.south_west),
+        StatCard(label: l.statCustomersOwing, value: owing.toString(), icon: Icons.people_outline),
+      ],
       filters: [FilterSpec(l.filterOwing, (c) => bal(c) > 0), FilterSpec(l.filterAdvance, (c) => bal(c) < 0), FilterSpec(l.filterClear, (c) => bal(c) == 0)],
       sorts: [(l.sortOwedHigh, (a, b) => bal(b).compareTo(bal(a)))],
       columns: [
@@ -64,30 +69,36 @@ class DealersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
     final items = ref.watch(recsProvider('dealers'));
+    final book = ref.watch(dealerLedgerProvider);
+    int owe(Rec r) => book[r.id]?.balance ?? 0;
     final th = Theme.of(context).textTheme;
+    Widget badge(Rec r) => owe(r) > 0 ? StatusBadge(formatPaise(owe(r), symbol: true), kind: BadgeKind.danger) : const SizedBox.shrink();
     return DataListScreen<Rec>(
       title: l.navDealers,
       subtitle: l.dealersSubtitle,
       items: items,
       searchText: (r) => '${r.s('name')} ${r.s('phone')} ${r.s('city')}',
+      stats: [
+        StatCard(label: l.statTotalWeOwe, value: '₹ ${formatPaise(items.fold<int>(0, (s, r) => owe(r) > 0 ? s + owe(r) : s))}', icon: Icons.north_east, tone: context.c.danger),
+        StatCard(label: l.statDealersOwed, value: items.where((r) => owe(r) > 0).length.toString(), icon: Icons.local_shipping_outlined),
+      ],
       addLabel: l.addDealer,
       onAdd: () async {
-        final v = await showFormSheet(context, title: l.addDealer, saveLabel: l.save, fields: [FieldSpec('name', l.fieldName, required: true, autofocus: true), FieldSpec('phone', l.fieldPhone, type: FieldType.phone), FieldSpec('city', l.fieldCity)]);
-        if (v != null) ref.read(recsProvider('dealers').notifier).add(Rec('d-new-${items.length}', {'name': v['name']!, 'phone': v['phone'] ?? '', 'city': v['city'] ?? '', 'balance': 0}));
+        final v = await showFormSheet(context, title: l.addDealer, saveLabel: l.save, fields: [FieldSpec('name', l.fieldName, required: true, autofocus: true), FieldSpec('phone', l.fieldPhone, type: FieldType.phone), FieldSpec('city', l.fieldCity), FieldSpec('address', l.fieldAddress)]);
+        if (v != null) ref.read(recsProvider('dealers').notifier).add(Rec('d-new-${items.length}', {'name': v['name']!, 'phone': v['phone'] ?? '', 'city': v['city'] ?? '', 'address': v['address'] ?? '', 'balance': 0}));
       },
-      filters: [FilterSpec(l.filterWeOwe, (r) => r.i('balance') > 0)],
+      filters: [FilterSpec(l.filterWeOwe, (r) => owe(r) > 0)],
+      sorts: [(l.sortOwedHigh, (a, b) => owe(b).compareTo(owe(a)))],
       columns: [
         ColumnSpec(l.fieldName, (c, r) => Text(r.s('name'), style: th.titleSmall), flex: 4),
         ColumnSpec(l.fieldPhone, (c, r) => Cell(r.s('phone'), muted: true), width: 120),
         ColumnSpec(l.fieldCity, (c, r) => Cell(r.s('city'), muted: true), flex: 2),
-        ColumnSpec(l.colWeOwe, (c, r) => r.i('balance') > 0 ? StatusBadge(formatPaise(r.i('balance'), symbol: true), kind: BadgeKind.danger) : const Cell('-', muted: true), width: 140, numeric: true),
+        ColumnSpec(l.colWeOwe, (c, r) => owe(r) > 0 ? badge(r) : const Cell('-', muted: true), width: 140, numeric: true),
       ],
       phoneTitle: (c, r) => Text(r.s('name'), style: th.titleSmall),
       phoneSubtitle: (r) => '${r.s('phone')}  ·  ${r.s('city')}',
-      phoneTrailing: (c, r) => r.i('balance') > 0 ? StatusBadge(formatPaise(r.i('balance'), symbol: true), kind: BadgeKind.danger) : const SizedBox.shrink(),
-      onTap: (ctx, r) => showDetail(ctx, title: r.s('name'), subtitle: r.s('city'), body: [KeyValue(l.fieldPhone, r.s('phone')), KeyValue(l.colWeOwe, formatPaise(r.i('balance'), symbol: true), bold: true)], actions: [
-        if (r.i('balance') > 0) FilledButton.icon(onPressed: () { Navigator.pop(ctx); toast(context, l.paymentSaved(formatPaise(r.i('balance'), symbol: true))); }, icon: const Icon(Icons.payments_outlined), label: Text(l.payDealer)),
-      ]),
+      phoneTrailing: (c, r) => badge(r),
+      onTap: (ctx, r) => ctx.go('/dealers/${r.id}'),
     );
   }
 }

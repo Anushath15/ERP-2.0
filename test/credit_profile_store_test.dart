@@ -5,6 +5,7 @@ import 'package:erp2/domain/credit/ledger.dart';
 import 'package:erp2/fake/credit_store.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:erp2/fake/models.dart';
+import 'package:erp2/fake/seed.dart';
 import 'helpers.dart';
 
 // Settle fully (with Undo), manual credit, reversal of wrong entries, opening balances and the profile facts, on the fake store.
@@ -162,5 +163,28 @@ void main() {
     expect(r.number, startsWith('PAY-'));
     expect(r.allocations.map((a) => '${a.billNo}:${a.paise}').toList(), ['PUR-1:500000', 'PUR-2:100000']);
     expect(d.balanceOf('dd1'), 100000);
+  });
+
+  test('an old opening balance (no bill behind it) is paid off by a payment, never turned into a fake advance', () {
+    final c = fresh();
+    final customers = seedCustomers();
+    final seeded = seedCredit(customers, fixedNow);
+    final entry = seeded.entries.firstWhere((e) => e.value.unbilledBalance > 0);
+    final n = c.read(creditProvider.notifier);
+    final key = entry.key;
+    final owed = n.balanceOf(key);
+    expect(c.read(creditProvider)[key]!.unbilledBalance, greaterThan(0));
+    final r = n.settleFully(customerId: key, customerName: 'X', mode: 'cash', at: fixedNow)!;
+    final a = c.read(creditProvider)[key]!;
+    expect(a.balance, 0);
+    expect(r.amountPaise, owed);
+    expect(r.advancePaise, 0, reason: 'nothing was paid ahead');
+    expect(a.ledger.where((e) => e.kind == LedgerKind.advance).isEmpty, isTrue);
+    // and a part payment larger than the bills but below the balance also pays the opening balance
+    final key2 = seeded.entries.firstWhere((e) => e.key != key && e.value.unbilledBalance > 0).key;
+    final billsOwed = c.read(creditProvider)[key2]!.bills.fold<int>(0, (s, b) => s + b.outstanding);
+    final r2 = n.receivePayment(customerId: key2, customerName: 'Y', amount: billsOwed + 100, mode: 'cash', at: fixedNow);
+    expect(r2.advancePaise, 0);
+    expect(n.balanceOf(key2), c.read(creditProvider)[key2]!.unbilledBalance, reason: 'what remains is only the rest of the opening balance');
   });
 }

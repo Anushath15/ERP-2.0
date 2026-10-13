@@ -104,16 +104,19 @@ abstract class PartyLedgerNotifier extends Notifier<Map<String, CreditAccount>> 
   PaymentReceipt receivePayment({required String customerId, required String customerName, required int amount, required String mode, required DateTime at, String note = '', Set<String>? onlyBills}) {
     final a = account(customerId);
     final res = allocatePayment(bills: a.bills, amount: amount, onlyBills: onlyBills);
+    // Money beyond the bills (when everything is not chosen by hand) first pays off an old opening balance that has no bill behind it.
+    final toUnbilled = onlyBills == null ? (a.unbilledBalance > 0 ? (res.advancePaise < a.unbilledBalance ? res.advancePaise : a.unbilledBalance) : 0) : 0;
+    final advance = res.advancePaise - toUnbilled;
     final ledger = [...a.ledger];
-    if (res.appliedPaise > 0) {
-      ledger.add(LedgerEntry.payment(id: _id(), customerId: customerId, paise: res.appliedPaise, at: at, mode: mode, note: note, by: currentUser, allocations: res.allocations));
+    if (res.appliedPaise + toUnbilled > 0) {
+      ledger.add(LedgerEntry.payment(id: _id(), customerId: customerId, paise: res.appliedPaise + toUnbilled, at: at, mode: mode, note: note, by: currentUser, allocations: res.allocations));
     }
-    if (res.advancePaise > 0) {
-      ledger.add(LedgerEntry.advance(id: _id(), customerId: customerId, paise: res.advancePaise, at: at, mode: mode, note: note.isEmpty ? paidMoreNote : note, by: currentUser));
+    if (advance > 0) {
+      ledger.add(LedgerEntry.advance(id: _id(), customerId: customerId, paise: advance, at: at, mode: mode, note: note.isEmpty ? paidMoreNote : note, by: currentUser));
     }
     final updated = a.copyWith(ledger: ledger, bills: applyAllocations(a.bills, res.allocations));
     _put(customerId, updated);
-    final r = PaymentReceipt(number: '$receiptPrefix-${(_rcp++).toString().padLeft(4, '0')}', customerId: customerId, customerName: customerName, amountPaise: amount, mode: mode, at: at, note: note, allocations: res.allocations, advancePaise: res.advancePaise, balanceAfter: updated.balance);
+    final r = PaymentReceipt(number: '$receiptPrefix-${(_rcp++).toString().padLeft(4, '0')}', customerId: customerId, customerName: customerName, amountPaise: amount, mode: mode, at: at, note: note, allocations: res.allocations, advancePaise: advance, balanceAfter: updated.balance);
     _snapshots[r.number] = (a, updated);
     return r;
   }
