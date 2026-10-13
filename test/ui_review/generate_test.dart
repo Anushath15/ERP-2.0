@@ -296,7 +296,7 @@ void main() {
         ..writeln('<img src="desktop/dark/${s.id}.jpg" width="520"> <img src="phone/dark/${s.id}.jpg" width="170">')
         ..writeln();
     }
-    File('${outRoot.path}/index.md').writeAsStringSync(b.toString());
+    File('${outRoot.path}/index-full.md').writeAsStringSync(b.toString());
   });
 }
 

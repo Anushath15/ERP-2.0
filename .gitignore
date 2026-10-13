@@ -45,3 +45,9 @@ ui-debug.log
 .DS_Store
 Thumbs.db
 dist/
+
+# Screenshots: only the ~10 key ones in docs/ui-review/ are committed (see its README); the full set is a release download.
+docs/ui-review/**/*.jpg
+docs/ui-review/index-full.md
+*.zip
+device.json

@@ -8,7 +8,7 @@ _Last updated: 2026-10-13_
 **Start with [REVIEW-GUIDE.md](REVIEW-GUIDE.md)**: a 15-minute walkthrough (₹150 bill with ₹100 given, Money to collect, WhatsApp preview and Undo, walk-in with a balance, 200% text, 100 lines). Sample data is fake; nothing is saved or sent.
 - **Current build (built from commit `68c77d1`, 2026-10-13):** `dist/ERP2-prototype-windows-2026-10-13-68c77d1.zip` (unzip, double-click `erp2.exe`) and `dist/ERP2-prototype-web-2026-10-13-68c77d1.zip` (open `index.html` through a local web server). Both include all current screens (credit, Money to collect, customer page, reminders, billing footer with Received and Balance, statement PDF). Older zips are in `dist/superseded/`. `dist/` is git-ignored.
 - **Checked:** the Windows zip was unzipped to a fresh folder and started (window opened, stayed running 8 seconds, then closed by me); the web zip was unzipped, served on localhost and Money to collect loaded with no browser console errors. Not checked: a second PC, a Mac, a phone.
-- **Without running anything:** screenshots of every screen are in [ui-review/index.md](ui-review/index.md).
+- **Without running anything:** the main screens are in [ui-review/index.md](ui-review/index.md); the full set of about 320 pictures is the `ERP2-ui-review-screenshots-*.zip` attached to each GitHub pre-release (and in `dist/`).
 - The Statement's **Save as PDF now makes a real A4 PDF** (Downloads folder, or a browser download). **Print** is still a "not connected" message (no printing in the prototype).
 - Preview helper: **Ctrl+Shift+L** on New bill fills the bill with 100 sample lines.
 
