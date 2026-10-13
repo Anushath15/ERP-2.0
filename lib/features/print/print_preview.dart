@@ -8,6 +8,7 @@ import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../domain_lite/bill_calc.dart';
 import '../../fake/models.dart';
+import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 import '../billing/cart.dart';
@@ -50,7 +51,6 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
     final now = ref.watch(clockProvider);
     final products = ref.watch(productsProvider);
     doc ??= samplePrintDoc(products, now, mode: widget.sampleMode ?? DocMode.invoice, edited: widget.sampleMode == DocMode.estimation);
-    final settings = ref.watch(settingsProvider);
     final phone = context.isPhone;
 
     final controls = Wrap(spacing: 10, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -93,7 +93,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
                     child: FittedBox(
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.topCenter,
-                      child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: SizedBox(width: paperW, child: Paper(doc: doc!, paper: _paper, l: l, shopName: settings.shopName, gstin: settings.gstin))),
+                      child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: SizedBox(width: paperW, child: Paper(doc: doc!, paper: _paper, l: l, shopName: ref.watch(shopProvider).name, gstin: ref.watch(shopProvider).gstin))),
                     ),
                   ),
                 ),

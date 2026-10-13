@@ -817,4 +817,19 @@ class Strings {
   String get dealerGone => 'Dealer not found';
   String get dealerNobodyDue => 'You owe nothing to this dealer';
   String get lkAdjustMore => 'Adjustment (more)';
+  String get navShop => 'Shop profile';
+  String get shopProfileSubtitle => 'The details of your shop. Printed bills and estimates read from here. They belong to the shop, not to this computer.';
+  String get shopLogoNote => 'The logo is printed at the top of your bills.';
+  String get shopOwner => 'Owner name';
+  String get shopBank => 'Bank details';
+  String get shopFooter => 'Bill footer message';
+  String get shopPrefix => 'Invoice number prefix';
+  String get estShowTitle => 'Show on estimate';
+  String get estShowHelp => 'An estimate is a rough price. These stay off unless you turn them on. Tax and round-off are still worked out; they are just not printed.';
+  String get estShowName => 'Shop name';
+  String get estShowAddress => 'Address';
+  String get estShowGstin => 'GSTIN';
+  String get estShowPhone => 'Phone';
+  String get estShowNumber => 'Estimate number';
+  String get estShowTax => 'Tax and round-off lines';
 }

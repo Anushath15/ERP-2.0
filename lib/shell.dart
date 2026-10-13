@@ -11,6 +11,7 @@ import 'design/tokens.dart';
 import 'design/widgets.dart';
 import 'design/app_logo.dart';
 import 'fake/store.dart';
+import 'fake/shop_profile.dart';
 import 'nav.dart';
 
 class AppShell extends ConsumerWidget {
@@ -177,7 +178,6 @@ class TopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
-    final s = ref.watch(settingsProvider);
     final th = Theme.of(context).textTheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -190,7 +190,7 @@ class TopBar extends ConsumerWidget {
           onPressed: () => ref.read(navExpandedProvider.notifier).toggle(ref.read(navExpandedProvider) ?? context.isDesktop),
           icon: const Icon(Icons.menu),
         ),
-        Expanded(child: Text(s.shopName, style: th.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        Expanded(child: Text(ref.watch(shopProvider).name, style: th.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
         const Flexible(child: SyncChip()),
         const SizedBox(width: 8),
         IconButton(tooltip: l.textSmaller, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.down(x.textScale))), icon: const Icon(Icons.text_decrease)),

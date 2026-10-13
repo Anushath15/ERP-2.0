@@ -13,6 +13,7 @@ import '../../domain/credit/reminder.dart';
 import '../../fake/credit_store.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
+import '../../fake/shop_profile.dart';
 import 'credit_dialogs.dart';
 import 'credit_screens.dart' show remindedText;
 import 'party_dialogs.dart';
@@ -49,6 +50,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final c = context.c;
     final now = ref.watch(clockProvider);
     final settings = ref.watch(settingsProvider);
+    final shop = ref.watch(shopProvider);
     final customers = ref.watch(customersProvider);
     final dealers = ref.watch(recsProvider('dealers'));
 
@@ -103,7 +105,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
     });
 
-    final waNumber = phone.isEmpty ? l.custNoNumber : (normalizePhone(phone, defaultCountry: settings.countryCode) == null ? phone : prettyPhone(normalizePhone(phone, defaultCountry: settings.countryCode)!));
+    final waNumber = phone.isEmpty ? l.custNoNumber : (normalizePhone(phone, defaultCountry: shop.countryCode) == null ? phone : prettyPhone(normalizePhone(phone, defaultCountry: shop.countryCode)!));
     final details = SectionCard(
       title: l.profDetails,
       trailing: TextButton.icon(key: const ValueKey('editParty'), onPressed: () => showEditParty(context, party), icon: const Icon(Icons.edit_outlined, size: 18), label: Text(l.editParty)),
@@ -120,7 +122,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     Future<void> downloadStatement() async {
       final w = win ?? (DateTime(2000), now);
       final st = buildStatement(entries: acct.ledger, from: w.$1, to: w.$2);
-      final bytes = await buildStatementPdf(statement: st, customer: Customer(id: widget.partyId, name: name, phone: phone, city: city, balancePaise: 0), shopName: settings.shopName, shopPhone: settings.shopPhone, today: now, l: l, dealer: !_customer);
+      final bytes = await buildStatementPdf(statement: st, customer: Customer(id: widget.partyId, name: name, phone: phone, city: city, balancePaise: 0), shopName: shop.name, shopPhone: shop.phone, today: now, l: l, dealer: !_customer);
       final stamp = '${now.year}-${two(now.month)}-${two(now.day)}';
       final where = await ref.read(fileSaverProvider).save('Statement $name $stamp.pdf', bytes);
       if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));

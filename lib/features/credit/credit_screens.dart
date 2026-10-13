@@ -14,6 +14,7 @@ import '../../domain/credit/reminder.dart';
 import '../../fake/credit_store.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
+import '../../fake/shop_profile.dart';
 import '../../strings.dart';
 import 'credit_dialogs.dart';
 import 'party_dialogs.dart';
@@ -156,7 +157,6 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
     final now = ref.watch(clockProvider);
     final customer = ref.watch(customersProvider).where((x) => x.id == widget.customerId).firstOrNull;
     final acct = ref.watch(creditProvider)[widget.customerId] ?? const CreditAccount();
-    final settings = ref.watch(settingsProvider);
     if (customer == null) return PageFrame(title: l.statementTitle, child: EmptyState(icon: Icons.person_off_outlined, title: l.nothingFound));
     final from = switch (_range) { 0 => DateTime(now.year, now.month, 1), 1 => DateTime(now.year, now.month - 2, 1), _ => DateTime(2000) };
     final st = buildStatement(entries: acct.ledger, from: from, to: now);
@@ -166,7 +166,7 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
       OutlinedButton.icon(
         key: const ValueKey('statementPdf'),
         onPressed: () async {
-          final bytes = await buildStatementPdf(statement: st, customer: customer, shopName: settings.shopName, shopPhone: settings.shopPhone, today: now, l: l);
+          final bytes = await buildStatementPdf(statement: st, customer: customer, shopName: ref.watch(shopProvider).name, shopPhone: ref.watch(shopProvider).phone, today: now, l: l);
           final stamp = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
           final where = await ref.read(fileSaverProvider).save('Statement ${customer.name} $stamp.pdf', bytes);
           if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
@@ -198,7 +198,7 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
                     child: FittedBox(
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.topCenter,
-                      child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: SizedBox(width: paperW, child: StatementPaper(statement: st, customer: customer, shopName: settings.shopName, shopPhone: settings.shopPhone, today: now))),
+                      child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: SizedBox(width: paperW, child: StatementPaper(statement: st, customer: customer, shopName: ref.watch(shopProvider).name, shopPhone: ref.watch(shopProvider).phone, today: now))),
                     ),
                   ),
                 ),
@@ -273,7 +273,6 @@ class PaymentReceiptScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
     final c = context.c;
-    final settings = ref.watch(settingsProvider);
     final now = ref.watch(clockProvider);
     final r = ref.watch(lastReceiptProvider) ??
         PaymentReceipt(number: 'RCP-0041', customerId: 'c1', customerName: 'Murugan Electricals', amountPaise: 150000, mode: 'cash', at: now, note: '', allocations: const [Allocation('A-019804', 100000), Allocation('A-019821', 40000)], advancePaise: 10000, balanceAfter: -10000);
@@ -284,8 +283,8 @@ class PaymentReceiptScreen extends ConsumerWidget {
       color: c.paper,
       padding: const EdgeInsets.all(12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Center(child: Text(settings.shopName.toUpperCase(), style: s(b: true, size: 14))),
-        Center(child: Text('Ph: ${settings.shopPhone}', style: s())),
+        Center(child: Text(ref.watch(shopProvider).name.toUpperCase(), style: s(b: true, size: 14))),
+        Center(child: Text('Ph: ${ref.watch(shopProvider).phone}', style: s())),
         Divider(color: c.onPaper.withValues(alpha: 0.5)),
         Center(child: Text(l.rcPaymentReceipt, style: s(b: true, size: 12))),
         const SizedBox(height: 6),

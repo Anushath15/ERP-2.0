@@ -11,6 +11,7 @@ import 'package:erp2/domain/credit/ledger.dart';
 import 'package:erp2/fake/credit_store.dart';
 import 'package:erp2/fake/models.dart';
 import 'package:erp2/fake/seed.dart';
+import 'package:erp2/fake/shop_profile.dart';
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
 
@@ -344,24 +345,23 @@ void main() {
     });
   });
 
-  group('Settings > Reminders and Credit', () {
-    testWidgets('template, tones, placeholders, shop phone, UPI, guard hours, country code; credit limit mode', (tester) async {
-      final c = await app(tester, '/settings');
+  group('Shop profile > Messages to customers and Credit', () {
+    testWidgets('template, tones, placeholders, UPI, guard hours, country code; credit limit mode (now on the Shop profile page)', (tester) async {
+      final c = await app(tester, '/shop', size: const ScreenSpec('tall', 1920, 3000));
       expect(find.text('Reminders'), findsWidgets);
       expect(find.text('{amount_due}'), findsOneWidget);
       expect(find.text('{upi_id}'), findsOneWidget);
-      expect(find.text('Shop phone (shown in the message)'), findsOneWidget);
       expect(find.text('UPI ID (shown in the message)'), findsOneWidget);
       expect(find.text('Ask before reminding again within (hours)'), findsOneWidget);
       expect(find.text('Default country code'), findsOneWidget);
       expect(find.text('When a bill goes over the credit limit'), findsOneWidget);
       await tester.enterText(find.byKey(const ValueKey('templateField')), 'Hello {customer_name}, {amount_due} pending');
       await tester.pump();
-      expect(c.read(settingsProvider).templateFriendly, 'Hello {customer_name}, {amount_due} pending');
+      expect(c.read(shopProvider).templateFriendly, 'Hello {customer_name}, {amount_due} pending');
       await tester.ensureVisible(find.text('Use the standard text'));
       await tester.tap(find.text('Use the standard text'));
       await tester.pumpAndSettle();
-      expect(c.read(settingsProvider).templateFriendly, contains('Greetings from'));
+      expect(c.read(shopProvider).templateFriendly, contains('Greetings from'));
       expect(tester.takeException(), isNull);
     });
   });

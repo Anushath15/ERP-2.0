@@ -3,14 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/date_fmt.dart';
 import '../../core/responsive.dart';
-import '../../design/form_sheet.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../design/app_logo.dart';
 import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
-import 'reminder_settings.dart';
 
 // ------------------------------------------------------------------ settings
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -40,20 +38,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ]),
         );
 
-    final shop = SectionCard(title: l.setShop, child: Column(children: [
-      row(l.setShopName, s.shopName, OutlinedButton(onPressed: () async {
-        final v = await showFormSheet(context, title: l.setShop, saveLabel: l.save, fields: [FieldSpec('name', l.setShopName, initial: s.shopName, required: true, autofocus: true), FieldSpec('gstin', 'GSTIN', initial: s.gstin), FieldSpec('addr', l.fieldAddress, type: FieldType.multiline, initial: '12 Market Street, Coimbatore - 641001'), FieldSpec('phone', l.fieldPhone, type: FieldType.phone, initial: '98765 43210')]);
-        if (v != null) set((x) => x.copyWith(shopName: v['name'], gstin: v['gstin']));
-      }, child: Text(l.edit))),
-      row('GSTIN', s.gstin, const SizedBox.shrink()),
-      row(l.setLogo, l.setLogoHelp, OutlinedButton.icon(onPressed: () => toast(context, l.demoOnly), icon: const Icon(Icons.image_outlined), label: Text(l.chooseFile))),
-    ]));
-
-    final tax = SectionCard(title: l.setTax, child: Column(children: [
-      row(l.setPricesIncludeGst, l.setPricesIncludeGstHelp, Switch(value: s.pricesIncludeGst, onChanged: (v) => set((x) => x.copyWith(pricesIncludeGst: v)))),
-      row(l.setRoundOff, l.setRoundOffHelp, Switch(value: true, onChanged: (_) => toast(context, l.demoOnly))),
-    ]));
-
     final printing = SectionCard(title: l.setPrinting, child: Column(children: [
       row(l.setPaper, l.setPaperHelp, SegmentedButton<PaperSize>(showSelectedIcon: false, segments: [ButtonSegment(value: PaperSize.a4, label: Text(l.paperA4)), ButtonSegment(value: PaperSize.mm80, label: Text(l.paper80)), ButtonSegment(value: PaperSize.mm58, label: Text(l.paper58))], selected: {s.paper}, onSelectionChanged: (v) => set((x) => x.copyWith(paper: v.first)))),
       row(l.setPrinter, l.setPrinterHelp, const SizedBox.shrink()),
@@ -62,8 +46,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     const look = AppearanceCard();
     const anim = AnimationsCard();
     const sounds = SoundsCard();
-    const reminders = RemindersCard();
-    const creditCard = CreditSettingsCard();
 
     final backup = SectionCard(title: l.setBackup, child: Column(children: [
       row(l.lastBackup, l.lastBackupValue(formatDateTime(now.subtract(const Duration(hours: 5)))), FilledButton.icon(onPressed: () => toast(context, l.backupDone), icon: const Icon(Icons.save_alt), label: Text(l.backupNow))),
@@ -99,16 +81,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       row(l.signOutEverywhere, l.signOutEverywhereHelp, OutlinedButton(onPressed: () => toast(context, l.demoOnly), child: Text(l.changePassword))),
     ]));
 
-    final cards = [look, anim, shop, tax, printing, creditCard, reminders, sounds, backup, sync, security];
+    final cards = [look, anim, printing, sounds, backup, sync, security];
     return PageFrame(
       title: l.navSettings,
       child: context.isDesktop
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(children: [for (final c in [shop, tax, printing, creditCard, reminders, security]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [printing, security, backup]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
-                Expanded(child: Column(children: [for (final c in [look, anim, sounds, backup, sync]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),
             )
           : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in cards) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),

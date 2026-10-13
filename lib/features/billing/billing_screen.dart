@@ -18,6 +18,7 @@ import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
+import '../../fake/shop_profile.dart';
 import '../products/product_form.dart';
 import 'bill_panel.dart';
 import 'cart.dart';
@@ -67,15 +68,14 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   String _number() {
     final cart = ref.read(cartProvider(mode));
     if (cart.editingNumber != null) return cart.editingNumber!;
-    return mode == DocMode.invoice ? 'A-${ref.read(invoiceCounterProvider).toString().padLeft(6, '0')}' : 'EST-${ref.read(estimateCounterProvider).toString().padLeft(5, '0')}';
+    return mode == DocMode.invoice ? '${ref.read(shopProvider).invoicePrefix}${ref.read(invoiceCounterProvider).toString().padLeft(6, '0')}' : 'EST-${ref.read(estimateCounterProvider).toString().padLeft(5, '0')}';
   }
 
   DateTime _date() => ref.read(cartProvider(mode)).editingDate ?? ref.read(clockProvider);
 
   PrintDoc _snapshot() {
     final cart = ref.read(cartProvider(mode));
-    final s = ref.read(settingsProvider);
-    final calc = calcFor(cart, inclusive: s.pricesIncludeGst);
+    final calc = calcFor(cart, inclusive: ref.read(shopProvider).pricesIncludeGst);
     int? received;
     var change = 0, advance = 0;
     if (mode == DocMode.invoice) {
@@ -120,7 +120,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   /// Returns false when the credit limit stops this bill (or the owner says no).
   Future<bool> _checkLimit(Customer customer, int balance) async {
     final l = tr(context);
-    final st = ref.read(settingsProvider);
+    final st = ref.read(shopProvider);
     if (st.creditLimitMode == CreditLimitMode.off) return true;
     final owes = ref.read(creditProvider.notifier).balanceOf(customer.id);
     final after = owes + balance;
@@ -140,7 +140,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     if (cart.lines.isEmpty) return;
     if (mode == DocMode.invoice) {
       // Everything below only waits (await) when a question has to be asked; a normal fully-paid sale saves in the same frame.
-      final total = calcFor(cart, inclusive: ref.read(settingsProvider).pricesIncludeGst).grandTotal;
+      final total = calcFor(cart, inclusive: ref.read(shopProvider).pricesIncludeGst).grandTotal;
       final split = splitPayment(total: total, received: cart.receivedPaise ?? total);
       if (split.balance > 0 && cart.customer == null) {
         final chosen = await _askCustomer(split.balance);
@@ -189,7 +189,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final cart = ref.watch(cartProvider(mode));
     final products = ref.watch(productsProvider);
     final settings = ref.watch(settingsProvider);
-    final calc = calcFor(cart, inclusive: settings.pricesIncludeGst);
+    final calc = calcFor(cart, inclusive: ref.watch(shopProvider).pricesIncludeGst);
     final inBill = {for (final ln in cart.lines) ln.product.id: ln.qtyMilli};
     final notifier = ref.read(cartProvider(mode).notifier);
     final phone = context.isPhone;

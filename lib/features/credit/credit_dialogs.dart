@@ -19,6 +19,7 @@ import '../../domain/credit/reminder.dart';
 import '../../fake/credit_store.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
+import '../../fake/shop_profile.dart';
 import '../../strings.dart';
 
 String ledgerKindLabel(Strings l, LedgerKind k, {bool dealer = false}) => switch (k) {
@@ -227,18 +228,18 @@ class ReminderPanel extends ConsumerStatefulWidget {
 }
 
 class _ReminderPanelState extends ConsumerState<ReminderPanel> {
-  late ReminderTone _tone = ref.read(settingsProvider).reminderTone;
+  late ReminderTone _tone = ref.read(shopProvider).reminderTone;
   late final TextEditingController _msg = TextEditingController(text: _build(_tone));
   late final TextEditingController _phone = TextEditingController(text: widget.customer.phone);
   late String _savedPhone = widget.customer.phone;
   String? _phoneError;
 
   String _build(ReminderTone tone) {
-    final s = ref.read(settingsProvider);
+    final s = ref.read(shopProvider);
     final acct = ref.read(creditProvider)[widget.customer.id] ?? const CreditAccount();
     return buildReminderMessage(
       tone == ReminderTone.friendly ? s.templateFriendly : s.templateFirm,
-      ReminderInput(customerName: widget.customer.name, shopName: s.shopName, shopPhone: s.shopPhone, upiId: s.upiId, bills: acct.bills, today: ref.read(clockProvider), lastPaymentDate: acct.lastPaymentAt),
+      ReminderInput(customerName: widget.customer.name, shopName: s.name, shopPhone: s.phone, upiId: s.upiId, bills: acct.bills, today: ref.read(clockProvider), lastPaymentDate: acct.lastPaymentAt),
     );
   }
 
@@ -249,11 +250,11 @@ class _ReminderPanelState extends ConsumerState<ReminderPanel> {
     super.dispose();
   }
 
-  String? get _digits => normalizePhone(_savedPhone, defaultCountry: ref.read(settingsProvider).countryCode);
+  String? get _digits => normalizePhone(_savedPhone, defaultCountry: ref.read(shopProvider).countryCode);
 
   void _savePhone() {
     final l = tr(context);
-    if (normalizePhone(_phone.text, defaultCountry: ref.read(settingsProvider).countryCode) == null) {
+    if (normalizePhone(_phone.text, defaultCountry: ref.read(shopProvider).countryCode) == null) {
       setState(() => _phoneError = l.remNumberBad);
       return;
     }
@@ -271,7 +272,7 @@ class _ReminderPanelState extends ConsumerState<ReminderPanel> {
     final digits = _digits;
     final check = canOpenWhatsapp(online: s.sync != SyncState.offline, digits: digits);
     if (!check.allowed || digits == null) return;
-    final recent = ref.read(reminderLogProvider).recent(widget.customer.id, now, hours: s.guardHours);
+    final recent = ref.read(reminderLogProvider).recent(widget.customer.id, now, hours: ref.read(shopProvider).guardHours);
     if (recent != null) {
       final sameDay = recent.at.year == now.year && recent.at.month == now.month && recent.at.day == now.day;
       final when = sameDay ? 'today at ${formatTime(recent.at)}' : 'on ${formatDate(recent.at)} at ${formatTime(recent.at)}';

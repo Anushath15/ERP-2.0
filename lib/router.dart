@@ -14,6 +14,7 @@ import 'features/people/people_screens.dart';
 import 'features/print/print_preview.dart';
 import 'features/reports/reports_screens.dart';
 import 'features/sales/sales_screens.dart';
+import 'features/shop/shop_profile_screen.dart';
 import 'features/stock/stock_screens.dart';
 import 'features/system/system_screens.dart';
 import 'shell.dart';
@@ -60,6 +61,7 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/warranty', pageBuilder: (c, s) => _p(c, s, const WarrantyScreen())),
           GoRoute(path: '/projects', pageBuilder: (c, s) => _p(c, s, const ProjectsScreen())),
           GoRoute(path: '/notifications', pageBuilder: (c, s) => _p(c, s, const NotificationsScreen())),
+          GoRoute(path: '/shop', pageBuilder: (c, s) => _p(c, s, const ShopProfileScreen())),
           GoRoute(path: '/settings', pageBuilder: (c, s) => _p(c, s, const SettingsScreen())),
           GoRoute(path: '/health', pageBuilder: (c, s) => _p(c, s, const HealthScreen())),
           GoRoute(path: '/help', pageBuilder: (c, s) => _p(c, s, const HelpScreen())),

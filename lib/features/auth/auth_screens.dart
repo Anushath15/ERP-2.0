@@ -7,6 +7,7 @@ import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../design/app_logo.dart';
 import '../../fake/store.dart';
+import '../../fake/shop_profile.dart';
 
 class _AuthFrame extends ConsumerWidget {
   const _AuthFrame({required this.child, this.maxWidth = 460});
@@ -226,7 +227,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
           const SizedBox(height: 8),
           Text(l.wizGstHelp, style: th.bodySmall),
           const SizedBox(height: 12),
-          SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(l.setPricesIncludeGst), subtitle: Text(l.setPricesIncludeGstHelp), value: s.pricesIncludeGst, onChanged: (v) => set((x) => x.copyWith(pricesIncludeGst: v))),
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(l.setPricesIncludeGst), subtitle: Text(l.setPricesIncludeGstHelp), value: ref.watch(shopProvider).pricesIncludeGst, onChanged: (v) => ref.read(shopProvider.notifier).set((x) => x.copyWith(pricesIncludeGst: v))),
         ]);
       case 3:
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -269,7 +270,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
             Row(children: [
               if (_step > 0) OutlinedButton(onPressed: () => setState(() => _step--), child: Text(l.back)),
               const Spacer(),
-              if (_step < _total - 1) FilledButton(onPressed: () => setState(() => _step++), child: Text(l.next)) else FilledButton.icon(onPressed: () { set((x) => x.copyWith(shopName: _name.text.trim().isEmpty ? x.shopName : _name.text.trim(), firstRunDone: true)); context.go('/'); }, icon: const Icon(Icons.check), label: Text(l.finish)),
+              if (_step < _total - 1) FilledButton(onPressed: () => setState(() => _step++), child: Text(l.next)) else FilledButton.icon(onPressed: () { ref.read(shopProvider.notifier).set((x) => x.copyWith(name: _name.text.trim().isEmpty ? x.name : _name.text.trim())); set((x) => x.copyWith(firstRunDone: true)); context.go('/'); }, icon: const Icon(Icons.check), label: Text(l.finish)),
             ]),
           ]),
         ),

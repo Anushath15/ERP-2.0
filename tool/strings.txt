@@ -839,3 +839,20 @@ dealerNoAccount | No purchases or payments yet.
 dealerGone | Dealer not found
 dealerNobodyDue | You owe nothing to this dealer
 lkAdjustMore | Adjustment (more)
+
+# ---- shop profile
+navShop | Shop profile
+shopProfileSubtitle | The details of your shop. Printed bills and estimates read from here. They belong to the shop, not to this computer.
+shopLogoNote | The logo is printed at the top of your bills.
+shopOwner | Owner name
+shopBank | Bank details
+shopFooter | Bill footer message
+shopPrefix | Invoice number prefix
+estShowTitle | Show on estimate
+estShowHelp | An estimate is a rough price. These stay off unless you turn them on. Tax and round-off are still worked out; they are just not printed.
+estShowName | Shop name
+estShowAddress | Address
+estShowGstin | GSTIN
+estShowPhone | Phone
+estShowNumber | Estimate number
+estShowTax | Tax and round-off lines

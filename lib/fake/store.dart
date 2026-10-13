@@ -120,17 +120,6 @@ class AppSettings {
     this.soundError = false,
     this.soundVolume = 0.7,
     this.paper = PaperSize.a4,
-    this.pricesIncludeGst = true,
-    this.creditLimitMode = CreditLimitMode.warn,
-    this.reminderTone = ReminderTone.friendly,
-    this.templateFriendly = defaultFriendlyTemplate,
-    this.templateFirm = defaultFirmTemplate,
-    this.shopPhone = '98765 43210',
-    this.upiId = 'senthil@okbank',
-    this.guardHours = 24,
-    this.countryCode = '91',
-    this.shopName = 'Senthil Enterprises',
-    this.gstin = '33AAAAA0000A1Z5',
     this.sync = SyncState.synced,
     this.firstRunDone = true,
     this.signedIn = true,
@@ -146,13 +135,7 @@ class AppSettings {
   final bool soundScan, soundSave, soundError;
   final double soundVolume;
   final PaperSize paper;
-  final bool pricesIncludeGst, firstRunDone, signedIn;
-  // shop settings for credit and reminders (shop-wide, they sync in Phase 2; not per-device)
-  final CreditLimitMode creditLimitMode;
-  final ReminderTone reminderTone;
-  final String templateFriendly, templateFirm, shopPhone, upiId, countryCode;
-  final int guardHours;
-  final String shopName, gstin;
+  final bool firstRunDone, signedIn;
   final SyncState sync;
 
   AppSettings copyWith({
@@ -202,17 +185,6 @@ class AppSettings {
         soundError: soundError ?? this.soundError,
         soundVolume: soundVolume ?? this.soundVolume,
         paper: paper ?? this.paper,
-        pricesIncludeGst: pricesIncludeGst ?? this.pricesIncludeGst,
-        creditLimitMode: creditLimitMode ?? this.creditLimitMode,
-        reminderTone: reminderTone ?? this.reminderTone,
-        templateFriendly: templateFriendly ?? this.templateFriendly,
-        templateFirm: templateFirm ?? this.templateFirm,
-        shopPhone: shopPhone ?? this.shopPhone,
-        upiId: upiId ?? this.upiId,
-        guardHours: guardHours ?? this.guardHours,
-        countryCode: countryCode ?? this.countryCode,
-        shopName: shopName ?? this.shopName,
-        gstin: gstin ?? this.gstin,
         sync: sync ?? this.sync,
         firstRunDone: firstRunDone ?? this.firstRunDone,
         signedIn: signedIn ?? this.signedIn,
@@ -234,7 +206,6 @@ class AppSettings {
         'soundError': soundError,
         'soundVolume': soundVolume,
         'paper': paper.name,
-        'pricesIncludeGst': pricesIncludeGst,
       };
 
   /// Tolerant: unknown or damaged values fall back to the defaults.
@@ -259,7 +230,6 @@ class AppSettings {
       soundError: bool_(j['soundError'], d.soundError),
       soundVolume: num_(j['soundVolume'], 0, 1, d.soundVolume),
       paper: pick(PaperSize.values, j['paper'], d.paper),
-      pricesIncludeGst: bool_(j['pricesIncludeGst'], d.pricesIncludeGst),
     );
   }
 }
