@@ -241,7 +241,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(l.setPaper, style: th.titleSmall),
           const SizedBox(height: 8),
-          SegmentedButton<PaperSize>(showSelectedIcon: false, segments: [ButtonSegment(value: PaperSize.a4, label: Text(l.paperA4)), ButtonSegment(value: PaperSize.mm80, label: Text(l.paper80)), ButtonSegment(value: PaperSize.mm58, label: Text(l.paper58))], selected: {s.paper}, onSelectionChanged: (v) => set((x) => x.copyWith(paper: v.first))),
+          SegmentedButton<PaperSize>(showSelectedIcon: false, segments: [ButtonSegment(value: PaperSize.a4, label: Text(l.paperA4)), ButtonSegment(value: PaperSize.a5, label: Text(l.paperA5)), ButtonSegment(value: PaperSize.mm80, label: Text(l.paper80)), ButtonSegment(value: PaperSize.mm58, label: Text(l.paper58))], selected: {s.paper}, onSelectionChanged: (v) => set((x) => x.copyWith(paper: v.first))),
           const SizedBox(height: 12),
           Text(l.wizPrinterHelp, style: th.bodySmall),
         ]);

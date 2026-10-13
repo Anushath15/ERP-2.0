@@ -225,6 +225,7 @@ class Strings {
   String get previewInvoiceHint => 'Check the bill on paper, then press Print';
   String get previewEstimateHint => 'Check the estimate on paper, then press Print';
   String get paperA4 => 'A4';
+  String get paperA5 => 'A5';
   String get paper80 => '80 mm';
   String get paper58 => '58 mm';
   String get printNotConnected => 'Printing is not connected in this preview.';
@@ -832,4 +833,9 @@ class Strings {
   String get estShowPhone => 'Phone';
   String get estShowNumber => 'Estimate number';
   String get estShowTax => 'Tax and round-off lines';
+  String get setPrintSize => 'Print text size';
+  String get setPrintSizeHelp => 'How big the writing is on printed bills and estimates. Small suits most printers.';
+  String get printSmaller => 'Smaller';
+  String get printSmall => 'Small';
+  String get printNormal => 'Normal';
 }

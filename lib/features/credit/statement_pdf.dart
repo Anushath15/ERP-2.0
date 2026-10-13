@@ -20,7 +20,8 @@ Future<Uint8List> buildStatementPdf({
   bool dealer = false,
 }) async {
   final regular = pw.Font.ttf(await rootBundle.load('assets/fonts/Inter-Variable.ttf'));
-  pw.TextStyle s({bool b = false, double size = 9.5}) => pw.TextStyle(font: regular, fontSize: size, fontWeight: b ? pw.FontWeight.bold : pw.FontWeight.normal);
+  final boldFont = pw.Font.ttf(await rootBundle.load('assets/fonts/Inter-Bold.ttf'));
+  pw.TextStyle s({bool b = false, double size = 9.5}) => pw.TextStyle(font: b ? boldFont : regular, fontSize: size);
   pw.Widget cell(String t, double w, {bool b = false, bool right = true}) => pw.SizedBox(width: w, child: pw.Text(t, textAlign: right ? pw.TextAlign.right : pw.TextAlign.left, style: s(b: b)));
   String m(int v) => v == 0 ? '' : formatPaise(v);
 

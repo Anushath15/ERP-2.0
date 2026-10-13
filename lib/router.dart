@@ -70,6 +70,7 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/print', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen())),
           GoRoute(path: '/preview/payment', pageBuilder: (c, s) => _p(c, s, const PaymentReceiptScreen())),
           GoRoute(path: '/preview/a4', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen(initialPaper: PaperSize.a4, sampleMode: DocMode.invoice))),
+          GoRoute(path: '/preview/a5', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen(initialPaper: PaperSize.a5, sampleMode: DocMode.invoice))),
           GoRoute(path: '/preview/80', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen(initialPaper: PaperSize.mm80, sampleMode: DocMode.invoice))),
           GoRoute(path: '/preview/58', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen(initialPaper: PaperSize.mm58, sampleMode: DocMode.invoice))),
           GoRoute(path: '/preview/estimate', pageBuilder: (c, s) => _p(c, s, const PrintPreviewScreen(initialPaper: PaperSize.a4, sampleMode: DocMode.estimation))),

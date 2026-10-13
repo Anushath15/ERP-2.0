@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/date_fmt.dart';
-import '../../core/money.dart';
+import '../../core/file_saver.dart';
 import '../../core/responsive.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
@@ -12,6 +11,8 @@ import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 import '../billing/cart.dart';
+import 'doc_pdf.dart';
+import 'print_layout.dart';
 
 /// A sample document so the preview works from the menu too (no bill needed).
 PrintDoc samplePrintDoc(List<Product> products, DateTime now, {DocMode mode = DocMode.invoice, bool edited = false}) {
@@ -52,12 +53,14 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
     final products = ref.watch(productsProvider);
     doc ??= samplePrintDoc(products, now, mode: widget.sampleMode ?? DocMode.invoice, edited: widget.sampleMode == DocMode.estimation);
     final phone = context.isPhone;
+    final settings = ref.watch(settingsProvider);
 
     final controls = Wrap(spacing: 10, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
       SegmentedButton<PaperSize>(
         showSelectedIcon: false,
         segments: [
           ButtonSegment(value: PaperSize.a4, label: Text(l.paperA4)),
+          ButtonSegment(value: PaperSize.a5, label: Text(l.paperA5)),
           ButtonSegment(value: PaperSize.mm80, label: Text(l.paper80)),
           ButtonSegment(value: PaperSize.mm58, label: Text(l.paper58)),
         ],
@@ -67,7 +70,17 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
     ]);
     final actions = [
       FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print), label: Text(l.print)),
-      OutlinedButton.icon(onPressed: () => toast(context, l.pdfNotConnected), icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(l.saveAsPdf)),
+      OutlinedButton.icon(
+        key: const ValueKey('printSavePdf'),
+        onPressed: () async {
+          final bytes = await buildDocPdf(doc: doc!, paper: _paper, shop: ref.read(shopProvider), size: settings.printSize, l: l);
+          final kind = doc!.mode == DocMode.estimation ? l.rcEstimate : l.rcTaxInvoice;
+          final where = await ref.read(fileSaverProvider).save('${kind[0]}${kind.substring(1).toLowerCase()} ${doc.number}.pdf'.replaceAll('/', '-'), bytes);
+          if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
+        },
+        icon: const Icon(Icons.picture_as_pdf_outlined),
+        label: Text(l.saveAsPdf),
+      ),
       if (context.canPop()) TextButton(onPressed: () => context.pop(), child: Text(l.back)),
     ];
 
@@ -83,7 +96,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
             width: double.infinity,
             decoration: BoxDecoration(color: c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.m)),
             child: LayoutBuilder(builder: (ctx, bc) {
-              final paperW = switch (_paper) { PaperSize.a4 => 595.0, PaperSize.mm80 => 302.0, PaperSize.mm58 => 219.0 };
+              final paperW = paperWidthPt(_paper);
               final scale = ((bc.maxWidth - 24) / paperW).clamp(0.3, 1.6);
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(12),
@@ -93,7 +106,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
                     child: FittedBox(
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.topCenter,
-                      child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: SizedBox(width: paperW, child: Paper(doc: doc!, paper: _paper, l: l, shopName: ref.watch(shopProvider).name, gstin: ref.watch(shopProvider).gstin))),
+                      child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: SizedBox(width: paperW, child: Paper(doc: doc!, paper: _paper, l: l, shop: ref.watch(shopProvider), size: settings.printSize))),
                     ),
                   ),
                 ),
@@ -107,130 +120,93 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
   }
 }
 
-/// The paper itself. Always white with dark text, whatever the app theme. Estimation shows its OWN date beside its number,
-/// and "Edited on" only if it was edited.
+/// The paper itself. Always white with dark text, whatever the app theme. It only DRAWS what print_layout.dart says to print,
+/// at the sizes of the chosen "Print text size"; the PDF uses the same layout, so the two always agree.
 class Paper extends StatelessWidget {
-  const Paper({super.key, required this.doc, required this.paper, required this.l, required this.shopName, required this.gstin});
+  const Paper({super.key, required this.doc, required this.paper, required this.l, required this.shop, this.size = PrintTextSize.small});
   final PrintDoc doc;
   final PaperSize paper;
   final Strings l;
-  final String shopName, gstin;
+  final ShopProfile shop;
+  final PrintTextSize size;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final a4 = paper == PaperSize.a4;
-    final fs = a4 ? 12.0 : (paper == PaperSize.mm80 ? 11.0 : 10.0);
-    TextStyle s({bool b = false, double? size}) => TextStyle(fontFamily: 'Inter', color: c.onPaper, fontSize: size ?? fs, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
-    final est = doc.mode == DocMode.estimation;
-    final title = est ? l.rcEstimate : l.rcTaxInvoice;
-    final cgst = doc.calc.cgst, sgst = doc.calc.sgst;
-    final Widget header = Column(crossAxisAlignment: a4 ? CrossAxisAlignment.start : CrossAxisAlignment.center, children: [
-      Text(shopName.toUpperCase(), style: s(b: true, size: a4 ? 18 : fs + 3), textAlign: a4 ? TextAlign.left : TextAlign.center),
-      Text('12 Market Street, Coimbatore - 641001', style: s(), textAlign: a4 ? TextAlign.left : TextAlign.center),
-      Text('${l.rcGstin}: $gstin   Ph: 98765 43210', style: s(), textAlign: a4 ? TextAlign.left : TextAlign.center),
-    ]);
-    final meta = a4
-        ? Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${l.rcCustomer}: ${doc.customer}', style: s(b: true)),
-              if (!est) Text('${l.rcPaidBy}: ${_pay(doc.pay)}', style: s()),
-            ]),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('${est ? l.rcEstNo : l.rcBillNo}: ${doc.number}', style: s(b: true)),
-              Text('${l.rcDate}: ${formatDate(doc.date)}', style: s(), key: const ValueKey('paperDate')),
-              if (doc.editedOn != null) Text('${l.rcEditedOn}: ${formatDate(doc.editedOn!)}', style: s(), key: const ValueKey('paperEdited')),
-            ]),
-          ])
-        : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(doc.number, style: s(b: true)),
-              Text(formatDate(doc.date), style: s(), key: const ValueKey('paperDate')),
-            ]),
-            if (doc.editedOn != null) Text('${l.rcEditedOn}: ${formatDate(doc.editedOn!)}', style: s(), key: const ValueKey('paperEdited')),
-            Text('${l.rcCustomer}: ${doc.customer}', style: s()),
+    final lay = buildPrintLayout(doc: doc, shop: shop, l: l);
+    final m = PrintMetrics.of(size);
+    final roll = isRoll(paper);
+    final margin = paperMarginPt(paper);
+    TextStyle s({bool b = false, double? fs}) => TextStyle(fontFamily: 'Inter', color: c.onPaper, fontSize: fs ?? m.row, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
+    Widget text(PrintText t, {TextAlign? align}) => Text(t.text, key: t.id == null ? null : ValueKey<String>(t.id!), style: s(b: t.bold, fs: t.id == 'shopName' ? m.shop : null), textAlign: align);
+    final cross = roll ? CrossAxisAlignment.center : CrossAxisAlignment.start;
+    final divider = Divider(color: c.onPaper.withValues(alpha: 0.5), height: roll ? 9 : 12, thickness: 0.8);
+
+    final header = lay.header.isEmpty ? null : Column(crossAxisAlignment: cross, children: [for (final h in lay.header) text(h, align: roll ? TextAlign.center : TextAlign.left)]);
+
+    final meta = roll
+        ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [for (final t in [...lay.metaRight, ...lay.metaLeft]) text(t)])
+        : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [for (final t in lay.metaLeft) text(t)])),
+            const SizedBox(width: 12),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [for (final t in lay.metaRight) text(t, align: TextAlign.right)]),
           ]);
 
-    Widget line(int i) {
-      final ln = doc.lines[i];
-      final lc = doc.calc.lines[i];
-      if (a4) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(width: 26, child: Text('${i + 1}', style: s())),
-            Expanded(child: Text(ln.product.name, style: s())),
-            SizedBox(width: 70, child: Text('${formatQty(ln.qtyMilli)} ${ln.product.unit}', textAlign: TextAlign.right, style: s())),
-            SizedBox(width: 72, child: Text(formatPaise(ln.rate), textAlign: TextAlign.right, style: s())),
-            SizedBox(width: 84, child: Text(formatPaise(lc.total), textAlign: TextAlign.right, style: s())),
-          ]),
-        );
-      }
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(ln.product.name, style: s()),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('${formatQty(ln.qtyMilli)} x ${formatPaise(ln.rate)}', style: s()),
-            Text(formatPaise(lc.total), style: s()),
-          ]),
-        ]),
-      );
-    }
+    const wNum = 22.0, wQty = 56.0, wRate = 58.0, wAmt = 68.0;
+    Widget head() => Row(children: [
+          SizedBox(width: wNum, child: Text(lay.tableHead[0], style: s(b: true))),
+          Expanded(child: Text(lay.tableHead[1], style: s(b: true))),
+          SizedBox(width: wQty, child: Text(lay.tableHead[2], textAlign: TextAlign.right, style: s(b: true))),
+          SizedBox(width: wRate, child: Text(lay.tableHead[3], textAlign: TextAlign.right, style: s(b: true))),
+          SizedBox(width: wAmt, child: Text(lay.tableHead[4], textAlign: TextAlign.right, style: s(b: true))),
+        ]);
+    Widget item(PrintItem i) => roll
+        ? Padding(
+            padding: const EdgeInsets.symmetric(vertical: 1.5),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(i.name, style: s()),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(i.qtyTimesRate, style: s()), Text(i.amount, style: s())]),
+            ]),
+          )
+        : Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              SizedBox(width: wNum, child: Text(i.number, style: s())),
+              Expanded(child: Text(i.name, style: s())),
+              SizedBox(width: wQty, child: Text(i.qty, textAlign: TextAlign.right, style: s())),
+              SizedBox(width: wRate, child: Text(i.rate, textAlign: TextAlign.right, style: s())),
+              SizedBox(width: wAmt, child: Text(i.amount, textAlign: TextAlign.right, style: s())),
+            ]),
+          );
 
-    Widget totalRow(String k, String v, {bool b = false, double? size, Key? key}) => Row(key: key, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Flexible(child: Text(k, style: s(b: b, size: size))), const SizedBox(width: 6), Text(v, style: s(b: b, size: size))]);
+    Widget total(TotalLine t) => Row(key: t.id == null ? null : ValueKey<String>(t.id!), mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Flexible(child: Text(t.label, style: s(b: t.bold, fs: t.big ? m.total : null))),
+          const SizedBox(width: 6),
+          Text(t.value, style: s(b: t.bold, fs: t.big ? m.total : null)),
+        ]);
 
-    final divider = Divider(color: c.onPaper.withValues(alpha: 0.5), height: a4 ? 14 : 10, thickness: 1);
-    final body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      header,
-      SizedBox(height: a4 ? 10 : 6),
-      Center(child: Text(title, style: s(b: true, size: a4 ? 15 : fs + 1))),
+    final body = Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      if (header != null) ...[header, SizedBox(height: roll ? 4 : 8)],
+      Center(child: Text(lay.title, style: s(b: true, fs: m.title))),
       divider,
       meta,
       divider,
-      if (a4)
-        Row(children: [
-          SizedBox(width: 26, child: Text('#', style: s(b: true))),
-          Expanded(child: Text(l.rcItem, style: s(b: true))),
-          SizedBox(width: 70, child: Text(l.rcQty, textAlign: TextAlign.right, style: s(b: true))),
-          SizedBox(width: 72, child: Text(l.rcRate, textAlign: TextAlign.right, style: s(b: true))),
-          SizedBox(width: 84, child: Text(l.rcAmount, textAlign: TextAlign.right, style: s(b: true))),
-        ]),
-      if (a4) divider,
-      for (var i = 0; i < doc.lines.length; i++) line(i),
+      if (!roll) ...[head(), divider],
+      for (final i in lay.items) item(i),
       divider,
       Align(
         alignment: Alignment.centerRight,
         child: SizedBox(
-          width: a4 ? 260 : double.infinity,
-          child: Column(children: [
-            totalRow(l.rcTaxable, formatPaise(doc.calc.taxable)),
-            totalRow('CGST', formatPaise(cgst)),
-            totalRow('SGST', formatPaise(sgst)),
-            totalRow(l.rcRoundOff, '${doc.calc.roundOff >= 0 ? '+' : ''}${formatPaise(doc.calc.roundOff)}'),
-            const SizedBox(height: 4),
-            totalRow(l.rcGrandTotal, '₹ ${formatPaise(doc.calc.grandTotal)}', b: true, size: a4 ? 15 : fs + 2),
-            if (!est && doc.receivedPaise != null) ...[
-              const SizedBox(height: 4),
-              totalRow(doc.pay == PayMode.credit ? l.paidNow : '${l.rcReceived} (${_pay(doc.pay)})', formatPaise(doc.receivedPaise! > doc.calc.grandTotal ? doc.calc.grandTotal : doc.receivedPaise!), key: const ValueKey('paperReceived')),
-              if (doc.balancePaise > 0) totalRow(l.rcBalanceDue, '₹ ${formatPaise(doc.balancePaise)}', b: true, key: const ValueKey('paperBalance')) else Align(alignment: Alignment.centerRight, child: Text(l.rcPaidInFull, style: s(b: true), key: const ValueKey('paperPaid'))),
-              if (doc.advanceKeptPaise > 0) totalRow(l.rcAdvance, formatPaise(doc.advanceKeptPaise)),
-              if (doc.newBalancePaise != null && doc.newBalancePaise! > 0 && doc.balancePaise > 0) totalRow(l.rcAccountBalance, '₹ ${formatPaise(doc.newBalancePaise!)}', key: const ValueKey('paperNewBalance')),
-              if (doc.changePaise > 0) totalRow(l.rcChange, formatPaise(doc.changePaise)),
-            ],
+          width: roll ? double.infinity : (paper == PaperSize.a5 ? 215 : 230),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            for (final t in lay.totals) total(t),
+            if (lay.paidInFull) Align(alignment: Alignment.centerRight, child: Text(l.rcPaidInFull, style: s(b: true), key: const ValueKey('paperPaid'))),
           ]),
         ),
       ),
-      SizedBox(height: a4 ? 18 : 10),
-      Center(child: Text(est ? l.rcEstimateNote : l.rcThanks, style: s(), textAlign: TextAlign.center)),
+      SizedBox(height: roll ? 8 : 12),
+      Center(child: Text(lay.note, style: s(), textAlign: TextAlign.center)),
     ]);
-    return Container(
-      color: c.paper,
-      padding: EdgeInsets.all(a4 ? 28 : 10),
-      constraints: BoxConstraints(minHeight: a4 ? 842 : 0),
-      child: body,
-    );
+    return Container(color: c.paper, padding: EdgeInsets.all(margin), child: body);
   }
-
-  String _pay(PayMode m) => switch (m) { PayMode.cash => l.payCash, PayMode.upi => l.payUpi, PayMode.card => l.payCard, PayMode.credit => l.payCredit };
 }

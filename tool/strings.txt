@@ -228,6 +228,7 @@ printPreview | Print
 previewInvoiceHint | Check the bill on paper, then press Print
 previewEstimateHint | Check the estimate on paper, then press Print
 paperA4 | A4
+paperA5 | A5
 paper80 | 80 mm
 paper58 | 58 mm
 printNotConnected | Printing is not connected in this preview.
@@ -856,3 +857,8 @@ estShowGstin | GSTIN
 estShowPhone | Phone
 estShowNumber | Estimate number
 estShowTax | Tax and round-off lines
+setPrintSize | Print text size
+setPrintSizeHelp | How big the writing is on printed bills and estimates. Small suits most printers.
+printSmaller | Smaller
+printSmall | Small
+printNormal | Normal

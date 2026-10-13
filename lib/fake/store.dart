@@ -95,7 +95,10 @@ class RecsNotifier extends Notifier<List<Rec>> {
 final recsProvider = NotifierProvider.family<RecsNotifier, List<Rec>, String>(RecsNotifier.new);
 
 // ---------------- settings (per device; never synced) ----------------
-enum PaperSize { a4, mm80, mm58 }
+enum PaperSize { a4, a5, mm80, mm58 }
+
+/// How big the printed bill and estimate text is. Small is the default.
+enum PrintTextSize { smaller, small, normal }
 
 enum SyncState { synced, syncing, offline, attention }
 
@@ -120,6 +123,7 @@ class AppSettings {
     this.soundError = false,
     this.soundVolume = 0.7,
     this.paper = PaperSize.a4,
+    this.printSize = PrintTextSize.small,
     this.sync = SyncState.synced,
     this.firstRunDone = true,
     this.signedIn = true,
@@ -135,6 +139,7 @@ class AppSettings {
   final bool soundScan, soundSave, soundError;
   final double soundVolume;
   final PaperSize paper;
+  final PrintTextSize printSize;
   final bool firstRunDone, signedIn;
   final SyncState sync;
 
@@ -154,6 +159,7 @@ class AppSettings {
     bool? soundError,
     double? soundVolume,
     PaperSize? paper,
+    PrintTextSize? printSize,
     bool? pricesIncludeGst,
     CreditLimitMode? creditLimitMode,
     ReminderTone? reminderTone,
@@ -185,6 +191,7 @@ class AppSettings {
         soundError: soundError ?? this.soundError,
         soundVolume: soundVolume ?? this.soundVolume,
         paper: paper ?? this.paper,
+        printSize: printSize ?? this.printSize,
         sync: sync ?? this.sync,
         firstRunDone: firstRunDone ?? this.firstRunDone,
         signedIn: signedIn ?? this.signedIn,
@@ -206,6 +213,7 @@ class AppSettings {
         'soundError': soundError,
         'soundVolume': soundVolume,
         'paper': paper.name,
+        'printSize': printSize.name,
       };
 
   /// Tolerant: unknown or damaged values fall back to the defaults.
@@ -230,6 +238,7 @@ class AppSettings {
       soundError: bool_(j['soundError'], d.soundError),
       soundVolume: num_(j['soundVolume'], 0, 1, d.soundVolume),
       paper: pick(PaperSize.values, j['paper'], d.paper),
+      printSize: pick(PrintTextSize.values, j['printSize'], d.printSize),
     );
   }
 }
