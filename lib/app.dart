@@ -9,6 +9,7 @@ import 'design/motion.dart';
 import 'design/motion_level.dart';
 import 'design/theme.dart';
 import 'design/text_zoom.dart';
+import 'fake/credit_store.dart';
 import 'fake/store.dart';
 import 'router.dart';
 
@@ -32,6 +33,12 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     super.initState();
     HardwareKeyboard.instance.addHandler(_onKey);
     WidgetsBinding.instance.addObserver(this);
+    // Build the (sample) credit data right after the first frame, while nobody is waiting, so the first visit to a credit page is not the slow frame.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(creditProvider);
+      ref.read(reminderLogProvider);
+    });
     if (!kDebugMode) {
       // The auto-protect guard only runs in real (profile/release) builds; debug frames are always slow.
       _guard = FrameGuard(onReduce: _reduceMotion);
@@ -90,7 +97,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     final level = Motion.resolve(chosen: s.motion, followSystem: s.followSystemMotion, systemReduces: WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations);
     ThemeData theme(Brightness b) => buildTheme(b, accent: s.accent, highContrast: s.highContrast, font: s.font, density: s.density, ripple: level != MotionLevel.off);
     return MaterialApp.router(
-      title: 'Senthil Enterprises ERP 2.0',
+      title: 'ASK ERP 2.0',
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
       theme: theme(Brightness.light),

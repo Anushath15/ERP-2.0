@@ -51,18 +51,43 @@ AnimationStyle dialogStyle(BuildContext context) {
   return const AnimationStyle(duration: Duration(milliseconds: 170), reverseDuration: Duration(milliseconds: 120), curve: Motion.out, reverseCurve: Curves.easeIn);
 }
 
-/// Page transition used by every route: a soft fade with a short slide (120-200 ms), or an instant switch when Off.
+/// Page change used by every route. The page is swapped at once (NoTransitionPage), so the old page is never in the picture
+/// together with the new one: a Navigator transition keeps the old page underneath while the new one fades in, which looked like
+/// a slide show. The new page may fade in a little (from 55% to 100% in 100 ms, so its content is visible in the very first frame);
+/// when motion is Off nothing animates.
 Page<void> motionPage(BuildContext context, LocalKey? key, Widget child) {
-  final m = context.motion;
-  if (!m.transitions) return NoTransitionPage<void>(key: key, child: child);
-  return CustomTransitionPage<void>(
-    key: key,
-    child: child,
-    transitionDuration: const Duration(milliseconds: 180),
-    reverseTransitionDuration: const Duration(milliseconds: 120),
-    transitionsBuilder: (ctx, anim, secondary, c) {
-      final curved = CurvedAnimation(parent: anim, curve: Motion.out, reverseCurve: Curves.easeIn);
-      return FadeTransition(opacity: curved, child: SlideTransition(position: Tween<Offset>(begin: const Offset(0.015, 0), end: Offset.zero).animate(curved), child: c));
-    },
-  );
+  return NoTransitionPage<void>(key: key, child: _PageFadeIn(child: child));
+}
+
+class _PageFadeIn extends StatefulWidget {
+  const _PageFadeIn({required this.child});
+  final Widget child;
+  @override
+  State<_PageFadeIn> createState() => _PageFadeInState();
+}
+
+class _PageFadeInState extends State<_PageFadeIn> with SingleTickerProviderStateMixin {
+  AnimationController? _c;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_c != null) return;
+    final m = context.motion;
+    if (!m.transitions) return;
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 100))..forward();
+  }
+
+  @override
+  void dispose() {
+    _c?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _c;
+    if (c == null) return widget.child;
+    return FadeTransition(opacity: Tween<double>(begin: 0.55, end: 1).animate(CurvedAnimation(parent: c, curve: Curves.easeOut)), child: widget.child);
+  }
 }

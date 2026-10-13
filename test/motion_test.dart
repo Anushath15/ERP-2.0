@@ -30,7 +30,7 @@ void main() {
     });
 
     for (final level in [MotionLevel.gentle, MotionLevel.full]) {
-      testWidgets('${level.name}: a page change fades and slides in (~180 ms) and is finished by 290 ms', (tester) async {
+      testWidgets('${level.name}: a page change swaps at once and the new page fades in (100 ms) and is finished by 310 ms', (tester) async {
         double minOpacity() => find.ancestor(of: find.text('Sales register').last, matching: find.byType(FadeTransition)).evaluate().map((e) => (e.widget as FadeTransition).opacity.value).reduce((a, b) => a < b ? a : b);
         await pumpApp(tester, size: desktop1366, location: '/', motion: level, followSystemMotion: false);
         routerOf(tester).go('/sales');

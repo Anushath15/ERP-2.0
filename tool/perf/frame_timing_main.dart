@@ -96,16 +96,37 @@ Future<void> main() async {
       ed.userUpdateTextEditingValue(const TextEditingValue(), SelectionChangedCause.keyboard);
       await Future<void>.delayed(const Duration(milliseconds: 300));
     }
-    // 3. flip through pages
+    // 3. flip through pages (timed on its own: the page-switch frames)
+    await Future<void>.delayed(const Duration(seconds: 1)); // let the earlier timings arrive first
+    final before = List.of(all);
+    all.clear();
     for (final r in ['/sales', '/products', '/customers', '/reports', '/estimates', '/inventory', '/settings', '/', '/credit', '/bill']) {
       router.go(r);
       await Future<void>.delayed(const Duration(milliseconds: 450));
     }
     await frames(5);
     await Future<void>.delayed(const Duration(seconds: 1)); // timings arrive a little later
-    final s = Stats(List.of(all));
-    stdout.writeln('PERF $name ${jsonEncode(s.toJson())}');
-    return s.toJson();
+    final pages = Stats(List.of(all));
+    final s = Stats([...before, ...all]);
+    final out = {...s.toJson(), 'pageSwitch': pages.toJson()};
+    stdout.writeln('PERF $name ${jsonEncode(out)}');
+    return out;
+  }
+
+  // Each page on its own: the worst frame while that page is opened (each route is left alone for 1.2 s so its timings can be told apart).
+  Future<Map<String, Object>> perRoute() async {
+    final out = <String, Object>{};
+    router.go('/');
+    await Future<void>.delayed(const Duration(seconds: 2));
+    for (final r in ['/sales', '/products', '/customers', '/reports', '/estimates', '/inventory', '/settings', '/', '/credit', '/bill', '/dealers', '/purchases', '/expenses']) {
+      all.clear();
+      router.go(r);
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      final st = Stats(List.of(all));
+      out[r] = {'worstMs': st.toJson()['worstMs']!, 'p95Ms': st.toJson()['p95Ms']!, 'frames': st.frames.length};
+    }
+    stdout.writeln('PERF_ROUTES ${jsonEncode(out)}');
+    return out;
   }
 
   final result = <String, Object>{
@@ -113,6 +134,7 @@ Future<void> main() async {
     'mode': 'profile',
     'motion': 'full',
   };
+  result['perRoute'] = await perRoute();
   result['normal'] = await flow('normal');
 
   // Contention: separate OS processes (not isolates, which share the VM and can freeze it) that each keep one CPU thread 100% busy.
