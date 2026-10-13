@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:erp2/app.dart';
 import 'package:erp2/core/device_store.dart';
+import 'package:erp2/core/link_launcher.dart';
+import 'package:erp2/domain/credit/reminder.dart' show LinkPlatform;
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/fake/store.dart';
 
@@ -46,4 +48,20 @@ Future<ProviderContainer> pumpApp(
   container.read(settingsProvider.notifier).set((s) => s.copyWith(theme: theme, textScale: textScale ?? s.textScale, motion: motion ?? s.motion, followSystemMotion: followSystemMotion ?? s.followSystemMotion));
   await tester.pumpAndSettle();
   return container;
+}
+
+/// A stand-in for opening links: records what would be opened, never opens anything.
+class FakeLauncher implements LinkLauncher {
+  FakeLauncher({this.platform = LinkPlatform.windows, this.ok = true, this.appInstalled = true});
+  @override
+  final LinkPlatform platform;
+  bool ok, appInstalled;
+  final opened = <String>[];
+  @override
+  Future<bool> open(String url) async {
+    if (url.startsWith('whatsapp:') && !appInstalled) return false;
+    if (!ok) return false;
+    opened.add(url);
+    return true;
+  }
 }

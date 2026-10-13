@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:erp2/fake/credit_store.dart' show seedCredit;
+import 'package:erp2/fake/seed.dart';
 import 'helpers.dart';
 
 /// Every screen must still lay out cleanly (no RenderFlex overflow or other layout error) at text sizes 80% to 200%,
 /// at desktop, tablet and phone widths, in both themes. All failures of a configuration are listed together.
-const routes = <String>[
+final _credit = seedCredit(seedCustomers(), fixedNow);
+final _dueId = _credit.entries.firstWhere((e) => e.value.balance > 0 && e.value.bills.length > 1).key;
+
+final routes = <String>[
   '/signin', '/forgot', '/wizard', '/', '/bill', '/estimate', '/estimates', '/sales', '/sales-returns', '/delivery', '/products', '/categories',
   '/inventory', '/purchases', '/purchase-returns', '/adjustments', '/customers', '/dealers', '/credit', '/staff', '/expenses', '/closing', '/reports',
   '/export', '/import', '/warranty', '/projects', '/notifications', '/settings', '/health', '/help', '/about', '/more', '/preview/a4', '/preview/80',
-  '/preview/58', '/preview/estimate',
+  '/preview/58', '/preview/estimate', '/preview/payment', '/customers/$_dueId', '/customers/$_dueId/statement',
 ];
 
 const scales = [0.8, 1.0, 1.25, 1.5, 2.0];

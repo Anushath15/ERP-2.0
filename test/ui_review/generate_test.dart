@@ -12,6 +12,8 @@ import 'package:image/image.dart' as img;
 import 'package:erp2/app.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
+import 'package:erp2/fake/credit_store.dart' show seedCredit;
+import 'package:erp2/fake/seed.dart';
 import 'package:erp2/design/segments.dart';
 import '../helpers.dart';
 
@@ -20,6 +22,14 @@ class Shot {
   final String id, title, route;
   final Future<void> Function(WidgetTester t, ProviderContainer c)? setup;
   final bool phoneOnly;
+}
+
+final _credit = seedCredit(seedCustomers(), fixedNow);
+final dueId = _credit.entries.firstWhere((e) => e.value.balance > 0 && e.value.bills.length > 1).key;
+
+Future<void> tapKey(WidgetTester t, String k) async {
+  await t.tap(find.byKey(ValueKey(k)).first);
+  await t.pumpAndSettle();
 }
 
 Future<void> fill(WidgetTester t, ProviderContainer c, DocMode mode) async {
@@ -107,11 +117,49 @@ final shots = <Shot>[
     await t.pumpAndSettle();
   }),
   const Shot('dlg-add-product-form', 'Form: add product (Ctrl+Shift+N)', '/products?add=1'),
-  Shot('dlg-customer-detail', 'Customer details with Receive payment', '/customers', setup: (t, c) async {
-    final cust = c.read(customersProvider).firstWhere((x) => x.balancePaise > 0);
-    await t.enterText(find.byType(TextField).first, cust.name);
+  Shot('pos-part-paid', 'POS: part payment, balance goes to the customer', '/bill', setup: (t, c) async {
+    await fill(t, c, DocMode.invoice);
+    c.read(cartProvider(DocMode.invoice).notifier)
+      ..setCustomer(c.read(customersProvider).first)
+      ..setReceived(100000);
     await t.pumpAndSettle();
-    await t.tap(find.text(cust.name).first);
+  }),
+  Shot('pos-walkin-balance', 'POS: walk-in with a balance must pick a customer', '/bill', setup: (t, c) async {
+    await fill(t, c, DocMode.invoice);
+    c.read(cartProvider(DocMode.invoice).notifier).setReceived(100000);
+    await t.pumpAndSettle();
+  }),
+  Shot('pos-overpaid', 'POS: overpaid, change or keep as advance', '/bill', setup: (t, c) async {
+    await fill(t, c, DocMode.invoice);
+    c.read(cartProvider(DocMode.invoice).notifier)
+      ..setCustomer(c.read(customersProvider).first)
+      ..setReceived(5000000);
+    await t.pumpAndSettle();
+  }),
+  Shot('customer-detail', 'Customer: balance, ageing, bills, ledger, reminders', '/customers/$dueId'),
+  Shot('customer-statement', 'Customer statement (print and PDF)', '/customers/$dueId/statement'),
+  const Shot('receipt-payment', 'Payment receipt preview', '/preview/payment'),
+  Shot('dlg-receive-payment', 'Dialog: receive payment (oldest bills first, or choose)', '/customers/$dueId', setup: (t, c) async {
+    await t.tap(find.text('Receive payment').first);
+    await t.pumpAndSettle();
+  }),
+  Shot('dlg-reminder', 'Dialog: WhatsApp reminder preview (editable)', '/customers/$dueId', setup: (t, c) async {
+    await t.tap(find.text('Remind on WhatsApp').first);
+    await t.pumpAndSettle();
+  }),
+  Shot('dlg-reminder-offline', 'Dialog: reminder while offline (Copy message)', '/customers/$dueId', setup: (t, c) async {
+    c.read(settingsProvider.notifier).set((x) => x.copyWith(sync: SyncState.offline));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Remind on WhatsApp').first);
+    await t.pumpAndSettle();
+  }),
+  Shot('settings-reminders', 'Settings > Reminders (template, tone, UPI, guard)', '/settings', setup: (t, c) async {
+    final k = find.byKey(const ValueKey('templateField'));
+    for (var i = 0; i < 40 && k.evaluate().isEmpty; i++) {
+      await t.dragFrom(Offset(t.view.physicalSize.width / 2, t.view.physicalSize.height * 0.6), const Offset(0, -300));
+      await t.pumpAndSettle();
+    }
+    await t.ensureVisible(k.first);
     await t.pumpAndSettle();
   }),
 ];
@@ -218,7 +266,7 @@ void main() {
       ..writeln()
       ..writeln('Folder layout: `docs/ui-review/<phone|tablet|desktop>/<dark|light>/<screen>.jpg`')
       ..writeln()
-      ..writeln('| Screen | Desktop dark EN | Desktop light TA | Tablet dark EN | Phone dark EN | Phone light TA |')
+      ..writeln('| Screen | Desktop dark EN | Desktop light EN | Tablet dark EN | Phone dark EN | Phone light EN |')
       ..writeln('|---|---|---|---|---|---|');
     for (final s in shots) {
       String link(String size, String mode) => s.phoneOnly && size != 'phone' ? '-' : '[$size ${mode.toUpperCase().replaceAll('-', ' ')}]($size/$mode/${s.id}.jpg)';

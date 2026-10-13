@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:erp2/app.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
+import 'package:erp2/fake/credit_store.dart' show seedCredit;
+import 'package:erp2/fake/seed.dart';
 import 'helpers.dart';
 
 /// Golden images of the key screens, at several text sizes and in both themes.
@@ -75,5 +77,23 @@ void main() {
     await pumpApp(tester, size: desktop1366, location: '/preview/80');
     expect(find.byKey(const ValueKey('paperEdited')), findsNothing);
     await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/print_receipt_80.png'));
+  });
+
+  testWidgets('invoice with Received and Balance due (A4)', (tester) async {
+    await pumpApp(tester, size: desktop1366, location: '/preview/a4');
+    expect(find.byKey(const ValueKey('paperReceived')), findsOneWidget);
+    expect(find.byKey(const ValueKey('paperBalance')), findsOneWidget);
+    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/print_invoice_part_paid_a4.png'));
+  });
+
+  testWidgets('Credit and Dues list, desktop', (tester) async {
+    await pumpApp(tester, size: desktop1366, location: '/credit');
+    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/credit_dues_desktop.png'));
+  });
+
+  testWidgets('customer page with ageing, ledger and reminders, tablet light', (tester) async {
+    final id = seedCredit(seedCustomers(), fixedNow).entries.firstWhere((e) => e.value.balance > 0 && e.value.bills.length > 1).key;
+    await pumpApp(tester, size: tabletPortrait, location: '/customers/$id', theme: ThemeMode.light);
+    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/customer_credit_tablet_light.png'));
   });
 }
