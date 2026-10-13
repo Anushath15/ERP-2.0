@@ -12,6 +12,7 @@ import 'package:image/image.dart' as img;
 import 'package:erp2/app.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
+import 'package:erp2/design/segments.dart';
 import '../helpers.dart';
 
 class Shot {
@@ -30,6 +31,8 @@ Future<void> fill(WidgetTester t, ProviderContainer c, DocMode mode) async {
   n.add(products.firstWhere((p) => p.outOfStock));
   await t.pumpAndSettle();
 }
+
+Future<void> fill_(WidgetTester t, ProviderContainer c, DocMode mode) => fill(t, c, mode);
 
 Future<void> tapText(WidgetTester t, String text, {bool last = false}) async {
   final f = last ? find.text(text).last : find.text(text).first;
@@ -87,7 +90,7 @@ final shots = <Shot>[
   }),
   Shot('dlg-choose-customer', 'Dialog: choose customer (5,000, searchable)', '/bill', setup: (t, c) async {
     await fill(t, c, DocMode.invoice);
-    final seg = find.byType(SegmentedButton<int>);
+    final seg = find.byType(SlideSegments<int>);
     if (seg.evaluate().isNotEmpty) {
       await t.tap(find.descendant(of: seg, matching: find.byIcon(Icons.receipt_long_outlined)));
       await t.pumpAndSettle();
@@ -171,6 +174,42 @@ void main() {
     }
   }
 
+  // POS, Estimations, Products and Settings at 100%, 150% and 200% text size
+  for (final combo in [combos[0], combos[2]]) {
+    for (final theme in ['dark', 'light']) {
+      testWidgets('text-size screenshots ${combo.size} $theme', skip: !run, timeout: const Timeout(Duration(minutes: 20)), (tester) async {
+        final dir = Directory('${outRoot.path}/text-sizes/${combo.size}/$theme')..createSync(recursive: true);
+        for (final scale in [1.0, 1.5, 2.0]) {
+          for (final (id, route, fill) in [('pos', '/bill', true), ('estimations', '/estimate', true), ('saved-estimates', '/estimates', false), ('products', '/products', false), ('settings', '/settings', false)]) {
+            final key = GlobalKey();
+            await tester.pumpWidget(const SizedBox.shrink());
+            tester.view.physicalSize = Size(combo.w, combo.h);
+            tester.view.devicePixelRatio = 1.0;
+            await tester.pumpWidget(ProviderScope(
+              key: UniqueKey(),
+              overrides: [clockProvider.overrideWithValue(fixedNow)],
+              child: RepaintBoundary(key: key, child: ErpApp(initialLocation: route)),
+            ));
+            final c = ProviderScope.containerOf(tester.element(find.byType(ErpApp)));
+            c.read(settingsProvider.notifier).set((x) => x.copyWith(theme: theme == 'dark' ? ThemeMode.dark : ThemeMode.light, textScale: scale));
+            await tester.pumpAndSettle();
+            if (fill) await fill_(tester, c, route == '/bill' ? DocMode.invoice : DocMode.estimation);
+            final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(key));
+            late Uint8List png;
+            await tester.runAsync(() async {
+              final image = await boundary.toImage(pixelRatio: 1.0);
+              final data = await image.toByteData(format: ui.ImageByteFormat.png);
+              png = data!.buffer.asUint8List();
+              image.dispose();
+            });
+            File('${dir.path}/${id}_${(scale * 100).round()}.jpg').writeAsBytesSync(img.encodeJpg(img.decodePng(png)!, quality: 72));
+            expect(tester.takeException(), isNull, reason: '$id ${combo.size} $theme ${(scale * 100).round()}%');
+          }
+        }
+      });
+    }
+  }
+
   test('write index.md', skip: !run, () {
     final b = StringBuffer()
       ..writeln('# UI review screenshots')
@@ -184,6 +223,17 @@ void main() {
     for (final s in shots) {
       String link(String size, String mode) => s.phoneOnly && size != 'phone' ? '-' : '[$size ${mode.toUpperCase().replaceAll('-', ' ')}]($size/$mode/${s.id}.jpg)';
       b.writeln('| ${s.title} | ${link('desktop', 'dark')} | ${link('desktop', 'light')} | ${link('tablet', 'dark')} | ${link('phone', 'dark')} | ${link('phone', 'light')} |');
+    }
+    b
+      ..writeln()
+      ..writeln('## Text size 100% / 150% / 200%')
+      ..writeln()
+      ..writeln('POS billing, estimates, saved estimates, products and settings at three text sizes (desktop and phone, dark and light): folder `text-sizes/<desktop|phone>/<dark|light>/`, files `<screen>_<100|150|200>.jpg`.')
+      ..writeln()
+      ..writeln('| Screen | Desktop dark 100% | Desktop dark 150% | Desktop dark 200% | Phone dark 100% | Phone dark 200% |')
+      ..writeln('|---|---|---|---|---|---|');
+    for (final id in ['pos', 'estimations', 'saved-estimates', 'products', 'settings']) {
+      b.writeln('| $id | [100%](text-sizes/desktop/dark/${id}_100.jpg) | [150%](text-sizes/desktop/dark/${id}_150.jpg) | [200%](text-sizes/desktop/dark/${id}_200.jpg) | [100%](text-sizes/phone/dark/${id}_100.jpg) | [200%](text-sizes/phone/dark/${id}_200.jpg) |');
     }
     b
       ..writeln()

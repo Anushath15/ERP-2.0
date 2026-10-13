@@ -46,6 +46,7 @@ class AppShell extends ConsumerWidget {
           bottomNavigationBar: hideBar
               ? null
               : NavigationBar(
+                  labelBehavior: context.textFactor >= 1.4 ? NavigationDestinationLabelBehavior.onlyShowSelected : NavigationDestinationLabelBehavior.alwaysShow,
                   selectedIndex: idx >= 0 ? idx : 4,
                   onDestinationSelected: (i) => context.go(i < 4 ? phoneTabs[i] : '/more'),
                   destinations: [

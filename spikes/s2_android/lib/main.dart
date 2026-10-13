@@ -1,4 +1,4 @@
-﻿import 'dart:isolate';
+import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'bench.dart';
 
@@ -12,15 +12,20 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   String text = 'running...';
-  int frames = 0;
+
   @override
   void initState() {
     super.initState();
     Isolate.run(() => runBench(['5000', '5000', '50000', 'FULL'])).then((r) {
-      debugPrint('BENCH_RESULT_BEGIN\n\\nBENCH_RESULT_END');
+      debugPrint('BENCH_RESULT_BEGIN');
+      for (final line in r.split('\n')) {
+        debugPrint('BENCH $line');
+      }
+      debugPrint('BENCH_RESULT_END');
       setState(() => text = r);
     });
   }
+
   @override
   Widget build(BuildContext context) => Scaffold(body: SafeArea(child: SingleChildScrollView(child: Text(text, style: const TextStyle(fontSize: 11)))));
 }

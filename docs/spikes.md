@@ -8,8 +8,10 @@ Machine: Windows 11, Intel Core i5-12500H, 16 GB RAM, SSD. Date: 2026-10-13. Eve
 | Target | Result |
 |---|---|
 | Windows, REST | **Pass** (pure Dart, no native code) |
-| Android / Web / macOS, REST | Same pure-Dart code, expected to pass. **Not verified** (Flutter plugin builds need Windows Developer Mode, see below) |
-| Official `firebase_*` SDK on Windows | **Not verified.** `flutter pub add` stops with "Building with plugins requires symlink support": Windows Developer Mode is off and changing it is a system setting only the owner should change |
+| Android, REST | **Pass** on an Android emulator (see below) |
+| Web (Chrome), REST | **Pass** against the emulator from a browser page (S1b); a Flutter web build compiles (Phase 1 web build) |
+| macOS, REST | Same pure-Dart code. **Not verified** (no Mac) |
+| Official `firebase_*` SDK on Windows | **Not verified.** Building any Flutter app with native plugins on this PC needs Windows Developer Mode (symlinks); it is still off, and changing it is a system setting only the owner should change. The REST layer needs no plugin |
 
 **Decision (written reason):** build the cloud layer on REST behind `AuthRepository` / `RemoteStore` interfaces. Reasons: it is proven here; it is identical on all four platforms; it needs no native plugin (the Windows C++ SDK is the riskiest piece); and it keeps the sync wire format fully under our control (idempotent commits, our cursor). If the official SDK is later preferred on a platform, only the implementation behind the interface changes.
 Google sign-in on REST needs a browser OAuth hand-off (Identity Toolkit `signInWithIdp`); email + password with reset (guaranteed baseline) works now. Google sign-in is Planned for Phase 2 and must be tried on real Firebase (needs the owner's project).
@@ -39,7 +41,7 @@ Database 116 MB (5,000 products, 5,000-10,000 customers, 50,000 bills, 200,000 l
 3. Start-up check uses `quick_check` (0.3 s), not `integrity_check` (up to 4.4 s, run weekly or from the Health page).
 4. The worst save (290 ms) is a one-off WAL checkpoint; set `wal_autocheckpoint` and checkpoint on idle.
 
-Low-end Android, throttled: **Not verified** (needs a Flutter app build with plugins; the Android SDK folder `D:\Android\Sdk` that existed at the start of the session disappeared during it, see PROGRESS.md; a new SDK is being installed in `D:\dev\android-sdk`). Web (WASM + OPFS): **Not verified**.
+Android emulator: see the section at the end (pass). A true low-end phone and Web (WASM + OPFS): **Not verified**.
 
 ## S3 - Printing
 - A4 invoice, 80 mm and 58 mm receipts generated from the `pdf` package (pure Dart): A4 with 26 lines 220-280 ms, 80 mm 50-60 ms, 58 mm 20 ms. Wrapping of long names, Indian digit grouping, Code128 barcode: **Pass** (viewed in the browser pane).
@@ -66,3 +68,10 @@ Run from a page in Chrome (the in-app browser) against the emulator, from a diff
 
 ## S4b - Convergence (2026-10-13, `test/s4_convergence_test.dart`)
 Two devices work offline (opening stock, 150-167 bills, purchases, adjustments, payments), sync in random order with 20% dropped requests, 20% lost replies and **delayed duplicate re-sends of old batches** (8-19 per run). Final check: both devices derive **identical stock per product, balance per customer, sales total and bill count**; a third fresh device restoring from the cloud gets the same numbers; no invoice number repeats. **3 of 3 seeds pass.**
+
+## Android emulator results (2026-10-13)
+Emulator: Android 15 (API 35, Google APIs, x86_64), 2 CPU cores, 1.5 GB RAM, hardware-accelerated by Windows (WHPX), release build. This is **not** a throttled low-end ARM phone (see "Not verified").
+
+**S2 on Android** (same 50,000-bill database, `synchronous=FULL`, 5,000 products, 5,000 customers): product search per keystroke p50 0.29 ms, p95 1.08 ms, max 6.5 ms (budget 16 ms); save bill p50 2.9 ms, p95 5.6 ms, max 25 ms (budget 150 ms); bill list page p95 21.7 ms (budget 300 ms); stock of all products 232 ms; top 20 products 233 ms; customer balances 72 ms; `quick_check` 151 ms; database 116 MB. **Pass**, comfortably, on the emulator. Real phone flash storage and a real low-end CPU will be slower: **Not verified**.
+
+**S1 on Android** (sign-in and sync over the REST layer to the Firebase emulator on the host, `s1_android`): sign up + verify e-mail + token refresh 710 ms; create shop HTTP 200; push 600 bills in batches of 100: 4.4 s, 0 left in the outbox, 600 server writes; a fresh device pulls all 600 in 0.8 s with 601 reads; **both devices identical. Pass.** Real Firebase over a real mobile network: Not verified.

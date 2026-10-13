@@ -91,6 +91,7 @@ ThemeData buildTheme(
       errorBorder: border.copyWith(borderSide: BorderSide(color: c.danger)),
       labelStyle: TextStyle(color: c.textMuted),
       hintStyle: TextStyle(color: c.textMuted),
+      hintMaxLines: 2,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       isDense: false,
     ),

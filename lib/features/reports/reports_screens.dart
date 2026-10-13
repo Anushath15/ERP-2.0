@@ -104,7 +104,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final th = Theme.of(context).textTheme;
     final days = switch (_range) { 0 => 7, 1 => 30, _ => 365 };
     final from = now.subtract(Duration(days: days));
-    final inRange = [for (final b in bills) if (b.date.isAfter(from) && b.status != DocStatus.cancelled) b];
+    // newest first: stop at the first bill older than the range (a 7- or 30-day report never builds the old bills)
+    final inRange = [for (final b in bills.takeWhile((b) => b.date.isAfter(from))) if (b.status != DocStatus.cancelled) b];
     final total = inRange.fold<int>(0, (s, b) => s + b.totalPaise);
     final avg = inRange.isEmpty ? 0 : total ~/ inRange.length;
     final buckets = _range == 2 ? 12 : (_range == 1 ? 15 : 7);

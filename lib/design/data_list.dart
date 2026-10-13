@@ -74,6 +74,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
   Object? _cacheSrc;
 
   List<T> _visible() {
+    if (_q.trim().isEmpty && _filter == 0 && _sort == 0) return widget.items; // nothing to do: keeps lazy lists lazy
     final key = '$_q|$_filter|$_sort';
     if (_cache != null && key == _cacheKey && identical(_cacheSrc, widget.items)) return _cache!;
     final q = _q.trim().toLowerCase();

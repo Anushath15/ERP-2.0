@@ -44,3 +44,4 @@ ui-debug.log
 *.iml
 .DS_Store
 Thumbs.db
+dist/

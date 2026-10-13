@@ -1,17 +1,15 @@
-// Frame-timing run of the billing flow with Full animations, in a REAL build (profile mode), not in a widget test.
+﻿// Frame-timing run of the billing flow with Full animations, in a REAL build (profile mode), not in a widget test.
 //
 //   flutter run -t tool/perf/frame_timing_main.dart -d windows --profile --dart-define=PERF_OUT=D:/path/result.json
 //
 // It drives the app by itself: adds 100 bill lines, types a search, flips through ten pages, twice:
 //   1. "normal"    : the computer as it is
-//   2. "contended" : the same flow while busy isolates keep most CPU cores 100% busy (a throttled, shared machine)
+//   2. "contended" : the same flow while busy isolates keep half of the CPU threads 100% busy (a throttled, shared machine)
 // and writes the average, 95th percentile and worst frame time (build + raster) of each run.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:math' as math;
-import 'dart:ui' show FrameTiming;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,16 +20,6 @@ import 'package:erp2/fake/store.dart';
 import 'package:erp2/router.dart';
 
 const outPath = String.fromEnvironment('PERF_OUT');
-
-Future<void> burn(SendPort port) async {
-  // busy loop until the process ends
-  final sw = Stopwatch()..start();
-  var x = 0.0;
-  while (true) {
-    x += math.sqrt(sw.elapsedMicroseconds.toDouble());
-    if (x > 1e18) x = 0;
-  }
-}
 
 class Stats {
   Stats(this.frames);
@@ -127,17 +115,17 @@ Future<void> main() async {
   };
   result['normal'] = await flow('normal');
 
-  final burners = <Isolate>[];
-  final busy = math.max(1, Platform.numberOfProcessors - 2);
+  // Contention: separate OS processes (not isolates, which share the VM and can freeze it) that each keep one CPU thread 100% busy.
+  final busy = math.max(1, Platform.numberOfProcessors ~/ 2); // half of all CPU threads
+  final burners = <Process>[];
   for (var i = 0; i < busy; i++) {
-    final rp = ReceivePort();
-    burners.add(await Isolate.spawn(burn, rp.sendPort));
+    burners.add(await Process.start('powershell', ['-NoProfile', '-Command', 'while (1) { }']));
   }
-  await Future<void>.delayed(const Duration(seconds: 1));
-  result['contendedBusyIsolates'] = busy;
+  await Future<void>.delayed(const Duration(seconds: 2));
+  result['contendedBusyProcesses'] = busy;
   result['contended'] = await flow('contended');
-  for (final b in burners) {
-    b.kill(priority: Isolate.immediate);
+  for (final p in burners) {
+    p.kill();
   }
 
   final text = const JsonEncoder.withIndent('  ').convert(result);
@@ -145,3 +133,4 @@ Future<void> main() async {
   if (outPath.isNotEmpty) File(outPath).writeAsStringSync(text);
   exit(0);
 }
+

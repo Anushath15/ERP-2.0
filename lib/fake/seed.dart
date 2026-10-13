@@ -1,6 +1,7 @@
 /// Deterministic fake data for the Phase 1 prototype. All names are invented/synthetic style data.
 library;
 
+import 'dart:collection';
 import 'dart:math';
 import 'models.dart';
 
@@ -139,7 +140,9 @@ class BillBook {
     );
   }
 
-  List<BillSummary> all() => List.generate(count, at, growable: false);
+  /// All bills as a lazy list: a bill is only built when something asks for it (and then kept), so opening the
+  /// sales register costs nothing up front even with 20,000 bills.
+  List<BillSummary> all() => LazyBills(this);
 }
 
 List<EstimationDoc> seedEstimations(DateTime base, List<Customer> customers, {int count = 300}) {
@@ -296,3 +299,17 @@ List<Rec> seedNotifications(DateTime base) => [
       Rec('n5', {'kind': 'warranty', 'text': '3 warranties finish this month', 'time': base.subtract(const Duration(days: 1)), 'read': 1}),
       Rec('n6', {'kind': 'estimate', 'text': 'EST-00231 was not converted to a bill yet (7 days)', 'time': base.subtract(const Duration(days: 2)), 'read': 1}),
     ];
+
+class LazyBills extends ListBase<BillSummary> {
+  LazyBills(this.book);
+  final BillBook book;
+  final _cache = <int, BillSummary>{};
+  @override
+  int get length => book.count;
+  @override
+  set length(int v) => throw UnsupportedError('read-only');
+  @override
+  BillSummary operator [](int i) => _cache.putIfAbsent(i, () => book.at(i));
+  @override
+  void operator []=(int i, BillSummary v) => throw UnsupportedError('read-only');
+}

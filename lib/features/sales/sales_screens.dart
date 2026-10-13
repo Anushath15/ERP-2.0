@@ -56,9 +56,10 @@ class SalesRegisterScreen extends ConsumerWidget {
     final th = Theme.of(context).textTheme;
     DocStatus st(BillSummary b) => cancelled.contains(b.number) ? DocStatus.cancelled : b.status;
     final today = ref.watch(clockProvider);
-    final todays = bills.where((b) => b.date.year == today.year && b.date.month == today.month && b.date.day == today.day && st(b) != DocStatus.cancelled);
+    // bills are newest first, so today's bills are the first ones: stop at the first older bill
+    final todays = bills.takeWhile((b) => b.date.year == today.year && b.date.month == today.month && b.date.day == today.day).where((b) => st(b) != DocStatus.cancelled).toList();
     final todayTotal = todays.fold<int>(0, (s, b) => s + b.totalPaise);
-    final due = bills.where((b) => st(b) == DocStatus.due || st(b) == DocStatus.partly).fold<int>(0, (s, b) => s + (b.totalPaise - b.paidPaise));
+    final due = ref.watch(customersProvider).fold<int>(0, (s, c) => s + c.balancePaise);
     Widget badge(BillSummary b) {
       final (t, k) = statusInfo(st(b), l);
       return StatusBadge(t, kind: k);
