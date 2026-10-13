@@ -4,19 +4,29 @@
 /// Balance = sum of entries. A positive balance is "Money to collect"; a negative balance is an "Advance".
 library;
 
+/// A part of a payment applied to one bill.
+class Allocation {
+  const Allocation(this.billNo, this.paise);
+  final String billNo;
+  final int paise;
+  @override
+  String toString() => '$billNo:$paise';
+}
+
 enum LedgerKind {
   opening, // balance carried in (positive = owes, negative = advance)
   billCredit, // unpaid part of a bill, added to credit
   payment, // money received from the customer
   advance, // money received above the dues, kept on account
   returnCredit, // credit note for returned goods
-  adjustment, // correction (either sign), with a reason
+  adjustment, // correction (either sign), with a reason; also how a wrong entry is reversed
+  manualCredit, // credit added by hand (goods taken without a bill, an old debt), with a reason
   writeOff, // owner decided not to collect the rest (owner only, reason)
   billCancel, // reverses the credit of a cancelled bill
 }
 
 class LedgerEntry {
-  const LedgerEntry({required this.id, required this.customerId, required this.kind, required this.amountPaise, required this.at, this.billNo, this.note = '', this.by = '', this.mode});
+  const LedgerEntry({required this.id, required this.customerId, required this.kind, required this.amountPaise, required this.at, this.billNo, this.note = '', this.by = '', this.mode, this.reverses, this.allocations = const []});
 
   final String id, customerId;
   final LedgerKind kind;
@@ -25,6 +35,12 @@ class LedgerEntry {
   final String? billNo; // bill this entry belongs to, when there is one
   final String note, by;
   final String? mode; // cash / upi / card for payments
+
+  /// Set on a reversal: the id of the entry this one cancels out.
+  final String? reverses;
+
+  /// For payments and write-offs: which bills the money was applied to (so a reversal can put it back).
+  final List<Allocation> allocations;
 
   // Factories force the right sign, so a caller cannot record a payment as a charge by mistake.
   factory LedgerEntry.opening({required String id, required String customerId, required int paise, required DateTime at, String by = ''}) =>
@@ -35,9 +51,9 @@ class LedgerEntry {
     return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.billCredit, amountPaise: paise, at: at, billNo: billNo, by: by);
   }
 
-  factory LedgerEntry.payment({required String id, required String customerId, required int paise, required DateTime at, String mode = 'cash', String note = '', String by = ''}) {
+  factory LedgerEntry.payment({required String id, required String customerId, required int paise, required DateTime at, String mode = 'cash', String note = '', String by = '', List<Allocation> allocations = const []}) {
     if (paise <= 0) throw ArgumentError.value(paise, 'paise', 'a payment must be above zero');
-    return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.payment, amountPaise: -paise, at: at, mode: mode, note: note, by: by);
+    return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.payment, amountPaise: -paise, at: at, mode: mode, note: note, by: by, allocations: allocations);
   }
 
   factory LedgerEntry.advance({required String id, required String customerId, required int paise, required DateTime at, String? billNo, String mode = 'cash', String note = '', String by = ''}) {
@@ -56,11 +72,26 @@ class LedgerEntry {
     return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.adjustment, amountPaise: signedPaise, at: at, note: reason.trim(), by: by);
   }
 
+  /// Credit added by hand: it increases what the customer owes. A reason is required.
+  factory LedgerEntry.manualCredit({required String id, required String customerId, required int paise, required DateTime at, required String reason, required String by, String? billNo}) {
+    if (paise <= 0) throw ArgumentError.value(paise, 'paise', 'manual credit must be above zero');
+    if (reason.trim().isEmpty) throw ArgumentError('manual credit needs a reason');
+    return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.manualCredit, amountPaise: paise, at: at, billNo: billNo, note: reason.trim(), by: by);
+  }
+
+  /// Cancels out a wrong entry with a NEW entry of the opposite amount (the wrong one stays in the ledger). Only entries
+  /// for which [isReversible] is true; the caller must also check [reversedIds] so an entry is reversed only once.
+  factory LedgerEntry.reversal({required String id, required String customerId, required LedgerEntry original, required DateTime at, required String reason, required String by}) {
+    if (reason.trim().isEmpty) throw ArgumentError('a reversal needs a reason');
+    if (!isReversible(original)) throw StateError('this entry cannot be reversed');
+    return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.adjustment, amountPaise: -original.amountPaise, at: at, billNo: original.billNo, note: 'Reversal: ${reason.trim()}', by: by, reverses: original.id);
+  }
+
   /// Owner only. Reduces what the customer owes; cannot take the balance below zero.
-  factory LedgerEntry.writeOff({required String id, required String customerId, required int paise, required DateTime at, required String reason, required String by}) {
+  factory LedgerEntry.writeOff({required String id, required String customerId, required int paise, required DateTime at, required String reason, required String by, List<Allocation> allocations = const []}) {
     if (paise <= 0) throw ArgumentError.value(paise, 'paise', 'a write-off must be above zero');
     if (reason.trim().isEmpty) throw ArgumentError('a write-off needs a reason');
-    return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.writeOff, amountPaise: -paise, at: at, note: reason.trim(), by: by);
+    return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.writeOff, amountPaise: -paise, at: at, note: reason.trim(), by: by, allocations: allocations);
   }
 
   factory LedgerEntry.billCancel({required String id, required String customerId, required int paise, required DateTime at, required String billNo, required String reason, required String by}) {
@@ -108,3 +139,17 @@ LedgerEntry reverseBillCredit({required List<LedgerEntry> entries, required Stri
   if (reversed >= credit) throw StateError('bill $billNo is already cancelled');
   return LedgerEntry.billCancel(id: entryId, customerId: customerId, paise: credit - reversed, at: at, billNo: billNo, reason: reason, by: by);
 }
+
+/// Payments, advances, manual credit, write-offs, opening balances, credit notes and adjustments can be reversed. Bills are
+/// cancelled through the bill (with the stock effects), a bill cancellation is final, and a reversal is never reversed:
+/// make a new entry instead.
+bool isReversible(LedgerEntry e) {
+  if (e.reverses != null) return false;
+  return switch (e.kind) {
+    LedgerKind.billCredit || LedgerKind.billCancel => false,
+    _ => true,
+  };
+}
+
+/// The ids of entries that already have a reversal.
+Set<String> reversedIds(Iterable<LedgerEntry> entries) => {for (final e in entries) if (e.reverses != null) e.reverses!};

@@ -29,6 +29,34 @@ class CreditAccount {
     return last;
   }
 
+  /// The latest payment (not an advance) with its date and amount.
+  LedgerEntry? get lastPayment => _latest(const {LedgerKind.payment, LedgerKind.advance}, skipReversed: true);
+
+  /// The latest credit added (a bill's unpaid part, manual credit or an opening balance).
+  LedgerEntry? get lastCredit => _latest(const {LedgerKind.billCredit, LedgerKind.manualCredit, LedgerKind.opening}, skipReversed: true);
+
+  LedgerEntry? _latest(Set<LedgerKind> kinds, {bool skipReversed = false}) {
+    final gone = skipReversed ? reversedIds(ledger) : const <String>{};
+    LedgerEntry? best;
+    for (final e in ledger) {
+      if (!kinds.contains(e.kind) || gone.contains(e.id) || e.amountPaise == 0) continue;
+      if (best == null || e.at.isAfter(best.at)) best = e;
+    }
+    return best;
+  }
+
+  /// The date the oldest unpaid bill was made: when this credit started (null when nothing is owed).
+  DateTime? get creditStart {
+    final u = unpaidBills(bills);
+    return u.isEmpty ? null : u.first.date;
+  }
+
+  /// When the oldest unpaid bill falls due ([termDays] after it was made); it is overdue when this is in the past.
+  DateTime? nextDue({int termDays = 30}) {
+    final s = creditStart;
+    return s == null ? null : DateTime(s.year, s.month, s.day).add(Duration(days: termDays));
+  }
+
   CreditAccount copyWith({List<LedgerEntry>? ledger, List<BillDue>? bills}) => CreditAccount(ledger: ledger ?? this.ledger, bills: bills ?? this.bills);
 }
 
@@ -41,33 +69,118 @@ class PaymentReceipt {
   final List<Allocation> allocations;
 }
 
-class CreditNotifier extends Notifier<Map<String, CreditAccount>> {
+/// The operations every person-account has (customers owe us, we owe dealers). Positive balance = the other side is owed
+/// money by the one in the book's title: for customers "they owe us", for dealers "we owe them".
+abstract class PartyLedgerNotifier extends Notifier<Map<String, CreditAccount>> {
   int _seq = 1000;
   int _rcp = 40;
+  int _manual = 1;
 
-  @override
-  Map<String, CreditAccount> build() => seedCredit(ref.watch(customersProvider), ref.watch(clockProvider));
+  /// Prefix of receipt numbers ("RCP" for customer payments, "PAY" for payments to dealers).
+  String get receiptPrefix;
 
-  CreditAccount account(String customerId) => state[customerId] ?? const CreditAccount();
+  /// Words kept in notes so the ledger reads right for this kind of account.
+  String get paidMoreNote => 'Paid more than was due';
 
-  /// What the customer owed right after the bill [billNo] was added to the account (null if the bill left no entry).
-  int? balanceAfterBill(String customerId, String billNo) {
+  CreditAccount account(String partyId) => state[partyId] ?? const CreditAccount();
+  int balanceOf(String partyId) => account(partyId).balance;
+
+  String _id() => 'le${_seq++}';
+  void _put(String id, CreditAccount a) => state = {...state, id: a};
+
+  /// What the party owed right after the bill [billNo] was added to the account (null if the bill left no entry).
+  int? balanceAfterBill(String partyId, String billNo) {
     int? out;
-    for (final l in withRunningBalance(account(customerId).ledger)) {
+    for (final l in withRunningBalance(account(partyId).ledger)) {
       if (l.entry.billNo == billNo) out = l.runningPaise;
     }
     return out;
   }
-  int balanceOf(String customerId) => account(customerId).balance;
-  int get totalToCollect => state.values.fold<int>(0, (s, a) => a.balance > 0 ? s + a.balance : s);
-  int get totalAdvances => state.values.fold<int>(0, (s, a) => a.balance < 0 ? s - a.balance : s);
 
-  String _id() => 'le${_seq++}';
+  /// A payment: applied to the oldest unpaid bills (or only [onlyBills]); any rest becomes an advance.
+  PaymentReceipt receivePayment({required String customerId, required String customerName, required int amount, required String mode, required DateTime at, String note = '', Set<String>? onlyBills}) {
+    final a = account(customerId);
+    final res = allocatePayment(bills: a.bills, amount: amount, onlyBills: onlyBills);
+    final ledger = [...a.ledger];
+    if (res.appliedPaise > 0) {
+      ledger.add(LedgerEntry.payment(id: _id(), customerId: customerId, paise: res.appliedPaise, at: at, mode: mode, note: note, by: currentUser, allocations: res.allocations));
+    }
+    if (res.advancePaise > 0) {
+      ledger.add(LedgerEntry.advance(id: _id(), customerId: customerId, paise: res.advancePaise, at: at, mode: mode, note: note.isEmpty ? paidMoreNote : note, by: currentUser));
+    }
+    final updated = a.copyWith(ledger: ledger, bills: applyAllocations(a.bills, res.allocations));
+    _put(customerId, updated);
+    final r = PaymentReceipt(number: '$receiptPrefix-${(_rcp++).toString().padLeft(4, '0')}', customerId: customerId, customerName: customerName, amountPaise: amount, mode: mode, at: at, note: note, allocations: res.allocations, advancePaise: res.advancePaise, balanceAfter: updated.balance);
+    _snapshots[r.number] = (a, updated);
+    return r;
+  }
 
-  void _put(String cid, CreditAccount a) => state = {...state, cid: a};
+  final _snapshots = <String, (CreditAccount before, CreditAccount after)>{};
 
-  /// Called when a bill is saved. [balance] goes to credit; [advance] (if the customer chose "keep as advance") is kept on account.
-  /// Returns the credit added.
+  /// "Settle fully": records the whole balance as received (or paid). Returns null when nothing is owed.
+  PaymentReceipt? settleFully({required String customerId, required String customerName, required String mode, required DateTime at, String note = ''}) {
+    final owed = account(customerId).balance;
+    if (owed <= 0) return null;
+    return receivePayment(customerId: customerId, customerName: customerName, amount: owed, mode: mode, at: at, note: note.isEmpty ? 'Settled fully' : note);
+  }
+
+  /// Takes a just-made payment back (the 8-second Undo). Works only while nothing else has changed on that account; the
+  /// entries were never uploaded (reminder-style hold-back, see docs/data-model.md), so nothing is left behind.
+  bool undoPayment(PaymentReceipt r) {
+    final snap = _snapshots[r.number];
+    if (snap == null || !identical(state[r.customerId] ?? const CreditAccount(), snap.$2)) return false;
+    state = {...state, r.customerId: snap.$1};
+    _snapshots.remove(r.number);
+    return true;
+  }
+
+  /// Credit added by hand. It becomes a bill-like line (so it ages and payments settle it oldest-first).
+  String addManualCredit({required String customerId, required int amount, required DateTime at, required String reason}) {
+    final a = account(customerId);
+    final no = 'CR-${(_manual++).toString().padLeft(3, '0')}';
+    final e = LedgerEntry.manualCredit(id: _id(), customerId: customerId, paise: amount, at: at, reason: reason, by: currentUser, billNo: no);
+    _put(customerId, a.copyWith(ledger: [...a.ledger, e], bills: [...a.bills, BillDue(billNo: no, date: at, totalPaise: amount, paidPaise: 0)]));
+    return no;
+  }
+
+  /// A starting balance for someone who already owed (or paid ahead) before this program. Positive = owes.
+  void addOpening({required String customerId, required int amount, required DateTime at}) {
+    if (amount == 0) return;
+    final a = account(customerId);
+    final e = LedgerEntry.opening(id: _id(), customerId: customerId, paise: amount, at: at, by: currentUser);
+    final no = 'OPEN-$customerId';
+    _put(customerId, a.copyWith(ledger: [...a.ledger, e], bills: amount > 0 ? [...a.bills, BillDue(billNo: no, date: at, totalPaise: amount, paidPaise: 0)] : a.bills));
+  }
+
+  /// Fixes a wrong entry with a NEW entry (the wrong one stays visible). Puts money back on the bills it was applied to.
+  /// Throws when the entry cannot be reversed or already was.
+  void reverseEntry({required String partyId, required String entryId, required String reason, required DateTime at}) {
+    final a = account(partyId);
+    final orig = a.ledger.firstWhere((e) => e.id == entryId);
+    if (reversedIds(a.ledger).contains(entryId)) throw StateError('already reversed');
+    final rev = LedgerEntry.reversal(id: _id(), customerId: partyId, original: orig, at: at, reason: reason, by: currentUser);
+    var bills = a.bills;
+    switch (orig.kind) {
+      case LedgerKind.payment || LedgerKind.writeOff:
+        bills = restoreAllocations(bills, orig.allocations);
+      case LedgerKind.manualCredit || LedgerKind.opening:
+        bills = [for (final b in bills) b.billNo == (orig.billNo ?? 'OPEN-$partyId') ? b.cancel() : b];
+      default:
+    }
+    _put(partyId, a.copyWith(ledger: [...a.ledger, rev], bills: bills));
+  }
+
+  /// Owner only. Cannot write off more than is owed.
+  void writeOff({required String customerId, required int amount, required String reason, required DateTime at}) {
+    final a = account(customerId);
+    if (amount > maxWriteOff(a.ledger)) throw StateError('cannot write off more than is owed');
+    // the written-off money is taken off the oldest bills too, so bill-wise dues and the ledger stay equal
+    final res = allocatePayment(bills: a.bills, amount: amount);
+    final entry = LedgerEntry.writeOff(id: _id(), customerId: customerId, paise: amount, at: at, reason: reason, by: currentUser, allocations: res.allocations);
+    _put(customerId, a.copyWith(ledger: [...a.ledger, entry], bills: applyAllocations(a.bills, res.allocations)));
+  }
+
+  /// Called when a bill (or a purchase) is saved. [balance] goes on the account; [advance] is kept on account.
   void addBill({required String customerId, required String billNo, required DateTime at, required int total, required int received, int advance = 0}) {
     final split = splitPayment(total: total, received: received);
     final a = account(customerId);
@@ -82,32 +195,17 @@ class CreditNotifier extends Notifier<Map<String, CreditAccount>> {
     }
     if (ledger.length != a.ledger.length) _put(customerId, a.copyWith(ledger: ledger, bills: bills));
   }
+}
 
-  /// Receive a payment: applied to the oldest unpaid bills (or only [onlyBills]); any rest becomes an advance.
-  PaymentReceipt receivePayment({required String customerId, required String customerName, required int amount, required String mode, required DateTime at, String note = '', Set<String>? onlyBills}) {
-    final a = account(customerId);
-    final res = allocatePayment(bills: a.bills, amount: amount, onlyBills: onlyBills);
-    final ledger = [...a.ledger];
-    if (res.appliedPaise > 0) {
-      ledger.add(LedgerEntry.payment(id: _id(), customerId: customerId, paise: res.appliedPaise, at: at, mode: mode, note: note, by: currentUser));
-    }
-    if (res.advancePaise > 0) {
-      ledger.add(LedgerEntry.advance(id: _id(), customerId: customerId, paise: res.advancePaise, at: at, mode: mode, note: note.isEmpty ? 'Paid more than was due' : note, by: currentUser));
-    }
-    final updated = a.copyWith(ledger: ledger, bills: applyAllocations(a.bills, res.allocations));
-    _put(customerId, updated);
-    return PaymentReceipt(number: 'RCP-${(_rcp++).toString().padLeft(4, '0')}', customerId: customerId, customerName: customerName, amountPaise: amount, mode: mode, at: at, note: note, allocations: res.allocations, advancePaise: res.advancePaise, balanceAfter: updated.balance);
-  }
+class CreditNotifier extends PartyLedgerNotifier {
+  @override
+  String get receiptPrefix => 'RCP';
 
-  /// Owner only. Cannot write off more than is owed.
-  void writeOff({required String customerId, required int amount, required String reason, required DateTime at}) {
-    final a = account(customerId);
-    if (amount > maxWriteOff(a.ledger)) throw StateError('cannot write off more than is owed');
-    // the written-off money is taken off the oldest bills too, so bill-wise dues and the ledger stay equal
-    final res = allocatePayment(bills: a.bills, amount: amount);
-    final entry = LedgerEntry.writeOff(id: _id(), customerId: customerId, paise: amount, at: at, reason: reason, by: currentUser);
-    _put(customerId, a.copyWith(ledger: [...a.ledger, entry], bills: applyAllocations(a.bills, res.allocations)));
-  }
+  @override
+  Map<String, CreditAccount> build() => seedCredit(ref.watch(customersProvider), ref.watch(clockProvider));
+
+  int get totalToCollect => state.values.fold<int>(0, (s, a) => a.balance > 0 ? s + a.balance : s);
+  int get totalAdvances => state.values.fold<int>(0, (s, a) => a.balance < 0 ? s - a.balance : s);
 
   /// A bill was cancelled (owner, with a reason): its credit is reversed. Does nothing for bills that never added credit.
   void cancelBill({required String billNo, required String reason, required DateTime at}) {

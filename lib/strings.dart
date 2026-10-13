@@ -675,6 +675,12 @@ class Strings {
   String get lkAdjust => 'Adjustment';
   String get lkWriteOff => 'Written off';
   String get lkBillCancel => 'Bill cancelled';
+  String get lkManualCredit => 'Credit added by hand';
+  String get lkDPurchase => 'Purchase';
+  String get lkDPayment => 'Paid to dealer';
+  String get lkDAdvance => 'Advance paid';
+  String get lkDReturn => 'Purchase return';
+  String get lkReversed => 'Reversed';
   String get sectionReminders => 'Reminders opened in WhatsApp';
   String get remindersTooltip => 'Counts each time Open WhatsApp was pressed. The program cannot see whether the message was really sent.';
   String get noRemindersYet => 'No reminders opened yet';

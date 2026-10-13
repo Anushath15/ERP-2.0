@@ -691,6 +691,12 @@ lkReturn | Return credit note
 lkAdjust | Adjustment
 lkWriteOff | Written off
 lkBillCancel | Bill cancelled
+lkManualCredit | Credit added by hand
+lkDPurchase | Purchase
+lkDPayment | Paid to dealer
+lkDAdvance | Advance paid
+lkDReturn | Purchase return
+lkReversed | Reversed
 sectionReminders | Reminders opened in WhatsApp
 remindersTooltip | Counts each time Open WhatsApp was pressed. The program cannot see whether the message was really sent.
 noRemindersYet | No reminders opened yet

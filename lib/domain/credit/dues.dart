@@ -3,6 +3,8 @@ library;
 
 import 'ledger.dart';
 
+export 'ledger.dart' show Allocation;
+
 class BillDue {
   const BillDue({required this.billNo, required this.date, required this.totalPaise, required this.paidPaise, this.cancelled = false});
   final String billNo;
@@ -15,14 +17,6 @@ class BillDue {
 
   BillDue paid(int more) => BillDue(billNo: billNo, date: date, totalPaise: totalPaise, paidPaise: paidPaise + more, cancelled: cancelled);
   BillDue cancel() => BillDue(billNo: billNo, date: date, totalPaise: totalPaise, paidPaise: paidPaise, cancelled: true);
-}
-
-class Allocation {
-  const Allocation(this.billNo, this.paise);
-  final String billNo;
-  final int paise;
-  @override
-  String toString() => '$billNo:$paise';
 }
 
 class AllocationResult {
@@ -63,6 +57,12 @@ AllocationResult allocatePayment({required List<BillDue> bills, required int amo
 List<BillDue> applyAllocations(List<BillDue> bills, List<Allocation> allocations) {
   final by = {for (final a in allocations) a.billNo: a.paise};
   return [for (final b in bills) by.containsKey(b.billNo) ? b.paid(by[b.billNo]!) : b];
+}
+
+/// The exact inverse of [applyAllocations]: takes the allocated money off the bills again (used when a payment is reversed).
+List<BillDue> restoreAllocations(List<BillDue> bills, List<Allocation> allocations) {
+  final by = {for (final a in allocations) a.billNo: a.paise};
+  return [for (final b in bills) by.containsKey(b.billNo) ? b.paid(-by[b.billNo]!) : b];
 }
 
 class AgeingBuckets {

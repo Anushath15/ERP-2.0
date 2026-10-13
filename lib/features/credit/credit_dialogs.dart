@@ -21,13 +21,14 @@ import '../../fake/models.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 
-String ledgerKindLabel(Strings l, LedgerKind k) => switch (k) {
+String ledgerKindLabel(Strings l, LedgerKind k, {bool dealer = false}) => switch (k) {
       LedgerKind.opening => l.lkOpening,
-      LedgerKind.billCredit => l.lkBillCredit,
-      LedgerKind.payment => l.lkPayment,
-      LedgerKind.advance => l.lkAdvance,
-      LedgerKind.returnCredit => l.lkReturn,
+      LedgerKind.billCredit => dealer ? l.lkDPurchase : l.lkBillCredit,
+      LedgerKind.payment => dealer ? l.lkDPayment : l.lkPayment,
+      LedgerKind.advance => dealer ? l.lkDAdvance : l.lkAdvance,
+      LedgerKind.returnCredit => dealer ? l.lkDReturn : l.lkReturn,
       LedgerKind.adjustment => l.lkAdjust,
+      LedgerKind.manualCredit => l.lkManualCredit,
       LedgerKind.writeOff => l.lkWriteOff,
       LedgerKind.billCancel => l.lkBillCancel,
     };
