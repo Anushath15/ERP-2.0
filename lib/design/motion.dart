@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'motion_level.dart';
 
 /// The motion rules for this device. Animations never delay work: they only play after an action has already happened.
@@ -41,4 +42,27 @@ class MotionScope extends InheritedWidget {
 
 extension MotionContext on BuildContext {
   Motion get motion => MotionScope.of(this);
+}
+
+/// Animation style for dialogs and bottom sheets: a short scale/slide in, or none when motion is Off.
+AnimationStyle dialogStyle(BuildContext context) {
+  final m = context.motion;
+  if (!m.transitions) return AnimationStyle.noAnimation;
+  return const AnimationStyle(duration: Duration(milliseconds: 170), reverseDuration: Duration(milliseconds: 120), curve: Motion.out, reverseCurve: Curves.easeIn);
+}
+
+/// Page transition used by every route: a soft fade with a short slide (120-200 ms), or an instant switch when Off.
+Page<void> motionPage(BuildContext context, LocalKey? key, Widget child) {
+  final m = context.motion;
+  if (!m.transitions) return NoTransitionPage<void>(key: key, child: child);
+  return CustomTransitionPage<void>(
+    key: key,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 180),
+    reverseTransitionDuration: const Duration(milliseconds: 120),
+    transitionsBuilder: (ctx, anim, secondary, c) {
+      final curved = CurvedAnimation(parent: anim, curve: Motion.out, reverseCurve: Curves.easeIn);
+      return FadeTransition(opacity: curved, child: SlideTransition(position: Tween<Offset>(begin: const Offset(0.015, 0), end: Offset.zero).animate(curved), child: c));
+    },
+  );
 }

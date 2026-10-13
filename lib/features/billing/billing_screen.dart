@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
+import '../../core/sound.dart';
+import '../../design/effects.dart';
 import '../../design/form_sheet.dart';
 import '../../design/segments.dart';
 import '../../design/text_zoom.dart';
@@ -86,6 +88,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     }
     ref.read(cartProvider(mode).notifier).clear();
     toast(context, mode == DocMode.invoice ? l.billSaved(doc.number) : l.estimateSaved(doc.number));
+    playSound(ref, SoundKind.save);
+    showSuccessCheck(context);
     if (print) {
       ref.read(printDocProvider.notifier).set(doc);
       context.push('/print');
@@ -117,7 +121,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final number = _number();
     final date = _date();
 
-    final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd));
+    final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd, onScan: () => playSound(ref, SoundKind.scan)));
 
     Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount));
     final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onSave: _save, onSavePrint: () => _save(print: true), onPreview: _preview, onClear: _clear);

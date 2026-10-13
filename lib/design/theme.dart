@@ -12,6 +12,9 @@ ThemeData buildTheme(
 }) {
   final c = AppColors.build(b, accent: accent, highContrast: highContrast);
   final latin = font.family;
+  // A clear, thick ring on keyboard focus (cashiers use the keyboard all day).
+  final ring = WidgetStateProperty.resolveWith<BorderSide?>((states) => states.contains(WidgetState.focused) ? BorderSide(color: c.text, width: 3) : null);
+  final ringOutlined = WidgetStateProperty.resolveWith<BorderSide?>((states) => states.contains(WidgetState.focused) ? BorderSide(color: c.primary, width: 3) : BorderSide(color: c.border));
   final scheme = ColorScheme(
     brightness: b,
     primary: c.primary,
@@ -91,6 +94,8 @@ ThemeData buildTheme(
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       isDense: false,
     ),
+    focusColor: c.primary.withValues(alpha: 0.28),
+    hoverColor: c.primary.withValues(alpha: 0.10),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: c.primary,
@@ -99,7 +104,7 @@ ThemeData buildTheme(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         textStyle: text.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.m)),
-      ),
+      ).copyWith(side: ring),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
@@ -109,7 +114,7 @@ ThemeData buildTheme(
         side: BorderSide(color: c.border),
         textStyle: text.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.m)),
-      ),
+      ).copyWith(side: ringOutlined),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(

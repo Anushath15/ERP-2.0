@@ -91,7 +91,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
                     child: FittedBox(
                       fit: BoxFit.fitWidth,
                       alignment: Alignment.topCenter,
-                      child: SizedBox(width: paperW, child: Paper(doc: doc!, paper: _paper, l: l, shopName: settings.shopName, gstin: settings.gstin)),
+                      child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: SizedBox(width: paperW, child: Paper(doc: doc!, paper: _paper, l: l, shopName: settings.shopName, gstin: settings.gstin))),
                     ),
                   ),
                 ),

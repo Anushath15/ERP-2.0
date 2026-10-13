@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
+import '../../design/effects.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
@@ -68,9 +69,9 @@ class DashboardScreen extends ConsumerWidget {
     }
 
     Widget action(IconData i, String label, String path, {bool primary = false}) => Expanded(
-          child: primary
+          child: PressScale(child: primary
               ? FilledButton.icon(onPressed: () => context.go(path), icon: Icon(i), label: Text(label, textAlign: TextAlign.center), style: FilledButton.styleFrom(minimumSize: const Size(0, 56)))
-              : OutlinedButton.icon(onPressed: () => context.go(path), icon: Icon(i), label: Text(label, textAlign: TextAlign.center), style: OutlinedButton.styleFrom(minimumSize: const Size(0, 56))),
+              : OutlinedButton.icon(onPressed: () => context.go(path), icon: Icon(i), label: Text(label, textAlign: TextAlign.center), style: OutlinedButton.styleFrom(minimumSize: const Size(0, 56)))),
         );
 
     final actions = phone

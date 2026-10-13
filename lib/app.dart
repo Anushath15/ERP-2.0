@@ -2,30 +2,64 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
+import 'design/frame_guard.dart';
+import 'design/motion.dart';
+import 'design/motion_level.dart';
 import 'design/theme.dart';
 import 'design/text_zoom.dart';
 import 'fake/store.dart';
 import 'router.dart';
 
 class ErpApp extends ConsumerStatefulWidget {
-  const ErpApp({super.key, this.initialLocation = '/'});
+  const ErpApp({super.key, this.initialLocation = '/', this.router});
   final String initialLocation;
+
+  /// Lets a test or the performance tool drive navigation itself.
+  final GoRouter? router;
   @override
   ConsumerState<ErpApp> createState() => _ErpAppState();
 }
 
-class _ErpAppState extends ConsumerState<ErpApp> {
-  late final GoRouter _router = buildRouter(initialLocation: widget.initialLocation);
+class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
+  FrameGuard? _guard;
+  final _clock = Stopwatch()..start();
+  late final GoRouter _router = widget.router ?? buildRouter(initialLocation: widget.initialLocation);
 
   @override
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_onKey);
+    WidgetsBinding.instance.addObserver(this);
+    if (!kDebugMode) {
+      // The auto-protect guard only runs in real (profile/release) builds; debug frames are always slow.
+      _guard = FrameGuard(onReduce: _reduceMotion);
+      SchedulerBinding.instance.addTimingsCallback(_onTimings);
+    }
   }
+
+  void _onTimings(List<FrameTiming> timings) {
+    for (final t in timings) {
+      _guard?.onFrame(_clock.elapsedMilliseconds, t.totalSpan.inMicroseconds / 1000.0);
+    }
+  }
+
+  /// Too slow for a few seconds: drop one motion level on this device and tell the owner calmly in Settings.
+  void _reduceMotion() {
+    final s = ref.read(settingsProvider);
+    final lower = FrameGuard.lower(s.motion);
+    if (lower != null) ref.read(settingsProvider.notifier).set((x) => x.copyWith(motion: lower, motionAutoReduced: true));
+  }
+
+  @override
+  void didChangeAccessibilityFeatures() => setState(() {});
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_onKey);
+    WidgetsBinding.instance.removeObserver(this);
+    if (!kDebugMode) SchedulerBinding.instance.removeTimingsCallback(_onTimings);
     super.dispose();
   }
 
@@ -53,7 +87,8 @@ class _ErpAppState extends ConsumerState<ErpApp> {
   @override
   Widget build(BuildContext context) {
     final s = ref.watch(settingsProvider);
-    ThemeData theme(Brightness b) => buildTheme(b, accent: s.accent, highContrast: s.highContrast, font: s.font, density: s.density);
+    final level = Motion.resolve(chosen: s.motion, followSystem: s.followSystemMotion, systemReduces: WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations);
+    ThemeData theme(Brightness b) => buildTheme(b, accent: s.accent, highContrast: s.highContrast, font: s.font, density: s.density, ripple: level != MotionLevel.off);
     return MaterialApp.router(
       title: 'Senthil Enterprises ERP 2.0',
       debugShowCheckedModeBanner: false,
@@ -66,7 +101,7 @@ class _ErpAppState extends ConsumerState<ErpApp> {
         final mq = MediaQuery.of(context);
         return MediaQuery(
           data: mq.copyWith(textScaler: TextScaler.linear(mq.textScaler.scale(1) * s.textScale)),
-          child: child ?? const SizedBox.shrink(),
+          child: MotionScope(motion: Motion(level), child: child ?? const SizedBox.shrink()),
         );
       },
     );

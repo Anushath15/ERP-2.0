@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
+import '../../design/motion.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
@@ -10,11 +12,12 @@ import '../../fake/models.dart';
 /// price in its own column, stock with unit, a separate "Out of stock" badge, an "in bill" badge.
 /// Up/Down move, Enter adds the highlighted row (the first match by default), a scanned barcode + Enter adds that product.
 class ProductPicker extends StatefulWidget {
-  const ProductPicker({super.key, required this.products, required this.inBill, required this.onAdd, required this.onQuickAdd, this.focusNode});
+  const ProductPicker({super.key, required this.products, required this.inBill, required this.onAdd, required this.onQuickAdd, this.onScan, this.focusNode});
   final List<Product> products;
   final Map<String, int> inBill; // productId -> qty milli
   final void Function(Product) onAdd;
   final void Function(String text) onQuickAdd;
+  final VoidCallback? onScan; // called when a scanned barcode adds a product (for the optional beep)
   final FocusNode? focusNode;
 
   @override
@@ -27,6 +30,8 @@ class _ProductPickerState extends State<ProductPicker> {
   final _selKey = GlobalKey();
   String _q = '';
   int _sel = 0;
+  String? _tickId;
+  Timer? _tickTimer;
   List<Product> _rows = const [];
   List<String> _lower = const [];
 
@@ -75,8 +80,14 @@ class _ProductPickerState extends State<ProductPicker> {
         _filter();
       });
 
-  void _add(Product p) {
+  void _add(Product p, {bool scanned = false}) {
     widget.onAdd(p);
+    if (scanned) widget.onScan?.call();
+    if (context.motion.effects) {
+      _tickTimer?.cancel();
+      _tickId = p.id;
+      _tickTimer = Timer(const Duration(milliseconds: 900), () => mounted ? setState(() => _tickId = null) : null);
+    }
     _ctl.clear();
     setState(() {
       _q = '';
@@ -90,7 +101,9 @@ class _ProductPickerState extends State<ProductPicker> {
       if (_q.trim().isNotEmpty) widget.onQuickAdd(_q.trim());
       return;
     }
-    _add(_rows[_sel.clamp(0, _rows.length - 1)]);
+    final row = _rows[_sel.clamp(0, _rows.length - 1)];
+    final scanned = RegExp(r'^[0-9]{8,}$').hasMatch(_q.trim()) && row.barcode == _q.trim();
+    _add(row, scanned: scanned);
   }
 
   void _move(int d) {
@@ -104,6 +117,7 @@ class _ProductPickerState extends State<ProductPicker> {
 
   @override
   void dispose() {
+    _tickTimer?.cancel();
     _ctl.dispose();
     if (widget.focusNode == null) _focus.dispose();
     super.dispose();
@@ -158,7 +172,7 @@ class _ProductPickerState extends State<ProductPicker> {
           decoration: BoxDecoration(border: Border.all(color: c.border.withValues(alpha: 0.6)), borderRadius: phone ? BorderRadius.circular(Radii.m) : const BorderRadius.vertical(bottom: Radius.circular(Radii.m))),
           child: _rows.isEmpty
               ? _NoProduct(text: _q.trim(), onAdd: () => widget.onQuickAdd(_q.trim()))
-              : ListView.separated(
+              : RepaintBoundary(child: ListView.separated(
                   itemCount: _rows.length,
                   separatorBuilder: (_, _) => Divider(height: 1, color: c.border.withValues(alpha: 0.5)),
                   itemBuilder: (ctx, i) => _ProductRow(
@@ -168,8 +182,9 @@ class _ProductPickerState extends State<ProductPicker> {
                     inBill: widget.inBill[_rows[i].id] ?? 0,
                     onTap: () => _add(_rows[i]),
                     phone: phone,
+                    ticked: _rows[i].id == _tickId,
                   ),
-                ),
+                )),
         ),
       ),
     ]);
@@ -198,7 +213,8 @@ class _NoProduct extends StatelessWidget {
 }
 
 class _ProductRow extends StatelessWidget {
-  const _ProductRow({super.key, required this.product, required this.selected, required this.inBill, required this.onTap, required this.phone});
+  const _ProductRow({super.key, required this.product, required this.selected, required this.inBill, required this.onTap, required this.phone, required this.ticked});
+  final bool ticked;
   final Product product;
   final bool selected, phone;
   final int inBill;
@@ -210,7 +226,12 @@ class _ProductRow extends StatelessWidget {
     final c = context.c;
     final th = Theme.of(context).textTheme;
     final p = product;
-    final name = Text(p.name, style: th.titleMedium?.copyWith(fontWeight: FontWeight.w700)); // wraps, never an ellipsis
+    final name = Text.rich(
+      TextSpan(children: [
+        TextSpan(text: p.name, style: th.titleMedium?.copyWith(fontWeight: FontWeight.w700)), // wraps, never an ellipsis
+        WidgetSpan(alignment: PlaceholderAlignment.middle, child: AnimatedOpacity(opacity: ticked ? 1 : 0, duration: context.motion.fx(150), child: Padding(padding: const EdgeInsets.only(left: 8), child: Icon(Icons.check_circle, size: 20, color: c.success)))),
+      ]),
+    );
     final badges = Wrap(spacing: 6, runSpacing: 4, children: [
       if (inBill > 0) StatusBadge(l.inBillQty(formatQty(inBill)), kind: BadgeKind.info, icon: Icons.shopping_cart_outlined),
     ]);
@@ -226,8 +247,8 @@ class _ProductRow extends StatelessWidget {
         onTap: onTap,
         child: Container(
           color: selected ? c.rowSelected : null,
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: phone ? 10 : 9),
-          constraints: const BoxConstraints(minHeight: Sizes.rowHeight + 4),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: (phone ? 10 : 9) * context.metrics.factor),
+          constraints: BoxConstraints(minHeight: context.metrics.rowHeight + 4),
           child: phone
               ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [name, const SizedBox(height: 4), Text('₹ ${formatPaise(p.pricePaise)}', style: th.titleSmall?.copyWith(color: c.primary)), badges])),

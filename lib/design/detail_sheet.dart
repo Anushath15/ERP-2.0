@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import '../core/responsive.dart';
+import 'motion.dart';
 import 'widgets.dart';
 
 /// Read-only detail view with optional actions (dialog on wide screens, bottom sheet on phones).
 Future<T?> showDetail<T>(BuildContext context, {required String title, String? subtitle, required List<Widget> body, List<Widget> actions = const []}) {
   final content = _Detail(title: title, subtitle: subtitle, body: body, actions: actions);
   if (context.isPhone) {
-    return showModalBottomSheet<T>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => content);
+    return showModalBottomSheet<T>(
+      context: context,
+      sheetAnimationStyle: dialogStyle(context), isScrollControlled: true, useSafeArea: true, builder: (_) => content);
   }
-  return showDialog<T>(context: context, builder: (_) => Dialog(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 620, maxHeight: 720), child: content)));
+  return showDialog<T>(
+    context: context,
+    animationStyle: dialogStyle(context), builder: (_) => Dialog(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 620, maxHeight: 720), child: content)));
 }
 
 class _Detail extends StatelessWidget {

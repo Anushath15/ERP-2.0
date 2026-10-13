@@ -600,3 +600,4 @@ soundError | Tone when something is wrong
 soundErrorHelp | A different tone for a mistake
 soundVolume | Volume
 soundNote | In this preview sounds use the computer beep, so the volume control only starts working when real sound is added.
+toggleMenu | Show or hide the menu

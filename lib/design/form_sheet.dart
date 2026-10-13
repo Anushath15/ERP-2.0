@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/date_fmt.dart';
+import '../core/sound.dart';
+import 'effects.dart';
 import '../core/responsive.dart';
+import 'motion.dart';
 import 'widgets.dart';
 
 enum FieldType { text, number, money, multiline, dropdown, date, phone, email }
@@ -30,6 +33,7 @@ Future<Map<String, String>?> showFormSheet(
   if (context.isPhone) {
     return showModalBottomSheet<Map<String, String>>(
       context: context,
+      sheetAnimationStyle: dialogStyle(context),
       isScrollControlled: true,
       useSafeArea: true,
       builder: (ctx) => Padding(padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom), child: body),
@@ -37,6 +41,7 @@ Future<Map<String, String>?> showFormSheet(
   }
   return showDialog<Map<String, String>>(
     context: context,
+    animationStyle: dialogStyle(context),
     builder: (ctx) => Dialog(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560, maxHeight: 720), child: body)),
   );
 }
@@ -52,6 +57,7 @@ class _FormBody extends StatefulWidget {
 
 class _FormBodyState extends State<_FormBody> {
   final _formKey = GlobalKey<FormState>();
+  final _shake = GlobalKey<ShakeState>();
   late final Map<String, TextEditingController> _ctl = {for (final f in widget.fields) f.key: TextEditingController(text: f.initial)};
   late final Map<String, String> _drop = {for (final f in widget.fields.where((f) => f.type == FieldType.dropdown)) f.key: f.initial.isNotEmpty ? f.initial : (f.options.isNotEmpty ? f.options.first.$1 : '')};
 
@@ -64,7 +70,11 @@ class _FormBodyState extends State<_FormBody> {
   }
 
   void _save() {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _shake.currentState?.shake();
+      playSoundIn(context, SoundKind.error);
+      return;
+    }
     Navigator.pop(context, {for (final f in widget.fields) f.key: f.type == FieldType.dropdown ? (_drop[f.key] ?? '') : _ctl[f.key]!.text.trim()});
   }
 
@@ -116,7 +126,9 @@ class _FormBodyState extends State<_FormBody> {
     final l = tr(context);
     return CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.keyS, control: true): _save},
-      child: Form(
+      child: Shake(
+        key: _shake,
+        child: Form(
         key: _formKey,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Padding(
@@ -144,6 +156,7 @@ class _FormBodyState extends State<_FormBody> {
             ]),
           ),
         ]),
+      ),
       ),
     );
   }

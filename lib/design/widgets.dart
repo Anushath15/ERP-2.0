@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/responsive.dart';
 import '../strings.dart';
+import 'effects.dart';
+import 'motion.dart';
 import 'tokens.dart';
 
 Strings tr(BuildContext context) => const Strings();
@@ -42,7 +44,10 @@ class EmptyState extends StatelessWidget {
   final Widget? action;
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
+        child: FadeSlideIn(
+          dy: 10,
+          ms: 250,
+          child: Padding(
           padding: const EdgeInsets.all(32),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -54,7 +59,7 @@ class EmptyState extends StatelessWidget {
               if (action != null) ...[const SizedBox(height: 16), action!],
             ]),
           ),
-        ),
+        )),
       );
 }
 
@@ -88,7 +93,7 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final th = Theme.of(context).textTheme;
-    return Card(
+    return HoverLift(child: Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(children: [
@@ -108,7 +113,7 @@ class StatCard extends StatelessWidget {
           ),
         ]),
       ),
-    );
+    ));
   }
 }
 
@@ -174,6 +179,7 @@ Future<bool> confirmDialog(BuildContext context, {required String title, require
   final l = tr(context);
   final r = await showDialog<bool>(
     context: context,
+    animationStyle: dialogStyle(context),
     builder: (ctx) => AlertDialog(
       title: Text(title),
       content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: Text(message)),

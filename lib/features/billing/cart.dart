@@ -5,7 +5,7 @@ import '../../fake/models.dart';
 enum DocMode { invoice, estimation }
 
 class CartState {
-  const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise});
+  const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise, this.touchedId, this.touchedNew = false, this.touchSeq = 0, this.touchedAtMs = 0});
   final List<CartLine> lines;
   final Customer? customer;
   final PayMode pay;
@@ -13,7 +13,12 @@ class CartState {
   final DateTime? editingDate, editedOn;
   final int? paidPaise;
 
-  CartState copyWith({List<CartLine>? lines, Customer? customer, bool clearCustomer = false, PayMode? pay, String? editingNumber, DateTime? editingDate, DateTime? editedOn}) => CartState(
+  /// The line that was just added or changed, used ONLY for the small on-screen animations (slide-in, pulse).
+  final String? touchedId;
+  final bool touchedNew;
+  final int touchSeq, touchedAtMs;
+
+  CartState copyWith({List<CartLine>? lines, Customer? customer, bool clearCustomer = false, PayMode? pay, String? editingNumber, DateTime? editingDate, DateTime? editedOn, ({String id, bool isNew})? touch}) => CartState(
         lines: lines ?? this.lines,
         customer: clearCustomer ? null : (customer ?? this.customer),
         pay: pay ?? this.pay,
@@ -21,6 +26,10 @@ class CartState {
         editingDate: editingDate ?? this.editingDate,
         editedOn: editedOn ?? this.editedOn,
         paidPaise: paidPaise,
+        touchedId: touch?.id ?? touchedId,
+        touchedNew: touch != null ? touch.isNew : touchedNew,
+        touchSeq: touch != null ? touchSeq + 1 : touchSeq,
+        touchedAtMs: touch != null ? DateTime.now().millisecondsSinceEpoch : touchedAtMs,
       );
 
   int qtyOf(String productId) {
@@ -43,13 +52,13 @@ class CartNotifier extends Notifier<CartState> {
     if (i >= 0) {
       setQty(i, state.lines[i].qtyMilli + qtyMilli);
     } else {
-      state = state.copyWith(lines: [...state.lines, CartLine(product: p, qtyMilli: qtyMilli)]);
+      state = state.copyWith(lines: [...state.lines, CartLine(product: p, qtyMilli: qtyMilli)], touch: (id: p.id, isNew: true));
     }
   }
 
   void setQty(int index, int qtyMilli) {
     if (qtyMilli <= 0) return remove(index);
-    state = state.copyWith(lines: [for (var i = 0; i < state.lines.length; i++) i == index ? state.lines[i].copyWith(qtyMilli: qtyMilli) : state.lines[i]]);
+    state = state.copyWith(lines: [for (var i = 0; i < state.lines.length; i++) i == index ? state.lines[i].copyWith(qtyMilli: qtyMilli) : state.lines[i]], touch: (id: state.lines[index].product.id, isNew: false));
   }
 
   void setRate(int index, int ratePaise) => state = state.copyWith(lines: [for (var i = 0; i < state.lines.length; i++) i == index ? state.lines[i].copyWith(ratePaise: ratePaise) : state.lines[i]]);

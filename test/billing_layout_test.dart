@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
@@ -56,6 +57,32 @@ void main() {
           expect(find.byType(Scrollbar), findsWidgets);
         });
       }
+    }
+  }
+
+  // The pinned footer must not move even while the Full-motion effects (slide-in, count-up, pulses) are playing.
+  for (final size in [desktop1366, phone390]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('Full animations: footer stays put while 100 lines are added, ${size.name}, text ${(scale * 100).round()}%', (tester) async {
+        final c = await pumpApp(tester, size: size, location: '/bill', textScale: scale, motion: MotionLevel.full, followSystemMotion: false);
+        final products = c.read(productsProvider);
+        await tester.pump(const Duration(seconds: 1));
+        final isPhone = size.w / scale < 700;
+        if (isPhone) {
+          await tester.tap(find.textContaining('Bill ('));
+          await tester.pump(const Duration(milliseconds: 400));
+        }
+        final first = tester.getRect(find.text('Save bill'));
+        final total0 = tester.getRect(find.byKey(const ValueKey('grandTotal'))).center.dy;
+        for (var i = 0; i < 100; i++) {
+          c.read(cartProvider(DocMode.invoice).notifier).add(products[i * 3]);
+          await tester.pump(const Duration(milliseconds: 16)); // frames while the effects play
+          expect(tester.takeException(), isNull, reason: 'line ${i + 1}');
+          expect(tester.getRect(find.text('Save bill')).top, closeTo(first.top, 0.5), reason: 'Save moved while adding line ${i + 1}');
+          expect(tester.getRect(find.byKey(const ValueKey('grandTotal'))).center.dy, closeTo(total0, 0.5));
+        }
+        await tester.pump(const Duration(seconds: 1));
+      });
     }
   }
 

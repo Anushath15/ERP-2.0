@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
+import '../../design/effects.dart';
 import '../../design/form_sheet.dart';
 import '../../design/segments.dart';
 import '../../design/tokens.dart';
@@ -122,11 +123,14 @@ class _BillLinesState extends State<BillLines> {
       Expanded(
         child: Scrollbar(
           controller: _scroll,
-          child: ListView.separated(
+          child: RepaintBoundary(child: ListView.separated(
             controller: _scroll,
             itemCount: lines.length,
             separatorBuilder: (_, _) => Divider(height: 1, color: c.border.withValues(alpha: 0.5)),
             itemBuilder: (ctx, i) => _LineRow(
+              key: ValueKey(lines[i].product.id),
+              fresh: widget.cart.touchedNew && widget.cart.touchedId == lines[i].product.id && DateTime.now().millisecondsSinceEpoch - widget.cart.touchedAtMs < 600,
+              touchSeq: widget.cart.touchedId == lines[i].product.id ? widget.cart.touchSeq : 0,
               index: i,
               line: lines[i],
               calc: widget.calc.lines[i],
@@ -136,15 +140,15 @@ class _BillLinesState extends State<BillLines> {
               onRate: (r) => widget.onRate(i, r),
               onDiscount: (d) => widget.onDiscount(i, d),
             ),
-          ),
+          )),
         ),
       ),
     ]);
   }
 }
 
-class _LineRow extends StatelessWidget {
-  const _LineRow({required this.index, required this.line, required this.calc, required this.phone, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount});
+class _LineBody extends StatelessWidget {
+  const _LineBody({required this.index, required this.line, required this.calc, required this.phone, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount});
   final int index;
   final CartLine line;
   final LineCalc calc;
@@ -221,6 +225,31 @@ class _LineRow extends StatelessWidget {
   }
 }
 
+/// One bill line. A line that was JUST added slides in and flashes briefly (Full only); nothing here delays the add itself.
+class _LineRow extends StatelessWidget {
+  const _LineRow({super.key, required this.fresh, required this.touchSeq, required this.index, required this.line, required this.calc, required this.phone, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount});
+  final bool fresh;
+  final int touchSeq;
+  final int index;
+  final CartLine line;
+  final LineCalc calc;
+  final bool phone;
+  final void Function(int) onQty;
+  final VoidCallback onRemove;
+  final void Function(int) onRate;
+  final void Function(int) onDiscount;
+
+  @override
+  Widget build(BuildContext context) => FadeSlideIn(
+        enabled: fresh,
+        flash: true,
+        dx: 18,
+        dy: 0,
+        ms: 220,
+        child: _LineBody(index: index, line: line, calc: calc, phone: phone, onQty: onQty, onRemove: onRemove, onRate: onRate, onDiscount: onDiscount),
+      );
+}
+
 class _QtyStepper extends StatelessWidget {
   const _QtyStepper({required this.qtyMilli, required this.unit, required this.onChanged});
   final int qtyMilli;
@@ -247,7 +276,7 @@ class _QtyStepper extends StatelessWidget {
           constraints: const BoxConstraints(minWidth: 48),
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
           alignment: Alignment.center,
-          child: Text(formatQty(qtyMilli), style: Theme.of(context).textTheme.titleMedium),
+          child: PulseOnChange(token: qtyMilli, child: Text(formatQty(qtyMilli), style: Theme.of(context).textTheme.titleMedium)),
         ),
       ),
       btn(Icons.add, l.moreQty, () => onChanged(qtyMilli + 1000)),
@@ -297,7 +326,7 @@ class BillFooter extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
-            child: Text('₹ ${formatPaise(calc.grandTotal)}', key: const ValueKey('grandTotal'), maxLines: 1, style: th.displaySmall?.copyWith(color: c.primary, fontWeight: FontWeight.w800)),
+            child: AnimatedMoney(paise: calc.grandTotal, textKey: const ValueKey('grandTotal'), style: th.displaySmall?.copyWith(color: c.primary, fontWeight: FontWeight.w800)),
           ),
         ),
       ),
@@ -323,9 +352,9 @@ class BillFooter extends StatelessWidget {
       final stacked = big && bc.maxWidth < 640;
       Widget lbl(String t) => FittedBox(fit: BoxFit.scaleDown, child: Text(t, textAlign: TextAlign.center, maxLines: 1));
       Widget? ic(IconData i) => narrow ? null : Icon(i);
-      final save = Tooltip(message: 'Ctrl+S', child: FilledButton.icon(onPressed: empty ? null : onSave, icon: ic(Icons.save_outlined), label: lbl(saveLabel)));
-      final savePrint = Tooltip(message: 'F9', child: FilledButton.tonalIcon(onPressed: empty ? null : onSavePrint, icon: ic(Icons.print_outlined), label: lbl(l.saveAndPrint)));
-      final preview = Tooltip(message: 'F8', child: OutlinedButton.icon(onPressed: empty ? null : onPreview, icon: ic(Icons.visibility_outlined), label: lbl(l.preview)));
+      final save = Tooltip(message: 'Ctrl+S', child: PressScale(child: FilledButton.icon(onPressed: empty ? null : onSave, icon: ic(Icons.save_outlined), label: lbl(saveLabel))));
+      final savePrint = Tooltip(message: 'F9', child: PressScale(child: FilledButton.tonalIcon(onPressed: empty ? null : onSavePrint, icon: ic(Icons.print_outlined), label: lbl(l.saveAndPrint))));
+      final preview = Tooltip(message: 'F8', child: PressScale(child: OutlinedButton.icon(onPressed: empty ? null : onPreview, icon: ic(Icons.visibility_outlined), label: lbl(l.preview))));
       if (stacked) {
         return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           save,

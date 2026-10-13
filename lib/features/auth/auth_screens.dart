@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/sound.dart';
+import '../../design/effects.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/store.dart';
@@ -49,6 +51,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _show = false;
   bool _create = false;
   String? _error;
+  final _shake = GlobalKey<ShakeState>();
 
   @override
   void dispose() {
@@ -59,14 +62,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   void _go() {
     final l = tr(context);
-    if (!_email.text.contains('@')) {
-      setState(() => _error = l.errEmail);
-      return;
+    void fail(String msg) {
+      setState(() => _error = msg); // the message is shown right beside the fields
+      _shake.currentState?.shake();
+      playSoundIn(context, SoundKind.error);
     }
-    if (_pass.text.length < 6) {
-      setState(() => _error = l.errPassword);
-      return;
-    }
+
+    if (!_email.text.contains('@')) return fail(l.errEmail);
+    if (_pass.text.length < 6) return fail(l.errPassword);
     setState(() => _error = null);
     context.go(_create ? '/wizard' : '/');
   }
@@ -76,7 +79,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final l = tr(context);
     final th = Theme.of(context).textTheme;
     return _AuthFrame(
-      child: Card(
+      child: Shake(
+        key: _shake,
+        child: Card(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -113,7 +118,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             Text(l.staySignedNote, style: th.bodySmall, textAlign: TextAlign.center),
           ]),
         ),
-      ),
+      )),
     );
   }
 }

@@ -587,4 +587,5 @@ class Strings {
   String get soundErrorHelp => 'A different tone for a mistake';
   String get soundVolume => 'Volume';
   String get soundNote => 'In this preview sounds use the computer beep, so the volume control only starts working when real sound is added.';
+  String get toggleMenu => 'Show or hide the menu';
 }

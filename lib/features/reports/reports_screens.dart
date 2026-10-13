@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
+import '../../design/effects.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
@@ -226,6 +227,14 @@ class ImportScreen extends ConsumerStatefulWidget {
 
 class _ImportScreenState extends ConsumerState<ImportScreen> {
   int _step = 0; // 0 choose file, 1 dry-run report, 2 done
+  bool _checking = false;
+
+  /// Demo of a slow step: the report takes about a second to build, so a placeholder shows (after 150 ms) instead of a frozen screen.
+  Future<void> _check() async {
+    setState(() => _checking = true);
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (mounted) setState(() { _checking = false; _step = 1; });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -237,7 +246,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       stepBody = SectionCard(title: l.importStep1, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(l.importHelp, style: th.bodyMedium),
         const SizedBox(height: 14),
-        FilledButton.icon(onPressed: () => setState(() => _step = 1), icon: const Icon(Icons.folder_open), label: Text(l.chooseBackupFile)),
+        FilledButton.icon(onPressed: _checking ? null : _check, icon: const Icon(Icons.folder_open), label: Text(l.chooseBackupFile)),
         const SizedBox(height: 8),
         Text(l.importSafe, style: th.bodySmall),
       ]));
@@ -277,6 +286,19 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         OutlinedButton(onPressed: () => setState(() => _step = 0), child: Text(l.importAgain)),
       ]));
     }
-    return PageFrame(title: l.navImport, subtitle: l.importSubtitle, child: SingleChildScrollView(padding: const EdgeInsets.only(bottom: 24), child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 760), child: stepBody)));
+    return PageFrame(
+      title: l.navImport,
+      subtitle: l.importSubtitle,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            stepBody,
+            if (_checking) const SizedBox(height: 200, child: DelayedLoader(loading: true, skeleton: SkeletonBlocks(rows: 3), child: SizedBox.shrink())),
+          ]),
+        ),
+      ),
+    );
   }
 }

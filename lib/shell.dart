@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/date_fmt.dart';
 import 'core/responsive.dart';
+import 'design/effects.dart';
+import 'design/motion.dart';
 import 'design/text_zoom.dart';
 import 'design/tokens.dart';
 import 'design/widgets.dart';
@@ -58,7 +60,7 @@ class AppShell extends ConsumerWidget {
       );
     }
 
-    final wide = size == ScreenSize.desktop;
+    final wide = ref.watch(navExpandedProvider) ?? size == ScreenSize.desktop;
     return CallbackShortcuts(
       bindings: shortcuts,
       child: Scaffold(
@@ -78,6 +80,15 @@ class AppShell extends ConsumerWidget {
   }
 }
 
+/// The owner can fold the left menu away (null = decide by window size).
+class NavExpanded extends Notifier<bool?> {
+  @override
+  bool? build() => null;
+  void toggle(bool current) => state = !current;
+}
+
+final navExpandedProvider = NotifierProvider<NavExpanded, bool?>(NavExpanded.new);
+
 class SideNav extends StatelessWidget {
   const SideNav({super.key, required this.location, required this.wide});
   final String location;
@@ -88,10 +99,16 @@ class SideNav extends StatelessWidget {
     final l = tr(context);
     final c = context.c;
     final th = Theme.of(context).textTheme;
-    return Container(
+    return AnimatedContainer(
+      duration: context.motion.t(200),
+      curve: Motion.out,
       width: wide ? Sizes.navRailWidth : Sizes.navRailCollapsed,
       color: c.surface,
-      child: Column(children: [
+      clipBehavior: Clip.hardEdge,
+      child: LayoutBuilder(builder: (ctx, bc) {
+        // labels appear only once there is room for them, so a half-open menu never overflows
+        final wide = bc.maxWidth > 150;
+        return Column(children: [
         SizedBox(
           height: 56,
           child: Row(mainAxisAlignment: wide ? MainAxisAlignment.start : MainAxisAlignment.center, children: [
@@ -117,7 +134,8 @@ class SideNav extends StatelessWidget {
             ],
           ]),
         ),
-      ]),
+      ]);
+      }),
     );
   }
 }
@@ -132,7 +150,7 @@ class _NavTile extends StatelessWidget {
     final l = tr(context);
     final label = item.label(l);
     final content = Container(
-      height: 42,
+      height: context.metrics.navTile,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(color: selected ? c.rowSelected : null, borderRadius: BorderRadius.circular(8)),
       child: Row(mainAxisAlignment: wide ? MainAxisAlignment.start : MainAxisAlignment.center, children: [
@@ -170,6 +188,11 @@ class TopBar extends ConsumerWidget {
       color: context.c.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(children: [
+        IconButton(
+          tooltip: l.toggleMenu,
+          onPressed: () => ref.read(navExpandedProvider.notifier).toggle(ref.read(navExpandedProvider) ?? context.isDesktop),
+          icon: const Icon(Icons.menu),
+        ),
         Expanded(child: Text(s.shopName, style: th.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
         const Flexible(child: SyncChip()),
         const SizedBox(width: 8),
@@ -222,8 +245,8 @@ class SyncChip extends ConsumerWidget {
           borderRadius: BorderRadius.circular(8),
           onTap: () => context.go('/settings'),
           child: compact
-              ? Padding(padding: const EdgeInsets.all(6), child: Icon(icon, color: switch (kind) { BadgeKind.success => context.c.success, BadgeKind.warning => context.c.warning, BadgeKind.danger => context.c.danger, _ => context.c.info }))
-              : Padding(padding: const EdgeInsets.all(4), child: StatusBadge(label, kind: kind, icon: icon)),
+              ? Padding(padding: const EdgeInsets.all(6), child: Pulse(active: st == SyncState.syncing, child: Icon(icon, color: switch (kind) { BadgeKind.success => context.c.success, BadgeKind.warning => context.c.warning, BadgeKind.danger => context.c.danger, _ => context.c.info })))
+              : Padding(padding: const EdgeInsets.all(4), child: Pulse(active: st == SyncState.syncing, child: StatusBadge(label, kind: kind, icon: icon))),
         ),
       ),
     );

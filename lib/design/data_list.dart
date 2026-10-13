@@ -203,7 +203,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
           ),
           const Divider(),
           Expanded(
-            child: ListView.separated(
+            child: RepaintBoundary(child: ListView.separated(
               itemCount: rows.length,
               separatorBuilder: (_, _) => const Divider(),
               itemBuilder: (ctx, i) {
@@ -212,9 +212,9 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
                   onTap: widget.onTap == null ? null : () => widget.onTap!(ctx, e),
                   hoverColor: c.rowSelected,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: Sizes.rowHeight),
+                    constraints: BoxConstraints(minHeight: context.metrics.rowHeight),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: context.metrics.padH, vertical: context.metrics.padV - 1),
                       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
                         for (final col in widget.columns) _cellBox(col.flex, col.width, col.numeric, col.cell(ctx, e)),
                       ]),
@@ -222,7 +222,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
                   ),
                 );
               },
-            ),
+            )),
           ),
         ]),
       );
@@ -233,7 +233,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
       subtitle: widget.subtitle,
       actions: [...widget.actions, ?addBtn],
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        toolbar,
+        ConstrainedBox(constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.5), child: SingleChildScrollView(child: toolbar)),
         Expanded(child: list),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),

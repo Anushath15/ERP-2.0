@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
+import '../../design/motion.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
@@ -10,9 +11,13 @@ import 'billing_screen.dart' show showQuickCustomer;
 Future<Customer?> showCustomerPickerImpl(BuildContext context) {
   const body = _CustomerPicker();
   if (context.isPhone) {
-    return showModalBottomSheet<Customer>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => body);
+    return showModalBottomSheet<Customer>(
+      context: context,
+      sheetAnimationStyle: dialogStyle(context), isScrollControlled: true, useSafeArea: true, builder: (_) => body);
   }
-  return showDialog<Customer>(context: context, builder: (_) => Dialog(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560, maxHeight: 680), child: body)));
+  return showDialog<Customer>(
+    context: context,
+    animationStyle: dialogStyle(context), builder: (_) => Dialog(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 560, maxHeight: 680), child: body)));
 }
 
 class _CustomerPicker extends ConsumerStatefulWidget {
