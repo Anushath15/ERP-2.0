@@ -134,4 +134,33 @@ void main() {
     n.receivePayment(customerId: id, customerName: 'Z', amount: 100, mode: 'cash', at: fixedNow);
     expect(c.read(reminderLogProvider).countFor(id), remindersBefore, reason: 'the reminder history survives a credit change');
   });
+
+  test('adjustments by hand: plus makes a new due line, minus is taken off the oldest bills; both can be reversed', () {
+    final c = fresh();
+    final n = setup(c);
+    n.addAdjustment(partyId: id, signedPaise: 5000, at: fixedNow, reason: 'Freight charged');
+    expect(n.balanceOf(id), 35000);
+    n.addAdjustment(partyId: id, signedPaise: -8000, at: fixedNow, reason: 'Discount given');
+    var a = c.read(creditProvider)[id]!;
+    expect(a.balance, 27000);
+    expect(a.bills.firstWhere((b) => b.billNo == 'B-1').outstanding, 12000, reason: 'the discount came off the oldest bill');
+    expect(a.balance, a.bills.fold<int>(0, (s, b) => s + b.outstanding));
+    for (final e in a.ledger.where((e) => e.kind == LedgerKind.adjustment).toList()) {
+      n.reverseEntry(partyId: id, entryId: e.id, reason: 'Entered by mistake', at: fixedNow);
+    }
+    a = c.read(creditProvider)[id]!;
+    expect(a.balance, 30000);
+    expect(a.balance, a.bills.fold<int>(0, (s, b) => s + b.outstanding));
+  });
+
+  test('dealers use the same rules: a payment to a dealer settles the oldest purchase first', () {
+    final c = fresh();
+    final d = c.read(dealerLedgerProvider.notifier);
+    d.addBill(customerId: 'dd1', billNo: 'PUR-1', at: daysAgo(40), total: 500000, received: 0);
+    d.addBill(customerId: 'dd1', billNo: 'PUR-2', at: daysAgo(5), total: 200000, received: 0);
+    final r = d.receivePayment(customerId: 'dd1', customerName: 'D', amount: 600000, mode: 'upi', at: fixedNow, note: 'UTR 123');
+    expect(r.number, startsWith('PAY-'));
+    expect(r.allocations.map((a) => '${a.billNo}:${a.paise}').toList(), ['PUR-1:500000', 'PUR-2:100000']);
+    expect(d.balanceOf('dd1'), 100000);
+  });
 }

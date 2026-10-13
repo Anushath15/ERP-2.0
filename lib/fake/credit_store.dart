@@ -13,6 +13,9 @@ import 'store.dart';
 
 const currentUser = 'Owner';
 
+/// Whose account: a customer (they owe us) or a dealer (we owe them). Both use the same ledger rules.
+enum PartyKind { customer, dealer }
+
 class CreditAccount {
   const CreditAccount({this.ledger = const [], this.bills = const []});
   final List<LedgerEntry> ledger;
@@ -143,6 +146,21 @@ abstract class PartyLedgerNotifier extends Notifier<Map<String, CreditAccount>> 
     return no;
   }
 
+  /// A correction by hand, either way. Plus = they owe more (it becomes a bill-like line); minus = they owe less (taken off the
+  /// oldest bills). A reason is required.
+  void addAdjustment({required String partyId, required int signedPaise, required DateTime at, required String reason}) {
+    final a = account(partyId);
+    if (signedPaise > 0) {
+      final no = 'ADJ-${(_manual++).toString().padLeft(3, '0')}';
+      final e = LedgerEntry.adjustment(id: _id(), customerId: partyId, signedPaise: signedPaise, at: at, reason: reason, by: currentUser, billNo: no);
+      _put(partyId, a.copyWith(ledger: [...a.ledger, e], bills: [...a.bills, BillDue(billNo: no, date: at, totalPaise: signedPaise, paidPaise: 0)]));
+    } else {
+      final res = allocatePayment(bills: a.bills, amount: -signedPaise);
+      final e = LedgerEntry.adjustment(id: _id(), customerId: partyId, signedPaise: signedPaise, at: at, reason: reason, by: currentUser, allocations: res.allocations);
+      _put(partyId, a.copyWith(ledger: [...a.ledger, e], bills: applyAllocations(a.bills, res.allocations)));
+    }
+  }
+
   /// A starting balance for someone who already owed (or paid ahead) before this program. Positive = owes.
   void addOpening({required String customerId, required int amount, required DateTime at}) {
     if (amount == 0) return;
@@ -165,6 +183,8 @@ abstract class PartyLedgerNotifier extends Notifier<Map<String, CreditAccount>> 
         bills = restoreAllocations(bills, orig.allocations);
       case LedgerKind.manualCredit || LedgerKind.opening:
         bills = [for (final b in bills) b.billNo == (orig.billNo ?? 'OPEN-$partyId') ? b.cancel() : b];
+      case LedgerKind.adjustment:
+        bills = orig.amountPaise > 0 ? [for (final b in bills) b.billNo == orig.billNo ? b.cancel() : b] : restoreAllocations(bills, orig.allocations);
       default:
     }
     _put(partyId, a.copyWith(ledger: [...a.ledger, rev], bills: bills));
@@ -222,6 +242,26 @@ class CreditNotifier extends PartyLedgerNotifier {
 
 final creditProvider = NotifierProvider<CreditNotifier, Map<String, CreditAccount>>(CreditNotifier.new);
 
+/// What we owe each dealer: purchases on credit, payments to the dealer, returns and adjustments (same rules as customers).
+class DealerLedgerNotifier extends PartyLedgerNotifier {
+  @override
+  String get receiptPrefix => 'PAY';
+
+  @override
+  Map<String, CreditAccount> build() {
+    final dealers = ref.read(recsProvider('dealers'));
+    return seedCredit([for (final d in dealers) Customer(id: d.id, name: d.s('name'), phone: d.s('phone'), city: d.s('city'), balancePaise: d.i('balance'))], ref.read(clockProvider), billPrefix: 'PUR-0', billBase: 15000, seed: 2031);
+  }
+
+  int get totalWeOwe => state.values.fold<int>(0, (s, a) => a.balance > 0 ? s + a.balance : s);
+}
+
+final dealerLedgerProvider = NotifierProvider<DealerLedgerNotifier, Map<String, CreditAccount>>(DealerLedgerNotifier.new);
+
+/// The account book for a kind of party (for screens that serve both customers and dealers).
+Map<String, CreditAccount> watchBook(WidgetRef ref, PartyKind k) => k == PartyKind.customer ? ref.watch(creditProvider) : ref.watch(dealerLedgerProvider);
+PartyLedgerNotifier bookOf(WidgetRef ref, PartyKind k) => k == PartyKind.customer ? ref.read(creditProvider.notifier) : ref.read(dealerLedgerProvider.notifier);
+
 class ReminderLogNotifier extends Notifier<ReminderLog> {
   @override
   ReminderLog build() => seedReminders(ref.read(creditProvider), ref.watch(clockProvider));
@@ -242,8 +282,8 @@ final reminderLogProvider = NotifierProvider<ReminderLogNotifier, ReminderLog>(R
 
 /// Realistic credit data for the customers who have a balance: bills part-paid at the counter, later part payments,
 /// old overdue bills, an opening balance for a few, and advances for some. Deterministic.
-Map<String, CreditAccount> seedCredit(List<Customer> customers, DateTime now) {
-  final r = Random(2027);
+Map<String, CreditAccount> seedCredit(List<Customer> customers, DateTime now, {String billPrefix = 'A-0', int billBase = 19000, int seed = 2027}) {
+  final r = Random(seed);
   final out = <String, CreditAccount>{};
   var seq = 1;
   String id() => 'seed${seq++}';
@@ -271,7 +311,7 @@ Map<String, CreditAccount> seedCredit(List<Customer> customers, DateTime now) {
       final credit = outstanding + paidLater;
       final total = credit + atCounter;
       final date = DateTime(now.year, now.month, now.day, 10 + r.nextInt(8), r.nextInt(60)).subtract(Duration(days: age));
-      final no = 'A-0${19000 + r.nextInt(900)}';
+      final no = '$billPrefix${billBase + r.nextInt(900)}';
       ledger.add(LedgerEntry.billCredit(id: id(), customerId: c.id, paise: credit, at: date, billNo: no, by: 'Priya'));
       if (paidLater > 0) ledger.add(LedgerEntry.payment(id: id(), customerId: c.id, paise: paidLater, at: date.add(Duration(days: 2 + r.nextInt(8))), mode: r.nextBool() ? 'cash' : 'upi', by: 'Priya'));
       bills.add(BillDue(billNo: no, date: date, totalPaise: total, paidPaise: total - outstanding));

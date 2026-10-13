@@ -63,9 +63,9 @@ class RecsNotifier extends Notifier<List<Rec>> {
       case 'categories':
         return seedCategories(products);
       case 'purchases':
-        return seedPurchases(now, ref.watch(recsProvider('dealers')));
+        return seedPurchases(now, ref.read(recsProvider('dealers')));
       case 'purchaseReturns':
-        return seedPurchaseReturns(now, ref.watch(recsProvider('dealers')));
+        return seedPurchaseReturns(now, ref.read(recsProvider('dealers')));
       case 'salesReturns':
         return seedSalesReturns(now, customers);
       case 'delivery':

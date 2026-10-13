@@ -66,10 +66,10 @@ class LedgerEntry {
     return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.returnCredit, amountPaise: -paise, at: at, billNo: billNo, note: note, by: by);
   }
 
-  factory LedgerEntry.adjustment({required String id, required String customerId, required int signedPaise, required DateTime at, required String reason, String by = ''}) {
+  factory LedgerEntry.adjustment({required String id, required String customerId, required int signedPaise, required DateTime at, required String reason, String by = '', String? billNo, List<Allocation> allocations = const []}) {
     if (signedPaise == 0) throw ArgumentError.value(signedPaise, 'signedPaise', 'an adjustment cannot be zero');
     if (reason.trim().isEmpty) throw ArgumentError('an adjustment needs a reason');
-    return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.adjustment, amountPaise: signedPaise, at: at, note: reason.trim(), by: by);
+    return LedgerEntry(id: id, customerId: customerId, kind: LedgerKind.adjustment, amountPaise: signedPaise, at: at, billNo: billNo, note: reason.trim(), by: by, allocations: allocations);
   }
 
   /// Credit added by hand: it increases what the customer owes. A reason is required.
