@@ -85,7 +85,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       advance = cart.customer != null && cart.keepAdvance ? split.change : 0;
       if (advance > 0) change = 0; // kept on account instead of given back
     }
-    return PrintDoc(mode: mode, number: _number(), date: _date(), editedOn: cart.editingNumber != null ? ref.read(clockProvider) : null, customer: cart.customer?.name ?? tr(context).walkInCustomer, lines: cart.lines, calc: calc, pay: cart.pay, receivedPaise: received, changePaise: change, advanceKeptPaise: advance);
+    return PrintDoc(mode: mode, number: _number(), date: _date(), editedOn: cart.editingNumber != null ? ref.read(clockProvider) : null, customer: cart.customer?.name ?? tr(context).walkInCustomer, lines: cart.lines, calc: calc, pay: cart.pay, receivedPaise: received, changePaise: change, advanceKeptPaise: advance, newBalancePaise: mode == DocMode.invoice && cart.customer != null ? ref.read(creditProvider.notifier).balanceOf(cart.customer!.id) + (calc.grandTotal - (received ?? calc.grandTotal) > 0 ? calc.grandTotal - (received ?? calc.grandTotal) : 0) - advance : null);
   }
 
   /// A bill with an unpaid balance needs a named customer: pick one or add one. Returns null if the person gives up
@@ -100,7 +100,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: Text(l.needCustomerText(formatPaise(balance, symbol: true)))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, 'cancel'), child: Text(l.cancel)),
-          OutlinedButton.icon(onPressed: () => Navigator.pop(ctx, 'new'), icon: const Icon(Icons.person_add_alt), label: Text(l.addCustomer)),
+          OutlinedButton.icon(onPressed: () => Navigator.pop(ctx, 'new'), icon: const Icon(Icons.person_add_alt), label: Text(l.addNewCustomer)),
           FilledButton.icon(key: const ValueKey('pickCustomerForCredit'), onPressed: () => Navigator.pop(ctx, 'pick'), icon: const Icon(Icons.person_search_outlined), label: Text(l.chooseCustomer)),
         ],
       ),
@@ -166,7 +166,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       editing ? n.replace(e) : n.add(e);
     }
     ref.read(cartProvider(mode).notifier).clear();
-    toast(context, mode == DocMode.invoice ? l.billSaved(doc.number) : l.estimateSaved(doc.number));
+    String m(int p) => formatPaise(p, symbol: true);
+    toast(context, mode != DocMode.invoice ? l.estimateSaved(doc.number) : (doc.balancePaise > 0 && doc.newBalancePaise != null ? l.billSavedCredit(doc.number, m(doc.receivedPaise! > doc.calc.grandTotal ? doc.calc.grandTotal : doc.receivedPaise!), m(doc.balancePaise), doc.customer, m(doc.newBalancePaise!)) : l.billSaved(doc.number)));
     playSound(ref, SoundKind.save);
     showSuccessCheck(context);
     if (print) {
@@ -198,7 +199,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd, onScan: () => playSound(ref, SoundKind.scan)));
 
     Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount));
-    final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear);
+    final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, customerBalance: cart.customer == null ? null : ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear);
 
     final shortcuts = <ShortcutActivator, VoidCallback>{
       const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {

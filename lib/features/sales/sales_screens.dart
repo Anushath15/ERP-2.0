@@ -206,7 +206,7 @@ class EstimationsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(l.estimateNoStock, style: th.bodySmall),
         ], actions: [
-          OutlinedButton.icon(onPressed: () { Navigator.pop(ctx); ref.read(printDocProvider.notifier).set(docOf()); context.push('/print'); }, icon: const Icon(Icons.visibility_outlined), label: Text(l.view)),
+          OutlinedButton.icon(onPressed: () { Navigator.pop(ctx); ref.read(printDocProvider.notifier).set(docOf()); context.push('/print'); }, icon: const Icon(Icons.print_outlined), label: Text(l.print)),
           OutlinedButton.icon(
             onPressed: () {
               Navigator.pop(ctx);

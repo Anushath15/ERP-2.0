@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:erp2/features/billing/cart.dart';
+import 'package:erp2/fake/models.dart' show PayMode;
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
 
@@ -40,6 +41,12 @@ void main() {
               cart.setReceived(100000000);
             case 'nothing':
               cart.setReceived(0);
+            case 'credit-walkin':
+              cart.setPay(PayMode.credit);
+            case 'credit-named':
+              cart.setCustomer(customers.first);
+              cart.setPay(PayMode.credit);
+              cart.setReceived(5000);
           }
           await tester.pumpAndSettle();
           if (isPhone) {
@@ -57,7 +64,7 @@ void main() {
         }
 
         final base = await measure(1, 'full');
-        for (final scenario in ['full', 'part-named', 'part-walkin', 'over-named', 'nothing']) {
+        for (final scenario in ['full', 'part-named', 'part-walkin', 'over-named', 'nothing', 'credit-walkin', 'credit-named']) {
           for (final lines in [1, 10, 100]) {
             final m = await measure(lines, scenario);
             for (final k in base.keys) {

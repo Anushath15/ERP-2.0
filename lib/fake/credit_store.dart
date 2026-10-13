@@ -49,6 +49,15 @@ class CreditNotifier extends Notifier<Map<String, CreditAccount>> {
   Map<String, CreditAccount> build() => seedCredit(ref.watch(customersProvider), ref.watch(clockProvider));
 
   CreditAccount account(String customerId) => state[customerId] ?? const CreditAccount();
+
+  /// What the customer owed right after the bill [billNo] was added to the account (null if the bill left no entry).
+  int? balanceAfterBill(String customerId, String billNo) {
+    int? out;
+    for (final l in withRunningBalance(account(customerId).ledger)) {
+      if (l.entry.billNo == billNo) out = l.runningPaise;
+    }
+    return out;
+  }
   int balanceOf(String customerId) => account(customerId).balance;
   int get totalToCollect => state.values.fold<int>(0, (s, a) => a.balance > 0 ? s + a.balance : s);
   int get totalAdvances => state.values.fold<int>(0, (s, a) => a.balance < 0 ? s - a.balance : s);

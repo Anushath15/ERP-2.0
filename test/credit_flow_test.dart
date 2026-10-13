@@ -70,7 +70,8 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('nothingReceived')));
       await tester.pump();
       expect(tester.widget<TextField>(find.byKey(const ValueKey('receivedField'))).controller!.text, '0.00');
-      expect(find.textContaining('Balance ₹150.00 will be added'), findsOneWidget);
+      expect(find.textContaining('goes on credit: ₹150.00'), findsOneWidget, reason: 'the clock button is the same as choosing Credit with nothing paid');
+      expect(find.text('Paid now'), findsOneWidget);
     });
 
     testWidgets('walk-in customer with a balance: a prompt appears and the bill is NOT saved until resolved', (tester) async {
@@ -92,7 +93,7 @@ void main() {
       await typeReceived(tester, '100');
       await tester.tap(find.text('Save bill'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Add customer'));
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Add new customer'));
       await tester.pumpAndSettle();
       await tester.enterText(find.widgetWithText(TextFormField, 'Name'), 'New Buyer');
       await tester.enterText(find.widgetWithText(TextFormField, 'Phone'), 'abc12');
@@ -153,10 +154,10 @@ void main() {
       expect(acct(c, 't1').ledger, isEmpty);
     });
 
-    testWidgets('payment mode picks Cash, UPI or Card or other; it is dimmed when nothing was received', (tester) async {
+    testWidgets('payment mode picks Cash, UPI or Card or other; and Credit (Credit mode has its own tests in credit_payment_test.dart)', (tester) async {
       final c = await billing(tester);
       expect(find.text('Card or other'), findsOneWidget);
-      expect(find.text('Credit'), findsNothing, reason: 'Credit is not a payment mode: it is "received = 0"');
+      expect(find.text('Credit'), findsOneWidget, reason: 'Credit is the fourth payment mode');
       await tester.tap(find.text('UPI'));
       await tester.pump();
       expect(c.read(cartProvider(DocMode.invoice)).pay, PayMode.upi);

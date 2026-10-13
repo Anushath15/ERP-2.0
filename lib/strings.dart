@@ -5,7 +5,7 @@
 class Strings {
   const Strings();
 
-  String get appName => 'Senthil Enterprises';
+  String get appName => 'ASK ERP 2.0';
   String get back => 'Back';
   String get cancel => 'Cancel';
   String get close => 'Close';
@@ -24,7 +24,6 @@ class Strings {
   String get duplicate => 'Make a copy';
   String get duplicated => 'A copy was made';
   String get print => 'Print';
-  String get preview => 'Preview';
   String get account => 'Account';
   String get fieldRequired => 'Please fill this in';
   String get searchHere => 'Search here';
@@ -183,9 +182,10 @@ class Strings {
   String get adjustPlus => 'More than the computer shows';
   String get searchBillHint => 'Search bill number or customer';
   String get walkInCustomer => 'Walk-in customer';
-  String get chooseCustomer => 'Choose customer';
+  String get chooseCustomer => 'Pick a customer';
   String get searchCustomerHint => 'Search name or phone';
   String get addCustomer => 'Add customer';
+  String get addNewCustomer => 'Add new customer';
   String customerOwes(String amount) => 'Owes ${amount}';
   String editingKeeps(String number, String date) => 'Editing ${number} dated ${date}. The number and date stay the same.';
   String get billEmptyTitle => 'No items in the bill';
@@ -221,9 +221,9 @@ class Strings {
   String get clearBillText => 'All items in this bill will be removed.';
   String billSaved(String number) => 'Bill ${number} saved';
   String estimateSaved(String number) => 'Estimate ${number} saved';
-  String get printPreview => 'Print preview';
-  String get previewInvoiceHint => 'This is how the bill will look on paper';
-  String get previewEstimateHint => 'This is how the estimate will look on paper';
+  String get printPreview => 'Print';
+  String get previewInvoiceHint => 'Check the bill on paper, then press Print';
+  String get previewEstimateHint => 'Check the estimate on paper, then press Print';
   String get paperA4 => 'A4';
   String get paper80 => '80 mm';
   String get paper58 => '58 mm';
@@ -593,6 +593,16 @@ class Strings {
   String get toggleMenu => 'Show or hide the menu';
   String get amountReceived => 'Amount received';
   String get fullAmount => 'Full amount';
+  String get paidNow => 'Paid now';
+  String get payNothing => 'Nothing';
+  String get payHalf => 'Half';
+  String get payFull => 'Full';
+  String creditSplit(String paid, String credit) => 'Paid now: ${paid}, goes on credit: ${credit}';
+  String get creditPickCustomer => 'Pick a customer to save';
+  String creditOwesNow(String name, String amount) => '${name} owes ${amount} now';
+  String creditAdvanceNow(String name, String amount) => '${name} has ${amount} in advance';
+  String billSavedCredit(String number, String paid, String credit, String name, String balance) => 'Bill ${number} saved. Paid now ${paid}, on credit ${credit}. ${name} now owes ${balance}.';
+  String get rcAccountBalance => 'Your balance now';
   String get nothingReceived => 'Nothing received: put it all on credit';
   String get paidInFull => 'Paid in full';
   String balanceToCredit(String amount, String name) => 'Balance ${amount} will be added to ${name}\'s credit';
@@ -609,8 +619,8 @@ class Strings {
   String creditLimitBlockText(String name, String limit) => '${name} would go over the credit limit of ${limit}. The owner has chosen not to allow this. Take more payment, or change the limit in Settings.';
   String get saveAnyway => 'Save anyway';
   String get errPhone => 'Please type a correct mobile number, like 98765 43210';
-  String get receivedLabel => 'Received';
-  String get balanceDueLabel => 'Balance due';
+  String get receivedLabel => 'Paid now';
+  String get balanceDueLabel => 'On credit';
   String get addedToCreditNote => '(added to credit)';
   String get changeReturned => 'Change returned';
   String get advanceKeptLabel => 'Kept as advance';

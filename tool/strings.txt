@@ -184,9 +184,10 @@ adjustPlus | More than the computer shows
 # ---- billing
 searchBillHint | Search bill number or customer
 walkInCustomer | Walk-in customer
-chooseCustomer | Choose customer
+chooseCustomer | Pick a customer
 searchCustomerHint | Search name or phone
 addCustomer | Add customer
+addNewCustomer | Add new customer
 customerOwes | Owes {amount}
 editingKeeps | Editing {number} dated {date}. The number and date stay the same.
 billEmptyTitle | No items in the bill
@@ -606,6 +607,16 @@ toggleMenu | Show or hide the menu
 # ---- credit: payment area in billing
 amountReceived | Amount received
 fullAmount | Full amount
+paidNow | Paid now
+payNothing | Nothing
+payHalf | Half
+payFull | Full
+creditSplit | Paid now: {paid}, goes on credit: {credit}
+creditPickCustomer | Pick a customer to save
+creditOwesNow | {name} owes {amount} now
+creditAdvanceNow | {name} has {amount} in advance
+billSavedCredit | Bill {number} saved. Paid now {paid}, on credit {credit}. {name} now owes {balance}.
+rcAccountBalance | Your balance now
 nothingReceived | Nothing received: put it all on credit
 paidInFull | Paid in full
 balanceToCredit | Balance {amount} will be added to {name}'s credit
@@ -622,8 +633,8 @@ creditLimitBlockTitle | Credit limit reached
 creditLimitBlockText | {name} would go over the credit limit of {limit}. The owner has chosen not to allow this. Take more payment, or change the limit in Settings.
 saveAnyway | Save anyway
 errPhone | Please type a correct mobile number, like 98765 43210
-receivedLabel | Received
-balanceDueLabel | Balance due
+receivedLabel | Paid now
+balanceDueLabel | On credit
 addedToCreditNote | (added to credit)
 changeReturned | Change returned
 advanceKeptLabel | Kept as advance

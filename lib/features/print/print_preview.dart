@@ -212,9 +212,10 @@ class Paper extends StatelessWidget {
             totalRow(l.rcGrandTotal, '₹ ${formatPaise(doc.calc.grandTotal)}', b: true, size: a4 ? 15 : fs + 2),
             if (!est && doc.receivedPaise != null) ...[
               const SizedBox(height: 4),
-              totalRow('${l.rcReceived} (${_pay(doc.pay)})', formatPaise(doc.receivedPaise! > doc.calc.grandTotal ? doc.calc.grandTotal : doc.receivedPaise!), key: const ValueKey('paperReceived')),
+              totalRow(doc.pay == PayMode.credit ? l.paidNow : '${l.rcReceived} (${_pay(doc.pay)})', formatPaise(doc.receivedPaise! > doc.calc.grandTotal ? doc.calc.grandTotal : doc.receivedPaise!), key: const ValueKey('paperReceived')),
               if (doc.balancePaise > 0) totalRow(l.rcBalanceDue, '₹ ${formatPaise(doc.balancePaise)}', b: true, key: const ValueKey('paperBalance')) else Align(alignment: Alignment.centerRight, child: Text(l.rcPaidInFull, style: s(b: true), key: const ValueKey('paperPaid'))),
               if (doc.advanceKeptPaise > 0) totalRow(l.rcAdvance, formatPaise(doc.advanceKeptPaise)),
+              if (doc.newBalancePaise != null && doc.newBalancePaise! > 0 && doc.balancePaise > 0) totalRow(l.rcAccountBalance, '₹ ${formatPaise(doc.newBalancePaise!)}', key: const ValueKey('paperNewBalance')),
               if (doc.changePaise > 0) totalRow(l.rcChange, formatPaise(doc.changePaise)),
             ],
           ]),

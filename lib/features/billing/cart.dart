@@ -77,10 +77,20 @@ class CartNotifier extends Notifier<CartState> {
 
   void setCustomer(Customer? c) => state = c == null ? state.copyWith(clearCustomer: true) : state.copyWith(customer: c);
 
-  void setPay(PayMode m) => state = state.copyWith(pay: m);
+  /// Credit = "Paid now" mode: entering it starts at nothing paid (unless a part payment is already typed); leaving it by
+  /// choosing Cash, UPI or Card with nothing paid means a normal full payment.
+  void setPay(PayMode m) {
+    if (m == PayMode.credit) {
+      state = state.copyWith(pay: m, received: state.receivedPaise ?? 0);
+    } else if (state.pay == PayMode.credit && (state.receivedPaise ?? 0) == 0) {
+      state = state.copyWith(pay: m, clearReceived: true, keepAdvance: false);
+    } else {
+      state = state.copyWith(pay: m);
+    }
+  }
 
   /// null = the full Grand Total.
-  void setReceived(int? paise) => state = paise == null ? state.copyWith(clearReceived: true, keepAdvance: false) : state.copyWith(received: paise);
+  void setReceived(int? paise) => state = paise == null ? state.copyWith(clearReceived: true, keepAdvance: false, pay: state.pay == PayMode.credit ? PayMode.cash : state.pay) : state.copyWith(received: paise);
 
   void setKeepAdvance(bool v) => state = state.copyWith(keepAdvance: v);
 
@@ -106,7 +116,7 @@ BillCalc calcFor(CartState s, {required bool inclusive}) => calcBill(s.lines, in
 
 /// Snapshot used by the print preview screens.
 class PrintDoc {
-  const PrintDoc({required this.mode, required this.number, required this.date, required this.customer, required this.lines, required this.calc, this.editedOn, required this.pay, this.receivedPaise, this.changePaise = 0, this.advanceKeptPaise = 0});
+  const PrintDoc({required this.mode, required this.number, required this.date, required this.customer, required this.lines, required this.calc, this.editedOn, required this.pay, this.receivedPaise, this.changePaise = 0, this.advanceKeptPaise = 0, this.newBalancePaise});
   final DocMode mode;
   final String number;
   final DateTime date;
@@ -119,6 +129,9 @@ class PrintDoc {
   /// Money received at the counter (null = not shown, e.g. an estimate or an old bill without the detail).
   final int? receivedPaise;
   final int changePaise, advanceKeptPaise;
+
+  /// What the named customer owes after this bill is saved (null = walk-in or not shown).
+  final int? newBalancePaise;
 
   /// The unpaid part, added to the customer's credit (0 when paid in full).
   int get balancePaise => receivedPaise == null ? 0 : (calc.grandTotal - receivedPaise! > 0 ? calc.grandTotal - receivedPaise! : 0);

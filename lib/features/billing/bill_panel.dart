@@ -293,7 +293,7 @@ class _QtyStepper extends StatelessWidget {
 /// With very large text the GST detail collapses into one short row and the buttons stack, but Grand total and the
 /// three buttons are always fully visible.
 class BillFooter extends StatelessWidget {
-  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, required this.onSave, required this.onSavePrint, required this.onClear});
+  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, this.customerBalance, required this.onSave, required this.onSavePrint, required this.onClear});
   final DocMode mode;
   final CartState cart;
   final BillCalc calc;
@@ -301,6 +301,7 @@ class BillFooter extends StatelessWidget {
   final void Function(int? paise) onReceived; // null = the full Grand Total
   final void Function(bool keep) onKeepAdvance;
   final String? customerName; // null = walk-in
+  final int? customerBalance; // what the named customer owes now (negative = advance)
   final VoidCallback onSave, onSavePrint, onClear;
 
   @override
@@ -343,7 +344,7 @@ class BillFooter extends StatelessWidget {
     ]));
 
     final Widget pay = invoice
-        ? PaymentArea(cart: cart, calc: calc, customerName: customerName, onPay: onPay, onReceived: onReceived, onKeepAdvance: onKeepAdvance)
+        ? PaymentArea(cart: cart, calc: calc, customerName: customerName, customerBalance: customerBalance, onPay: onPay, onReceived: onReceived, onKeepAdvance: onKeepAdvance)
         : Row(children: [Icon(Icons.info_outline, size: 18, color: c.textMuted), const SizedBox(width: 8), Expanded(child: Text(l.estimateNoStock, style: th.bodySmall))]);
 
     final saveLabel = invoice ? l.saveBill : l.saveEstimate;
@@ -392,10 +393,11 @@ class BillFooter extends StatelessWidget {
 /// happens to any balance or change, and the payment mode for the part that was received. Every row has a fixed height, so the
 /// footer never moves when the message changes.
 class PaymentArea extends StatefulWidget {
-  const PaymentArea({super.key, required this.cart, required this.calc, required this.customerName, required this.onPay, required this.onReceived, required this.onKeepAdvance});
+  const PaymentArea({super.key, required this.cart, required this.calc, required this.customerName, this.customerBalance, required this.onPay, required this.onReceived, required this.onKeepAdvance});
   final CartState cart;
   final BillCalc calc;
   final String? customerName;
+  final int? customerBalance;
   final void Function(PayMode) onPay;
   final void Function(int? paise) onReceived;
   final void Function(bool keep) onKeepAdvance;
@@ -443,7 +445,20 @@ class _PaymentAreaState extends State<PaymentArea> {
     String text;
     Color color;
     IconData icon;
-    if (split.balance > 0) {
+    final credit = widget.cart.pay == PayMode.credit;
+    if (credit) {
+      final base = l.creditSplit(money(split.settled), money(split.balance));
+      if (name == null) {
+        text = '$base. ${l.creditPickCustomer}';
+        color = c.danger;
+        icon = Icons.person_add_alt;
+      } else {
+        final owes = widget.customerBalance;
+        text = owes == null || owes == 0 ? base : (owes > 0 ? '$base. ${l.creditOwesNow(name, money(owes))}' : '$base. ${l.creditAdvanceNow(name, money(-owes))}');
+        color = split.balance > 0 ? c.warning : c.success;
+        icon = Icons.schedule;
+      }
+    } else if (split.balance > 0) {
       if (name == null) {
         text = l.balanceNeedsCustomer(money(split.balance));
         color = c.danger;
@@ -489,20 +504,36 @@ class _PaymentAreaState extends State<PaymentArea> {
                 _typed = parseRupeesToPaise(v) ?? 0;
                 widget.onReceived(_typed);
               },
-              decoration: InputDecoration(labelText: l.amountReceived, prefixText: '₹ ', isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+              decoration: InputDecoration(labelText: credit ? l.paidNow : l.amountReceived, prefixText: '₹ ', isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
             ),
           ),
           const SizedBox(width: 6),
-          Expanded(
-            flex: 3,
-            child: OutlinedButton(
-              key: const ValueKey('fullAmount'),
-              style: OutlinedButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 6)),
-              onPressed: () => widget.onReceived(null),
-              child: FittedBox(fit: BoxFit.scaleDown, child: Text(l.fullAmount, maxLines: 1)),
+          if (credit) ...[
+            for (final b in [('payNothing', l.payNothing, () => widget.onReceived(0)), ('payHalf', l.payHalf, () => widget.onReceived(_total ~/ 2)), ('payFull', l.payFull, () => widget.onReceived(null))]) ...[
+              const SizedBox(width: 4),
+              Expanded(
+                flex: 2,
+                child: OutlinedButton(
+                  key: ValueKey(b.$1),
+                  style: OutlinedButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 4)),
+                  onPressed: b.$3,
+                  child: FittedBox(fit: BoxFit.scaleDown, child: Text(b.$2, maxLines: 1)),
+                ),
+              ),
+            ],
+          ] else ...[
+            const SizedBox(width: 6),
+            Expanded(
+              flex: 3,
+              child: OutlinedButton(
+                key: const ValueKey('fullAmount'),
+                style: OutlinedButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 6)),
+                onPressed: () => widget.onReceived(null),
+                child: FittedBox(fit: BoxFit.scaleDown, child: Text(l.fullAmount, maxLines: 1)),
+              ),
             ),
-          ),
-          Tooltip(message: l.nothingReceived, child: IconButton(key: const ValueKey('nothingReceived'), onPressed: () => widget.onReceived(0), icon: const Icon(Icons.schedule))),
+            Tooltip(message: l.nothingReceived, child: IconButton(key: const ValueKey('nothingReceived'), onPressed: () => widget.onPay(PayMode.credit), icon: const Icon(Icons.schedule))),
+          ],
         ]),
       ),
       const SizedBox(height: 4),
@@ -517,20 +548,15 @@ class _PaymentAreaState extends State<PaymentArea> {
         ]),
       ),
       const SizedBox(height: 4),
-      Opacity(
-        opacity: received == 0 ? 0.45 : 1,
-        child: IgnorePointer(
-          ignoring: received == 0,
-          child: SlideSegments<PayMode>(
-            options: [
+      SlideSegments<PayMode>(
+        options: [
               (PayMode.cash, l.payCash, Icons.payments_outlined),
               (PayMode.upi, l.payUpi, Icons.qr_code_2),
               (PayMode.card, l.payCard, Icons.credit_card),
-            ],
-            selected: widget.cart.pay == PayMode.credit ? PayMode.cash : widget.cart.pay,
-            onChanged: widget.onPay,
-          ),
-        ),
+              (PayMode.credit, l.payCredit, Icons.schedule),
+        ],
+        selected: widget.cart.pay,
+        onChanged: widget.onPay,
       ),
     ]);
   }
