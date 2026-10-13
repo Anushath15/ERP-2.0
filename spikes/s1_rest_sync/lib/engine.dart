@@ -279,8 +279,16 @@ class Engine {
       };
 
   String _canon(String json) {
+    Object? sortDeep(Object? v) {
+      if (v is Map) {
+        final keys = v.keys.cast<String>().toList()..sort();
+        return {for (final k in keys) k: sortDeep(v[k])};
+      }
+      if (v is List) return v.map(sortDeep).toList();
+      return v;
+    }
+
     final m = (jsonDecode(json) as Map<String, dynamic>)..remove('serverAt');
-    final keys = m.keys.toList()..sort();
-    return jsonEncode({for (final k in keys) k: m[k]});
+    return jsonEncode(sortDeep(m));
   }
 }
