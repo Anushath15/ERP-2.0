@@ -51,3 +51,8 @@ docs/ui-review/**/*.jpg
 docs/ui-review/index-full.md
 *.zip
 device.json
+
+# Real e-mail addresses for the security rules, and the generated rules (never committed)
+firebase/allowed-emails.local.json
+firebase/deploy/
+.firebaserc.local

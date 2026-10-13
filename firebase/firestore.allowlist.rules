@@ -2,13 +2,14 @@ rules_version = '2';
 
 // Design (b): the people allowed are listed in THIS file. No membership document is read,
 // so security rules cost zero extra reads. Adding or removing a person = edit the three lists
-// below and run: firebase deploy --only firestore:rules   (tools/deploy-rules is planned).
+// below and deploy the rules (see docs/ACCOUNTS-AND-RECOVERY.md). The real e-mail addresses are NOT kept in the
+// repository: `dart run tool/make_rules.dart` fills the placeholders from a local, git-ignored file.
 service cloud.firestore {
   match /databases/{db}/documents {
 
-    function owners()   { return ['__OWNER_EMAIL__']; }
-    function managers() { return []; }
-    function cashiers() { return []; }
+    function owners()   { return [/*OWNERS*/'__OWNER_EMAIL__']; }
+    function managers() { return [/*MANAGERS*/]; }
+    function cashiers() { return [/*CASHIERS*/]; }
 
     function signedIn() {
       return request.auth != null && request.auth.token.email_verified == true;
@@ -18,6 +19,16 @@ service cloud.firestore {
     function canRead()  { return signedIn() && (me() in owners() || me() in managers() || me() in cashiers()); }
     function canWrite() { return canRead(); }
 
+    // Records that are never edited after they are saved (a repeated upload may only change the server stamp).
+    function appendOnly(coll) {
+      return coll in ['bills', 'billCancellations', 'payments', 'stockMovements', 'ledgerEntries', 'audit', 'history',
+                      'salesReturns', 'purchaseReturns', 'reminders'];
+    }
+    // Records that can be edited.
+    function editable(coll) {
+      return coll in ['products', 'customers', 'dealers', 'categories', 'estimations', 'purchases', 'expenses', 'settingsShared'];
+    }
+
     function smallDoc() {
       return request.resource.data.keys().size() <= 60
         && request.resource.data.keys().hasAll(['id', 'deviceId', 'updatedAt', 'serverAt'])
@@ -25,22 +36,13 @@ service cloud.firestore {
     }
 
     match /shops/{shopId}/{coll}/{docId} {
-      allow read: if canRead()
-        && coll in ['bills', 'payments', 'stockMovements', 'ledgerEntries', 'audit', 'products',
-                    'customers', 'dealers', 'categories', 'estimations', 'purchases', 'expenses',
-                    'settingsShared', 'history'];
-      allow create: if canWrite()
-        && coll in ['bills', 'payments', 'stockMovements', 'ledgerEntries', 'audit', 'products',
-                    'customers', 'dealers', 'categories', 'estimations', 'purchases', 'expenses',
-                    'settingsShared', 'history']
+      allow read: if canRead() && (appendOnly(coll) || editable(coll));
+      allow create: if canWrite() && (appendOnly(coll) || editable(coll))
         && request.resource.data.id == docId && smallDoc();
-      allow update: if canWrite()
-        && coll in ['products', 'customers', 'dealers', 'categories', 'estimations', 'settingsShared']
+      allow update: if canWrite() && editable(coll)
         && request.resource.data.id == docId && smallDoc();
       // Duplicate delivery of an append-only record: only the server stamp may change.
-      allow update: if canWrite()
-        && coll in ['bills', 'payments', 'stockMovements', 'ledgerEntries', 'audit', 'history']
-        && smallDoc()
+      allow update: if canWrite() && appendOnly(coll) && smallDoc()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['serverAt']);
       allow delete: if false;
     }
