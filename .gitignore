@@ -1,0 +1,46 @@
+﻿# Secrets and local config (never commit)
+firebase_options.dart
+google-services.json
+GoogleService-Info.plist
+firebase.json.local
+.firebaserc.local
+*.jks
+*.keystore
+key.properties
+*.pem
+*.p12
+service-account*.json
+.env
+.env.*
+
+# Real shop data (never commit)
+ERP_Backup_*.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+backups/
+real-data/
+
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock.bak
+coverage/
+*.log
+
+# Firebase emulator
+.emulator-data/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
