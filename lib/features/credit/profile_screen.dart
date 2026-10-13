@@ -123,7 +123,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final bytes = await buildStatementPdf(statement: st, customer: Customer(id: widget.partyId, name: name, phone: phone, city: city, balancePaise: 0), shopName: settings.shopName, shopPhone: settings.shopPhone, today: now, l: l, dealer: !_customer);
       final stamp = '${now.year}-${two(now.month)}-${two(now.day)}';
       final where = await ref.read(fileSaverProvider).save('Statement $name $stamp.pdf', bytes);
-      if (mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
+      if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
     }
 
     final actions = Wrap(spacing: 8, runSpacing: 8, children: [
@@ -181,10 +181,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             selected: _range == 3,
             onSelected: (_) async {
               final r = await showDateRangePicker(context: context, firstDate: DateTime(now.year - 15), lastDate: DateTime(now.year + 1), initialDateRange: _picked ?? DateTimeRange(start: DateTime(now.year, now.month, 1), end: now));
-              if (r != null) setState(() {
-                    _picked = r;
-                    _range = 3;
-                  });
+              if (r != null && mounted) {
+                setState(() {
+                  _picked = r;
+                  _range = 3;
+                });
+              }
             },
           ),
         ]);
