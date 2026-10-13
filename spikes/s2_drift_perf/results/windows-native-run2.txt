@@ -1,0 +1,28 @@
+seed products+customers: 177 ms
+seed 50000 bills (+200000 lines/movements, 50000 ledger): 15764 ms
+db size: 115.9 MB
+product search FTS5 per keystroke (2100 samples): p50=0.24ms p95=0.52ms max=3.72ms  budget<16ms
+barcode lookup (NO index, full scan): p50=0.09ms p95=0.13ms max=1.10ms
+customer search (LIKE prefix): p50=0.06ms p95=0.11ms max=0.46ms
+bill list page (50 rows, offsets 0..40000, joined): p50=18.51ms p95=35.72ms max=38.04ms  budget<300ms
+save bill (1 txn, 4 lines, COUNT-based number): p50=1.99ms p95=3.36ms max=46.42ms  budget<150ms
+report: 30-day sales by day: 5.6 ms
+report: top 20 products over 200000 lines: 1393.3 ms
+report: stock of ALL products (sum movements): 1287.3 ms
+report: balance of ALL customers (sum ledger): 247.8 ms
+screen: inventory page of 50 w/ live stock subquery: 336.4 ms
+quick_check: 329 ms; integrity_check: 2608 ms
+seed products+customers: 402 ms
+seed 50000 bills (+200000 lines/movements, 50000 ledger): 18237 ms
+db size: 116.9 MB
+product search FTS5 per keystroke (2100 samples): p50=0.73ms p95=2.18ms max=8.34ms  budget<16ms
+barcode lookup (NO index, full scan): p50=0.37ms p95=0.51ms max=1.38ms
+customer search (LIKE prefix): p50=0.07ms p95=0.32ms max=4.23ms
+bill list page (50 rows, offsets 0..40000, joined): p50=19.55ms p95=45.56ms max=49.06ms  budget<300ms
+save bill (1 txn, 4 lines, COUNT-based number): p50=9.01ms p95=20.00ms max=60.53ms  budget<150ms
+report: 30-day sales by day: 8.8 ms
+report: top 20 products over 200000 lines: 2151.0 ms
+report: stock of ALL products (sum movements): 2079.4 ms
+report: balance of ALL customers (sum ledger): 241.0 ms
+screen: inventory page of 50 w/ live stock subquery: 58.4 ms
+quick_check: 267 ms; integrity_check: 3322 ms

@@ -1,0 +1,89 @@
+rules_version = '2';
+
+// ERP 2.0 security rules (Phase 0 draft, tested by spikes/s1_rest_sync).
+// Model: shops/{shopId} has members/{email} documents. Membership is keyed by the
+// VERIFIED email in the sign-in token. Everything not listed here is denied.
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function me() { return request.auth.token.email.lower(); }
+    function memberPath(shopId, email) {
+      return /databases/$(db)/documents/shops/$(shopId)/members/$(email);
+    }
+    function isMember(shopId) {
+      return signedIn() && exists(memberPath(shopId, me()));
+    }
+    function roleOf(shopId) {
+      return get(memberPath(shopId, me())).data.role;
+    }
+    function isOwner(shopId) { return isMember(shopId) && roleOf(shopId) == 'owner'; }
+    function canWrite(shopId) {
+      return isMember(shopId) && roleOf(shopId) in ['owner', 'manager', 'cashier'];
+    }
+    function smallDoc() {
+      return request.resource.data.keys().size() <= 60
+        && request.resource.data.keys().hasAll(['id', 'deviceId', 'updatedAt', 'serverAt'])
+        && request.resource.data.serverAt == request.time
+        && request.resource.data.size() < 200;
+    }
+
+    match /shops/{shopId} {
+      // The first signed-in person creates the shop and becomes its owner.
+      allow create: if signedIn()
+        && request.resource.data.ownerEmail == me()
+        && request.resource.data.keys().size() <= 20;
+      allow read: if isMember(shopId);
+      allow update: if isOwner(shopId)
+        && request.resource.data.ownerEmail == resource.data.ownerEmail;
+      allow delete: if false;
+
+      match /members/{email} {
+        // Owner bootstrap: creating own owner row right after creating the shop.
+        allow create: if signedIn() && (
+          (email == me() && request.resource.data.role == 'owner'
+            && getAfter(/databases/$(db)/documents/shops/$(shopId)).data.ownerEmail == me())
+          || (isOwner(shopId) && request.resource.data.role in ['manager', 'cashier']));
+        allow read: if isMember(shopId) || (signedIn() && email == me());
+        allow update, delete: if isOwner(shopId) && email != get(/databases/$(db)/documents/shops/$(shopId)).data.ownerEmail;
+      }
+
+      // Per-device revoke list (owner-managed). A revoked device cannot write.
+      match /revokedDevices/{deviceId} {
+        allow read: if isMember(shopId);
+        allow write: if isOwner(shopId);
+      }
+
+      // Append-only business records: bills, payments, stock movements, ledger entries, audit.
+      match /{coll}/{docId} {
+        allow read: if isMember(shopId)
+          && coll in ['bills', 'payments', 'stockMovements', 'ledgerEntries', 'audit', 'products',
+                      'customers', 'dealers', 'categories', 'estimations', 'purchases', 'expenses',
+                      'settingsShared', 'history'];
+        allow create: if canWrite(shopId)
+          && coll in ['bills', 'payments', 'stockMovements', 'ledgerEntries', 'audit', 'products',
+                      'customers', 'dealers', 'categories', 'estimations', 'purchases', 'expenses',
+                      'settingsShared', 'history']
+          && request.resource.data.id == docId
+          && smallDoc()
+          && !exists(/databases/$(db)/documents/shops/$(shopId)/revokedDevices/$(request.resource.data.deviceId));
+        // Editable master data only. Append-only collections can never be updated or deleted.
+        allow update: if canWrite(shopId)
+          && coll in ['products', 'customers', 'dealers', 'categories', 'estimations', 'settingsShared']
+          && request.resource.data.id == docId
+          && smallDoc()
+          && !exists(/databases/$(db)/documents/shops/$(shopId)/revokedDevices/$(request.resource.data.deviceId));
+        // Duplicate delivery of an append-only record (a retry after a lost reply) is
+        // harmless: only the server stamp may change, so a re-sent batch never fails.
+        allow update: if canWrite(shopId)
+          && coll in ['bills', 'payments', 'stockMovements', 'ledgerEntries', 'audit', 'history']
+          && smallDoc()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['serverAt'])
+          && !exists(/databases/$(db)/documents/shops/$(shopId)/revokedDevices/$(request.resource.data.deviceId));
+        allow delete: if false;
+      }
+    }
+  }
+}
