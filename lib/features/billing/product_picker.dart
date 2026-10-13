@@ -150,7 +150,7 @@ class _ProductPickerState extends State<ProductPicker> {
           child: Row(children: [
             Expanded(child: Text(l.colProduct, style: th.labelMedium?.copyWith(color: c.textMuted))),
             SizedBox(width: 96, child: Text(l.colPrice, textAlign: TextAlign.right, style: th.labelMedium?.copyWith(color: c.textMuted))),
-            SizedBox(width: 120, child: Text(l.colStock, textAlign: TextAlign.right, style: th.labelMedium?.copyWith(color: c.textMuted))),
+            SizedBox(width: 140, child: Text(l.colStock, textAlign: TextAlign.right, style: th.labelMedium?.copyWith(color: c.textMuted))),
           ]),
         ),
       Expanded(
@@ -237,7 +237,7 @@ class _ProductRow extends StatelessWidget {
               : Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [name, if (inBill > 0) Padding(padding: const EdgeInsets.only(top: 4), child: badges)])),
                   SizedBox(width: 96, child: Text(formatPaise(p.pricePaise), textAlign: TextAlign.right, style: th.titleMedium)),
-                  SizedBox(width: 120, child: stock),
+                  SizedBox(width: 140, child: stock),
                 ]),
         ),
       ),

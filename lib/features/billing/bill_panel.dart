@@ -168,17 +168,27 @@ class _LineRow extends StatelessWidget {
     final stepper = _QtyStepper(qtyMilli: line.qtyMilli, unit: p.unit, onChanged: onQty);
     final amount = Text(formatPaise(calc.total), style: th.titleSmall, textAlign: TextAlign.right);
     final del = IconButton(tooltip: l.removeLine, onPressed: onRemove, icon: Icon(Icons.delete_outline, color: c.danger));
+    Future<void> editRate() async {
+      final v = await showFormSheet(context, title: l.changeRate, saveLabel: l.save, fields: [FieldSpec('rate', l.colRate, type: FieldType.money, initial: (line.rate / 100).toStringAsFixed(2), required: true, autofocus: true), FieldSpec('disc', l.discountPercentLabel, type: FieldType.number, initial: (line.discountBp / 100).toString())]);
+      if (v == null) return;
+      final r = double.tryParse(v['rate'] ?? '');
+      final d = double.tryParse(v['disc'] ?? '');
+      if (r != null) onRate((r * 100).round());
+      if (d != null) onDiscount((d * 100).round());
+    }
+
     if (phone) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(10, 8, 2, 4),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: name), del]),
+          Padding(padding: const EdgeInsets.only(right: 8), child: name),
+          const SizedBox(height: 4),
           Row(children: [
             stepper,
             const Spacer(),
-            Text('${formatPaise(line.rate)} ×', style: th.bodySmall),
-            const SizedBox(width: 8),
+            InkWell(onTap: editRate, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Text('${formatPaise(line.rate)} ×', style: th.bodySmall))),
             SizedBox(width: 84, child: amount),
+            del,
           ]),
         ]),
       );
@@ -192,14 +202,7 @@ class _LineRow extends StatelessWidget {
         SizedBox(
           width: 78,
           child: InkWell(
-            onTap: () async {
-              final v = await showFormSheet(context, title: l.changeRate, saveLabel: l.save, fields: [FieldSpec('rate', l.colRate, type: FieldType.money, initial: (line.rate / 100).toStringAsFixed(2), required: true, autofocus: true), FieldSpec('disc', l.discountPercentLabel, type: FieldType.number, initial: (line.discountBp / 100).toString())]);
-              if (v == null) return;
-              final r = double.tryParse(v['rate'] ?? '');
-              final d = double.tryParse(v['disc'] ?? '');
-              if (r != null) onRate((r * 100).round());
-              if (d != null) onDiscount((d * 100).round());
-            },
+            onTap: editRate,
             child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(formatPaise(line.rate), textAlign: TextAlign.right, style: th.bodyMedium)),
           ),
         ),

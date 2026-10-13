@@ -666,7 +666,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get payCard => 'Card';
 
   @override
-  String get payCredit => 'On credit';
+  String get payCredit => 'Credit';
 
   @override
   String get estimateNoStock => 'An estimate does not change your stock.';

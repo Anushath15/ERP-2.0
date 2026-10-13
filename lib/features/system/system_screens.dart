@@ -70,7 +70,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       row(l.autoBackup, l.autoBackupHelp, Switch(value: _autoBackup, onChanged: (v) => setState(() => _autoBackup = v))),
       row(l.restore, l.restoreHelp, OutlinedButton.icon(onPressed: () async {
         final ok = await confirmDialog(context, title: l.restoreConfirmTitle, message: l.restoreConfirmText, confirmLabel: l.restore, danger: true);
-        if (ok && mounted) toast(context, l.demoOnly);
+        if (ok && context.mounted) toast(context, l.demoOnly);
       }, icon: const Icon(Icons.restore), label: Text(l.chooseFile))),
     ]));
 
@@ -152,7 +152,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
           ]),
         );
     final cards = [
-      item(Icons.verified_outlined, c.success, l.healthIntegrity, l.healthOk, help: l.healthIntegrityHelp(formatDateTime(now.subtract(const Duration(hours: 2)))), action: OutlinedButton.icon(onPressed: _checking ? null : () async { setState(() => _checking = true); await Future<void>.delayed(const Duration(milliseconds: 700)); if (mounted) { setState(() => _checking = false); toast(context, l.healthChecked); } }, icon: _checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.search), label: Text(l.checkNow))),
+      item(Icons.verified_outlined, c.success, l.healthIntegrity, l.healthOk, help: l.healthIntegrityHelp(formatDateTime(now.subtract(const Duration(hours: 2)))), action: OutlinedButton.icon(onPressed: _checking ? null : () async { setState(() => _checking = true); await Future<void>.delayed(const Duration(milliseconds: 700)); if (context.mounted) { setState(() => _checking = false); toast(context, l.healthChecked); } }, icon: _checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.search), label: Text(l.checkNow))),
       item(Icons.save_alt, c.success, l.lastBackup, formatDateTime(now.subtract(const Duration(hours: 5))), help: l.backupsKept('30'), action: FilledButton.icon(onPressed: () => toast(context, l.backupDone), icon: const Icon(Icons.save_alt), label: Text(l.backupNow))),
       item(Icons.storage_outlined, c.primary, l.freeDisk, '212 GB', help: l.freeDiskHelp),
       item(Icons.cloud_upload_outlined, c.warning, l.syncBacklog, l.syncBacklogValue('0'), help: l.syncBacklogHelp),

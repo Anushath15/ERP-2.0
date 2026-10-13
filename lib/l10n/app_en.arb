@@ -321,7 +321,7 @@
   "payCash": "Cash",
   "payUpi": "UPI",
   "payCard": "Card",
-  "payCredit": "On credit",
+  "payCredit": "Credit",
   "estimateNoStock": "An estimate does not change your stock.",
   "saveBill": "Save bill",
   "saveEstimate": "Save estimate",

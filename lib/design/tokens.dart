@@ -38,7 +38,7 @@ class AppColors extends ThemeExtension<AppColors> {
     bg: Color(0xFF0E1318),
     surface: Color(0xFF161D25),
     surfaceAlt: Color(0xFF1E2833),
-    border: Color(0xFF3A4856),
+    border: Color(0xFF708195),
     text: Color(0xFFEAF0F6),
     textMuted: Color(0xFFA8B5C2),
     primary: Color(0xFF5BADFF),

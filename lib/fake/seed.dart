@@ -273,7 +273,7 @@ List<Rec> seedProjects() {
     final budget = 20000000 + r.nextInt(60000000);
     return Rec('hp$i', {
       'name': names[i],
-      'customer': _first[r.nextInt(_first.length)] + ' ' + _second[r.nextInt(_second.length)],
+      'customer': '${_first[r.nextInt(_first.length)]} ${_second[r.nextInt(_second.length)]}',
       'budget': budget,
       'spent': budget * (20 + r.nextInt(70)) ~/ 100,
       'status': ['running', 'running', 'done', 'planning'][r.nextInt(4)],

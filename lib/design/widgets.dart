@@ -70,7 +70,7 @@ class SectionCard extends StatelessWidget {
           padding: padding,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (title != null) ...[
-              Row(children: [Expanded(child: Text(title!, style: Theme.of(context).textTheme.titleMedium)), if (trailing != null) trailing!]),
+              Row(children: [Expanded(child: Text(title!, style: Theme.of(context).textTheme.titleMedium)), ?trailing]),
               const SizedBox(height: 12),
             ],
             child,

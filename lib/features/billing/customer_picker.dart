@@ -8,7 +8,7 @@ import '../../fake/store.dart';
 import 'billing_screen.dart' show showQuickCustomer;
 
 Future<Customer?> showCustomerPickerImpl(BuildContext context) {
-  final body = const _CustomerPicker();
+  const body = _CustomerPicker();
   if (context.isPhone) {
     return showModalBottomSheet<Customer>(context: context, isScrollControlled: true, useSafeArea: true, builder: (_) => body);
   }

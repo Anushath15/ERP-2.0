@@ -1343,7 +1343,7 @@ abstract class AppLocalizations {
   /// No description provided for @payCredit.
   ///
   /// In en, this message translates to:
-  /// **'On credit'**
+  /// **'Credit'**
   String get payCredit;
 
   /// No description provided for @estimateNoStock.

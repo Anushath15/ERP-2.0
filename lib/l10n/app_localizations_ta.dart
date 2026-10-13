@@ -10,7 +10,7 @@ class AppLocalizationsTa extends AppLocalizations {
   AppLocalizationsTa([String locale = 'ta']) : super(locale);
 
   @override
-  String get appName => 'செந்தில் என்டர்பிரைசஸ்';
+  String get appName => 'செந்தில் ERP';
 
   @override
   String get back => 'பின்செல்';
@@ -480,8 +480,7 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
-  String get searchProductHint =>
-      'பெயர் தட்டச்சு செய்யவும் அல்லது பார்கோடு ஸ்கேன் செய்யவும்';
+  String get searchProductHint => 'பெயர் அல்லது பார்கோடு';
 
   @override
   String get addProduct => 'பொருள் சேர்';

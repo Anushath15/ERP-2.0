@@ -37,11 +37,11 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
     final cash = by(PayMode.cash), upi = by(PayMode.upi), card = by(PayMode.card);
     final credit = todays.fold<int>(0, (s, b) => s + (b.totalPaise - b.paidPaise));
     final expenses = ref.watch(recsProvider('expenses')).where((r) => sameDay(r.f['date'] as DateTime)).fold<int>(0, (s, r) => s + r.i('amount'));
-    final opening = 500000;
+    const opening = 500000;
     final expected = opening + cash - expenses;
     final countedPaise = ((double.tryParse(_counted.text) ?? 0) * 100).round();
     final diff = countedPaise - expected;
-    final row = (String k, String v, {bool bold = false}) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(children: [Expanded(child: Text(k, style: bold ? th.titleSmall : th.bodyMedium)), Text(v, style: bold ? th.titleMedium : th.bodyMedium)]));
+    Widget row(String k, String v, {bool bold = false}) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(children: [Expanded(child: Text(k, style: bold ? th.titleSmall : th.bodyMedium)), Text(v, style: bold ? th.titleMedium : th.bodyMedium)]));
 
     final summary = SectionCard(title: l.closingSummary(formatDate(now)), child: Column(children: [
       row(l.statBillsToday, '${todays.length}'),
@@ -67,7 +67,7 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
           final ok = await confirmDialog(context, title: l.closingConfirmTitle, message: l.closingConfirmText(formatDate(now)), confirmLabel: l.closeDay);
           if (ok) {
             setState(() => _closed = true);
-            if (mounted) toast(context, l.closingDone);
+            if (context.mounted) toast(context, l.closingDone);
           }
         },
         icon: const Icon(Icons.event_available),

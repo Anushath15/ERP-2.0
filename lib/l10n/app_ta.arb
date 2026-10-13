@@ -1,6 +1,6 @@
 {
   "@@locale": "ta",
-  "appName": "செந்தில் என்டர்பிரைசஸ்",
+  "appName": "செந்தில் ERP",
   "back": "பின்செல்",
   "cancel": "ரத்து செய்",
   "close": "மூடு",
@@ -181,7 +181,7 @@
       }
     }
   },
-  "searchProductHint": "பெயர் தட்டச்சு செய்யவும் அல்லது பார்கோடு ஸ்கேன் செய்யவும்",
+  "searchProductHint": "பெயர் அல்லது பார்கோடு",
   "addProduct": "பொருள் சேர்",
   "editProduct": "பொருளை மாற்று",
   "addProductShortcut": "புதிய பொருள் சேர் (Ctrl+Shift+N)",

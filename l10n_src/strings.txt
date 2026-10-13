@@ -1,6 +1,6 @@
 # key | English | Tamil      ({name} = filled in by the app; never use an apostrophe, write the words out)
 # ---- common
-appName | Senthil Enterprises | செந்தில் என்டர்பிரைசஸ்
+appName | Senthil Enterprises | செந்தில் ERP
 back | Back | பின்செல்
 cancel | Cancel | ரத்து செய்
 close | Close | மூடு
@@ -159,7 +159,7 @@ sortAmountHigh | Amount: high to low | தொகை: அதிகம் மு�
 outOfStock | Out of stock | இருப்பு இல்லை
 lowStock | Almost finished | கிட்டத்தட்ட தீர்ந்தது
 inBillQty | In bill: {qty} | பில்லில்: {qty}
-searchProductHint | Type name or scan barcode | பெயர் தட்டச்சு செய்யவும் அல்லது பார்கோடு ஸ்கேன் செய்யவும்
+searchProductHint | Type name or scan barcode | பெயர் அல்லது பார்கோடு
 addProduct | Add product | பொருள் சேர்
 editProduct | Change product | பொருளை மாற்று
 addProductShortcut | Add a new product (Ctrl+Shift+N) | புதிய பொருள் சேர் (Ctrl+Shift+N)
@@ -214,7 +214,7 @@ grandTotal | Grand total | மொத்தத் தொகை
 payCash | Cash | பணம்
 payUpi | UPI | யுபிஐ
 payCard | Card | கார்டு
-payCredit | On credit | கடன்
+payCredit | Credit | கடன்
 estimateNoStock | An estimate does not change your stock. | மதிப்பீடு உங்கள் இருப்பை மாற்றாது.
 saveBill | Save bill | பில் சேமி
 saveEstimate | Save estimate | மதிப்பீடு சேமி

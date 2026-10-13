@@ -231,7 +231,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
     return PageFrame(
       title: widget.title,
       subtitle: widget.subtitle,
-      actions: [...widget.actions, if (addBtn != null) addBtn],
+      actions: [...widget.actions, ?addBtn],
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         toolbar,
         Expanded(child: list),
