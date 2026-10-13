@@ -70,3 +70,20 @@ Zero extra reads. Tested on the emulator (`allowlist_test.dart`: allowed e-mail 
 - Later customer payments are one small `payments` document each (already counted in the normal day: "40 later payments"). Write-offs, adjustments and credit notes are rare (a few a week).
 - **Reminders: one small write per reminder opened.** A busy shop might open about 20 a day: **20 writes a day (0.1% of the limit)**, and each device that pulls them reads 20 more. Over a year about 7,000 reminder documents (about 12 MB, 1% of storage). A first restore reads reminder history last and only the most recent 90 days first, so it adds about 1,800 reads, not 7,000.
 - Reminder records are held back 10 seconds before upload so "Not sent? Undo" can remove them; this adds no writes.
+
+
+## A shop with 1,000,000 bills: what goes to Firebase and what stays on the PC
+The free plan allows 1 GiB stored, 50,000 reads and 20,000 writes a day. One million bills do not fit, so **we never upload "everything"**. The rule (a decision for the owner, see PROGRESS.md):
+
+| What | Where | Why |
+|---|---|---|
+| Bills, payments, reminders of the **last 24 months** | Firebase, one small document each (about 1.5 KB) | 24 months at 550 bills a day is about 400,000 documents, about 600 MB: inside 1 GiB with room for the rest |
+| **Summaries**: one document per day (`day_totals`), per customer (balance), per product (stock), per product and month | Firebase, always | 365 daily documents a year; this is all the Home page and the reports need, on any device |
+| Bills **older than 24 months** | Only on the shop PC, in a yearly file (`bills-2023.sqlite`), and in a yearly **backup file** the owner keeps on his own drive | A new phone does not need five-year-old bills; the PC has them and the owner has the file |
+| Master data (products, customers, dealers, shop profile) | Firebase | small, edited |
+
+- **Writes:** one bill = one write. At 550 bills a day that is 550 writes, 3% of 20,000. Summaries are updated on the device and uploaded as small replacements (a handful a day).
+- **First restore of a new device:** reads the summaries and the last 24 months only: about 400,000 reads, spread over 8 days by the quota guard (50,000 a day) unless the owner restores from his backup file, which costs no reads. **A new device is usable on day 1** (masters + summaries + the newest bills first); older bills fill in over the following days.
+- **Removing old bills from the cloud** (to stay under 1 GiB): one device deletes bills older than 24 months, at most 2,000 a day (the free plan allows 20,000 deletes a day), and only **after** that year has been saved as a yearly backup file on the PC. Nothing is deleted from a device.
+- The in-app quota guard is unchanged: when the daily limit is near it pauses uploads; reading and billing on the PC never stop.
+- Real quota use on the real project over several weeks is **Not verified**.
