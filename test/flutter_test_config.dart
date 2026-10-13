@@ -17,6 +17,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   final root = Platform.environment['FLUTTER_ROOT'] ?? 'D:/dev/flutter';
   final icons = File('$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
   if (icons.existsSync()) await load('MaterialIcons', [icons.path]);
-  await load('NotoSans', ['assets/fonts/NotoSans-Regular.ttf', 'assets/fonts/NotoSans-Bold.ttf']);
+  await load('Inter', ['assets/fonts/Inter-Variable.ttf']);
+  await load('AtkinsonHyperlegibleNext', ['assets/fonts/AtkinsonHyperlegibleNext-Variable.ttf']);
   await testMain();
 }

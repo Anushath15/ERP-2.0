@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:erp2/app.dart';
+import 'package:erp2/core/device_store.dart';
 import 'package:erp2/fake/store.dart';
 
 final fixedNow = DateTime(2026, 10, 13, 17, 30);
@@ -25,17 +26,18 @@ Future<ProviderContainer> pumpApp(
   required Viewport size,
   String location = '/',
   ThemeMode theme = ThemeMode.dark,
-  double textScale = 1.0,
+  double? textScale,
+  DeviceStore? store,
 }) async {
   tester.view.physicalSize = Size(size.w, size.h);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
-    overrides: [clockProvider.overrideWithValue(fixedNow)],
+    overrides: [clockProvider.overrideWithValue(fixedNow), deviceStoreProvider.overrideWithValue(store ?? MemoryDeviceStore())],
     child: ErpApp(initialLocation: location),
   ));
   final container = ProviderScope.containerOf(tester.element(find.byType(ErpApp)));
-  container.read(settingsProvider.notifier).set((s) => s.copyWith(theme: theme, textScale: textScale));
+  container.read(settingsProvider.notifier).set((s) => s.copyWith(theme: theme, textScale: textScale ?? s.textScale));
   await tester.pumpAndSettle();
   return container;
 }

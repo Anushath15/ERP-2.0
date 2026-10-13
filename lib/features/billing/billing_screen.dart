@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
 import '../../design/form_sheet.dart';
+import '../../design/segments.dart';
+import '../../design/text_zoom.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
@@ -115,9 +117,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final number = _number();
     final date = _date();
 
-    final picker = ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd);
+    final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd));
 
-    Widget lines() => BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount);
+    Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount));
     final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onSave: _save, onSavePrint: () => _save(print: true), onPreview: _preview, onClear: _clear);
 
     final shortcuts = <ShortcutActivator, VoidCallback>{
@@ -137,14 +139,10 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       body = Column(children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-          child: SegmentedButton<int>(
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(value: 0, label: Text(l.tabProducts), icon: const Icon(Icons.inventory_2_outlined)),
-              ButtonSegment(value: 1, label: Text(l.tabBill(cart.lines.length.toString())), icon: const Icon(Icons.receipt_long_outlined)),
-            ],
-            selected: {_phoneTab},
-            onSelectionChanged: (s) => setState(() => _phoneTab = s.first),
+          child: SlideSegments<int>(
+            options: [(0, l.tabProducts, Icons.inventory_2_outlined), (1, l.tabBill(cart.lines.length.toString()), Icons.receipt_long_outlined)],
+            selected: _phoneTab,
+            onChanged: (v) => setState(() => _phoneTab = v),
           ),
         ),
         Expanded(

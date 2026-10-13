@@ -2,6 +2,9 @@
 library;
 
 import 'package:flutter/material.dart' show ThemeMode;
+import '../core/device_store.dart';
+import '../design/motion_level.dart';
+import '../design/tokens.dart' show Accent, DensityMode, FontChoice;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models.dart';
 import 'seed.dart';
@@ -93,10 +96,23 @@ enum PaperSize { a4, mm80, mm58 }
 
 enum SyncState { synced, syncing, offline, attention }
 
+/// Everything in here is remembered on THIS device only (see DeviceStore). Shop details are demo data in the prototype.
 class AppSettings {
   const AppSettings({
     this.theme = ThemeMode.dark,
+    this.accent = Accent.blue,
+    this.highContrast = false,
     this.textScale = 1.0,
+    this.billingScale = 1.0,
+    this.density = DensityMode.normal,
+    this.font = FontChoice.inter,
+    this.motion = MotionLevel.gentle,
+    this.followSystemMotion = true,
+    this.motionAutoReduced = false,
+    this.soundScan = true,
+    this.soundSave = false,
+    this.soundError = false,
+    this.soundVolume = 0.7,
     this.paper = PaperSize.a4,
     this.pricesIncludeGst = true,
     this.shopName = 'Senthil Enterprises',
@@ -106,15 +122,58 @@ class AppSettings {
     this.signedIn = true,
   });
   final ThemeMode theme;
-  final double textScale;
+  final Accent accent;
+  final bool highContrast;
+  final double textScale, billingScale;
+  final DensityMode density;
+  final FontChoice font;
+  final MotionLevel motion;
+  final bool followSystemMotion, motionAutoReduced;
+  final bool soundScan, soundSave, soundError;
+  final double soundVolume;
   final PaperSize paper;
   final bool pricesIncludeGst, firstRunDone, signedIn;
   final String shopName, gstin;
   final SyncState sync;
 
-  AppSettings copyWith({ThemeMode? theme, double? textScale, PaperSize? paper, bool? pricesIncludeGst, String? shopName, String? gstin, SyncState? sync, bool? firstRunDone, bool? signedIn}) => AppSettings(
+  AppSettings copyWith({
+    ThemeMode? theme,
+    Accent? accent,
+    bool? highContrast,
+    double? textScale,
+    double? billingScale,
+    DensityMode? density,
+    FontChoice? font,
+    MotionLevel? motion,
+    bool? followSystemMotion,
+    bool? motionAutoReduced,
+    bool? soundScan,
+    bool? soundSave,
+    bool? soundError,
+    double? soundVolume,
+    PaperSize? paper,
+    bool? pricesIncludeGst,
+    String? shopName,
+    String? gstin,
+    SyncState? sync,
+    bool? firstRunDone,
+    bool? signedIn,
+  }) =>
+      AppSettings(
         theme: theme ?? this.theme,
+        accent: accent ?? this.accent,
+        highContrast: highContrast ?? this.highContrast,
         textScale: textScale ?? this.textScale,
+        billingScale: billingScale ?? this.billingScale,
+        density: density ?? this.density,
+        font: font ?? this.font,
+        motion: motion ?? this.motion,
+        followSystemMotion: followSystemMotion ?? this.followSystemMotion,
+        motionAutoReduced: motionAutoReduced ?? this.motionAutoReduced,
+        soundScan: soundScan ?? this.soundScan,
+        soundSave: soundSave ?? this.soundSave,
+        soundError: soundError ?? this.soundError,
+        soundVolume: soundVolume ?? this.soundVolume,
         paper: paper ?? this.paper,
         pricesIncludeGst: pricesIncludeGst ?? this.pricesIncludeGst,
         shopName: shopName ?? this.shopName,
@@ -123,12 +182,64 @@ class AppSettings {
         firstRunDone: firstRunDone ?? this.firstRunDone,
         signedIn: signedIn ?? this.signedIn,
       );
+
+  Map<String, Object?> toJson() => {
+        'theme': theme.name,
+        'accent': accent.name,
+        'highContrast': highContrast,
+        'textScale': textScale,
+        'billingScale': billingScale,
+        'density': density.name,
+        'font': font.name,
+        'motion': motion.name,
+        'followSystemMotion': followSystemMotion,
+        'motionAutoReduced': motionAutoReduced,
+        'soundScan': soundScan,
+        'soundSave': soundSave,
+        'soundError': soundError,
+        'soundVolume': soundVolume,
+        'paper': paper.name,
+        'pricesIncludeGst': pricesIncludeGst,
+      };
+
+  /// Tolerant: unknown or damaged values fall back to the defaults.
+  static AppSettings fromJson(Map<String, Object?> j) {
+    T pick<T extends Enum>(List<T> values, Object? name, T fallback) => values.firstWhere((v) => v.name == name, orElse: () => fallback);
+    double num_(Object? v, double min, double max, double fallback) => v is num ? v.toDouble().clamp(min, max) : fallback;
+    bool bool_(Object? v, bool fallback) => v is bool ? v : fallback;
+    const d = AppSettings();
+    return AppSettings(
+      theme: pick(ThemeMode.values, j['theme'], d.theme),
+      accent: pick(Accent.values, j['accent'], d.accent),
+      highContrast: bool_(j['highContrast'], d.highContrast),
+      textScale: num_(j['textScale'], 0.8, 2.0, d.textScale),
+      billingScale: num_(j['billingScale'], 0.8, 2.5, d.billingScale),
+      density: pick(DensityMode.values, j['density'], d.density),
+      font: pick(FontChoice.values, j['font'], d.font),
+      motion: pick(MotionLevel.values, j['motion'], d.motion),
+      followSystemMotion: bool_(j['followSystemMotion'], d.followSystemMotion),
+      motionAutoReduced: bool_(j['motionAutoReduced'], d.motionAutoReduced),
+      soundScan: bool_(j['soundScan'], d.soundScan),
+      soundSave: bool_(j['soundSave'], d.soundSave),
+      soundError: bool_(j['soundError'], d.soundError),
+      soundVolume: num_(j['soundVolume'], 0, 1, d.soundVolume),
+      paper: pick(PaperSize.values, j['paper'], d.paper),
+      pricesIncludeGst: bool_(j['pricesIncludeGst'], d.pricesIncludeGst),
+    );
+  }
 }
+
+/// Where this device keeps its settings. The app overrides it with the real store; tests use memory.
+final deviceStoreProvider = Provider<DeviceStore>((ref) => MemoryDeviceStore());
 
 class SettingsNotifier extends Notifier<AppSettings> {
   @override
-  AppSettings build() => const AppSettings();
-  void set(AppSettings Function(AppSettings) f) => state = f(state);
+  AppSettings build() => AppSettings.fromJson(ref.read(deviceStoreProvider).load());
+
+  void set(AppSettings Function(AppSettings) f) {
+    state = f(state);
+    ref.read(deviceStoreProvider).save(state.toJson());
+  }
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);

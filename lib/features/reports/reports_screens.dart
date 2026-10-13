@@ -191,7 +191,7 @@ class ExportScreen extends ConsumerWidget {
       title: l.navExport,
       subtitle: l.exportSubtitle,
       child: LayoutBuilder(builder: (ctx, bc) {
-        final cols = bc.maxWidth > 980 ? 3 : (bc.maxWidth > 620 ? 2 : 1);
+        final cols = (bc.maxWidth / ctx.textFactor) > 980 ? 3 : ((bc.maxWidth / ctx.textFactor) > 620 ? 2 : 1);
         final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
         return SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 24),

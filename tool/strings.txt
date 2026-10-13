@@ -427,14 +427,6 @@ setPaperHelp | Saved only on this computer
 setPrinter | Printer
 setPrinterHelp | Check how your paper will look
 setLook | How it looks
-setTheme | Colours
-setTextSize | Text size
-setTextSizeHelp | Make writing bigger if it is hard to read
-sizeSmall | Small
-sizeNormal | Normal
-sizeLarge | Large
-sizeHuge | Very large
-textSample | This is how your text will look.
 deviceOnlyNote | Colours, text size and printer are saved only on this device.
 setBackup | Backup
 lastBackup | Last backup
@@ -555,3 +547,56 @@ wizStockText | How do you want to put in your products?
 wizStockLater | Later, I will do it myself
 wizStockExcel | From an Excel file
 wizStockHand | Type them in now
+# ---- appearance, animations, sounds
+setAppearance | Appearance
+setTheme | Colours
+themeSystem | Match my computer
+setAccent | Accent colour
+accentName | {name} accent colour
+setHighContrast | High contrast
+setHighContrastHelp | Stronger colours and borders that are easier to see
+setTextSize | Text size
+setTextSizeHelp | Make writing bigger if it is hard to read. Keys: Ctrl and + or -, and Ctrl 0 to reset.
+sizeSmall | Small
+sizeNormal | Normal
+sizeLarge | Large
+sizeExtraLarge | Extra large
+sizeHuge | Huge
+textSmaller | Smaller text
+textLarger | Larger text
+textPreview | This sentence shows how your text will look. The row below is a bill row.
+resetNormal | Reset to normal
+setBillingText | Billing screen text size
+setBillingTextHelp | Only the product list and the bill lines. Make product names very large without making the whole program bigger.
+setDensity | Row spacing
+setDensityHelp | How much room each row takes
+densityComfortable | Comfortable
+densityNormal | Normal
+densityCompact | Compact
+setFont | Letter style
+setFontHelp | Both styles are inside the program, so nothing is downloaded
+fontInter | Inter (clean)
+fontAtkinson | Atkinson (easy to read)
+fontPreview | Rs. 1,234.50   ₹ 1,234.50   Hacksaw blade 1/2 inch   0123456789
+setAnimations | Animations
+setAnimationsHelp | Movement makes the program feel friendly. It never makes anything slower, and you can turn it down or off.
+animFull | Full
+animGentle | Gentle
+animOff | Off
+animFullHelp | Everything moves: pages, windows, bill lines, totals and small tick marks.
+animGentleHelp | Only page and window changes and button presses move. This is the recommended setting.
+animOffHelp | Nothing moves. Best for slow computers.
+animFollowSystem | Follow my computer reduce-motion setting
+animFollowSystemHelp | If Windows or your phone asks for less movement, animations are turned off.
+animSystemReducing | Your computer is asking for less movement, so animations are off.
+animAutoNote | The program felt slow for a few seconds, so animations were turned down on this device. Nothing else changed.
+animTurnBackOn | Turn animations back on
+setSounds | Sounds
+soundScan | Beep when a barcode is scanned
+soundScanHelp | A short beep each time a product is added by scanning
+soundSave | Tone when a bill is saved
+soundSaveHelp | A soft tone after Save
+soundError | Tone when something is wrong
+soundErrorHelp | A different tone for a mistake
+soundVolume | Volume
+soundNote | In this preview sounds use the computer beep, so the volume control only starts working when real sound is added.

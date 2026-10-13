@@ -3,6 +3,7 @@ import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
 import '../../design/form_sheet.dart';
+import '../../design/segments.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../domain_lite/bill_calc.dart';
@@ -99,7 +100,7 @@ class _BillLinesState extends State<BillLines> {
     if (lines.isEmpty) {
       return EmptyState(icon: Icons.shopping_cart_outlined, title: l.billEmptyTitle, text: l.billEmptyText);
     }
-    return LayoutBuilder(builder: (ctx, bc) => _buildLines(ctx, lines, bc.maxWidth < 560));
+    return LayoutBuilder(builder: (ctx, bc) => _buildLines(ctx, lines, bc.maxWidth / ctx.textFactor < 560));
   }
 
   Widget _buildLines(BuildContext context, List<CartLine> lines, bool phone) {
@@ -185,9 +186,16 @@ class _LineRow extends StatelessWidget {
           const SizedBox(height: 4),
           Row(children: [
             stepper,
-            const Spacer(),
-            InkWell(onTap: editRate, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Text('${formatPaise(line.rate)} ×', style: th.bodySmall))),
-            SizedBox(width: 84, child: amount),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  InkWell(onTap: editRate, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Text('${formatPaise(line.rate)} ×', style: th.bodySmall))),
+                  amount,
+                ]),
+              ),
+            ),
             del,
           ]),
         ]),
@@ -248,6 +256,8 @@ class _QtyStepper extends StatelessWidget {
 }
 
 /// PINNED footer: totals, payment mode and the action buttons. It sits outside every scroll view, so it never moves.
+/// With very large text the GST detail collapses into one short row and the buttons stack, but Grand total and the
+/// three buttons are always fully visible.
 class BillFooter extends StatelessWidget {
   const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onSave, required this.onSavePrint, required this.onPreview, required this.onClear});
   final DocMode mode;
@@ -264,59 +274,71 @@ class BillFooter extends StatelessWidget {
     final phone = context.isPhone;
     final empty = cart.lines.isEmpty;
     final invoice = mode == DocMode.invoice;
+    final big = context.textFactor >= 1.4;
 
-    final details = Wrap(spacing: 14, runSpacing: 2, children: [
-      Text(l.itemsCount(calc.itemCount.toString()), style: th.bodySmall),
-      Text('${l.taxable}: ${formatPaise(calc.taxable)}', style: th.bodySmall),
-      Text('CGST: ${formatPaise(calc.cgst)}', style: th.bodySmall),
-      Text('SGST: ${formatPaise(calc.sgst)}', style: th.bodySmall),
-      if (calc.discount > 0) Text('${l.discount}: -${formatPaise(calc.discount)}', style: th.bodySmall),
-      Text('${l.roundOff}: ${calc.roundOff >= 0 ? '+' : ''}${formatPaise(calc.roundOff)}', style: th.bodySmall),
-    ]);
+    // One line, always the same height (so the footer never moves), shrinking to fit instead of wrapping or clipping.
+    final lineH = MediaQuery.textScalerOf(context).scale(th.bodySmall!.fontSize ?? 12) * 1.5;
+    final detailText = big
+        ? '${l.itemsCount(calc.itemCount.toString())}  ·  ${l.taxable}: ${formatPaise(calc.taxable)}  ·  GST: ${formatPaise(calc.tax)}'
+        : '${l.itemsCount(calc.itemCount.toString())}   ${l.taxable}: ${formatPaise(calc.taxable)}   CGST: ${formatPaise(calc.cgst)}   SGST: ${formatPaise(calc.sgst)}'
+            '${calc.discount > 0 ? '   ${l.discount}: -${formatPaise(calc.discount)}' : ''}   ${l.roundOff}: ${calc.roundOff >= 0 ? '+' : ''}${formatPaise(calc.roundOff)}';
+    final Widget details = SizedBox(
+      height: lineH,
+      child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(detailText, style: th.bodySmall, maxLines: 1, softWrap: false)),
+    );
 
-    final total = Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-      Expanded(child: Text(l.grandTotal, style: th.titleMedium)),
-      Semantics(
-        label: l.grandTotal,
-        child: Text('₹ ${formatPaise(calc.grandTotal)}', key: const ValueKey('grandTotal'), style: th.displaySmall?.copyWith(color: c.primary, fontWeight: FontWeight.w800)),
+    final totalH = MediaQuery.textScalerOf(context).scale(th.displaySmall?.fontSize ?? 28) * 1.45;
+    final total = SizedBox(height: totalH, child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+      Flexible(flex: 0, child: Text(l.grandTotal, style: th.titleMedium)),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Semantics(
+          label: l.grandTotal,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text('₹ ${formatPaise(calc.grandTotal)}', key: const ValueKey('grandTotal'), maxLines: 1, style: th.displaySmall?.copyWith(color: c.primary, fontWeight: FontWeight.w800)),
+          ),
+        ),
       ),
-    ]);
+    ]));
 
-    final pay = invoice
-        ? SegmentedButton<PayMode>(
-            showSelectedIcon: false,
-            style: SegmentedButton.styleFrom(minimumSize: const Size(0, 44), textStyle: th.labelMedium),
-            segments: [
-              ButtonSegment(value: PayMode.cash, label: Text(l.payCash), icon: const Icon(Icons.payments_outlined, size: 18)),
-              ButtonSegment(value: PayMode.upi, label: Text(l.payUpi), icon: const Icon(Icons.qr_code_2, size: 18)),
-              ButtonSegment(value: PayMode.card, label: Text(l.payCard), icon: const Icon(Icons.credit_card, size: 18)),
-              ButtonSegment(value: PayMode.credit, label: Text(l.payCredit), icon: const Icon(Icons.schedule, size: 18)),
+    final Widget pay = invoice
+        ? SlideSegments<PayMode>(
+            options: [
+              (PayMode.cash, l.payCash, Icons.payments_outlined),
+              (PayMode.upi, l.payUpi, Icons.qr_code_2),
+              (PayMode.card, l.payCard, Icons.credit_card),
+              (PayMode.credit, l.payCredit, Icons.schedule),
             ],
-            selected: {cart.pay},
-            onSelectionChanged: (s) => onPay(s.first),
+            selected: cart.pay,
+            onChanged: onPay,
           )
         : Row(children: [Icon(Icons.info_outline, size: 18, color: c.textMuted), const SizedBox(width: 8), Expanded(child: Text(l.estimateNoStock, style: th.bodySmall))]);
 
     final saveLabel = invoice ? l.saveBill : l.saveEstimate;
     final buttons = LayoutBuilder(builder: (ctx, bc) {
-      final narrow = bc.maxWidth < 520;
-      Widget lbl(String t) => FittedBox(fit: BoxFit.scaleDown, child: Text(t, textAlign: TextAlign.center));
+      final w = bc.maxWidth / ctx.textFactor;
+      final narrow = w < 520;
+      final stacked = big && bc.maxWidth < 640;
+      Widget lbl(String t) => FittedBox(fit: BoxFit.scaleDown, child: Text(t, textAlign: TextAlign.center, maxLines: 1));
       Widget? ic(IconData i) => narrow ? null : Icon(i);
+      final save = Tooltip(message: 'Ctrl+S', child: FilledButton.icon(onPressed: empty ? null : onSave, icon: ic(Icons.save_outlined), label: lbl(saveLabel)));
+      final savePrint = Tooltip(message: 'F9', child: FilledButton.tonalIcon(onPressed: empty ? null : onSavePrint, icon: ic(Icons.print_outlined), label: lbl(l.saveAndPrint)));
+      final preview = Tooltip(message: 'F8', child: OutlinedButton.icon(onPressed: empty ? null : onPreview, icon: ic(Icons.visibility_outlined), label: lbl(l.preview)));
+      if (stacked) {
+        return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          save,
+          const SizedBox(height: 6),
+          Row(children: [Expanded(flex: 3, child: savePrint), const SizedBox(width: 8), Expanded(flex: 2, child: preview)]),
+        ]);
+      }
       return Row(children: [
-        Expanded(
-          flex: 3,
-          child: Tooltip(message: 'Ctrl+S', child: FilledButton.icon(onPressed: empty ? null : onSave, icon: ic(Icons.save_outlined), label: lbl(saveLabel))),
-        ),
+        Expanded(flex: 3, child: save),
         const SizedBox(width: 8),
-        Expanded(
-          flex: 3,
-          child: Tooltip(message: 'F9', child: FilledButton.tonalIcon(onPressed: empty ? null : onSavePrint, icon: ic(Icons.print_outlined), label: lbl(l.saveAndPrint))),
-        ),
+        Expanded(flex: 3, child: savePrint),
         const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: Tooltip(message: 'F8', child: OutlinedButton.icon(onPressed: empty ? null : onPreview, icon: ic(Icons.visibility_outlined), label: lbl(l.preview))),
-        ),
+        Expanded(flex: 2, child: preview),
         if (!narrow) ...[
           const SizedBox(width: 8),
           Tooltip(message: 'Esc', child: IconButton(onPressed: empty ? null : onClear, icon: const Icon(Icons.layers_clear_outlined), tooltip: l.clearBill)),

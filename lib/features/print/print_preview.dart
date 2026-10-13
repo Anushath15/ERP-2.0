@@ -119,7 +119,7 @@ class Paper extends StatelessWidget {
     final c = context.c;
     final a4 = paper == PaperSize.a4;
     final fs = a4 ? 12.0 : (paper == PaperSize.mm80 ? 11.0 : 10.0);
-    TextStyle s({bool b = false, double? size}) => TextStyle(fontFamily: 'NotoSans', color: c.onPaper, fontSize: size ?? fs, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
+    TextStyle s({bool b = false, double? size}) => TextStyle(fontFamily: 'Inter', color: c.onPaper, fontSize: size ?? fs, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
     final est = doc.mode == DocMode.estimation;
     final title = est ? l.rcEstimate : l.rcTaxInvoice;
     final cgst = doc.calc.cgst, sgst = doc.calc.sgst;

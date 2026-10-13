@@ -90,7 +90,7 @@ class DashboardScreen extends ConsumerWidget {
           ]);
 
     final stats = LayoutBuilder(builder: (ctx, bc) {
-      final cols = bc.maxWidth > 900 ? 4 : (bc.maxWidth > 520 ? 2 : 1);
+      final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
       final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
       final cards = [
         StatCard(label: l.statTodaySales, value: '₹ ${formatPaise(todayTotal)}', icon: Icons.trending_up, tone: context.c.success, hint: l.billsCount(todays.length.toString())),

@@ -113,7 +113,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
     final toolbar = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (widget.stats.isNotEmpty) ...[
         LayoutBuilder(builder: (ctx, bc) {
-          final cols = bc.maxWidth > 900 ? 4 : (bc.maxWidth > 560 ? 2 : 1);
+          final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 560 ? 2 : 1);
           final w = (bc.maxWidth - (cols - 1) * 12) / cols;
           return Wrap(spacing: 12, runSpacing: 12, children: [for (final s in widget.stats) SizedBox(width: w.floorToDouble(), child: s)]);
         }),

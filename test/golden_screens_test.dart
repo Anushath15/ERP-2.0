@@ -6,7 +6,8 @@ import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
 
-/// Golden images of the key screens. Update with: flutter test --update-goldens test/golden_screens_test.dart
+/// Golden images of the key screens, at several text sizes and in both themes.
+/// Update with: flutter test --update-goldens test/golden_screens_test.dart
 void main() {
   Future<void> fillBill(WidgetTester tester, ProviderContainer c, DocMode mode, {int lines = 8}) async {
     final products = c.read(productsProvider);
@@ -18,19 +19,30 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('billing, desktop 1366x768, dark, English', (tester) async {
-    final c = await pumpApp(tester, size: desktop1366, location: '/bill');
-    await fillBill(tester, c, DocMode.invoice);
-    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/billing_desktop_dark_en.png'));
-  });
+  final screens = <(String, String, bool)>[('pos', '/bill', true), ('estimations', '/estimates', false), ('products', '/products', false), ('settings', '/settings', false)];
+  for (final size in [desktop1366, phone390]) {
+    for (final scale in [0.8, 1.0, 1.25, 1.5, 2.0]) {
+      for (final (name, route, fill) in screens) {
+        testWidgets('$name, ${size.name}, text ${(scale * 100).round()}%, dark', (tester) async {
+          final c = await pumpApp(tester, size: size, location: route, textScale: scale);
+          if (fill) await fillBill(tester, c, DocMode.invoice, lines: 6);
+          expect(tester.takeException(), isNull);
+          await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/text_sizes/${name}_${size.name}_${(scale * 100).round()}_dark.png'));
+        });
+      }
+    }
+  }
 
-  testWidgets('billing, phone 390x844, bill tab', (tester) async {
-    final c = await pumpApp(tester, size: phone390, location: '/bill');
-    await fillBill(tester, c, DocMode.invoice, lines: 4);
-    await tester.tap(find.textContaining('Bill ('));
-    await tester.pumpAndSettle();
-    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/billing_phone_bill_dark_en.png'));
-  });
+  for (final (name, route, fill) in screens) {
+    testWidgets('$name, desktop 1366x768, light, high contrast, large text', (tester) async {
+      final c = await pumpApp(tester, size: desktop1366, location: route, theme: ThemeMode.light, textScale: 1.25);
+      c.read(settingsProvider.notifier).set((s) => s.copyWith(highContrast: true));
+      if (fill) await fillBill(tester, c, DocMode.invoice, lines: 6);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/text_sizes/${name}_desktop-1366x768_125_light_highcontrast.png'));
+    });
+  }
 
   testWidgets('product picker with no match shows + Add row', (tester) async {
     await pumpApp(tester, size: desktop1366, location: '/bill');
@@ -41,20 +53,14 @@ void main() {
     await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/billing_no_product.png'));
   });
 
-  testWidgets('saved estimations, desktop', (tester) async {
-    await pumpApp(tester, size: desktop1366, location: '/estimates');
-    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/estimates_desktop_dark_en.png'));
-  });
-
-  testWidgets('products table, desktop: names wrap fully and Out of stock is separate from price', (tester) async {
+  testWidgets('products table: names wrap fully and Out of stock is separate from the price', (tester) async {
     await pumpApp(tester, size: desktop1366, location: '/products');
     expect(find.text('Out of stock'), findsWidgets);
-    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/products_desktop_dark_en.png'));
   });
 
   testWidgets('dashboard, tablet portrait, light', (tester) async {
     await pumpApp(tester, size: tabletPortrait, location: '/', theme: ThemeMode.light);
-    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/dashboard_tablet_light_en.png'));
+    await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/dashboard_tablet_light.png'));
   });
 
   testWidgets('estimate print: shows its own date beside the number; Edited on only when edited', (tester) async {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/date_fmt.dart';
 import 'core/responsive.dart';
+import 'design/text_zoom.dart';
 import 'design/tokens.dart';
 import 'design/widgets.dart';
 import 'fake/store.dart';
@@ -170,8 +171,10 @@ class TopBar extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(children: [
         Expanded(child: Text(s.shopName, style: th.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
-        const SyncChip(),
-        const SizedBox(width: 12),
+        const Flexible(child: SyncChip()),
+        const SizedBox(width: 8),
+        IconButton(tooltip: l.textSmaller, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.down(x.textScale))), icon: const Icon(Icons.text_decrease)),
+        IconButton(tooltip: l.textLarger, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.up(x.textScale))), icon: const Icon(Icons.text_increase)),
         IconButton(
           tooltip: dark ? l.themeLight : l.themeDark,
           onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(theme: dark ? ThemeMode.light : ThemeMode.dark)),

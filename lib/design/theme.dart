@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'tokens.dart';
 
-const _latin = 'NotoSans';
 
-ThemeData buildTheme(Brightness b) {
-  final c = b == Brightness.dark ? AppColors.dark : AppColors.light;
+ThemeData buildTheme(
+  Brightness b, {
+  Accent accent = Accent.blue,
+  bool highContrast = false,
+  FontChoice font = FontChoice.inter,
+  DensityMode density = DensityMode.normal,
+  bool ripple = true,
+}) {
+  final c = AppColors.build(b, accent: accent, highContrast: highContrast);
+  final latin = font.family;
   final scheme = ColorScheme(
     brightness: b,
     primary: c.primary,
@@ -20,7 +27,7 @@ ThemeData buildTheme(Brightness b) {
     outlineVariant: c.border,
   );
   TextStyle t(double size, FontWeight w, {Color? color}) => TextStyle(
-        fontFamily: _latin,
+        fontFamily: latin,
         fontSize: size,
         fontWeight: w,
         color: color ?? c.text,
@@ -50,10 +57,10 @@ ThemeData buildTheme(Brightness b) {
     colorScheme: scheme,
     scaffoldBackgroundColor: c.bg,
     canvasColor: c.surface,
-    fontFamily: _latin,
+    fontFamily: latin,
     textTheme: text,
     primaryTextTheme: text,
-    extensions: [c],
+    extensions: [c, AppMetrics(density)],
     dividerColor: c.border,
     dividerTheme: DividerThemeData(color: c.border.withValues(alpha: 0.6), space: 1, thickness: 1),
     cardTheme: CardThemeData(
@@ -147,8 +154,8 @@ ThemeData buildTheme(Brightness b) {
       thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? c.onPrimary : c.textMuted),
       trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? c.primary : c.surfaceAlt),
     ),
-    visualDensity: VisualDensity.standard,
-    splashFactory: NoSplash.splashFactory, // no heavy animations
+    visualDensity: switch (density) { DensityMode.comfortable => VisualDensity.comfortable, DensityMode.normal => VisualDensity.standard, DensityMode.compact => VisualDensity.compact },
+    splashFactory: ripple ? InkRipple.splashFactory : NoSplash.splashFactory,
     pageTransitionsTheme: const PageTransitionsTheme(builders: {
       TargetPlatform.android: _NoTransition(),
       TargetPlatform.windows: _NoTransition(),
