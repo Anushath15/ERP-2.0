@@ -2,11 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:erp2/features/billing/cart.dart';
+import 'package:erp2/fake/models.dart';
+import 'package:erp2/fake/seed.dart';
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
 
 /// Keyboard-first billing: type, Enter adds the first match, Up/Down moves, a barcode + Enter adds that product.
+class _Big extends ProductsNotifier {
+  @override
+  List<Product> build() => seedProducts(count: 6000);
+}
+
 void main() {
+  testWidgets('a long catalogue: after scrolling far down, a new search starts at the top with its first match (and the list is a fresh view)', (tester) async {
+    await pumpApp(tester, size: desktop1366, location: '/bill', extraOverrides: [productsProvider.overrideWith(_Big.new)]);
+    ScrollableState list() {
+      ScrollableState? best;
+      for (final e in find.byType(Scrollable).evaluate()) {
+        final st = (e as StatefulElement).state as ScrollableState;
+        if (st.position.axis == Axis.vertical && st.position.maxScrollExtent > 1000 && (best == null || st.position.maxScrollExtent > best.position.maxScrollExtent)) best = st;
+      }
+      return best!;
+    }
+
+    for (var i = 0; i < 30; i++) {
+      list().position.jumpTo(list().position.pixels + 900);
+      await tester.pump();
+    }
+    expect(list().position.pixels, greaterThan(20000), reason: 'we are far down the list');
+    await tester.enterText(find.byType(TextField).first, 'hacksaw');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('HACKSAW'), findsWidgets);
+    final after = tester.widgetList<ListView>(find.byType(ListView)).where((l) => l.key is ValueKey<int>).toList();
+    expect(after, isNotEmpty, reason: 'the product list is a keyed view that is replaced for every new search');
+  });
+
   testWidgets('Enter adds the first match; the search box clears and keeps focus', (tester) async {
     final c = await pumpApp(tester, size: desktop1366, location: '/bill');
     final first = c.read(productsProvider).firstWhere((p) => p.name.contains('HACKSAW'));

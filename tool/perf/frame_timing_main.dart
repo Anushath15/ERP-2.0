@@ -16,10 +16,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:erp2/app.dart';
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/features/billing/cart.dart';
+import 'package:erp2/fake/models.dart';
+import 'package:erp2/fake/seed.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:erp2/router.dart';
 
 const outPath = String.fromEnvironment('PERF_OUT');
+
+/// With --dart-define=PERF_PRODUCTS=50000 the catalogue has that many products and only the long-list test runs.
+const bigProducts = int.fromEnvironment('PERF_PRODUCTS');
+
+class _BigProducts extends ProductsNotifier {
+  @override
+  List<Product> build() => seedProducts(count: bigProducts);
+}
+
 
 class Stats {
   Stats(this.frames);
@@ -42,7 +53,7 @@ class Stats {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final container = ProviderContainer();
+  final container = ProviderContainer(overrides: [if (bigProducts > 0) productsProvider.overrideWith(_BigProducts.new)]);
   container.read(settingsProvider.notifier).set((s) => s.copyWith(motion: MotionLevel.full, followSystemMotion: false));
   final router = buildRouter(initialLocation: '/bill');
   runApp(UncontrolledProviderScope(container: container, child: ErpApp(router: router)));
@@ -127,6 +138,63 @@ Future<void> main() async {
     }
     stdout.writeln('PERF_ROUTES ${jsonEncode(out)}');
     return out;
+  }
+
+  if (bigProducts > 0) {
+    // New bill with a huge catalogue: scroll the product list (fast, deep), then type a search on it
+    router.go('/bill');
+    await Future<void>.delayed(const Duration(seconds: 3));
+    ScrollPosition? findList() {
+      ScrollPosition? best;
+      void visit(Element e) {
+        if (e is StatefulElement && e.state is ScrollableState) {
+          final p = (e.state as ScrollableState).position;
+          if (p.axis == Axis.vertical && p.maxScrollExtent > 1000 && (best == null || p.maxScrollExtent > best!.maxScrollExtent)) best = p;
+        }
+        e.visitChildren(visit);
+      }
+
+      WidgetsBinding.instance.rootElement?.visitChildren(visit);
+      return best;
+    }
+
+    final list = findList();
+    final out = <String, Object>{'products': bigProducts, 'listExtentPx': list?.maxScrollExtent ?? 0};
+    if (list != null) {
+      all.clear();
+      for (var i = 0; i < 600; i++) {
+        list.jumpTo((list.pixels + 900) % list.maxScrollExtent); // roughly 15 rows per frame, far faster than a person
+        await WidgetsBinding.instance.endOfFrame;
+      }
+      await Future<void>.delayed(const Duration(seconds: 1));
+      out['scroll'] = Stats(List.of(all)).toJson();
+    }
+    final ed = findEditable();
+    if (ed != null) {
+      all.clear();
+      // warm-up typing of something rare (few matches), then the long search that starts with a very common letter
+      for (final w in const bool.fromEnvironment('PERF_NOWARM') ? <String>[] : ['z', 'zq', '']) {
+        ed.userUpdateTextEditingValue(TextEditingValue(text: w, selection: TextSelection.collapsed(offset: w.length)), SelectionChangedCause.keyboard);
+        final t = Stopwatch()..start();
+        await WidgetsBinding.instance.endOfFrame;
+        stdout.writeln('PERF_KEY warm-up "$w" took ${t.elapsedMilliseconds} ms');
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+      const q = 'tower bolt 1 1/2';
+      for (var i = 1; i <= q.length; i++) {
+        final t = Stopwatch()..start();
+        ed.userUpdateTextEditingValue(TextEditingValue(text: q.substring(0, i), selection: TextSelection.collapsed(offset: i)), SelectionChangedCause.keyboard);
+        await WidgetsBinding.instance.endOfFrame;
+        stdout.writeln('PERF_KEY "${q.substring(0, i)}" took ${t.elapsedMilliseconds} ms until the next frame ended');
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+      }
+      await Future<void>.delayed(const Duration(seconds: 1));
+      out['typeSearch'] = Stats(List.of(all)).toJson();
+    }
+    final text = const JsonEncoder.withIndent('  ').convert(out);
+    stdout.writeln('PERF_BIGLIST $text');
+    if (outPath.isNotEmpty) File(outPath).writeAsStringSync(text);
+    exit(0);
   }
 
   final result = <String, Object>{

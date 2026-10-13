@@ -28,6 +28,7 @@ class _ProductPickerState extends State<ProductPicker> {
   final _ctl = TextEditingController();
   late final FocusNode _focus = widget.focusNode ?? FocusNode();
   final _selKey = GlobalKey();
+  int _gen = 0;
   String _q = '';
   int _sel = 0;
   String? _tickId;
@@ -73,6 +74,10 @@ class _ProductPickerState extends State<ProductPicker> {
       _rows = out;
     }
     _sel = 0;
+    // A new result list is a NEW list view. Reusing the old one is slow: when someone has scrolled far down a long list and then types a
+    // search, the old view builds every row between its old position and the top again (measured with 50,000 products: one frame of
+    // 1.1 to 5.3 seconds). A fresh view starts at the top and builds only the rows you can see.
+    _gen++;
   }
 
   void _onChanged(String v) => setState(() {
@@ -173,6 +178,7 @@ class _ProductPickerState extends State<ProductPicker> {
           child: _rows.isEmpty
               ? _NoProduct(text: _q.trim(), onAdd: () => widget.onQuickAdd(_q.trim()))
               : RepaintBoundary(child: ListView.separated(
+                  key: ValueKey<int>(_gen),
                   itemCount: _rows.length,
                   separatorBuilder: (_, _) => Divider(height: 1, color: c.border.withValues(alpha: 0.5)),
                   itemBuilder: (ctx, i) => _ProductRow(

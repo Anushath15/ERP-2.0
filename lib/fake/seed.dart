@@ -60,10 +60,17 @@ List<Product> seedProducts({int count = 757}) {
   final r = Random(2026);
   final seen = <String>{};
   final out = <Product>[];
+  var misses = 0;
   while (out.length < count) {
     final t = _templates[r.nextInt(_templates.length)];
-    final name = _fill(t.$1, r);
-    if (!seen.add(name)) continue;
+    var name = _fill(t.$1, r);
+    if (!seen.add(name)) {
+      // a very big catalogue (the 50,000-product speed test) runs out of different combinations: make the name different
+      if (++misses < 500) continue;
+      name = '$name ${out.length + 1}';
+      seen.add(name);
+      misses = 0;
+    }
     final price = ((t.$4 + r.nextInt(t.$5 - t.$4 + 1)) ~/ 50) * 50;
     final i = out.length;
     final stockRoll = r.nextInt(100);
