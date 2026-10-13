@@ -21,7 +21,8 @@ Evidence and numbers: see the report in the last message and [perf-results.md](p
 Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents, spikes S1-S4 plus Android and browser checks, quota analysis of rule lookups, convergence test: see [spikes.md](spikes.md).
 
 ## Blocked on the owner
-- **GitHub:** `gh` is installed but **not signed in** (checked 2026-10-13: "not logged into any GitHub hosts"). Nothing is pushed. When you sign in (`gh auth login`), I create the public repo ERP-2.0, push all commits and publish the two zips as a pre-release. Until then the zips are in `dist/`.
+- **GitHub: done.** Code: <https://github.com/Anushath15/ERP-2.0> (public, history about 44 MB). CI (analyze, tests, web and Windows builds) passes on `main`. Pre-release **v2.0.0-proto.1** with the Windows zip, web zip and full screenshot zip: <https://github.com/Anushath15/ERP-2.0/releases/tag/v2.0.0-proto.1>. Secret scanning and push protection are on.
+- **Firebase: waiting on the owner.** Needs the shop Gmail address (OWNER-SETUP step 3), then `firebase login` with it in the browser (step 4). The CLI on this PC is currently signed in with the personal Gmail, so I did not create anything. Nothing is created, no billing, the app is not connected to Firebase.
 - **Windows Developer Mode is still off** (checked again today). Needed only to build apps with native plugins on this PC (official Firebase plugins, printing/scanner plugins in Phase 2). The Phase 1 prototype needs no plugin. OWNER-SETUP step 1.
 - **Firebase project** (OWNER-SETUP step 3): not needed until real sync in Phase 2.
 
