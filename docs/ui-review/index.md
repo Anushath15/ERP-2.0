@@ -4,7 +4,7 @@ Every screen of the Phase 1 prototype (sample data only) at three widths: **phon
 
 Folder layout: `docs/ui-review/<phone|tablet|desktop>/<dark|light>/<screen>.jpg`
 
-| Screen | Desktop dark EN | Desktop light TA | Tablet dark EN | Phone dark EN | Phone light TA |
+| Screen | Desktop dark EN | Desktop light EN | Tablet dark EN | Phone dark EN | Phone light EN |
 |---|---|---|---|---|---|
 | Sign in | [desktop DARK](desktop/dark/signin.jpg) | [desktop LIGHT](desktop/light/signin.jpg) | [tablet DARK](tablet/dark/signin.jpg) | [phone DARK](phone/dark/signin.jpg) | [phone LIGHT](phone/light/signin.jpg) |
 | Forgot password | [desktop DARK](desktop/dark/forgot-password.jpg) | [desktop LIGHT](desktop/light/forgot-password.jpg) | [tablet DARK](tablet/dark/forgot-password.jpg) | [phone DARK](phone/dark/forgot-password.jpg) | [phone LIGHT](phone/light/forgot-password.jpg) |
@@ -49,7 +49,16 @@ Folder layout: `docs/ui-review/<phone|tablet|desktop>/<dark|light>/<screen>.jpg`
 | Bill details with Print again / Return / Cancel (owner only) | [desktop DARK](desktop/dark/dlg-bill-detail.jpg) | [desktop LIGHT](desktop/light/dlg-bill-detail.jpg) | [tablet DARK](tablet/dark/dlg-bill-detail.jpg) | [phone DARK](phone/dark/dlg-bill-detail.jpg) | [phone LIGHT](phone/light/dlg-bill-detail.jpg) |
 | Saved estimate: View, Edit, Copy, Make into bill, Delete with reason | [desktop DARK](desktop/dark/dlg-estimate-actions.jpg) | [desktop LIGHT](desktop/light/dlg-estimate-actions.jpg) | [tablet DARK](tablet/dark/dlg-estimate-actions.jpg) | [phone DARK](phone/dark/dlg-estimate-actions.jpg) | [phone LIGHT](phone/light/dlg-estimate-actions.jpg) |
 | Form: add product (Ctrl+Shift+N) | [desktop DARK](desktop/dark/dlg-add-product-form.jpg) | [desktop LIGHT](desktop/light/dlg-add-product-form.jpg) | [tablet DARK](tablet/dark/dlg-add-product-form.jpg) | [phone DARK](phone/dark/dlg-add-product-form.jpg) | [phone LIGHT](phone/light/dlg-add-product-form.jpg) |
-| Customer details with Receive payment | [desktop DARK](desktop/dark/dlg-customer-detail.jpg) | [desktop LIGHT](desktop/light/dlg-customer-detail.jpg) | [tablet DARK](tablet/dark/dlg-customer-detail.jpg) | [phone DARK](phone/dark/dlg-customer-detail.jpg) | [phone LIGHT](phone/light/dlg-customer-detail.jpg) |
+| POS: part payment, balance goes to the customer | [desktop DARK](desktop/dark/pos-part-paid.jpg) | [desktop LIGHT](desktop/light/pos-part-paid.jpg) | [tablet DARK](tablet/dark/pos-part-paid.jpg) | [phone DARK](phone/dark/pos-part-paid.jpg) | [phone LIGHT](phone/light/pos-part-paid.jpg) |
+| POS: walk-in with a balance must pick a customer | [desktop DARK](desktop/dark/pos-walkin-balance.jpg) | [desktop LIGHT](desktop/light/pos-walkin-balance.jpg) | [tablet DARK](tablet/dark/pos-walkin-balance.jpg) | [phone DARK](phone/dark/pos-walkin-balance.jpg) | [phone LIGHT](phone/light/pos-walkin-balance.jpg) |
+| POS: overpaid, change or keep as advance | [desktop DARK](desktop/dark/pos-overpaid.jpg) | [desktop LIGHT](desktop/light/pos-overpaid.jpg) | [tablet DARK](tablet/dark/pos-overpaid.jpg) | [phone DARK](phone/dark/pos-overpaid.jpg) | [phone LIGHT](phone/light/pos-overpaid.jpg) |
+| Customer: balance, ageing, bills, ledger, reminders | [desktop DARK](desktop/dark/customer-detail.jpg) | [desktop LIGHT](desktop/light/customer-detail.jpg) | [tablet DARK](tablet/dark/customer-detail.jpg) | [phone DARK](phone/dark/customer-detail.jpg) | [phone LIGHT](phone/light/customer-detail.jpg) |
+| Customer statement (print and PDF) | [desktop DARK](desktop/dark/customer-statement.jpg) | [desktop LIGHT](desktop/light/customer-statement.jpg) | [tablet DARK](tablet/dark/customer-statement.jpg) | [phone DARK](phone/dark/customer-statement.jpg) | [phone LIGHT](phone/light/customer-statement.jpg) |
+| Payment receipt preview | [desktop DARK](desktop/dark/receipt-payment.jpg) | [desktop LIGHT](desktop/light/receipt-payment.jpg) | [tablet DARK](tablet/dark/receipt-payment.jpg) | [phone DARK](phone/dark/receipt-payment.jpg) | [phone LIGHT](phone/light/receipt-payment.jpg) |
+| Dialog: receive payment (oldest bills first, or choose) | [desktop DARK](desktop/dark/dlg-receive-payment.jpg) | [desktop LIGHT](desktop/light/dlg-receive-payment.jpg) | [tablet DARK](tablet/dark/dlg-receive-payment.jpg) | [phone DARK](phone/dark/dlg-receive-payment.jpg) | [phone LIGHT](phone/light/dlg-receive-payment.jpg) |
+| Dialog: WhatsApp reminder preview (editable) | [desktop DARK](desktop/dark/dlg-reminder.jpg) | [desktop LIGHT](desktop/light/dlg-reminder.jpg) | [tablet DARK](tablet/dark/dlg-reminder.jpg) | [phone DARK](phone/dark/dlg-reminder.jpg) | [phone LIGHT](phone/light/dlg-reminder.jpg) |
+| Dialog: reminder while offline (Copy message) | [desktop DARK](desktop/dark/dlg-reminder-offline.jpg) | [desktop LIGHT](desktop/light/dlg-reminder-offline.jpg) | [tablet DARK](tablet/dark/dlg-reminder-offline.jpg) | [phone DARK](phone/dark/dlg-reminder-offline.jpg) | [phone LIGHT](phone/light/dlg-reminder-offline.jpg) |
+| Settings > Reminders (template, tone, UPI, guard) | [desktop DARK](desktop/dark/settings-reminders.jpg) | [desktop LIGHT](desktop/light/settings-reminders.jpg) | [tablet DARK](tablet/dark/settings-reminders.jpg) | [phone DARK](phone/dark/settings-reminders.jpg) | [phone LIGHT](phone/light/settings-reminders.jpg) |
 
 ## Text size 100% / 150% / 200%
 
@@ -235,7 +244,43 @@ All 6 combinations (3 widths x 2 colours) exist for every screen, in the same fo
 
 <img src="desktop/dark/dlg-add-product-form.jpg" width="520"> <img src="phone/dark/dlg-add-product-form.jpg" width="170">
 
-### Customer details with Receive payment
+### POS: part payment, balance goes to the customer
 
-<img src="desktop/dark/dlg-customer-detail.jpg" width="520"> <img src="phone/dark/dlg-customer-detail.jpg" width="170">
+<img src="desktop/dark/pos-part-paid.jpg" width="520"> <img src="phone/dark/pos-part-paid.jpg" width="170">
+
+### POS: walk-in with a balance must pick a customer
+
+<img src="desktop/dark/pos-walkin-balance.jpg" width="520"> <img src="phone/dark/pos-walkin-balance.jpg" width="170">
+
+### POS: overpaid, change or keep as advance
+
+<img src="desktop/dark/pos-overpaid.jpg" width="520"> <img src="phone/dark/pos-overpaid.jpg" width="170">
+
+### Customer: balance, ageing, bills, ledger, reminders
+
+<img src="desktop/dark/customer-detail.jpg" width="520"> <img src="phone/dark/customer-detail.jpg" width="170">
+
+### Customer statement (print and PDF)
+
+<img src="desktop/dark/customer-statement.jpg" width="520"> <img src="phone/dark/customer-statement.jpg" width="170">
+
+### Payment receipt preview
+
+<img src="desktop/dark/receipt-payment.jpg" width="520"> <img src="phone/dark/receipt-payment.jpg" width="170">
+
+### Dialog: receive payment (oldest bills first, or choose)
+
+<img src="desktop/dark/dlg-receive-payment.jpg" width="520"> <img src="phone/dark/dlg-receive-payment.jpg" width="170">
+
+### Dialog: WhatsApp reminder preview (editable)
+
+<img src="desktop/dark/dlg-reminder.jpg" width="520"> <img src="phone/dark/dlg-reminder.jpg" width="170">
+
+### Dialog: reminder while offline (Copy message)
+
+<img src="desktop/dark/dlg-reminder-offline.jpg" width="520"> <img src="phone/dark/dlg-reminder-offline.jpg" width="170">
+
+### Settings > Reminders (template, tone, UPI, guard)
+
+<img src="desktop/dark/settings-reminders.jpg" width="520"> <img src="phone/dark/settings-reminders.jpg" width="170">
 
