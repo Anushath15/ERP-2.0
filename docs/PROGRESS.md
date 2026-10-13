@@ -5,10 +5,12 @@
 _Last updated: 2026-10-13_
 
 ## How to look at it
-- **Start the prototype (Windows):** unzip `dist/ERP2-prototype-windows.zip` and double-click `erp2.exe` (or, in this folder: `flutter run -d windows`).
-- **Web:** `dist/ERP2-prototype-web.zip` (open `index.html` through any local web server), or `flutter run -d chrome`.
-- **Without running anything:** screenshots of every screen are in [ui-review/index.md](ui-review/index.md) (phone, tablet, desktop; dark and light; plus text sizes 100/150/200%).
-- Nothing is saved except per-device display settings; all data is made-up sample data.
+**Start with [REVIEW-GUIDE.md](REVIEW-GUIDE.md)**: a 15-minute walkthrough (₹150 bill with ₹100 given, Money to collect, WhatsApp preview and Undo, walk-in with a balance, 200% text, 100 lines). Sample data is fake; nothing is saved or sent.
+- **Current build (built from commit `68c77d1`, 2026-10-13):** `dist/ERP2-prototype-windows-2026-10-13-68c77d1.zip` (unzip, double-click `erp2.exe`) and `dist/ERP2-prototype-web-2026-10-13-68c77d1.zip` (open `index.html` through a local web server). Both include all current screens (credit, Money to collect, customer page, reminders, billing footer with Received and Balance, statement PDF). Older zips are in `dist/superseded/`. `dist/` is git-ignored.
+- **Checked:** the Windows zip was unzipped to a fresh folder and started (window opened, stayed running 8 seconds, then closed by me); the web zip was unzipped, served on localhost and Money to collect loaded with no browser console errors. Not checked: a second PC, a Mac, a phone.
+- **Without running anything:** screenshots of every screen are in [ui-review/index.md](ui-review/index.md).
+- The Statement's **Save as PDF now makes a real A4 PDF** (Downloads folder, or a browser download). **Print** is still a "not connected" message (no printing in the prototype).
+- Preview helper: **Ctrl+Shift+L** on New bill fills the bill with 100 sample lines.
 
 ## Phase 1 status (UI and UX, no database, no Firebase)
 Done: design system, all 37 screens (first-run wizard, sign in, forgot password, Home, POS billing, estimates, saved estimates, sales register, sales returns, delivery, products, categories, stock left, purchases, purchase returns, stock changes, customers, dealers, money to collect, staff, expenses, daily closing, reports, export, import old data, warranty, house projects, notifications, settings, database health, help, about, More menu, and the four print previews: A4 invoice, 80 mm, 58 mm, estimate with its own date), English only, dark/light/match-computer, accents, high contrast, text size 80-200%, billing text size, density, two fonts, animations (Full/Gentle/Off), optional sounds.
@@ -19,7 +21,7 @@ Evidence and numbers: see the report in the last message and [perf-results.md](p
 Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents, spikes S1-S4 plus Android and browser checks, quota analysis of rule lookups, convergence test: see [spikes.md](spikes.md).
 
 ## Blocked on the owner
-- **GitHub:** `gh` is not signed in. First step next session: `gh auth status`, create the public repo ERP-2.0, push, publish the Windows zip as a pre-release. Until then the zips are in `dist/` (git-ignored).
+- **GitHub:** `gh` is installed but **not signed in** (checked 2026-10-13: "not logged into any GitHub hosts"). Nothing is pushed. When you sign in (`gh auth login`), I create the public repo ERP-2.0, push all commits and publish the two zips as a pre-release. Until then the zips are in `dist/`.
 - **Windows Developer Mode is still off** (checked again today). Needed only to build apps with native plugins on this PC (official Firebase plugins, printing/scanner plugins in Phase 2). The Phase 1 prototype needs no plugin. OWNER-SETUP step 1.
 - **Firebase project** (OWNER-SETUP step 3): not needed until real sync in Phase 2.
 
