@@ -36,11 +36,9 @@ class ShopProfileScreen extends ConsumerWidget {
     final details = SectionCard(
       title: l.setShop,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
+        Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
           const AppLogo(size: 56),
-          const SizedBox(width: 12),
-          Expanded(child: Text(l.shopLogoNote, style: th.bodySmall)),
-          const SizedBox(width: 8),
+          ConstrainedBox(constraints: const BoxConstraints(maxWidth: 240), child: Text(l.shopLogoNote, style: th.bodySmall)),
           OutlinedButton.icon(onPressed: () => toast(context, l.demoOnly), icon: const Icon(Icons.image_outlined), label: Text(l.chooseFile)),
         ]),
         const SizedBox(height: 14),

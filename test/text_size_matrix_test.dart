@@ -7,6 +7,7 @@ import 'helpers.dart';
 /// Every screen must still lay out cleanly (no RenderFlex overflow or other layout error) at text sizes 80% to 200%,
 /// at desktop, tablet and phone widths, in both themes. All failures of a configuration are listed together.
 final _credit = seedCredit(seedCustomers(), fixedNow);
+final _dealerId = seedDealers().firstWhere((d) => d.i('balance') > 0).id;
 final _dueId = _credit.entries.firstWhere((e) => e.value.balance > 0 && e.value.bills.length > 1).key;
 
 final routes = <String>[
@@ -14,6 +15,7 @@ final routes = <String>[
   '/inventory', '/purchases', '/purchase-returns', '/adjustments', '/customers', '/dealers', '/credit', '/staff', '/expenses', '/closing', '/reports',
   '/export', '/import', '/warranty', '/projects', '/notifications', '/settings', '/health', '/help', '/about', '/more', '/preview/a4', '/preview/80',
   '/preview/58', '/preview/estimate', '/preview/payment', '/customers/$_dueId', '/customers/$_dueId/statement',
+  '/shop', '/dealers/$_dealerId', '/preview/a5',
 ];
 
 const scales = [0.8, 1.0, 1.25, 1.5, 2.0];

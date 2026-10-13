@@ -113,8 +113,10 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
         ? null
         : FilledButton.icon(onPressed: widget.onAdd, icon: const Icon(Icons.add), label: Text(widget.addLabel ?? l.addNew));
 
+    // On a very small screen with very big text the summary cards would push the list out of the window: they wait until there is room.
+    final tiny = MediaQuery.sizeOf(context).height / context.textFactor < 380;
     final toolbar = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      if (widget.stats.isNotEmpty) ...[
+      if (widget.stats.isNotEmpty && !tiny) ...[
         LayoutBuilder(builder: (ctx, bc) {
           final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 560 ? 2 : 1);
           final w = (bc.maxWidth - (cols - 1) * 12) / cols;

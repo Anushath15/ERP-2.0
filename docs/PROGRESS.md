@@ -2,15 +2,13 @@
 
 **READY FOR OWNER REVIEW (Phase 1: screens with sample data).** Phase 2 does not start until the owner says "go".
 
-_Last updated: 2026-10-13_
+_Last updated: 2026-10-14_
 
 ## How to look at it
-**Start with [REVIEW-GUIDE.md](REVIEW-GUIDE.md)**: a 15-minute walkthrough (₹150 bill with ₹100 given, Money to collect, WhatsApp preview and Undo, walk-in with a balance, 200% text, 100 lines). Sample data is fake; nothing is saved or sent.
-- **Current build (built from commit `68c77d1`, 2026-10-13):** `dist/ERP2-prototype-windows-2026-10-13-68c77d1.zip` (unzip, double-click `erp2.exe`) and `dist/ERP2-prototype-web-2026-10-13-68c77d1.zip` (open `index.html` through a local web server). Both include all current screens (credit, Money to collect, customer page, reminders, billing footer with Received and Balance, statement PDF). Older zips are in `dist/superseded/`. `dist/` is git-ignored.
-- **Checked:** the Windows zip was unzipped to a fresh folder and started (window opened, stayed running 8 seconds, then closed by me); the web zip was unzipped, served on localhost and Money to collect loaded with no browser console errors. Not checked: a second PC, a Mac, a phone.
-- **Without running anything:** the main screens are in [ui-review/index.md](ui-review/index.md); the full set of about 320 pictures is the `ERP2-ui-review-screenshots-*.zip` attached to each GitHub pre-release (and in `dist/`).
-- The Statement's **Save as PDF now makes a real A4 PDF** (Downloads folder, or a browser download). **Print** is still a "not connected" message (no printing in the prototype).
-- Preview helper: **Ctrl+Shift+L** on New bill fills the bill with 100 sample lines.
+**Start with [REVIEW-GUIDE.md](REVIEW-GUIDE.md)**: a 15-minute walkthrough (₹150 bill with ₹100 given, the Credit button, Money to collect, customer and dealer profiles, Settle fully with Undo, WhatsApp preview, the Shop profile and the estimate printout, 200% text, 100 lines). Sample data is fake; nothing is saved or sent.
+- **Current build: pre-release `v2.0.0-proto.2`** on GitHub (<https://github.com/Anushath15/ERP-2.0/releases>): `ASK-ERP-2.0-windows-v2.0.0-proto.2.zip` (unzip, double-click `ASK_ERP_2.exe`), `ASK-ERP-2.0-web-v2.0.0-proto.2.zip` and the full screenshot set `ASK-ERP-2.0-screenshots-v2.0.0-proto.2.zip`. They are built by the release workflow from the tagged commit.
+- **Without running anything:** the main screens are in [ui-review/index.md](ui-review/index.md).
+- Things that now really work in the prototype: Save as PDF (statements, bills, estimates; saved on this computer only), Ctrl+Shift+L fills 100 sample lines on New bill.
 
 ## Phase 1 status (UI and UX, no database, no Firebase)
 Done: design system, all 37 screens (first-run wizard, sign in, forgot password, Home, POS billing, estimates, saved estimates, sales register, sales returns, delivery, products, categories, stock left, purchases, purchase returns, stock changes, customers, dealers, money to collect, staff, expenses, daily closing, reports, export, import old data, warranty, house projects, notifications, settings, database health, help, about, More menu, and the four print previews: A4 invoice, 80 mm, 58 mm, estimate with its own date), English only, dark/light/match-computer, accents, high contrast, text size 80-200%, billing text size, density, two fonts, animations (Full/Gentle/Off), optional sounds.
@@ -46,14 +44,25 @@ Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents
 17. Credit sale needs a named customer (pick or quick-add name and phone) before saving; a walk-in with a balance cannot be saved. Change: `_save` in `lib/features/billing/billing_screen.dart`.
 18. Overpayment shows change to give back by default; "Keep as advance" is a tick, only for a named customer. A payment above the dues becomes an advance.
 19. Receive payment goes to the OLDEST bills first; "Choose bills" overrides. Overdue = older than 30 days. Change: `overdueAmount(termDays)` in `lib/domain/credit/dues.dart`.
-20. Credit limit default is off; Settings > Credit limit: Off / Warn / Block (owner chooses).
+20. Credit limit: Off / Warn / Block (owner chooses); default **Warn**. It lives on the Shop profile page now.
 21. Write-off is owner-only, needs a reason, and cannot exceed what is owed.
 22. A reminder record means "Open WhatsApp was pressed", never "delivered"; the screens say "Reminders opened in WhatsApp". Undo for 8 seconds; 24-hour guard asks before a repeat (hours in Settings > Reminders).
 23. The app never sends by itself and never bulk-sends. Offline: button disabled with the reason, "Copy message" offered. Default country code +91.
 24. Phase 1 opens links with small built-in code (no plugin); Phase 2 swaps in `url_launcher` once Developer Mode is on (Android needs it).
 25. Reminder events are held 10 seconds before upload so Undo needs no cloud delete; about 20 small writes a day (quota-budget.md).
 
+26. **Page changes** replace the old page at once; the new page fades in from 55% to 100% in 100 ms (nothing when animations are Off). Change: `motionPage` in `lib/design/motion.dart`.
+27. **The app is "ASK ERP 2.0"** with the ERP 1.0 logo. The Windows file is `ASK_ERP_2.exe`. The shop name in the header comes from the Shop profile.
+28. **No Preview step.** "Save and print" and "Print again" open one Print screen (Print and Save as PDF only; printing itself is still "not connected" in the prototype). The sample printouts at `/preview/...` are kept only for screenshots and tests, they are not linked from any menu.
+29. **Credit** is the fourth payment mode: Paid now (starts at 0), Nothing / Half / Full ("Full" turns it back into a normal full payment). A smaller Amount received on Cash, UPI or Card works the same and uses the same "who is this credit for?" window.
+30. **Profiles** (customers and dealers) are for the shopkeeper's own eyes: no link, no sharing, no sending. Wrong entries are reversed by a new entry, never deleted. Money paid beyond the bills first pays an old opening balance and only the rest becomes an advance. Settle fully has an 8-second Undo (the entries are held back before upload, like reminders).
+31. **Shop profile** is its own sidebar page and its own data (it syncs with the shop in Phase 2); Settings keeps only this computer's choices (text size, theme, density, animations, sounds, paper and print text size, backup, sync status, security). The estimate switches are all OFF by default.
+32. **Printouts and PDFs** come from one layout, so the screen and the PDF always agree. Estimate PDFs and roll paper are exactly as long as their content (no blank space); A4 and A5 tax invoices are normal pages. Print text size: Smaller 8 pt, **Small 9.5 pt (default)**, Normal 11 pt rows; title 12 pt, total 11 pt at Small. A bold font file (`Inter-Bold.ttf`, made from Inter) is bundled for PDFs.
+33. **For 1,000,000 bills** the design is: cursor paging, summary tables updated in the same transaction, and one database file per finished year (archiving a year inside the live file was measured and rejected). Only the last 24 months of bills go to Firebase; older ones stay on the PC and in a yearly backup file the owner keeps. **This needs the owner's agreement before Phase 2** (details: quota-budget.md and data-model.md).
+34. Fixed on the way: adding a customer used to reset all credit data, reminders and estimates (they were rebuilt from the sample data); a search typed after scrolling far down a long product list froze the screen for seconds.
+
 ## Open questions for the owner
 - Which Google account owns the Firebase project (OWNER-SETUP step 3)?
+- **Do you agree** that Firebase keeps only the last 24 months of bills and older years stay on the shop PC and in a yearly backup file you keep (decision 33)?
 - Is the WhatsApp message wording (Friendly and Firm) right for your customers? Edit in Settings > Reminders.
 - Is the Phase 1 look right? Corrections go in as a list; I apply them before Phase 2.

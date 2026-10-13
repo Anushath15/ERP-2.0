@@ -13,6 +13,7 @@ import 'package:erp2/app.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:erp2/fake/credit_store.dart' show seedCredit;
+import 'package:erp2/fake/models.dart' show PayMode;
 import 'package:erp2/fake/seed.dart';
 import 'package:erp2/design/segments.dart';
 import '../helpers.dart';
@@ -25,12 +26,22 @@ class Shot {
 }
 
 final _credit = seedCredit(seedCustomers(), fixedNow);
+final dealerId = seedDealers().firstWhere((d) => d.i('balance') > 0).id;
 final dueId = _credit.entries.firstWhere((e) => e.value.balance > 0 && e.value.bills.length > 1).key;
 
-Future<void> tapKey(WidgetTester t, String k) async {
-  await t.tap(find.byKey(ValueKey(k)).first);
+/// Taps something that may be far down a long page: scrolls until it is built, then taps it.
+Future<void> tapScrolled(WidgetTester t, Finder f) async {
+  for (var i = 0; i < 40 && f.evaluate().isEmpty; i++) {
+    await t.dragFrom(Offset(t.view.physicalSize.width / 2, t.view.physicalSize.height * 0.6), const Offset(0, -300));
+    await t.pumpAndSettle();
+  }
+  await t.ensureVisible(f.first);
+  await t.pumpAndSettle();
+  await t.tap(f.first);
   await t.pumpAndSettle();
 }
+
+Future<void> tapKey(WidgetTester t, String k) => tapScrolled(t, find.byKey(ValueKey(k)));
 
 Future<void> fill(WidgetTester t, ProviderContainer c, DocMode mode) async {
   final products = c.read(productsProvider);
@@ -136,24 +147,42 @@ final shots = <Shot>[
       ..setReceived(5000000);
     await t.pumpAndSettle();
   }),
+  Shot('pos-credit-mode', 'POS: Credit with Paid now, Half, Full', '/bill', setup: (t, c) async {
+    await fill(t, c, DocMode.invoice);
+    c.read(cartProvider(DocMode.invoice).notifier)
+      ..setCustomer(c.read(customersProvider).first)
+      ..setPay(PayMode.credit)
+      ..setReceived(100000);
+    await t.pumpAndSettle();
+  }),
+  Shot('dlg-credit-walkin', 'Dialog: who is this credit for? (walk-in on credit)', '/bill', setup: (t, c) async {
+    await fill(t, c, DocMode.invoice);
+    c.read(cartProvider(DocMode.invoice).notifier).setPay(PayMode.credit);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Save bill').first);
+    await t.pumpAndSettle();
+  }),
+  Shot('dealer-profile', 'Dealer profile: what we owe, dates, ledger, Pay dealer', '/dealers/$dealerId'),
+  Shot('dlg-settle-fully', 'Dialog: Settle fully (how paid, note)', '/customers/$dueId', setup: (t, c) async {
+    await tapKey(t, 'settleFully');
+  }),
+  Shot('dlg-add-credit-customer', 'Dialog: add a credit customer (amount owed and start date)', '/credit', setup: (t, c) async {
+    await t.tap(find.text('Add credit customer').first);
+    await t.pumpAndSettle();
+  }),
+  const Shot('shop-profile', 'Shop profile: details, estimate switches, tax, messages, credit', '/shop'),
+  const Shot('print-a5', 'Print: A5 invoice', '/preview/a5'),
   Shot('customer-detail', 'Customer: balance, ageing, bills, ledger, reminders', '/customers/$dueId'),
   Shot('customer-statement', 'Customer statement (print and PDF)', '/customers/$dueId/statement'),
   const Shot('receipt-payment', 'Payment receipt preview', '/preview/payment'),
-  Shot('dlg-receive-payment', 'Dialog: receive payment (oldest bills first, or choose)', '/customers/$dueId', setup: (t, c) async {
-    await t.tap(find.text('Receive payment').first);
-    await t.pumpAndSettle();
-  }),
-  Shot('dlg-reminder', 'Dialog: WhatsApp reminder preview (editable)', '/customers/$dueId', setup: (t, c) async {
-    await t.tap(find.text('Remind on WhatsApp').first);
-    await t.pumpAndSettle();
-  }),
+  Shot('dlg-receive-payment', 'Dialog: receive payment (oldest bills first, or choose)', '/customers/$dueId', setup: (t, c) => tapKey(t, 'receiveOrPay')),
+  Shot('dlg-reminder', 'Dialog: WhatsApp reminder preview (editable)', '/customers/$dueId', setup: (t, c) => tapScrolled(t, find.text('Remind on WhatsApp'))),
   Shot('dlg-reminder-offline', 'Dialog: reminder while offline (Copy message)', '/customers/$dueId', setup: (t, c) async {
     c.read(settingsProvider.notifier).set((x) => x.copyWith(sync: SyncState.offline));
     await t.pumpAndSettle();
-    await t.tap(find.text('Remind on WhatsApp').first);
-    await t.pumpAndSettle();
+    await tapScrolled(t, find.text('Remind on WhatsApp'));
   }),
-  Shot('settings-reminders', 'Settings > Reminders (template, tone, UPI, guard)', '/settings', setup: (t, c) async {
+  Shot('settings-reminders', 'Shop profile > Messages to customers (template, tone, guard)', '/shop', setup: (t, c) async {
     final k = find.byKey(const ValueKey('templateField'));
     for (var i = 0; i < 40 && k.evaluate().isEmpty; i++) {
       await t.dragFrom(Offset(t.view.physicalSize.width / 2, t.view.physicalSize.height * 0.6), const Offset(0, -300));
