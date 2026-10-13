@@ -227,6 +227,8 @@ class Strings {
   String get paper80 => '80 mm';
   String get paper58 => '58 mm';
   String get printNotConnected => 'Printing is not connected in this preview.';
+  String pdfSaved(String where) => 'PDF saved: ${where}';
+  String get pdfFailed => 'The PDF could not be saved.';
   String get pdfNotConnected => 'Saving a PDF is not connected in this preview.';
   String get saveAsPdf => 'Save as PDF';
   String get rcTaxInvoice => 'TAX INVOICE';

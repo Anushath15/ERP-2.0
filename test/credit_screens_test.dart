@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:erp2/domain/credit/reminder.dart' show LinkPlatform;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:erp2/core/file_saver.dart';
 import 'package:erp2/core/link_launcher.dart';
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/domain/credit/dues.dart';
@@ -123,6 +124,28 @@ void main() {
       expect(find.text('Print'), findsOneWidget);
       expect(find.text('Save as PDF'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Statement PDF', () {
+    testWidgets('Save as PDF makes a real PDF file (saved through a stand-in, not to disk) and says where', (tester) async {
+      final s = sample();
+      final saver = FakeSaver();
+      await app(tester, '/customers/${s.c.id}/statement', extra: [fileSaverProvider.overrideWithValue(saver)]);
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const ValueKey('statementPdf')));
+        for (var i = 0; i < 100 && saver.saved.isEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+      });
+      await tester.pump();
+      expect(saver.saved.length, 1);
+      final bytes = saver.saved.values.first;
+      expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+      expect(bytes.length, greaterThan(2000));
+      expect(saver.saved.keys.first, startsWith('Statement '));
+      expect(find.textContaining('PDF saved'), findsOneWidget);
+      await tester.pumpAndSettle(const Duration(seconds: 6));
     });
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/file_saver.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
@@ -16,6 +17,7 @@ import '../../fake/models.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 import 'credit_dialogs.dart';
+import 'statement_pdf.dart';
 
 /// One line of the Credit and Dues list.
 class CreditRow {
@@ -307,7 +309,17 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
     final phone = context.isPhone;
     final actions = [
       FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print), label: Text(l.print)),
-      OutlinedButton.icon(onPressed: () => toast(context, l.pdfNotConnected), icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(l.saveAsPdf)),
+      OutlinedButton.icon(
+        key: const ValueKey('statementPdf'),
+        onPressed: () async {
+          final bytes = await buildStatementPdf(statement: st, customer: customer, shopName: settings.shopName, shopPhone: settings.shopPhone, today: now, l: l);
+          final stamp = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+          final where = await ref.read(fileSaverProvider).save('Statement ${customer.name} $stamp.pdf', bytes);
+          if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
+        },
+        icon: const Icon(Icons.picture_as_pdf_outlined),
+        label: Text(l.saveAsPdf),
+      ),
       TextButton(onPressed: () => context.go('/customers/${widget.customerId}'), child: Text(l.back)),
     ];
     return PageFrame(

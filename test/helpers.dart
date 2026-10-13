@@ -1,9 +1,11 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:erp2/app.dart';
 import 'package:erp2/core/device_store.dart';
+import 'package:erp2/core/file_saver.dart';
 import 'package:erp2/core/link_launcher.dart';
 import 'package:erp2/domain/credit/reminder.dart' show LinkPlatform;
 import 'package:erp2/design/motion_level.dart';
@@ -63,5 +65,15 @@ class FakeLauncher implements LinkLauncher {
     if (!ok) return false;
     opened.add(url);
     return true;
+  }
+}
+
+/// A stand-in for saving files: keeps the bytes in memory, never touches the disk.
+class FakeSaver implements FileSaver {
+  final saved = <String, Uint8List>{};
+  @override
+  Future<String?> save(String fileName, Uint8List bytes) async {
+    saved[fileName] = bytes;
+    return 'Downloads/$fileName';
   }
 }

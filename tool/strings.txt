@@ -230,6 +230,8 @@ paperA4 | A4
 paper80 | 80 mm
 paper58 | 58 mm
 printNotConnected | Printing is not connected in this preview.
+pdfSaved | PDF saved: {where}
+pdfFailed | The PDF could not be saved.
 pdfNotConnected | Saving a PDF is not connected in this preview.
 saveAsPdf | Save as PDF
 rcTaxInvoice | TAX INVOICE
