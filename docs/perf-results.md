@@ -87,3 +87,9 @@ Setup: 1,000,000 bills over 5 years (3 to 8 lines each, 5.0 on average), 5,000,0
 - **A 4 GB PC with a hard disk.** The numbers are warm-cache numbers from an SSD machine; a cold random read on a hard disk costs about 10 ms, so an indexed lookup that touches 3 to 4 pages should still be about 30 to 40 ms (inside the 50 ms budget but tight) and a page of 50 rows about 100 ms. Saving a bill will cost an extra 10 to 30 ms for the disk flush. Not measured.
 - **Android and web storage.** Android's private storage was measured earlier for 50,000 bills only (116 MB), not for 1,000,000. For the **web**, a browser limits what a site may store (the limit differs by browser and by free disk space, and the browser may clear it unless the site is allowed to keep its data). When the browser says it is full, writing a bill fails; the app must then stop saving and say so in plain words. 3.8 KB a bill means 100,000 bills are about 380 MB, so the web version should hold only the recent months. How much the real browsers allow was **not measured**.
 - Free-disk checks before a backup or archive are designed (data-model.md) but not built.
+
+
+## Money to collect, first visit (2026-10-14)
+The first visit of Money to collect cost one 41 ms frame (budget 33 ms; the second visit cost 20 ms). About 22 ms of that was work done only once: building the list of 134 customers with ageing and overdue amounts. The app now prepares that list right after the first screen is drawn, while nobody is waiting. **First visit now 18.7 ms (second visit 17.9 ms).** Pass.
+Worst frame on the first visit of each page, now: Reports 24.5 ms, Settings 23.1 ms, everything else 9 to 20 ms. All under 33 ms.
+The motion test `scan x20 + save` used to compare wall-clock times and failed on a busy computer. It now uses the test's own clock: it checks that 20 scans and a save need no animation time at all, with Off and with Full. It passed twice while another heavy test ran at the same time.

@@ -2,11 +2,11 @@
 
 **READY FOR OWNER REVIEW (Phase 1: screens with sample data).** Phase 2 does not start until the owner says "go".
 
-_Last updated: 2026-10-14_
+_Last updated: 2026-10-14 (evening)_
 
 ## How to look at it
 **Start with [REVIEW-GUIDE.md](REVIEW-GUIDE.md)**: a 15-minute walkthrough (₹150 bill with ₹100 given, the Credit button, Money to collect, customer and dealer profiles, Settle fully with Undo, WhatsApp preview, the Shop profile and the estimate printout, 200% text, 100 lines). Sample data is fake; nothing is saved or sent.
-- **Current build: pre-release `v2.0.0-proto.2`** on GitHub (<https://github.com/Anushath15/ERP-2.0/releases>): `ASK-ERP-2.0-windows-v2.0.0-proto.2.zip` (unzip, double-click `ASK_ERP_2.exe`), `ASK-ERP-2.0-web-v2.0.0-proto.2.zip` and the full screenshot set `ASK-ERP-2.0-screenshots-v2.0.0-proto.2.zip`. They are built by the release workflow from the tagged commit.
+- **Current build: pre-release `v2.0.0-proto.2`** (checked on 2026-10-14: the Windows build ran for 10 seconds, the web build loaded with no console errors, the screenshot zip opened with 416 pictures) on GitHub (<https://github.com/Anushath15/ERP-2.0/releases>): `ASK-ERP-2.0-windows-v2.0.0-proto.2.zip` (unzip, double-click `ASK_ERP_2.exe`), `ASK-ERP-2.0-web-v2.0.0-proto.2.zip` and the full screenshot set `ASK-ERP-2.0-screenshots-v2.0.0-proto.2.zip`. They are built by the release workflow from the tagged commit.
 - **Without running anything:** the main screens are in [ui-review/index.md](ui-review/index.md).
 - Things that now really work in the prototype: Save as PDF (statements, bills, estimates; saved on this computer only), Ctrl+Shift+L fills 100 sample lines on New bill.
 
@@ -58,11 +58,11 @@ Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents
 30. **Profiles** (customers and dealers) are for the shopkeeper's own eyes: no link, no sharing, no sending. Wrong entries are reversed by a new entry, never deleted. Money paid beyond the bills first pays an old opening balance and only the rest becomes an advance. Settle fully has an 8-second Undo (the entries are held back before upload, like reminders).
 31. **Shop profile** is its own sidebar page and its own data (it syncs with the shop in Phase 2); Settings keeps only this computer's choices (text size, theme, density, animations, sounds, paper and print text size, backup, sync status, security). The estimate switches are all OFF by default.
 32. **Printouts and PDFs** come from one layout, so the screen and the PDF always agree. Estimate PDFs and roll paper are exactly as long as their content (no blank space); A4 and A5 tax invoices are normal pages. Print text size: Smaller 8 pt, **Small 9.5 pt (default)**, Normal 11 pt rows; title 12 pt, total 11 pt at Small. A bold font file (`Inter-Bold.ttf`, made from Inter) is bundled for PDFs.
-33. **For 1,000,000 bills** the design is: cursor paging, summary tables updated in the same transaction, and one database file per finished year (archiving a year inside the live file was measured and rejected). Only the last 24 months of bills go to Firebase; older ones stay on the PC and in a yearly backup file the owner keeps. **This needs the owner's agreement before Phase 2** (details: quota-budget.md and data-model.md).
-34. Fixed on the way: adding a customer used to reset all credit data, reminders and estimates (they were rebuilt from the sample data); a search typed after scrolling far down a long product list froze the screen for seconds.
+33. **For 1,000,000 bills (agreed by the owner 2026-10-14)** the design is: cursor paging, summary tables updated in the same transaction, and one database file per finished year (archiving a year inside the live file was measured and rejected). Only the last 24 months of bills go to Firebase; older ones stay on the PC and in a yearly backup file the owner keeps. Phase 2 adds a yearly backup reminder and a "Restore an old year" action (details: quota-budget.md and data-model.md).
+34. **First visit of Money to collect** is prepared right after the first screen (18.7 ms instead of 41 ms). The motion timing test uses a fake clock and no longer fails on a busy computer.
+35. Fixed on the way: adding a customer used to reset all credit data, reminders and estimates (they were rebuilt from the sample data); a search typed after scrolling far down a long product list froze the screen for seconds.
 
 ## Open questions for the owner
 - Which Google account owns the Firebase project (OWNER-SETUP step 3)?
-- **Do you agree** that Firebase keeps only the last 24 months of bills and older years stay on the shop PC and in a yearly backup file you keep (decision 33)?
 - Is the WhatsApp message wording (Friendly and Firm) right for your customers? Edit in Settings > Reminders.
 - Is the Phase 1 look right? Corrections go in as a list; I apply them before Phase 2.

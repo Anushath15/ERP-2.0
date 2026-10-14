@@ -111,7 +111,8 @@ void main() {
       final c = await pumpApp(tester, size: desktop1366, location: '/bill', motion: level, followSystemMotion: false);
       await tester.pump(const Duration(seconds: 1));
       final p = c.read(productsProvider);
-      final sw = Stopwatch()..start();
+      // The test's own clock (it only moves when the test pumps time), so a busy computer cannot make this test fail.
+      final t0 = tester.binding.clock.now();
       var immediate = true;
       for (var i = 0; i < 20; i++) {
         await tester.enterText(find.byType(TextField).first, p[i * 3].barcode); // a scan
@@ -124,19 +125,18 @@ void main() {
       await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
       await tester.pump();
       if (c.read(cartProvider(DocMode.invoice)).lines.isNotEmpty) immediate = false; // Save finished in the same frame
-      sw.stop();
+      final waited = tester.binding.clock.now().difference(t0).inMilliseconds;
       await tester.pumpAndSettle();
-      return (sw.elapsedMilliseconds, immediate);
+      return (waited, immediate);
     }
 
     testWidgets('scan x20 + save: state changes in the very next frame, with and without effects', (tester) async {
       final off = await flow(tester, MotionLevel.off);
       final full = await flow(tester, MotionLevel.full);
-      // ignore: avoid_print
-      print('flow wall time (ms): off=${off.$1} full=${full.$1}');
       expect(off.$2, true, reason: 'Off: every scan and the save took effect in the next frame');
       expect(full.$2, true, reason: 'Full: every scan and the save took effect in the next frame');
-      expect((full.$1 - off.$1).abs(), lessThan(1500), reason: 'effects add no waiting');
+      expect(off.$1, 0, reason: 'Off: 20 scans and a save needed no animation time at all');
+      expect(full.$1, 0, reason: 'Full: effects add no waiting: the same 20 scans and the save needed no animation time either');
     });
   });
 

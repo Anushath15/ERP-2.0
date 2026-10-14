@@ -87,3 +87,13 @@ The free plan allows 1 GiB stored, 50,000 reads and 20,000 writes a day. One mil
 - **Removing old bills from the cloud** (to stay under 1 GiB): one device deletes bills older than 24 months, at most 2,000 a day (the free plan allows 20,000 deletes a day), and only **after** that year has been saved as a yearly backup file on the PC. Nothing is deleted from a device.
 - The in-app quota guard is unchanged: when the daily limit is near it pauses uploads; reading and billing on the PC never stop.
 - Real quota use on the real project over several weeks is **Not verified**.
+
+
+## DECIDED by the owner (2026-10-14): how long bills stay in Firebase
+1. **Firebase keeps the last 24 months of bills** (bills, payments, reminders) **plus all summaries and balances** (day totals, customer balances, stock, product-month totals) and the master data. **Older years stay on the shop PC**, one database file per finished year (`bills-2023.sqlite`).
+2. A new phone or PC is usable on the first day: masters, summaries and the newest bills first; the rest of the last 24 months fills in over the next days (50,000 reads a day).
+3. **Phase 2 plan, added because of this decision:**
+   - **Yearly backup reminder.** When a year is finished (and every January until it is done) the app asks, in plain words: "Last year's bills are saved on this computer only. Copy them to a pen drive or Google Drive now?" The year file is closed, checked and copied to the place the owner chooses; the app records the date and the file size. The reminder repeats every month until a copy exists, and a bill older than 24 months is **never** removed from Firebase before that copy exists.
+   - **Restore an old year.** A button "Restore an old year" (Settings > Backup): the owner picks a year file from the pen drive or Google Drive; the app checks that it is a real year file of this shop (shop id, year, bill count, check value), then attaches it read-only so those bills show in the sales register, customer profiles and reports. It is also how an old year is put on a new PC. Nothing is uploaded to Firebase.
+   - Removing old bills from the cloud runs on one device, at most 2,000 deletes a day, only after the year's backup copy exists.
+4. Costs and limits for this are in "A shop with 1,000,000 bills" above; real use over weeks is **Not verified**.

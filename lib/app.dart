@@ -9,6 +9,7 @@ import 'design/motion.dart';
 import 'design/motion_level.dart';
 import 'design/theme.dart';
 import 'design/text_zoom.dart';
+import 'features/credit/credit_screens.dart' show creditRowsProvider;
 import 'fake/credit_store.dart';
 import 'fake/store.dart';
 import 'router.dart';
@@ -38,6 +39,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       if (!mounted) return;
       ref.read(creditProvider);
       ref.read(reminderLogProvider);
+      ref.read(creditRowsProvider); // the Money to collect list (134 rows with ageing), so its first visit only has to draw it
     });
     if (!kDebugMode) {
       // The auto-protect guard only runs in real (profile/release) builds; debug frames are always slow.
