@@ -62,3 +62,31 @@ The project is on the Spark plan. The owner confirms the "Spark" badge in the Fi
 `device.json` (Windows, macOS, Linux) and the browser's local storage hold **display preferences only**: theme, accent, text size, billing text size, density, font, animation level, sounds, paper size and print text size. Anybody who can sit at the computer can edit them, so:
 - **Nothing security-related may ever be read from this file or from local storage.** There is no "this device is trusted" flag, no role, no "approved", no signed-in marker, no shop data. Permission always comes from Firebase (the rules check the signed-in e-mail, the allow-list, the device approval and the role on every request).
 - Everything is validated on read: unknown keys are ignored, wrong types, unknown names, out-of-range and non-finite numbers go back to the defaults, and a missing, damaged, wrong-shaped, binary or oversized (over 64 KB) file means defaults, never a crash. Tests: `test/device_settings_integrity_test.dart`.
+
+
+## Status of the ten review findings (2026-10-14)
+| # | Finding | Status | What was done / what is left |
+|---|---|---|---|
+| 1 | Text becomes a file name or path (traversal, reserved names) | **Fixed** | One `safeFileName` and `isInside` check used by every save; numbered names, never silently overwrites; tests for `..\..\Startup\x`, `C:\evil`, `CON`, `NUL.pdf`, control characters. Restore and import only read files; no file name taken from them is ever written. |
+| 2 | `device.json` / local storage trusted | **Fixed** | Preferences only, validated on read, unknown keys ignored; nothing security-related is read from it (section above). |
+| 3 | Release and CI supply chain | **Fixed in code; owner clicks left** | Actions pinned to SHAs, read-only permissions, Dependabot, release only from a `v*` tag on main after CI, `release` environment with the owner as required reviewer (admin bypass off), checksums, build attestations, rulesets for tags and main. Left: the owner approves each release; signed commits are not required (accepted, below). |
+| 4 | Injection through text (CSV formulas, WhatsApp link, hostile import, SQL, logs) | **Fixed / safe** | `csvCell` neutralises formulas; WhatsApp link strictly encoded and capped; imports go through a limited reader; no SQL built from text (guard test); the app logs nothing. |
+| 5 | No roles: any member could change prices and limits | **Fixed** | Cashier / manager / owner in the rules; price, cost and credit-limit changes need an audit record in the same batch. |
+| 6 | Rules accepted any shape of data | **Fixed** | Exact fields, integer paise, ranges, lengths, enums, id and creator checks; a test for each malformed case. |
+| 7 | The client's device id was not a control | **Mitigated** | A new device can only write "pending"; only the owner approves; every business write needs an approved device of the same person. Left: a stolen, already approved device works until the owner stops it. |
+| 8 | The people (phishing, stolen phone or Gmail, no two-step verification) | **Mitigated** | `docs/SECURITY-CHECKLIST-FOR-OWNER.md` and the Security card. The program cannot check two-step verification and says so. Left: the owner must turn it on and print the codes. |
+| 9 | Write-spam / quota exhaustion | **Mitigated** | Per-person daily counter with a cap per role, quota guard, a clear "Sync paused" message, emergency procedure. Left: the cap counts batches, not documents; Spark stops at its limit and cannot bill; App Check is not possible on Windows. |
+| 10 | Downloads are unsigned and unverifiable | **Mitigated; signing accepted for now** | SHA-256 checksums, build attestations, "Verify your download", the honest "Unknown publisher" explanation. Free signing (SignPath Foundation) is researched in `docs/code-signing.md`; apply after the first real release. |
+
+### Accepted risks
+- Commits are not cryptographically signed (one-person project; the main branch cannot be force-pushed or deleted, and every release is built by CI and approved by the owner).
+- No Windows code-signing certificate yet (see finding 10).
+
+### What this cannot stop (honest list)
+- Someone who already holds the owner's unlocked computer, or the owner's Google account without two-step verification.
+- A stolen but already approved device, until the owner stops it. A token already issued can read for up to an hour after a sign-in is disabled (Google's limit).
+- A trusted person (cashier, manager) misusing what their role allows. The audit records show who changed a price, cost or limit and bills and payments are append-only, but nothing stops a cashier selling cheap to a friend.
+- An owner who approves a malicious device or release.
+- Spam inside the daily batch cap, and damage to the free daily quota (denial of service) by someone who is signed in. There is no bill, but sync pauses until the reset.
+- Malware on the shop computer, and theft of the database file from the disk (use BitLocker).
+- Anyone on the internet who reads this public repository: that is expected; security does not rely on secrecy.

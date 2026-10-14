@@ -9,6 +9,7 @@ import '../../design/app_logo.dart';
 import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
+import 'security_card.dart';
 
 // ------------------------------------------------------------------ settings
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -83,14 +84,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       row(l.signOutEverywhere, l.signOutEverywhereHelp, OutlinedButton(onPressed: () => toast(context, l.demoOnly), child: Text(l.changePassword))),
     ]));
 
-    final cards = [look, anim, printing, sounds, backup, sync, security];
+    const people = SecurityCard();
+    final cards = [look, anim, printing, sounds, backup, sync, security, people];
     return PageFrame(
       title: l.navSettings,
       child: context.isDesktop
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(children: [for (final c in [printing, security, backup]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [printing, security, people, backup]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
                 Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),
