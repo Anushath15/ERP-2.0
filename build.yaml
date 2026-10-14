@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        generate_for:
+          include: ["lib/data/**"]
+        options:
+          sql:
+            dialect: sqlite
+            options:
+              version: "3.46"
+              modules: [fts5]
+      source_gen:combining_builder:
+        generate_for:
+          include: ["lib/data/**"]

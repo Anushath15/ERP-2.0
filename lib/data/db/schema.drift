@@ -1,0 +1,383 @@
+-- ASK ERP 2.0 local database, schema version 1. SQL first: this file is the single source of the tables.
+-- Rules (docs/data-model.md): money = integer paise, quantity = integer thousandths (milli-units), percent = basis points,
+-- times = UTC milliseconds, ids = UUIDv7 text (or a stable text id for imported rows). Nothing is ever hard-deleted.
+-- "common" columns on editable records: created_at, updated_at, deleted_at, device_id, version, hlc.
+
+-- Shop-wide small settings and the shop profile (key/value, each value is JSON text).
+CREATE TABLE kv (
+  name TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+) AS DbKv;
+
+CREATE TABLE categories (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER,
+  device_id TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  hlc TEXT NOT NULL DEFAULT ''
+) AS DbCategory;
+CREATE UNIQUE INDEX categories_name ON categories(name COLLATE NOCASE) WHERE deleted_at IS NULL;
+
+CREATE TABLE products (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT '',
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  price_paise INTEGER NOT NULL,
+  cost_paise INTEGER NOT NULL DEFAULT 0,
+  gst_bp INTEGER NOT NULL DEFAULT 1800,
+  hsn TEXT NOT NULL DEFAULT '',
+  barcode TEXT NOT NULL DEFAULT '',
+  min_stock_milli INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  old_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER,
+  device_id TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  hlc TEXT NOT NULL DEFAULT ''
+) AS DbProduct;
+CREATE INDEX products_name ON products(name COLLATE NOCASE);
+CREATE INDEX products_barcode ON products(barcode) WHERE barcode <> '';
+CREATE INDEX products_category ON products(category);
+CREATE UNIQUE INDEX products_old_id ON products(old_id) WHERE old_id IS NOT NULL;
+
+-- Product search (native and web): FTS5 over name and barcode, prefix search, kept in step by triggers.
+CREATE VIRTUAL TABLE product_fts USING fts5(name, barcode, content='products', content_rowid='rowid', tokenize='unicode61 remove_diacritics 2', prefix='2 3');
+CREATE TRIGGER products_fts_ai AFTER INSERT ON products BEGIN
+  INSERT INTO product_fts(rowid, name, barcode) VALUES (new.rowid, new.name, new.barcode);
+END;
+CREATE TRIGGER products_fts_ad AFTER DELETE ON products BEGIN
+  INSERT INTO product_fts(product_fts, rowid, name, barcode) VALUES ('delete', old.rowid, old.name, old.barcode);
+END;
+CREATE TRIGGER products_fts_au AFTER UPDATE OF name, barcode ON products BEGIN
+  INSERT INTO product_fts(product_fts, rowid, name, barcode) VALUES ('delete', old.rowid, old.name, old.barcode);
+  INSERT INTO product_fts(rowid, name, barcode) VALUES (new.rowid, new.name, new.barcode);
+END;
+
+CREATE TABLE customers (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL DEFAULT '',
+  address TEXT NOT NULL DEFAULT '',
+  gstin TEXT NOT NULL DEFAULT '',
+  credit_limit_paise INTEGER NOT NULL DEFAULT 0,
+  old_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER,
+  device_id TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  hlc TEXT NOT NULL DEFAULT ''
+) AS DbCustomer;
+CREATE INDEX customers_name ON customers(name COLLATE NOCASE);
+CREATE INDEX customers_phone ON customers(phone) WHERE phone <> '';
+CREATE UNIQUE INDEX customers_old_id ON customers(old_id) WHERE old_id IS NOT NULL;
+
+CREATE TABLE dealers (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL DEFAULT '',
+  address TEXT NOT NULL DEFAULT '',
+  gstin TEXT NOT NULL DEFAULT '',
+  old_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER,
+  device_id TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  hlc TEXT NOT NULL DEFAULT ''
+) AS DbDealer;
+CREATE INDEX dealers_name ON dealers(name COLLATE NOCASE);
+CREATE UNIQUE INDEX dealers_old_id ON dealers(old_id) WHERE old_id IS NOT NULL;
+
+-- Stock = sum of movements. stock_cache is the running figure kept in the same transaction and re-checked by the self-check.
+CREATE TABLE stock_movements (
+  id TEXT NOT NULL PRIMARY KEY,
+  product_id TEXT NOT NULL REFERENCES products(id),
+  qty_milli INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  ref_id TEXT,
+  unit_cost_paise INTEGER NOT NULL DEFAULT 0,
+  at INTEGER NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbStockMovement;
+CREATE INDEX stock_movements_product ON stock_movements(product_id, at);
+CREATE INDEX stock_movements_ref ON stock_movements(ref_id) WHERE ref_id IS NOT NULL;
+
+CREATE TABLE stock_cache (
+  product_id TEXT NOT NULL PRIMARY KEY REFERENCES products(id),
+  qty_milli INTEGER NOT NULL DEFAULT 0
+) AS DbStockCache;
+
+-- One row per bill. Lines are separate rows here and embedded in the cloud document.
+CREATE TABLE bills (
+  id TEXT NOT NULL PRIMARY KEY,
+  number TEXT NOT NULL,
+  series TEXT NOT NULL,
+  seq INTEGER NOT NULL,
+  billed_at INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  customer_id TEXT REFERENCES customers(id),
+  customer_name TEXT NOT NULL DEFAULT '',
+  total_paise INTEGER NOT NULL,
+  received_paise INTEGER NOT NULL,
+  balance_paise INTEGER NOT NULL DEFAULT 0,
+  change_paise INTEGER NOT NULL DEFAULT 0,
+  advance_kept_paise INTEGER NOT NULL DEFAULT 0,
+  taxable_paise INTEGER NOT NULL DEFAULT 0,
+  cgst_paise INTEGER NOT NULL DEFAULT 0,
+  sgst_paise INTEGER NOT NULL DEFAULT 0,
+  igst_paise INTEGER NOT NULL DEFAULT 0,
+  discount_paise INTEGER NOT NULL DEFAULT 0,
+  round_off_paise INTEGER NOT NULL DEFAULT 0,
+  pay_mode INTEGER NOT NULL DEFAULT 0,
+  status INTEGER NOT NULL DEFAULT 0,
+  cancelled INTEGER NOT NULL DEFAULT 0,
+  item_count INTEGER NOT NULL DEFAULT 0,
+  prices_include_gst INTEGER NOT NULL DEFAULT 1,
+  idem_key TEXT NOT NULL,
+  old_bill_no TEXT,
+  note TEXT NOT NULL DEFAULT '',
+  created_by TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbBill;
+CREATE UNIQUE INDEX bills_number ON bills(number);
+CREATE UNIQUE INDEX bills_idem ON bills(idem_key);
+CREATE INDEX bills_billed_at ON bills(billed_at DESC, id DESC);
+CREATE INDEX bills_customer ON bills(customer_id, billed_at DESC, id DESC) WHERE customer_id IS NOT NULL;
+CREATE INDEX bills_old_no ON bills(old_bill_no) WHERE old_bill_no IS NOT NULL;
+CREATE INDEX bills_cancelled ON bills(billed_at DESC) WHERE cancelled = 1;
+CREATE INDEX bills_due ON bills(customer_id, billed_at) WHERE balance_paise > 0;
+
+CREATE TABLE bill_lines (
+  id TEXT NOT NULL PRIMARY KEY,
+  bill_id TEXT NOT NULL REFERENCES bills(id),
+  line_no INTEGER NOT NULL,
+  product_id TEXT NOT NULL REFERENCES products(id),
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  qty_milli INTEGER NOT NULL,
+  rate_paise INTEGER NOT NULL,
+  discount_bp INTEGER NOT NULL DEFAULT 0,
+  gst_bp INTEGER NOT NULL DEFAULT 0,
+  gross_paise INTEGER NOT NULL,
+  discount_paise INTEGER NOT NULL DEFAULT 0,
+  taxable_paise INTEGER NOT NULL,
+  tax_paise INTEGER NOT NULL,
+  total_paise INTEGER NOT NULL
+) AS DbBillLine;
+CREATE INDEX bill_lines_bill ON bill_lines(bill_id, line_no);
+CREATE INDEX bill_lines_product ON bill_lines(product_id, bill_id);
+
+CREATE TABLE bill_cancellations (
+  id TEXT NOT NULL PRIMARY KEY,
+  bill_id TEXT NOT NULL REFERENCES bills(id),
+  bill_no TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  by_name TEXT NOT NULL DEFAULT '',
+  at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbBillCancellation;
+CREATE UNIQUE INDEX bill_cancellations_bill ON bill_cancellations(bill_id);
+
+-- Estimations: editable, own number series, lines kept so an estimate can be edited and converted.
+CREATE TABLE estimations (
+  id TEXT NOT NULL PRIMARY KEY,
+  number TEXT NOT NULL,
+  at INTEGER NOT NULL,
+  edited_on INTEGER,
+  customer_id TEXT REFERENCES customers(id),
+  customer_name TEXT NOT NULL DEFAULT '',
+  total_paise INTEGER NOT NULL,
+  line_count INTEGER NOT NULL DEFAULT 0,
+  converted_bill_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER,
+  device_id TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  hlc TEXT NOT NULL DEFAULT ''
+) AS DbEstimation;
+CREATE UNIQUE INDEX estimations_number ON estimations(number);
+CREATE INDEX estimations_at ON estimations(at DESC, id DESC);
+
+CREATE TABLE estimation_lines (
+  id TEXT NOT NULL PRIMARY KEY,
+  estimation_id TEXT NOT NULL REFERENCES estimations(id),
+  line_no INTEGER NOT NULL,
+  product_id TEXT NOT NULL REFERENCES products(id),
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  qty_milli INTEGER NOT NULL,
+  rate_paise INTEGER NOT NULL,
+  discount_bp INTEGER NOT NULL DEFAULT 0
+) AS DbEstimationLine;
+CREATE INDEX estimation_lines_est ON estimation_lines(estimation_id, line_no);
+
+-- Money owed: one ledger for customers (they owe us) and dealers (we owe them). Positive = the other side is owed / owes.
+CREATE TABLE ledger_entries (
+  id TEXT NOT NULL PRIMARY KEY,
+  party_kind TEXT NOT NULL,
+  party_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  amount_paise INTEGER NOT NULL,
+  at INTEGER NOT NULL,
+  bill_no TEXT,
+  note TEXT NOT NULL DEFAULT '',
+  by_name TEXT NOT NULL DEFAULT '',
+  mode TEXT,
+  reverses TEXT,
+  allocations TEXT NOT NULL DEFAULT '[]',
+  running_paise INTEGER NOT NULL DEFAULT 0,
+  ref_id TEXT,
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbLedgerEntry;
+CREATE INDEX ledger_party ON ledger_entries(party_id, at DESC, id DESC);
+CREATE INDEX ledger_bill ON ledger_entries(party_id, bill_no) WHERE bill_no IS NOT NULL;
+CREATE INDEX ledger_reverses ON ledger_entries(reverses) WHERE reverses IS NOT NULL;
+
+-- A payment received from a customer or made to a dealer (one document); its ledger entries point back with ref_id.
+CREATE TABLE payments (
+  id TEXT NOT NULL PRIMARY KEY,
+  party_kind TEXT NOT NULL,
+  party_id TEXT NOT NULL,
+  amount_paise INTEGER NOT NULL,
+  advance_paise INTEGER NOT NULL DEFAULT 0,
+  mode TEXT NOT NULL DEFAULT 'cash',
+  at INTEGER NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  receipt_no TEXT NOT NULL,
+  allocations TEXT NOT NULL DEFAULT '[]',
+  by_name TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbPayment;
+CREATE UNIQUE INDEX payments_receipt ON payments(receipt_no);
+CREATE INDEX payments_party ON payments(party_id, at DESC, id DESC);
+
+-- Bill-wise dues (a bill's unpaid part, manual credit, an opening balance): what payments are applied to, oldest first.
+CREATE TABLE party_bills (
+  id TEXT NOT NULL PRIMARY KEY,
+  party_kind TEXT NOT NULL,
+  party_id TEXT NOT NULL,
+  bill_no TEXT NOT NULL,
+  date INTEGER NOT NULL,
+  total_paise INTEGER NOT NULL,
+  paid_paise INTEGER NOT NULL DEFAULT 0,
+  cancelled INTEGER NOT NULL DEFAULT 0
+) AS DbPartyBill;
+CREATE UNIQUE INDEX party_bills_key ON party_bills(party_id, bill_no);
+CREATE INDEX party_bills_open ON party_bills(party_id, date) WHERE cancelled = 0 AND total_paise > paid_paise;
+
+-- Summary tables: written in the same transaction as the event, never rebuilt by scanning (checked by the self-check).
+CREATE TABLE party_balance (
+  party_id TEXT NOT NULL PRIMARY KEY,
+  party_kind TEXT NOT NULL,
+  balance_paise INTEGER NOT NULL DEFAULT 0,
+  last_bill_at INTEGER,
+  last_payment_at INTEGER,
+  entry_count INTEGER NOT NULL DEFAULT 0
+) AS DbPartyBalance;
+CREATE INDEX party_balance_owed ON party_balance(party_kind, balance_paise DESC);
+
+CREATE TABLE day_totals (
+  day TEXT NOT NULL PRIMARY KEY,
+  bills INTEGER NOT NULL DEFAULT 0,
+  sales_paise INTEGER NOT NULL DEFAULT 0,
+  tax_paise INTEGER NOT NULL DEFAULT 0,
+  cash_paise INTEGER NOT NULL DEFAULT 0,
+  upi_paise INTEGER NOT NULL DEFAULT 0,
+  card_paise INTEGER NOT NULL DEFAULT 0,
+  credit_paise INTEGER NOT NULL DEFAULT 0,
+  cancelled_bills INTEGER NOT NULL DEFAULT 0,
+  cancelled_paise INTEGER NOT NULL DEFAULT 0
+) AS DbDayTotal;
+
+CREATE TABLE product_month (
+  product_id TEXT NOT NULL,
+  month TEXT NOT NULL,
+  qty_milli INTEGER NOT NULL DEFAULT 0,
+  amount_paise INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (product_id, month)
+) AS DbProductMonth;
+
+CREATE TABLE counters (
+  name TEXT NOT NULL PRIMARY KEY,
+  value INTEGER NOT NULL
+) AS DbCounter;
+
+CREATE TABLE reminders (
+  id TEXT NOT NULL PRIMARY KEY,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  at INTEGER NOT NULL,
+  amount_due_paise INTEGER NOT NULL,
+  message TEXT NOT NULL,
+  by_name TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbReminder;
+CREATE INDEX reminders_customer ON reminders(customer_id, at DESC);
+
+-- Everything else the prototype lists (purchases, returns, delivery, stock changes, expenses, warranty, projects, staff,
+-- notifications): one small JSON record each, listed by kind.
+CREATE TABLE records (
+  id TEXT NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL,
+  data TEXT NOT NULL,
+  at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted_at INTEGER,
+  device_id TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  hlc TEXT NOT NULL DEFAULT ''
+) AS DbRecord;
+CREATE INDEX records_kind ON records(kind, at DESC, id DESC) WHERE deleted_at IS NULL;
+
+-- Upload queue. One row per changed document; editing it again before it is sent replaces the row (coalescing).
+CREATE TABLE outbox (
+  seq INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  coll TEXT NOT NULL,
+  doc_id TEXT NOT NULL,
+  op TEXT NOT NULL DEFAULT 'set',
+  stamp TEXT NOT NULL DEFAULT '',
+  state TEXT NOT NULL DEFAULT 'pending',
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  hold_until INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+) AS DbOutbox;
+CREATE UNIQUE INDEX outbox_doc ON outbox(coll, doc_id);
+CREATE INDEX outbox_state ON outbox(state, seq);
+
+CREATE TABLE sync_meta (
+  name TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL
+) AS DbSyncMeta;
+
+CREATE TABLE audit (
+  id TEXT NOT NULL PRIMARY KEY,
+  what TEXT NOT NULL,
+  entity TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  field TEXT NOT NULL,
+  old_value TEXT,
+  new_value TEXT,
+  by_name TEXT NOT NULL DEFAULT '',
+  at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbAudit;
+CREATE INDEX audit_at ON audit(at DESC);
