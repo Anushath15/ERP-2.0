@@ -71,10 +71,9 @@ class SecurityCard extends ConsumerWidget {
         heading(l.secTwoStep),
         Text(l.secTwoStepHelp, style: th.bodySmall),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        OutlinedButton(
           key: const ValueKey('open2sv'),
-          icon: const Icon(Icons.open_in_new, size: 18),
-          label: Text(l.secTwoStepOpen),
+          child: Text(l.secTwoStepOpen),
           onPressed: () async {
             final ok = await ref.read(linkLauncherProvider).open(twoStepUrl);
             if (!ok && context.mounted) toast(context, l.secTwoStepFail);
