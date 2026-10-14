@@ -1,49 +1,404 @@
 rules_version = '2';
 
-// Design (b): the people allowed are listed in THIS file. No membership document is read,
-// so security rules cost zero extra reads. Adding or removing a person = edit the three lists
-// below and deploy the rules (see docs/ACCOUNTS-AND-RECOVERY.md). The real e-mail addresses are NOT kept in the
-// repository: `dart run tool/make_rules.dart` fills the placeholders from a local, git-ignored file.
+// ASK ERP 2.0 security rules. These rules are the real gate: the app is only a convenience.
+//
+// WHO may do WHAT (the three lists are filled from a git-ignored file by `dart run tool/make_rules.dart`, the real addresses are never in git):
+//   owner   : everything, also approves devices and writes the shop profile, settings and bill cancellations
+//   manager : everything a cashier does, plus products, prices, customers, dealers, purchases, returns, stock adjustments, estimates, expenses
+//   cashier : creates bills, payments, ledger entries, sale stock movements, customer notes, reminders and a NEW customer with credit limit 0;
+//             cannot change or delete anything that already exists
+//   Nobody can delete anything. Records of what happened (bills, payments, ledger, audit...) can never be edited either.
+//
+// EVERY write to business data must also satisfy (checked on every request, so removing a person or a device works at once):
+//   1. the signed-in e-mail is verified and is in one of the lists
+//   2. the writing DEVICE is approved by the owner (devices/{id}.status == 'approved') and belongs to that same e-mail
+//   3. the same batch bumps today's usage counter of that person (usage/{email}_{yyyymmdd}) by exactly 1, and stays under the daily cap of the role
+//   4. every field has the right type, range, length and name; ids match the path; "created by" is the signed-in e-mail; no unknown fields
+//   5. a change of a price, a cost or a credit limit comes with an audit record in the same batch (who, old value, new value)
 service cloud.firestore {
-  match /databases/{db}/documents {
+  match /databases/{database}/documents {
 
+    // ------------------------------------------------------------------ people and roles
     function owners()   { return [/*OWNERS*/'__OWNER_EMAIL__']; }
     function managers() { return [/*MANAGERS*/]; }
     function cashiers() { return [/*CASHIERS*/]; }
 
-    function signedIn() {
-      return request.auth != null && request.auth.token.email_verified == true;
-    }
-    function me() { return request.auth.token.email.lower(); }
-    function isOwner()  { return signedIn() && me() in owners(); }
-    function canRead()  { return signedIn() && (me() in owners() || me() in managers() || me() in cashiers()); }
-    function canWrite() { return canRead(); }
+    function signedIn() { return request.auth != null && request.auth.token.email_verified == true; }
+    function email() { return request.auth.token.email.lower(); }
+    function isOwner() { return signedIn() && email() in owners(); }
+    function isManager() { return signedIn() && email() in managers(); }
+    function isCashier() { return signedIn() && email() in cashiers(); }
+    function isMember() { return isOwner() || isManager() || isCashier(); }
+    function isManagerUp() { return isOwner() || isManager(); }
+    function dailyCap() { return isOwner() ? /*CAP_OWNER*/4000 : (isManager() ? /*CAP_MANAGER*/3000 : /*CAP_CASHIER*/1500); } // batches a day, see docs/threat-model.md
 
-    // Records that are never edited after they are saved (a repeated upload may only change the server stamp).
-    function appendOnly(coll) {
-      return coll in ['bills', 'billCancellations', 'payments', 'stockMovements', 'ledgerEntries', 'audit', 'history',
-                      'salesReturns', 'purchaseReturns', 'reminders'];
-    }
-    // Records that can be edited.
-    function editable(coll) {
-      return coll in ['products', 'customers', 'dealers', 'categories', 'estimations', 'purchases', 'expenses', 'settingsShared'];
+    // ------------------------------------------------------------------ where things live
+    function shop(shopId) { return /databases/$(database)/documents/shops/$(shopId); }
+    function dayNumber() { return request.time.year() * 10000 + request.time.month() * 100 + request.time.day(); }
+    function usageId() { return email() + '_' + string(dayNumber()); }
+
+    // ------------------------------------------------------------------ the device and the daily counter (every business write)
+    function deviceApproved(shopId) {
+      let id = request.resource.data.deviceId;
+      let dev = get(/databases/$(database)/documents/shops/$(shopId)/devices/$(id));
+      return dev.data.status == 'approved' && dev.data.ownerEmail == email();
     }
 
-    function smallDoc() {
-      return request.resource.data.keys().size() <= 60
-        && request.resource.data.keys().hasAll(['id', 'deviceId', 'updatedAt', 'serverAt'])
+    function usageBumped(shopId) {
+      let p = /databases/$(database)/documents/shops/$(shopId)/usage/$(usageId());
+      let after = getAfter(p).data;
+      return (exists(p) ? after.batches == get(p).data.batches + 1 : after.batches == 1) && after.batches <= dailyCap();
+    }
+
+    // may this person write business data in this batch? (role is checked by the caller)
+    function writing(shopId) { return isMember() && deviceApproved(shopId) && usageBumped(shopId); }
+
+    // ------------------------------------------------------------------ small checks
+    function plausible(ms) { return ms is int && ms > request.time.toMillis() - 1000 * 60 * 60 * 24 * 800 && ms < request.time.toMillis() + 1000 * 60 * 60 * 24; }
+    function text(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+    function optText(v, max) { return v == null || (v is string && v.size() <= max); }
+    function money(v) { return v is int && v >= 0 && v <= 100000000000; }
+    function signed(v) { return v is int && v >= -100000000000 && v <= 100000000000; }
+    function qty(v) { return v is int && v >= -1000000000 && v <= 1000000000; }
+    function flag(v) { return v is bool; }
+    function idText(v) { return v is string && v.size() >= 1 && v.size() <= 64; }
+
+    // the fields every record has; the creator is always the signed-in person
+    function base(docId) {
+      let d = request.resource.data;
+      return d.id == docId && idText(d.id) && text(d.deviceId, 8, 64) && d.createdBy == email() && plausible(d.updatedAt) && d.serverAt == request.time;
+    }
+
+    // a repeated delivery of the same record (a retry after a lost reply): only the server stamp may change
+    function resend() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['serverAt']); }
+
+    // an edit of an editable record: next version, same creator, edited by the signed-in person
+    function edit(docId) {
+      let d = request.resource.data;
+      return d.id == docId && d.createdBy == resource.data.createdBy && d.updatedBy == email() && d.version == resource.data.version + 1 && plausible(d.updatedAt) && d.serverAt == request.time && text(d.deviceId, 8, 64);
+    }
+
+    function keysOk(may, must) {
+      return request.resource.data.keys().hasAll(must) && request.resource.data.keys().hasOnly(must.concat(may));
+    }
+
+    // ------------------------------------------------------------------ audit link: a price, cost or credit-limit change needs its audit record in the same batch
+    function auditFor(shopId, auditId, entity, entityId, field, oldValue, newValue) {
+      let a = getAfter(/databases/$(database)/documents/shops/$(shopId)/audit/$(auditId)).data;
+      return a.entity == entity && a.entityId == entityId && a.field == field && a.oldValue == oldValue && a.newValue == newValue && a.by == email();
+    }
+
+    // ================================================================== DEVICES (a new device writes only "pending")
+    match /shops/{shopId}/devices/{docId} {
+      allow read: if isOwner() || (isMember() && resource.data.ownerEmail == email());
+      allow create: if isMember()
+        && keysOk([], ['id', 'ownerEmail', 'name', 'platform', 'status', 'createdAt', 'serverAt'])
+        && request.resource.data.id == docId && text(docId, 8, 64) && docId.matches('^[A-Za-z0-9_-]+$')
+        && request.resource.data.ownerEmail == email()
+        && request.resource.data.status == 'pending'
+        && text(request.resource.data.name, 1, 60)
+        && request.resource.data.platform in ['windows', 'android', 'macos', 'web', 'other']
+        && plausible(request.resource.data.createdAt)
         && request.resource.data.serverAt == request.time;
+      // only the owner approves or revokes
+      allow update: if isOwner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'approvedBy', 'approvedAt', 'serverAt'])
+        && request.resource.data.status in ['approved', 'revoked']
+        && request.resource.data.approvedBy == email()
+        && plausible(request.resource.data.approvedAt)
+        && request.resource.data.serverAt == request.time;
+      allow delete: if false;
     }
 
-    match /shops/{shopId}/{coll}/{docId} {
-      allow read: if canRead() && (appendOnly(coll) || editable(coll));
-      allow create: if canWrite() && (appendOnly(coll) || editable(coll))
-        && request.resource.data.id == docId && smallDoc();
-      allow update: if canWrite() && editable(coll)
-        && request.resource.data.id == docId && smallDoc();
-      // Duplicate delivery of an append-only record: only the server stamp may change.
-      allow update: if canWrite() && appendOnly(coll) && smallDoc()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['serverAt']);
+    // ================================================================== USAGE COUNTER (one document per person per day)
+    match /shops/{shopId}/usage/{docId} {
+      allow read: if isOwner() || (isMember() && resource.data.email == email());
+      allow create: if isMember() && docId == usageId()
+        && keysOk([], ['email', 'day', 'batches'])
+        && request.resource.data.email == email() && request.resource.data.day == dayNumber() && request.resource.data.batches == 1;
+      allow update: if isMember() && docId == usageId()
+        && keysOk([], ['email', 'day', 'batches'])
+        && request.resource.data.email == email() && request.resource.data.day == dayNumber()
+        && request.resource.data.batches == resource.data.batches + 1 && request.resource.data.batches <= dailyCap();
+      allow delete: if false;
+    }
+
+    // ================================================================== RECORDS OF WHAT HAPPENED (cannot be edited or deleted)
+    match /shops/{shopId}/bills/{docId} {
+      allow read: if isMember();
+      allow create: if writing(shopId) && base(docId)
+        && keysOk(['customerId', 'lines', 'note'], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'number', 'status', 'totalPaise', 'receivedPaise', 'balancePaise', 'taxPaise', 'payMode', 'billedAt', 'day', 'idemKey'])
+        && text(request.resource.data.number, 1, 30) && request.resource.data.status == 0
+        && money(request.resource.data.totalPaise) && money(request.resource.data.receivedPaise) && money(request.resource.data.balancePaise) && money(request.resource.data.taxPaise)
+        && request.resource.data.balancePaise <= request.resource.data.totalPaise && request.resource.data.taxPaise <= request.resource.data.totalPaise
+        && request.resource.data.payMode is int && request.resource.data.payMode >= 0 && request.resource.data.payMode <= 3
+        && plausible(request.resource.data.billedAt) && text(request.resource.data.day, 10, 10) && idText(request.resource.data.idemKey)
+        && optText(request.resource.data.get('customerId', null), 64) && optText(request.resource.data.get('note', null), 500)
+        && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 300));
+      allow update: if writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/billCancellations/{docId} {
+      allow read: if isMember();
+      allow create: if isOwner() && writing(shopId) && base(docId)
+        && keysOk([], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'billId', 'billNo', 'reason', 'at'])
+        && idText(request.resource.data.billId) && text(request.resource.data.billNo, 1, 30) && text(request.resource.data.reason, 1, 500) && plausible(request.resource.data.at);
+      allow update: if isOwner() && writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/payments/{docId} {
+      allow read: if isMember();
+      allow create: if writing(shopId) && base(docId)
+        && keysOk(['allocations', 'note', 'receiptNo', 'dealerId', 'customerId'], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'amountPaise', 'mode', 'date', 'advancePaise'])
+        && request.resource.data.amountPaise is int && request.resource.data.amountPaise >= 1 && request.resource.data.amountPaise <= 100000000000
+        && request.resource.data.mode in ['cash', 'upi', 'card']
+        && plausible(request.resource.data.date)
+        && money(request.resource.data.advancePaise) && request.resource.data.advancePaise <= request.resource.data.amountPaise
+        && (('customerId' in request.resource.data) != ('dealerId' in request.resource.data))
+        && optText(request.resource.data.get('customerId', null), 64) && optText(request.resource.data.get('dealerId', null), 64)
+        && optText(request.resource.data.get('note', null), 500) && optText(request.resource.data.get('receiptNo', null), 30)
+        && (!('allocations' in request.resource.data) || (request.resource.data.allocations is list && request.resource.data.allocations.size() <= 300))
+        // paying a dealer is a manager's job; receiving from a customer is a cashier's
+        && (!('dealerId' in request.resource.data) || isManagerUp());
+      allow update: if writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/ledgerEntries/{docId} {
+      allow read: if isMember();
+      allow create: if writing(shopId) && base(docId)
+        && keysOk(['billNo', 'note', 'mode', 'reverses', 'allocations'], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'partyId', 'kind', 'amountPaise', 'at'])
+        && idText(request.resource.data.partyId) && plausible(request.resource.data.at) && signed(request.resource.data.amountPaise) && request.resource.data.amountPaise != 0
+        && request.resource.data.kind in ['opening', 'billCredit', 'payment', 'advance', 'returnCredit', 'adjustment', 'manualCredit', 'writeOff', 'billCancel']
+        // sign rules: money in or credit given is negative (it lowers the balance); credit added is positive
+        && (request.resource.data.kind in ['payment', 'advance', 'returnCredit', 'writeOff', 'billCancel'] ? request.resource.data.amountPaise < 0 : true)
+        && (request.resource.data.kind in ['billCredit', 'manualCredit'] ? request.resource.data.amountPaise > 0 : true)
+        // only a manager or the owner can write off, adjust, add credit by hand or start a balance
+        && (request.resource.data.kind in ['writeOff', 'adjustment', 'manualCredit', 'opening', 'billCancel', 'returnCredit'] ? isManagerUp() : true)
+        && (request.resource.data.kind == 'writeOff' || request.resource.data.kind == 'billCancel' ? isOwner() : true)
+        && optText(request.resource.data.get('billNo', null), 30) && optText(request.resource.data.get('note', null), 500) && optText(request.resource.data.get('mode', null), 10) && optText(request.resource.data.get('reverses', null), 64)
+        && (!('allocations' in request.resource.data) || (request.resource.data.allocations is list && request.resource.data.allocations.size() <= 300));
+      allow update: if writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/stockMovements/{docId} {
+      allow read: if isMember();
+      allow create: if writing(shopId) && base(docId)
+        && keysOk(['refId'], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'productId', 'qtyMilli', 'kind', 'at'])
+        && idText(request.resource.data.productId) && qty(request.resource.data.qtyMilli) && request.resource.data.qtyMilli != 0 && plausible(request.resource.data.at)
+        && request.resource.data.kind in ['sale', 'purchase', 'adjustment', 'opening', 'saleReturn', 'purchaseReturn', 'cancel']
+        && optText(request.resource.data.get('refId', null), 64)
+        // a cashier can only record the stock that a sale takes out
+        && (isManagerUp() || (request.resource.data.kind == 'sale' && request.resource.data.qtyMilli < 0));
+      allow update: if writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/audit/{docId} {
+      allow read: if isManagerUp();
+      allow create: if writing(shopId) && base(docId)
+        && keysOk([], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'action', 'entity', 'entityId', 'field', 'oldValue', 'newValue', 'by', 'at'])
+        && request.resource.data.action in ['price', 'cost', 'creditLimit', 'cancelBill', 'writeOff', 'role', 'deviceApproval', 'adjustment']
+        && text(request.resource.data.entity, 1, 40) && idText(request.resource.data.entityId) && text(request.resource.data.field, 1, 40)
+        && request.resource.data.by == email() && plausible(request.resource.data.at)
+        && (request.resource.data.oldValue == null || request.resource.data.oldValue is int || text(request.resource.data.oldValue, 0, 100))
+        && (request.resource.data.newValue == null || request.resource.data.newValue is int || text(request.resource.data.newValue, 0, 100));
+      allow update: if writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/history/{docId} {
+      allow read: if isManagerUp();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk(['snapshot'], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'entity', 'entityId', 'version'])
+        && text(request.resource.data.entity, 1, 40) && idText(request.resource.data.entityId) && request.resource.data.version is int && request.resource.data.version >= 1
+        && (!('snapshot' in request.resource.data) || (request.resource.data.snapshot is map && request.resource.data.snapshot.keys().size() <= 60));
+      allow update: if isManagerUp() && writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/salesReturns/{docId} {
+      allow read: if isMember();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk(['lines', 'note'], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'number', 'billNo', 'customerId', 'totalPaise', 'at'])
+        && text(request.resource.data.number, 1, 30) && text(request.resource.data.billNo, 1, 30) && idText(request.resource.data.customerId)
+        && money(request.resource.data.totalPaise) && plausible(request.resource.data.at) && optText(request.resource.data.get('note', null), 500)
+        && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 300));
+      allow update: if isManagerUp() && writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/purchaseReturns/{docId} {
+      allow read: if isMember();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk(['lines', 'note'], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'number', 'dealerId', 'totalPaise', 'at'])
+        && text(request.resource.data.number, 1, 30) && idText(request.resource.data.dealerId) && money(request.resource.data.totalPaise) && plausible(request.resource.data.at)
+        && optText(request.resource.data.get('note', null), 500)
+        && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 300));
+      allow update: if isManagerUp() && writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/reminders/{docId} {
+      allow read: if isMember();
+      allow create: if writing(shopId) && base(docId)
+        && keysOk([], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'customerId', 'at', 'amountDuePaise', 'message', 'by'])
+        && idText(request.resource.data.customerId) && plausible(request.resource.data.at) && money(request.resource.data.amountDuePaise)
+        && text(request.resource.data.message, 1, 1500) && request.resource.data.by == email();
+      allow update: if writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/customerNotes/{docId} {
+      allow read: if isMember();
+      allow create: if writing(shopId) && base(docId)
+        && keysOk([], ['id', 'deviceId', 'createdBy', 'updatedAt', 'serverAt', 'customerId', 'note', 'at'])
+        && idText(request.resource.data.customerId) && text(request.resource.data.note, 1, 500) && plausible(request.resource.data.at);
+      allow update: if writing(shopId) && resend();
+      allow delete: if false;
+    }
+
+    // ================================================================== EDITABLE RECORDS
+    match /shops/{shopId}/products/{docId} {
+      allow read: if isMember();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk(['barcode', 'costPaise', 'category', 'deletedAt', 'auditIdPrice', 'auditIdCost'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name', 'pricePaise', 'gstBp', 'unit', 'minQtyMilli', 'active'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email()
+        && text(request.resource.data.name, 1, 120) && money(request.resource.data.pricePaise) && request.resource.data.pricePaise <= 1000000000
+        && (request.resource.data.get('costPaise', null) == null || (money(request.resource.data.costPaise) && request.resource.data.costPaise <= 1000000000))
+        && request.resource.data.gstBp is int && request.resource.data.gstBp >= 0 && request.resource.data.gstBp <= 4000
+        && text(request.resource.data.unit, 1, 12) && qty(request.resource.data.minQtyMilli) && request.resource.data.minQtyMilli >= 0 && flag(request.resource.data.active)
+        && optText(request.resource.data.get('barcode', null), 40) && optText(request.resource.data.get('category', null), 60)
+        && (request.resource.data.get('deletedAt', null) == null || plausible(request.resource.data.deletedAt));
+      allow update: if isManagerUp() && writing(shopId) && (resend() || (edit(docId)
+        && keysOk(['barcode', 'costPaise', 'category', 'deletedAt', 'auditIdPrice', 'auditIdCost'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name', 'pricePaise', 'gstBp', 'unit', 'minQtyMilli', 'active'])
+        && text(request.resource.data.name, 1, 120) && money(request.resource.data.pricePaise) && request.resource.data.pricePaise <= 1000000000
+        && (request.resource.data.get('costPaise', null) == null || (money(request.resource.data.costPaise) && request.resource.data.costPaise <= 1000000000))
+        && request.resource.data.gstBp is int && request.resource.data.gstBp >= 0 && request.resource.data.gstBp <= 4000
+        && text(request.resource.data.unit, 1, 12) && qty(request.resource.data.minQtyMilli) && request.resource.data.minQtyMilli >= 0 && flag(request.resource.data.active)
+        && optText(request.resource.data.get('barcode', null), 40) && optText(request.resource.data.get('category', null), 60)
+        && (request.resource.data.get('deletedAt', null) == null || plausible(request.resource.data.deletedAt))
+        // price and cost changes need their audit record in the same batch
+        && (request.resource.data.pricePaise == resource.data.pricePaise || auditFor(shopId, request.resource.data.get('auditIdPrice', 'none'), 'product', docId, 'price', resource.data.pricePaise, request.resource.data.pricePaise))
+        && (request.resource.data.get('costPaise', null) == resource.data.get('costPaise', null) || auditFor(shopId, request.resource.data.get('auditIdCost', 'none'), 'product', docId, 'cost', resource.data.get('costPaise', null), request.resource.data.get('costPaise', null)))));
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/customers/{docId} {
+      allow read: if isMember();
+      // a cashier may add a NEW customer, with credit limit 0; a manager or the owner may set any limit
+      allow create: if writing(shopId) && base(docId)
+        && keysOk(['phone', 'city', 'address', 'deletedAt'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name', 'creditLimitPaise'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email()
+        && text(request.resource.data.name, 1, 80) && optText(request.resource.data.get('phone', null), 20) && optText(request.resource.data.get('city', null), 60) && optText(request.resource.data.get('address', null), 200)
+        && money(request.resource.data.creditLimitPaise)
+        && (isManagerUp() || request.resource.data.creditLimitPaise == 0)
+        && (request.resource.data.get('deletedAt', null) == null || plausible(request.resource.data.deletedAt));
+      allow update: if writing(shopId) && (resend() || (isManagerUp() && edit(docId)
+        && keysOk(['phone', 'city', 'address', 'deletedAt', 'auditIdLimit'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name', 'creditLimitPaise'])
+        && text(request.resource.data.name, 1, 80) && optText(request.resource.data.get('phone', null), 20) && optText(request.resource.data.get('city', null), 60) && optText(request.resource.data.get('address', null), 200)
+        && money(request.resource.data.creditLimitPaise)
+        && (request.resource.data.get('deletedAt', null) == null || plausible(request.resource.data.deletedAt))
+        && (request.resource.data.creditLimitPaise == resource.data.creditLimitPaise || auditFor(shopId, request.resource.data.get('auditIdLimit', 'none'), 'customer', docId, 'creditLimit', resource.data.creditLimitPaise, request.resource.data.creditLimitPaise))));
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/dealers/{docId} {
+      allow read: if isMember();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk(['phone', 'city', 'address', 'deletedAt'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email()
+        && text(request.resource.data.name, 1, 80) && optText(request.resource.data.get('phone', null), 20) && optText(request.resource.data.get('city', null), 60) && optText(request.resource.data.get('address', null), 200);
+      allow update: if isManagerUp() && writing(shopId) && (resend() || (edit(docId)
+        && keysOk(['phone', 'city', 'address', 'deletedAt'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name'])
+        && text(request.resource.data.name, 1, 80) && optText(request.resource.data.get('phone', null), 20) && optText(request.resource.data.get('city', null), 60) && optText(request.resource.data.get('address', null), 200)));
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/categories/{docId} {
+      allow read: if isMember();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk([], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email() && text(request.resource.data.name, 1, 60);
+      allow update: if isManagerUp() && writing(shopId) && (resend() || (edit(docId)
+        && keysOk([], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name']) && text(request.resource.data.name, 1, 60)));
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/estimations/{docId} {
+      allow read: if isMember();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk(['lines', 'customerName', 'editedOn', 'convertedBillId'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'number', 'totalPaise', 'at'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email()
+        && text(request.resource.data.number, 1, 30) && money(request.resource.data.totalPaise) && plausible(request.resource.data.at)
+        && optText(request.resource.data.get('customerName', null), 80) && optText(request.resource.data.get('convertedBillId', null), 64)
+        && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 300));
+      allow update: if isManagerUp() && writing(shopId) && (resend() || (edit(docId)
+        && keysOk(['lines', 'customerName', 'editedOn', 'convertedBillId'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'number', 'totalPaise', 'at'])
+        && text(request.resource.data.number, 1, 30) && money(request.resource.data.totalPaise) && plausible(request.resource.data.at)
+        && optText(request.resource.data.get('customerName', null), 80) && optText(request.resource.data.get('convertedBillId', null), 64)
+        && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 300))));
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/purchases/{docId} {
+      allow read: if isMember();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk(['lines', 'invoiceNo', 'note'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'number', 'dealerId', 'totalPaise', 'at', 'status'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email()
+        && text(request.resource.data.number, 1, 30) && idText(request.resource.data.dealerId) && money(request.resource.data.totalPaise) && plausible(request.resource.data.at)
+        && request.resource.data.status in ['received', 'pending'] && optText(request.resource.data.get('invoiceNo', null), 40) && optText(request.resource.data.get('note', null), 500)
+        && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 300));
+      allow update: if isManagerUp() && writing(shopId) && (resend() || (edit(docId)
+        && keysOk(['lines', 'invoiceNo', 'note'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'number', 'dealerId', 'totalPaise', 'at', 'status'])
+        && text(request.resource.data.number, 1, 30) && idText(request.resource.data.dealerId) && money(request.resource.data.totalPaise) && plausible(request.resource.data.at)
+        && request.resource.data.status in ['received', 'pending'] && optText(request.resource.data.get('invoiceNo', null), 40) && optText(request.resource.data.get('note', null), 500)
+        && (!('lines' in request.resource.data) || (request.resource.data.lines is list && request.resource.data.lines.size() <= 300))));
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/expenses/{docId} {
+      allow read: if isMember();
+      allow create: if isManagerUp() && writing(shopId) && base(docId)
+        && keysOk(['note'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'category', 'amountPaise', 'at'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email()
+        && text(request.resource.data.category, 1, 60) && money(request.resource.data.amountPaise) && plausible(request.resource.data.at) && optText(request.resource.data.get('note', null), 500);
+      allow update: if isManagerUp() && writing(shopId) && (resend() || (edit(docId)
+        && keysOk(['note'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'category', 'amountPaise', 'at'])
+        && text(request.resource.data.category, 1, 60) && money(request.resource.data.amountPaise) && plausible(request.resource.data.at) && optText(request.resource.data.get('note', null), 500)));
+      allow delete: if false;
+    }
+
+    // ================================================================== OWNER ONLY
+    match /shops/{shopId}/shopProfile/{docId} {
+      allow read: if isMember();
+      allow create: if isOwner() && writing(shopId) && docId == 'main' && base(docId)
+        && keysOk(['ownerName', 'address', 'phone', 'gstin', 'upiId', 'bankDetails', 'billFooter', 'invoicePrefix', 'pricesIncludeGst', 'estimate'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email() && text(request.resource.data.name, 1, 80)
+        && optText(request.resource.data.get('ownerName', null), 80) && optText(request.resource.data.get('address', null), 200) && optText(request.resource.data.get('phone', null), 20)
+        && optText(request.resource.data.get('gstin', null), 15) && optText(request.resource.data.get('upiId', null), 100) && optText(request.resource.data.get('bankDetails', null), 200)
+        && optText(request.resource.data.get('billFooter', null), 200) && optText(request.resource.data.get('invoicePrefix', null), 10)
+        && (request.resource.data.get('pricesIncludeGst', true) is bool) && (!('estimate' in request.resource.data) || (request.resource.data.estimate is map && request.resource.data.estimate.keys().size() <= 10));
+      allow update: if isOwner() && writing(shopId) && (resend() || (edit(docId)
+        && keysOk(['ownerName', 'address', 'phone', 'gstin', 'upiId', 'bankDetails', 'billFooter', 'invoicePrefix', 'pricesIncludeGst', 'estimate'], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'name'])
+        && text(request.resource.data.name, 1, 80)
+        && optText(request.resource.data.get('ownerName', null), 80) && optText(request.resource.data.get('address', null), 200) && optText(request.resource.data.get('phone', null), 20)
+        && optText(request.resource.data.get('gstin', null), 15) && optText(request.resource.data.get('upiId', null), 100) && optText(request.resource.data.get('bankDetails', null), 200)
+        && optText(request.resource.data.get('billFooter', null), 200) && optText(request.resource.data.get('invoicePrefix', null), 10)
+        && (request.resource.data.get('pricesIncludeGst', true) is bool) && (!('estimate' in request.resource.data) || (request.resource.data.estimate is map && request.resource.data.estimate.keys().size() <= 10))));
+      allow delete: if false;
+    }
+
+    match /shops/{shopId}/settingsShared/{docId} {
+      allow read: if isMember();
+      allow create: if isOwner() && writing(shopId) && base(docId)
+        && keysOk([], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'key', 'value'])
+        && request.resource.data.version == 1 && request.resource.data.updatedBy == email() && text(request.resource.data.key, 1, 60) && text(request.resource.data.value, 0, 2000);
+      allow update: if isOwner() && writing(shopId) && (resend() || (edit(docId)
+        && keysOk([], ['id', 'deviceId', 'createdBy', 'updatedBy', 'updatedAt', 'serverAt', 'version', 'key', 'value']) && text(request.resource.data.key, 1, 60) && text(request.resource.data.value, 0, 2000)));
       allow delete: if false;
     }
   }

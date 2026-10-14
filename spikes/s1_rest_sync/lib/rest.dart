@@ -159,6 +159,15 @@ class FirestoreRest {
     return DateTime.parse(jsonDecode(r.body)["commitTime"] as String);
   }
 
+  /// Like [commit], but each document says whether the server stamp (serverAt) is added.
+  Future<DateTime> commitMixed(List<({String path, Map<String, Object?> data, bool stamp})> docs) async {
+    final r = await client.post(Uri.parse('$fsBase/v1/$_db:commit'),
+        headers: _h, body: jsonEncode({'writes': docs.map((d) => _write(d.path, d.data, stamp: d.stamp)).toList()}));
+    if (r.statusCode != 200) _fail(r);
+    writes += docs.length;
+    return DateTime.parse(jsonDecode(r.body)["commitTime"] as String);
+  }
+
   Future<Map<String, Object?>?> get(String path) async {
     final r = await client.get(Uri.parse('$fsBase/v1/$_db/$path'), headers: _h);
     reads++;
