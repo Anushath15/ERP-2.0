@@ -7,8 +7,12 @@ import '../../design/effects.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../design/app_logo.dart';
+import '../../core/plain_error.dart';
+import '../../data/repo/series_registry.dart';
+import '../../fake/data_providers.dart';
 import '../../fake/store.dart';
 import '../../fake/shop_profile.dart';
+import '../../strings.dart';
 
 class _AuthFrame extends ConsumerWidget {
   const _AuthFrame({required this.child, this.maxWidth = 460});
@@ -183,16 +187,65 @@ class WizardScreen extends ConsumerStatefulWidget {
 
 class _WizardScreenState extends ConsumerState<WizardScreen> {
   int _step = 0;
-  static const _total = 6;
-  final _name = TextEditingController(text: 'Senthil Enterprises');
-  final _gst = TextEditingController();
+  static const _total = 7;
+  late final _name = TextEditingController(text: ref.read(shopProvider).name);
+  late final _owner = TextEditingController(text: ref.read(shopProvider).ownerName);
+  late final _address = TextEditingController(text: ref.read(shopProvider).address);
+  late final _phone = TextEditingController(text: ref.read(shopProvider).phone);
+  late final _gst = TextEditingController(text: ref.read(shopProvider).gstin);
+  late final _prefix = TextEditingController(text: ref.read(shopProvider).invoicePrefix);
+  String? _letter;
+  String? _error;
+  bool _busy = false;
   int _stockChoice = 0;
 
   @override
   void dispose() {
-    _name.dispose();
-    _gst.dispose();
+    for (final c in [_name, _owner, _address, _phone, _gst, _prefix]) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  /// What is wrong with the step the person is on (null = fine to go on).
+  String? _check(Strings l) {
+    switch (_step) {
+      case 1:
+        if (_name.text.trim().isEmpty) return l.wizNameRequired;
+        if (checkText(TextKind.name, _name.text) != null || checkText(TextKind.address, _address.text) != null) return l.fieldRequired;
+      case 2:
+        if (_gst.text.trim().isNotEmpty && checkText(TextKind.gstin, _gst.text) != null) return l.errGstin;
+      case 3:
+        if (!RegExp(r'^[A-Za-z0-9-]{0,6}$').hasMatch(_prefix.text.trim())) return l.wizPrefixBad;
+        if (_letter == null) return l.wizSeriesPick;
+    }
+    return null;
+  }
+
+  Future<void> _finish(Strings l) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final d = ref.read(appDataProvider);
+      final registry = SeriesRegistry(d.settings, d.cx.deviceId);
+      await ref.read(writeQueueProvider).run(() => registry.claim(_letter!)); // refused if another computer of this shop has the letter
+      d.bills.series = _letter!;
+      ref.read(shopProvider.notifier).set((x) => x.copyWith(name: _name.text.trim(), ownerName: _owner.text.trim(), address: _address.text.trim(), phone: _phone.text.trim(), gstin: _gst.text.trim(), invoicePrefix: _prefix.text.trim()));
+      d.bills.invoicePrefix = _prefix.text.trim();
+      await ref.read(writeQueueProvider).run(() => d.settings.put('shop.created', '${d.cx.nowMs()}'));
+      await ref.read(writeQueueProvider).flush();
+      await ref.read(nextNumbersProvider.notifier).refresh();
+      ref.read(settingsProvider.notifier).set((x) => x.copyWith(firstRunDone: true));
+      if (mounted) context.go('/');
+    } on SeriesTakenException {
+      setState(() => _error = l.wizSeriesTaken(_letter ?? ''));
+    } catch (e) {
+      setState(() => _error = plainError(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -201,7 +254,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
     final s = ref.watch(settingsProvider);
     final set = ref.read(settingsProvider.notifier).set;
     final th = Theme.of(context).textTheme;
-    final titles = [l.wizWelcome, l.wizShop, l.wizGst, l.wizLogo, l.wizPrinter, l.wizStock];
+    final titles = [l.wizWelcome, l.wizShop, l.wizGst, l.wizNumbering, l.wizLogo, l.wizPrinter, l.wizStock];
     Widget body;
     switch (_step) {
       case 0:
@@ -216,21 +269,47 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
         ]);
       case 1:
         body = Column(children: [
-          TextField(controller: _name, inputFormatters: [safeInput(TextKind.name)], decoration: InputDecoration(labelText: l.setShopName)),
+          TextField(key: const ValueKey('wizName'), controller: _name, inputFormatters: [safeInput(TextKind.name)], decoration: InputDecoration(labelText: l.setShopName)),
           const SizedBox(height: 12),
-          TextField(minLines: 2, maxLines: 3, inputFormatters: [safeInput(TextKind.address)], decoration: InputDecoration(labelText: l.fieldAddress)),
+          TextField(key: const ValueKey('wizOwner'), controller: _owner, inputFormatters: [safeInput(TextKind.name)], decoration: InputDecoration(labelText: l.fieldOwner)),
           const SizedBox(height: 12),
-          TextField(keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: l.fieldPhone)),
+          TextField(key: const ValueKey('wizAddress'), controller: _address, minLines: 2, maxLines: 3, inputFormatters: [safeInput(TextKind.address)], decoration: InputDecoration(labelText: l.fieldAddress)),
+          const SizedBox(height: 12),
+          TextField(key: const ValueKey('wizPhone'), controller: _phone, keyboardType: TextInputType.phone, inputFormatters: [safeInput(TextKind.phone)], decoration: InputDecoration(labelText: l.fieldPhone)),
         ]);
       case 2:
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          TextField(controller: _gst, inputFormatters: [safeInput(TextKind.gstin)], decoration: const InputDecoration(labelText: 'GSTIN', hintText: '33AAAAA0000A1Z5')),
+          TextField(key: const ValueKey('wizGstin'), controller: _gst, inputFormatters: [safeInput(TextKind.gstin)], decoration: const InputDecoration(labelText: 'GSTIN', hintText: '33AAAAA0000A1Z5')),
           const SizedBox(height: 8),
           Text(l.wizGstHelp, style: th.bodySmall),
           const SizedBox(height: 12),
           SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(l.setPricesIncludeGst), subtitle: Text(l.setPricesIncludeGstHelp), value: ref.watch(shopProvider).pricesIncludeGst, onChanged: (v) => ref.read(shopProvider.notifier).set((x) => x.copyWith(pricesIncludeGst: v))),
         ]);
       case 3:
+        final free = ref.watch(freeSeriesProvider);
+        final letters = free.value ?? const <String>[];
+        body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(l.wizNumberingHelp, style: th.bodyMedium),
+          const SizedBox(height: 12),
+          TextField(key: const ValueKey('wizPrefix'), controller: _prefix, onChanged: (_) => setState(() {}), inputFormatters: [safeInput(TextKind.town)], decoration: InputDecoration(labelText: l.wizPrefixLabel, hintText: 'SE-', helperText: l.wizPrefixHelp)),
+          const SizedBox(height: 16),
+          Text(l.wizSeriesLabel, style: th.titleSmall),
+          const SizedBox(height: 4),
+          Text(l.wizSeriesHelp, style: th.bodySmall),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final x in SeriesRegistry.letters)
+              ChoiceChip(
+                key: ValueKey('series-$x'),
+                label: Text(x),
+                selected: _letter == x,
+                onSelected: letters.contains(x) ? (_) => setState(() => _letter = x) : null,
+              ),
+          ]),
+          const SizedBox(height: 8),
+          if (_letter != null) Text(l.wizSeriesExample('${_prefix.text.trim()}$_letter-000001'), style: th.bodySmall),
+        ]);
+      case 4:
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Container(height: 120, decoration: BoxDecoration(color: context.c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.m), border: Border.all(color: context.c.border)), child: Center(child: Icon(Icons.image_outlined, size: 48, color: context.c.textMuted))),
           const SizedBox(height: 12),
@@ -238,7 +317,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
           const SizedBox(height: 8),
           Text(l.wizLogoHelp, style: th.bodySmall),
         ]);
-      case 4:
+      case 5:
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(l.setPaper, style: th.titleSmall),
           const SizedBox(height: 8),
@@ -254,6 +333,12 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
             Padding(padding: const EdgeInsets.only(bottom: 8), child: Card(color: _stockChoice == e.$1 ? context.c.rowSelected : null, child: ListTile(minTileHeight: 56, leading: Icon(e.$3), title: Text(e.$2, style: th.titleSmall), trailing: _stockChoice == e.$1 ? Icon(Icons.check_circle, color: context.c.primary) : null, onTap: () => setState(() => _stockChoice = e.$1)))),
         ]);
     }
+    void next() {
+      final problem = _check(l);
+      setState(() => _error = problem);
+      if (problem == null) setState(() => _step++);
+    }
+
     return _AuthFrame(
       maxWidth: 560,
       child: Card(
@@ -267,11 +352,12 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
             Text(titles[_step], style: th.headlineSmall),
             const SizedBox(height: 14),
             body,
+            if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, key: const ValueKey('wizError'), style: th.bodyMedium?.copyWith(color: context.c.danger))),
             const SizedBox(height: 22),
             Row(children: [
-              if (_step > 0) OutlinedButton(onPressed: () => setState(() => _step--), child: Text(l.back)),
+              if (_step > 0) OutlinedButton(onPressed: _busy ? null : () => setState(() { _step--; _error = null; }), child: Text(l.back)),
               const Spacer(),
-              if (_step < _total - 1) FilledButton(onPressed: () => setState(() => _step++), child: Text(l.next)) else FilledButton.icon(onPressed: () { ref.read(shopProvider.notifier).set((x) => x.copyWith(name: _name.text.trim().isEmpty ? x.name : _name.text.trim())); set((x) => x.copyWith(firstRunDone: true)); context.go('/'); }, icon: const Icon(Icons.check), label: Text(l.finish)),
+              if (_step < _total - 1) FilledButton(onPressed: next, child: Text(l.next)) else FilledButton.icon(key: const ValueKey('wizFinish'), onPressed: _busy ? null : () => _finish(l), icon: const Icon(Icons.check), label: Text(l.finish)),
             ]),
           ]),
         ),
@@ -279,3 +365,9 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
     );
   }
 }
+
+/// The series letters nobody in this shop has taken yet.
+final freeSeriesProvider = FutureProvider<List<String>>((ref) {
+  final d = ref.watch(appDataProvider);
+  return SeriesRegistry(d.settings, d.cx.deviceId).free();
+});

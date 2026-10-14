@@ -1,4 +1,4 @@
-import 'package:sqlite3/sqlite3.dart' show SqliteException;
+import 'package:sqlite3/common.dart' show SqliteException;
 
 /// What went wrong when the database could not be opened or used, in terms a screen can explain to a shop owner.
 enum DbProblem { tooNew, locked, readOnly, cannotOpen, notDatabase, corrupt, diskFull, other }

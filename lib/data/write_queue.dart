@@ -3,7 +3,10 @@ import 'dart:async';
 /// All database writes the screens start go through one queue, in the order they were made. A screen can fire a write and carry on
 /// (small edits), or await its result (a bill, a payment: nothing is shown as done until the database says so).
 class WriteQueue {
-  WriteQueue({this.onError});
+  WriteQueue({this.onError, this.beforeWrite});
+
+  /// Runs before every write; it throws to stop the write (for example when the disk is nearly full).
+  Future<void> Function()? beforeWrite;
 
   /// Called when a fire-and-forget write fails, so the screen can say so plainly (disk full, file locked...).
   void Function(Object error, StackTrace stack)? onError;
@@ -12,11 +15,12 @@ class WriteQueue {
   int pending = 0;
 
   /// Runs [job] after everything queued before it and returns its result (or rethrows its error to the caller).
-  Future<T> run<T>(Future<T> Function() job) {
+  Future<T> run<T>(Future<T> Function() job, {bool guard = true}) {
     final done = Completer<T>();
     pending++;
     _tail = _tail.then((_) async {
       try {
+        if (guard) await beforeWrite?.call();
         done.complete(await job());
       } catch (e, s) {
         done.completeError(e, s);
@@ -35,5 +39,5 @@ class WriteQueue {
   }
 
   /// Completes when everything queued so far is on disk (before a backup, a restore, closing the program).
-  Future<void> flush() => run(() async {});
+  Future<void> flush() => run(() async {}, guard: false);
 }

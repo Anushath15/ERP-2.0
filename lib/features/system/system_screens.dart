@@ -10,6 +10,8 @@ import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
 import 'security_card.dart';
+import '../../core/data_mode.dart';
+import '../../fake/data_providers.dart';
 
 // ------------------------------------------------------------------ settings
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -85,14 +87,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ]));
 
     const people = SecurityCard();
-    final cards = [look, anim, printing, sounds, backup, sync, security, people];
+    final demoOn = ref.watch(appModeProvider) == DataMode.demo;
+    final demo = SectionCard(title: l.setDemo, child: row(l.setDemoOn, l.setDemoHelp, Switch(key: const ValueKey('demoSwitch'), value: demoOn, onChanged: (v) async {
+      final ok = await confirmDialog(context, title: v ? l.setDemoSwitchTitle : l.setDemoLeaveTitle, message: v ? l.setDemoSwitchText : l.setDemoLeaveText, confirmLabel: v ? l.setDemoOn : l.setDemoLeaveTitle.replaceAll('?', ''));
+      if (ok) await ref.read(modeSwitcherProvider)(v ? DataMode.demo : DataMode.real);
+    })));
+    final cards = [look, anim, printing, sounds, backup, sync, security, people, demo];
     return PageFrame(
       title: l.navSettings,
       child: context.isDesktop
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(children: [for (final c in [printing, security, people, backup]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [printing, security, people, backup, demo]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
                 Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),

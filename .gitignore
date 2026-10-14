@@ -60,3 +60,7 @@ firebase/deploy/
 # Firebase CLI deploy cache
 .firebase/
 test/failures/
+
+# built from tool/web/drift_worker.dart (dart compile js); the browser database needs it next to index.html
+web/drift_worker.js.deps
+web/drift_worker.js.map

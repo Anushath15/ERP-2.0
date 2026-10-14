@@ -1,3 +1,4 @@
+import 'features/system/problem_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,7 +45,7 @@ class AppShell extends ConsumerWidget {
             title: Text(location == '/more' ? l.navMore : (navFor(location)?.label(l) ?? l.appName), maxLines: 1, overflow: TextOverflow.ellipsis),
             actions: const [SyncChip(compact: true), SizedBox(width: 8)],
           ),
-          body: child,
+          body: Column(children: [const ProblemBanner(), Expanded(child: child)]),
           bottomNavigationBar: hideBar
               ? null
               : NavigationBar(
@@ -74,6 +75,7 @@ class AppShell extends ConsumerWidget {
             child: Column(children: [
               TopBar(location: location),
               Divider(height: 1, color: context.c.border.withValues(alpha: 0.6)),
+              const ProblemBanner(),
               Expanded(child: child),
             ]),
           ),

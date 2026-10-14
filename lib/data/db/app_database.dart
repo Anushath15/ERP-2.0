@@ -32,6 +32,7 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
+          if (from > to) throw DatabaseTooNewException(from, to); // never write an older version number into newer data
           for (var v = from + 1; v <= to; v++) {
             final step = migrations[v];
             if (step == null) throw StateError('No migration to version $v');

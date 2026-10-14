@@ -894,3 +894,64 @@ secTwoStepFail | Could not open the page. Visit myaccount.google.com and search 
 saveFailedTitle | The bill could not be saved
 saveFailedText | Nothing was saved and nothing was taken from your stock, so you can try again. The bill is still on the screen. Reason: {reason}
 oldBillNo | Old bill no.
+diskLowBanner | The disk is getting full (under 500 MB left). Free some space soon so saving does not stop.
+diskFullBanner | The disk is almost full (under 100 MB left). Saving is stopped to protect your data. Free some space to carry on.
+dismiss | Dismiss
+# ---- first-run set-up (numbering and series letter)
+fieldOwner | Owner name
+wizNameRequired | Please type the name of your shop.
+wizNumbering | Bill numbers
+wizNumberingHelp | Every bill gets a number that never repeats. Each computer in your shop has its own letter, so two computers can never make the same number.
+wizPrefixLabel | Text before every bill number (optional)
+wizPrefixHelp | For example SE- makes SE-A-000001. Leave it empty if you do not want any.
+wizPrefixBad | The text before the number can have at most 6 letters, digits or dashes.
+wizSeriesLabel | The letter of THIS computer
+wizSeriesHelp | A letter that another computer already uses is greyed out. Once chosen it stays with this computer.
+wizSeriesPick | Please choose a letter for this computer.
+wizSeriesTaken | The letter {letter} is already used by another computer of your shop. Please choose a different one.
+wizSeriesExample | Your first bill will be {number}
+# ---- starting the program, problems with the data file
+bootOpening | Opening your shop data...
+bootDemoPreparing | Getting the demo shop ready (the first time takes a few seconds)...
+probTooNewTitle | This data was made by a newer version of the program
+probTooNewText | Your shop data (version {fileVersion}) is newer than this program understands (up to version {appVersion}). To protect it, nothing was opened or changed. Install the newest version of ASK ERP 2.0 and open it again.
+probLockedTitle | The data file is busy
+probLockedText | Another copy of the program, or another program, is using the shop data right now. Close it and try again. If you just started the computer, wait a minute.
+probReadOnlyTitle | The data file is read-only
+probReadOnlyText | The shop data is marked read-only, so nothing could be saved. Right-click the file, open Properties and remove the Read-only tick, or ask whoever looks after the computer.
+probCannotOpenTitle | The data folder cannot be opened
+probCannotOpenText | The folder that holds the shop data is missing or the computer is not allowed to use it. If it is on another drive or a network folder, check that it is connected.
+probNotDbTitle | The data file is not a shop data file
+probNotDbText | The file is damaged or is something else. It was not changed. Restore from a backup (Settings, Backup) or ask for help before doing anything else.
+probCorruptTitle | The data file is damaged
+probCorruptText | The shop data file is damaged. It was not changed. Restore from a backup (Settings, Backup) or ask for help before doing anything else.
+probDiskFullTitle | The disk is full
+probDiskFullText | There is no room to open the shop data. Free some space (empty the Recycle Bin, move files to another drive) and try again.
+probOtherTitle | The shop data could not be opened
+probOtherText | Something unexpected stopped the program from opening your shop data. Nothing was changed. Try again; if it keeps happening, ask for help.
+probRetry | Try again
+probDemo | Practise in demo mode meanwhile
+probBackToShop | Go back to my shop
+damagedTitle | Your shop data needs repair
+damagedText | The program checked the shop data file and found a problem. Please do not keep billing on this file: new bills could be lost. The safe way is to restore from your newest backup (Settings, Backup, Restore). Bills made since that backup can be typed again from the printed copies. The program has kept the damaged file as it is, so it can still be examined.
+damagedWhat | What the check said (for whoever helps you):
+damagedRestore | Restore from a backup
+damagedCarryOn | I understand, carry on for now
+restoreLater | Restore from a backup is built in the next step of this phase.
+demoBanner | DEMO MODE: everything here is made up. Your real shop data is not touched.
+demoLeave | Go back to my shop
+setDemo | Demo mode
+setDemoHelp | Practise with made-up customers, products and bills. It uses its own separate file, so your real shop data is never touched.
+setDemoOn | Use demo mode
+setDemoSwitchTitle | Switch to the demo shop?
+setDemoSwitchText | The program will open the demo shop (made-up data in a separate file). Your real data stays exactly as it is. You can come back any time.
+setDemoLeaveTitle | Go back to your shop?
+setDemoLeaveText | The program will open your real shop data again. Anything you did in demo mode stays in the demo file only.
+errBusy | The data file is busy because another program is using it. Close the other program and try again.
+errReadOnly | The data file is locked as read-only, so nothing can be saved. Check that the folder is not read-only and that the file is not on a disk that was removed.
+errIo | The computer could not write to the disk. Check that the disk is still connected and not full.
+errCorrupt | The data file looks damaged. Do not keep working: restore from a backup (Settings, Backup).
+errDiskFullSave | The disk is full, so nothing can be saved. Free some space and try again.
+errOtherSql | The data could not be saved ({detail}).
+errSaveGeneric | Something went wrong while saving. Nothing was changed.
+errDiskGuard | The disk has only {mb} MB free, so saving is stopped to protect your data. Free some space (empty the Recycle Bin, move files to another drive) and try again. Your work is safe on this computer.

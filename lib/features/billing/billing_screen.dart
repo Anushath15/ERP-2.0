@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/money.dart';
+import '../../core/plain_error.dart';
 import '../../data/ids.dart';
 import '../../data/repo/bill_repo.dart';
 import '../../data/repo/records_repo.dart' show EstimateLine;
@@ -193,7 +194,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      await showDialog<void>(context: context, builder: (ctx) => AlertDialog(title: Text(l.saveFailedTitle), content: Text(l.saveFailedText('$e')), actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(l.close))]));
+      await showDialog<void>(context: context, builder: (ctx) => AlertDialog(title: Text(l.saveFailedTitle), content: Text(l.saveFailedText(plainError(e))), actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(l.close))]));
       return; // nothing was saved: the bill stays on the screen so nothing has to be typed again
     }
     if (!mounted) return;

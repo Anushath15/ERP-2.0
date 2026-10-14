@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,13 +11,23 @@ import 'design/motion_level.dart';
 import 'design/theme.dart';
 import 'design/text_zoom.dart';
 import 'features/credit/credit_screens.dart' show creditRowsProvider;
+import 'boot_root.dart' show DamagedFileScreen;
+import 'data/db/integrity.dart';
 import 'fake/credit_store.dart';
+import 'fake/data_providers.dart';
+import 'fake/health.dart';
 import 'fake/store.dart';
 import 'router.dart';
 
 class ErpApp extends ConsumerStatefulWidget {
-  const ErpApp({super.key, this.initialLocation = '/', this.router});
+  const ErpApp({super.key, this.initialLocation = '/', this.router, this.dbLocation, this.runChecks = false});
   final String initialLocation;
+
+  /// Where the database file is (for the health checks); null in tests.
+  final String? dbLocation;
+
+  /// Whether to check the data file after start-up (the real shop only).
+  final bool runChecks;
 
   /// Lets a test or the performance tool drive navigation itself.
   final GoRouter? router;
@@ -41,12 +52,44 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       ref.read(reminderLogProvider);
       ref.read(creditRowsProvider); // the Money to collect list (134 rows with ageing), so its first visit only has to draw it
     });
+    if (widget.runChecks && widget.dbLocation != null) unawaited(_startChecks());
     if (!kDebugMode) {
       // The auto-protect guard only runs in real (profile/release) builds; debug frames are always slow.
       _guard = FrameGuard(onReduce: _reduceMotion);
       SchedulerBinding.instance.addTimingsCallback(_onTimings);
     }
   }
+
+  /// After the first screen is up: SQLite's quick check of the data file (separate connection, billing carries on), then once a week
+  /// the full check. A problem puts up the "your data needs repair" screen. Free disk space is looked at every minute.
+  Future<void> _startChecks() async {
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    final quick = await checkDatabaseFile(widget.dbLocation!);
+    if (!mounted) return;
+    if (quick.isNotEmpty) {
+      ref.read(damageDetailsProvider.notifier).set(quick);
+      ref.read(fileHealthProvider.notifier).set(FileHealth.damaged);
+      return;
+    }
+    ref.read(fileHealthProvider.notifier).set(FileHealth.ok);
+    final d = ref.read(appDataProvider);
+    final last = int.tryParse(await d.settings.get('integrity.lastFull') ?? '') ?? 0;
+    if (d.cx.nowMs() - last > const Duration(days: 7).inMilliseconds) {
+      final full = await checkDatabaseFile(widget.dbLocation!, full: true);
+      if (!mounted) return;
+      if (full.isNotEmpty) {
+        ref.read(damageDetailsProvider.notifier).set(full);
+        ref.read(fileHealthProvider.notifier).set(FileHealth.damaged);
+        return;
+      }
+      await d.settings.put('integrity.lastFull', '${d.cx.nowMs()}');
+    }
+    unawaited(ref.read(diskLevelProvider.notifier).refresh());
+    _diskTimer = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(ref.read(diskLevelProvider.notifier).refresh()));
+  }
+
+  Timer? _diskTimer;
 
   void _onTimings(List<FrameTiming> timings) {
     for (final t in timings) {
@@ -66,6 +109,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _diskTimer?.cancel();
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     if (!kDebugMode) SchedulerBinding.instance.removeTimingsCallback(_onTimings);
@@ -106,6 +150,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       darkTheme: theme(Brightness.dark),
       themeMode: s.theme,
       builder: (context, child) {
+        if (ref.watch(fileHealthProvider) == FileHealth.damaged) return DamagedFileScreen(details: ref.watch(damageDetailsProvider));
         // Our text size is multiplied with the operating system's own text size, never replacing it.
         final mq = MediaQuery.of(context);
         return MediaQuery(

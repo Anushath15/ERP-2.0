@@ -9,6 +9,9 @@ import '../data/write_queue.dart';
 import '../domain/credit/account.dart';
 import '../domain/credit/reminder.dart';
 import '../domain/models.dart';
+import '../core/data_mode.dart';
+import '../core/plain_error.dart';
+import 'health.dart';
 import 'shop_profile.dart';
 import 'stats.dart';
 
@@ -17,6 +20,16 @@ final appDataProvider = Provider<AppData>((ref) => throw StateError('The shop da
 
 /// Everything the screens need the moment they appear: the lists they show at once, read from the database before the first screen.
 final bootstrapProvider = Provider<Bootstrap>((ref) => throw StateError('The shop data is not loaded.'));
+
+/// Which data the app is showing (real shop or demo shop) and the way to switch. The start-up root overrides both; in tests they do nothing.
+class AppModeNotifier extends Notifier<DataMode> {
+  @override
+  DataMode build() => DataMode.real;
+}
+
+final appModeProvider = NotifierProvider<AppModeNotifier, DataMode>(AppModeNotifier.new);
+
+final modeSwitcherProvider = Provider<Future<void> Function(DataMode)>((ref) => (m) async {});
 
 /// Says in plain words that a write failed (disk full, file locked...); the shell shows it as a banner.
 class WriteErrorNotifier extends Notifier<String?> {
@@ -28,8 +41,8 @@ class WriteErrorNotifier extends Notifier<String?> {
 final writeErrorProvider = NotifierProvider<WriteErrorNotifier, String?>(WriteErrorNotifier.new);
 
 final writeQueueProvider = Provider<WriteQueue>((ref) {
-  final q = WriteQueue(onError: (e, s) => ref.read(writeErrorProvider.notifier).set('A change could not be saved: $e'));
-  return q;
+  final guard = ref.watch(diskGuardProvider);
+  return WriteQueue(onError: (e, s) => ref.read(writeErrorProvider.notifier).set(plainError(e)), beforeWrite: guard.checkBeforeWrite);
 });
 
 class Bootstrap {
