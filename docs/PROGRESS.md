@@ -2,7 +2,7 @@
 
 **READY FOR OWNER REVIEW (Phase 1: screens with sample data).** Phase 2 does not start until the owner says "go".
 
-_Last updated: 2026-10-14 (evening)_
+_Last updated: 2026-10-14 (security hardening)_
 
 ## How to look at it
 **Start with [REVIEW-GUIDE.md](REVIEW-GUIDE.md)**: a 15-minute walkthrough (₹150 bill with ₹100 given, the Credit button, Money to collect, customer and dealer profiles, Settle fully with Undo, WhatsApp preview, the Shop profile and the estimate printout, 200% text, 100 lines). Sample data is fake; nothing is saved or sent.
@@ -14,6 +14,9 @@ _Last updated: 2026-10-14 (evening)_
 Done: design system, all 37 screens (first-run wizard, sign in, forgot password, Home, POS billing, estimates, saved estimates, sales register, sales returns, delivery, products, categories, stock left, purchases, purchase returns, stock changes, customers, dealers, money to collect, staff, expenses, daily closing, reports, export, import old data, warranty, house projects, notifications, settings, database health, help, about, More menu, and the four print previews: A4 invoice, 80 mm, 58 mm, estimate with its own date), English only, dark/light/match-computer, accents, high contrast, text size 80-200%, billing text size, density, two fonts, animations (Full/Gentle/Off), optional sounds.
 **Added in this round: customer credit and WhatsApp reminders** (screens + all rules as tested pure Dart; Phase 2 wiring is written in [data-model.md](data-model.md)): part payment becomes credit in the pinned POS footer, Credit and Dues, customer page (ageing, bill-wise dues, ledger, reminder history), Receive payment, write-off (owner), statement, payment receipt, WhatsApp reminder preview, Settings > Reminders, Received/Balance on print and bill view, Paid / Part paid / Unpaid chips.
 Evidence and numbers: see the report in the last message and [perf-results.md](perf-results.md), [motion-guide.md](motion-guide.md), [design-system.md](design-system.md).
+
+## Security hardening (2026-10-14): ten review findings
+Status of each finding is in [threat-model.md](threat-model.md) (fixed / mitigated / accepted). Production Firestore rules (roles, field checks, device approval, daily counter, audit records) were tested on the emulator (62 rules tests) and **deployed to the real project `ask-erp-2`** (alias `prod`). Release pipeline hardened (pinned actions, `release` environment needing the owner's approval, checksums, attestations); the `v2.0.0-proto.3` tag is **not** pushed yet: it waits for the owner to look at the release environment (see the last report). Owner steps: [SECURITY-CHECKLIST-FOR-OWNER.md](SECURITY-CHECKLIST-FOR-OWNER.md).
 
 ## Phase 0 recap
 Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents, spikes S1-S4 plus Android and browser checks, quota analysis of rule lookups, convergence test: see [spikes.md](spikes.md).
