@@ -1,4 +1,6 @@
-# Runs on every push and pull request. Needs no secrets: Phase 1 uses sample data only.
+# Runs on every push to main and on every pull request. Needs no secrets. The token is read-only, so a pull request from a
+# fork can run these checks but can never publish, release or read a secret. Every action is pinned to a full commit SHA
+# (Dependabot keeps them fresh).
 # One Windows job (the golden-image tests were made on Windows, and the Windows build is checked in the same run).
 name: CI
 on:
@@ -15,8 +17,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: 3.47.7
           channel: stable

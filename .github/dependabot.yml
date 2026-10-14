@@ -1,0 +1,22 @@
+# Keeps the pinned actions, the Dart/Flutter packages and the Firebase tooling fresh. Dependabot only OPENS pull requests;
+# nothing is merged or released without the owner and a green CI.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(actions)"
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(pub)"
+  - package-ecosystem: npm
+    directory: /firebase
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(npm)"

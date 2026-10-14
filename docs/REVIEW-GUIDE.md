@@ -2,6 +2,9 @@
 
 **Everything you see is made-up sample data. Nothing is saved when you close the program, and nothing is ever sent: no WhatsApp message, no print, no cloud.** You cannot damage anything. Close and reopen to start fresh.
 
+## 0. Verify your download (2 minutes)
+Before opening a file, compare its SHA-256 code with `SHA256SUMS.txt` from the same release: in PowerShell run `Get-FileHash .\the-file.zip -Algorithm SHA256` and check the codes are identical. The full steps (and the stronger `gh attestation verify` check) are in the README under "Verify your download". Windows will say "Unknown publisher" because the program is not signed with a paid certificate yet; that is expected and is why this check matters.
+
 ## 1. Open it
 - **Windows:** unzip the `ASK-ERP-2.0-windows-...zip` from the `dist` folder and double-click `ASK_ERP_2.exe`. (If Windows shows a blue "protected your PC" box, press More info, then Run anyway: the program is not signed yet.)
 - **Web:** unzip the `ASK-ERP-2.0-web-...zip`, open `index.html` through a local web server (the guide in `PROGRESS.md` shows how), or just use the Windows one.

@@ -1,0 +1,8 @@
+{
+  "name": "ask-erp-2-firebase-tools",
+  "private": true,
+  "description": "Records which Firebase command-line tool version the rules are tested and deployed with. Dependabot watches it. Nothing here is shipped in the app.",
+  "devDependencies": {
+    "firebase-tools": "15.33.0"
+  }
+}
