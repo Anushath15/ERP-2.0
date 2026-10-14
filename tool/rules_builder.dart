@@ -34,7 +34,7 @@ String buildRules(String template, Map<String, dynamic> j) {
       .replaceAll('/*CASHIERS*/', _list(cashiers))
       .replaceAll('/*CAP_OWNER*/24', '${_cap(j['caps'], 'owner', 24)}')
       .replaceAll('/*CAP_MANAGER*/24', '${_cap(j['caps'], 'manager', 24)}')
-      .replaceAll('/*CAP_CASHIER*/16', '${_cap(j['caps'], 'cashier', 16)}');
+      .replaceAll('/*CAP_CASHIER*/20', '${_cap(j['caps'], 'cashier', 20)}');
   final left = RegExp(r'/\*(OWNERS|MANAGERS|CASHIERS|CAP_[A-Z]+)\*/|__OWNER_EMAIL__').firstMatch(out);
   if (left != null) throw FormatException('The template still has a placeholder: ${left.group(0)}');
   return out;

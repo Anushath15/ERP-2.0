@@ -32,7 +32,7 @@ void main() {
 
   test('a normal busy day stays far under the daily batch cap, and the worst a modified program could do is known', () {
     // 550 bills a day at the 1,000,000-bill scale is about 1,100 documents with payments, reminders and edits
-    expect(dailyBatches(documents: 1100, hours: 12), lessThanOrEqualTo(16), reason: 'cashier cap');
+    expect(dailyBatches(documents: 1100, hours: 12), lessThanOrEqualTo(20), reason: 'cashier cap');
     expect(dailyBatches(documents: 2000, hours: 12), lessThanOrEqualTo(24), reason: 'worst legitimate day, owner and manager cap');
   });
 }

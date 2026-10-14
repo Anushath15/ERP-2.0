@@ -30,7 +30,7 @@ service cloud.firestore {
     function isCashier() { return signedIn() && email() in cashiers(); }
     function isMember() { return isOwner() || isManager() || isCashier(); }
     function isManagerUp() { return isOwner() || isManager(); }
-    function dailyCap() { return isOwner() ? /*CAP_OWNER*/24 : (isManager() ? /*CAP_MANAGER*/24 : /*CAP_CASHIER*/16); } // batches a day, see docs/threat-model.md
+    function dailyCap() { return isOwner() ? /*CAP_OWNER*/24 : (isManager() ? /*CAP_MANAGER*/24 : /*CAP_CASHIER*/20); } // batches a day, see docs/threat-model.md
 
     // ------------------------------------------------------------------ where things live
     function shop(shopId) { return /databases/$(database)/documents/shops/$(shopId); }
