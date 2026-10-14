@@ -233,8 +233,9 @@ Future<void> main() async {
           final p = (e.state as ScrollableState).position;
           if (p.axis == Axis.vertical &&
               p.maxScrollExtent > 1000 &&
-              (best == null || p.maxScrollExtent > best!.maxScrollExtent))
+              (best == null || p.maxScrollExtent > best!.maxScrollExtent)) {
             best = p;
+          }
         }
         e.visitChildren(visit);
       }
