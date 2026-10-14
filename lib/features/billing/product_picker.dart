@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/money.dart';
@@ -145,6 +146,7 @@ class _ProductPickerState extends State<ProductPicker> {
             child: TextField(
               controller: _ctl,
               focusNode: _focus,
+              inputFormatters: [safeInput(TextKind.name)],
               autofocus: !phone,
               onChanged: _onChanged,
               onSubmitted: (_) {

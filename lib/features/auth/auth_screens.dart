@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/validators.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/sound.dart';
@@ -215,15 +216,15 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
         ]);
       case 1:
         body = Column(children: [
-          TextField(controller: _name, decoration: InputDecoration(labelText: l.setShopName)),
+          TextField(controller: _name, inputFormatters: [safeInput(TextKind.name)], decoration: InputDecoration(labelText: l.setShopName)),
           const SizedBox(height: 12),
-          TextField(minLines: 2, maxLines: 3, decoration: InputDecoration(labelText: l.fieldAddress)),
+          TextField(minLines: 2, maxLines: 3, inputFormatters: [safeInput(TextKind.address)], decoration: InputDecoration(labelText: l.fieldAddress)),
           const SizedBox(height: 12),
           TextField(keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: l.fieldPhone)),
         ]);
       case 2:
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          TextField(controller: _gst, decoration: const InputDecoration(labelText: 'GSTIN', hintText: '33AAAAA0000A1Z5')),
+          TextField(controller: _gst, inputFormatters: [safeInput(TextKind.gstin)], decoration: const InputDecoration(labelText: 'GSTIN', hintText: '33AAAAA0000A1Z5')),
           const SizedBox(height: 8),
           Text(l.wizGstHelp, style: th.bodySmall),
           const SizedBox(height: 12),

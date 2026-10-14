@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_fmt.dart';
@@ -43,7 +44,7 @@ Future<void> showSettleFully(BuildContext context, PartyRef party) async {
             const SizedBox(height: 12),
             SlideSegments<String>(options: [('cash', l.payCash, Icons.payments_outlined), ('upi', l.payUpi, Icons.qr_code_2), ('card', l.payCard, Icons.credit_card)], selected: mode, onChanged: (v) => setState(() => mode = v)),
             const SizedBox(height: 12),
-            TextField(key: const ValueKey('settleNote'), controller: note, decoration: InputDecoration(labelText: l.settleNote)),
+            TextField(key: const ValueKey('settleNote'), controller: note, inputFormatters: [safeInput(TextKind.note)], decoration: InputDecoration(labelText: l.settleNote)),
           ]),
         ),
         actions: [

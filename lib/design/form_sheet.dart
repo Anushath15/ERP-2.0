@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/date_fmt.dart';
 import '../core/sound.dart';
+import '../core/validators.dart';
 import 'effects.dart';
 import '../core/responsive.dart';
 import 'motion.dart';
+import '../strings.dart';
 import 'widgets.dart';
 
 enum FieldType { text, number, money, multiline, dropdown, date, phone, email }
 
 class FieldSpec {
-  const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check});
+  const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check, this.kind});
   final String key, label;
   final FieldType type;
   final List<(String, String)> options; // (value, label)
@@ -21,7 +23,22 @@ class FieldSpec {
 
   /// Extra check for what was typed: returns a message, or null when fine. Only runs when the field is not empty.
   final String? Function(String)? check;
+
+  /// What kind of text this is (sets the length limit and the shape check). When left out it follows the field type.
+  final TextKind? kind;
+
+  TextKind get textKind => kind ?? switch (type) { FieldType.multiline => TextKind.note, FieldType.phone => TextKind.phone, FieldType.email => TextKind.email, _ => TextKind.name };
 }
+
+/// The words for what is wrong with a text (null when nothing is).
+String? textProblemMessage(Strings l, TextKind k, TextProblem? p) => switch (p) {
+      null => null,
+      TextProblem.tooLong => l.errTooLong(maxLength(k).toString()),
+      TextProblem.badChars => l.errBadChars,
+      TextProblem.notGstin => l.errGstin,
+      TextProblem.notUpi => l.errUpi,
+      TextProblem.notPhone => l.errPhone,
+    };
 
 /// Opens a form as a dialog (desktop / tablet) or a bottom sheet (phone). Returns the entered values, or null if cancelled.
 Future<Map<String, String>?> showFormSheet(
@@ -78,13 +95,17 @@ class _FormBodyState extends State<_FormBody> {
       playSoundIn(context, SoundKind.error);
       return;
     }
-    Navigator.pop(context, {for (final f in widget.fields) f.key: f.type == FieldType.dropdown ? (_drop[f.key] ?? '') : _ctl[f.key]!.text.trim()});
+    Navigator.pop(context, {for (final f in widget.fields) f.key: f.type == FieldType.dropdown ? (_drop[f.key] ?? '') : (f.type == FieldType.money || f.type == FieldType.number || f.type == FieldType.date ? _ctl[f.key]!.text.trim() : storeText(f.textKind, _ctl[f.key]!.text))});
   }
 
   Widget _field(FieldSpec f) {
     final l = tr(context);
     String? validate(String? v) {
-      if (f.required && (v == null || v.trim().isEmpty)) return l.fieldRequired;
+      if (f.required && (v == null || cleanText(v, multiline: f.textKind == TextKind.note).isEmpty)) return l.fieldRequired;
+      if (v != null && v.trim().isNotEmpty && f.type != FieldType.money && f.type != FieldType.number && f.type != FieldType.date) {
+        final bad = textProblemMessage(l, f.textKind, checkText(f.textKind, v));
+        if (bad != null) return bad;
+      }
       if (f.check != null && v != null && v.trim().isNotEmpty) return f.check!(v.trim());
       return null;
     }
@@ -108,7 +129,7 @@ class _FormBodyState extends State<_FormBody> {
           },
         );
       case FieldType.multiline:
-        return TextFormField(controller: _ctl[f.key], minLines: 2, maxLines: 4, decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate);
+        return TextFormField(controller: _ctl[f.key], minLines: 2, maxLines: 4, inputFormatters: [safeInput(f.textKind)], decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate);
       case FieldType.number:
       case FieldType.money:
         return TextFormField(
@@ -124,7 +145,7 @@ class _FormBodyState extends State<_FormBody> {
       case FieldType.email:
         return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate);
       case FieldType.text:
-        return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate, textInputAction: TextInputAction.next);
+        return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, inputFormatters: [safeInput(f.textKind)], decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate, textInputAction: TextInputAction.next);
     }
   }
 

@@ -838,4 +838,8 @@ class Strings {
   String get printSmaller => 'Smaller';
   String get printSmall => 'Small';
   String get printNormal => 'Normal';
+  String errTooLong(String max) => 'Too long: at most ${max} characters';
+  String get errBadChars => 'This contains characters that are not allowed';
+  String get errGstin => 'This is not a valid GSTIN (15 letters and digits)';
+  String get errUpi => 'This is not a valid UPI id (like name@bank)';
 }

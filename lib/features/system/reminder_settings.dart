@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/validators.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../design/segments.dart';
@@ -78,7 +79,7 @@ class _RemindersCardState extends ConsumerState<RemindersCard> {
         const SizedBox(height: 12),
         Text(l.setRemTemplate, style: th.titleSmall),
         const SizedBox(height: 6),
-        TextField(key: const ValueKey('templateField'), controller: _template, minLines: 6, maxLines: 12, onChanged: (_) => _save(s), decoration: const InputDecoration(alignLabelWithHint: true)),
+        TextField(key: const ValueKey('templateField'), controller: _template, inputFormatters: [safeInput(TextKind.message)], minLines: 6, maxLines: 12, onChanged: (_) => _save(s), decoration: const InputDecoration(alignLabelWithHint: true)),
         const SizedBox(height: 8),
         Text(l.setRemUse, style: th.bodySmall),
         const SizedBox(height: 6),

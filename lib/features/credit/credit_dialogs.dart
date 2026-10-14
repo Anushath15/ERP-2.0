@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -153,7 +154,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: TextField(controller: _note, decoration: InputDecoration(labelText: dealer ? l.dealerPayRef : l.fieldNote))),
+                Expanded(child: TextField(controller: _note, inputFormatters: [safeInput(TextKind.note)], decoration: InputDecoration(labelText: dealer ? l.dealerPayRef : l.fieldNote))),
               ]),
               const SizedBox(height: 14),
               SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(_manual ? l.recvChoose : l.recvAuto), value: _manual, onChanged: unpaid.isEmpty ? null : (v) => setState(() => _manual = v)),
@@ -343,7 +344,7 @@ class _ReminderPanelState extends ConsumerState<ReminderPanel> {
               }),
             ),
             const SizedBox(height: 12),
-            TextField(key: const ValueKey('remMessage'), controller: _msg, minLines: 8, maxLines: 14, decoration: InputDecoration(labelText: l.remMessage, alignLabelWithHint: true)),
+            TextField(key: const ValueKey('remMessage'), controller: _msg, inputFormatters: [safeInput(TextKind.message)], minLines: 8, maxLines: 14, decoration: InputDecoration(labelText: l.remMessage, alignLabelWithHint: true)),
             Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(top: 4), child: Text('${_msg.text.length} / $maxReminderLength', style: th.bodySmall))),
             if (!check.allowed && hasNumber) Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(check.reason!, kind: BadgeKind.warning, icon: Icons.cloud_off_outlined)),
           ]),

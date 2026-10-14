@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/responsive.dart';
+import '../../core/validators.dart';
+import '../../design/form_sheet.dart' show textProblemMessage;
 import '../../design/app_logo.dart';
 import '../../design/widgets.dart';
 import '../../fake/shop_profile.dart';
@@ -18,13 +20,19 @@ class ShopProfileScreen extends ConsumerWidget {
     final s = ref.watch(shopProvider);
     final set = ref.read(shopProvider.notifier).set;
 
-    Widget field(String keyName, String label, String value, ValueChanged<String> on, {TextInputType? type, int lines = 1, String? hint}) => TextFormField(
+    Widget field(String keyName, String label, String value, ValueChanged<String> on, {TextInputType? type, int lines = 1, String? hint, TextKind kind = TextKind.name}) => TextFormField(
           key: ValueKey('shop-$keyName'),
           initialValue: value,
           keyboardType: type,
           minLines: lines,
           maxLines: lines,
-          onChanged: on,
+          autovalidateMode: AutovalidateMode.always,
+          inputFormatters: [safeInput(kind)],
+          validator: (v) => textProblemMessage(l, kind, checkText(kind, v ?? '')),
+          // a wrong value is shown with its reason and NOT saved: the shop keeps its last good value
+          onChanged: (v) {
+            if (checkText(kind, v) == null) on(storeText(kind, v));
+          },
           decoration: InputDecoration(labelText: label, hintText: hint),
         );
 
@@ -45,13 +53,13 @@ class ShopProfileScreen extends ConsumerWidget {
         wrap([
           field('name', l.setShopName, s.name, (v) => set((x) => x.copyWith(name: v))),
           field('owner', l.shopOwner, s.ownerName, (v) => set((x) => x.copyWith(ownerName: v))),
-          field('address', l.fieldAddress, s.address, (v) => set((x) => x.copyWith(address: v)), lines: 2),
-          field('phone', l.fieldPhone, s.phone, (v) => set((x) => x.copyWith(phone: v)), type: TextInputType.phone),
-          field('gstin', 'GSTIN', s.gstin, (v) => set((x) => x.copyWith(gstin: v))),
-          field('upi', l.setUpi, s.upiId, (v) => set((x) => x.copyWith(upiId: v))),
-          field('bank', l.shopBank, s.bankDetails, (v) => set((x) => x.copyWith(bankDetails: v)), lines: 2),
-          field('footer', l.shopFooter, s.billFooter, (v) => set((x) => x.copyWith(billFooter: v)), lines: 2),
-          field('prefix', l.shopPrefix, s.invoicePrefix, (v) => set((x) => x.copyWith(invoicePrefix: v.trim())), hint: 'A-'),
+          field('address', l.fieldAddress, s.address, (v) => set((x) => x.copyWith(address: v)), lines: 2, kind: TextKind.address),
+          field('phone', l.fieldPhone, s.phone, (v) => set((x) => x.copyWith(phone: v)), type: TextInputType.phone, kind: TextKind.phone),
+          field('gstin', 'GSTIN', s.gstin, (v) => set((x) => x.copyWith(gstin: v)), kind: TextKind.gstin),
+          field('upi', l.setUpi, s.upiId, (v) => set((x) => x.copyWith(upiId: v)), kind: TextKind.upi),
+          field('bank', l.shopBank, s.bankDetails, (v) => set((x) => x.copyWith(bankDetails: v)), lines: 2, kind: TextKind.address),
+          field('footer', l.shopFooter, s.billFooter, (v) => set((x) => x.copyWith(billFooter: v)), lines: 2, kind: TextKind.address),
+          field('prefix', l.shopPrefix, s.invoicePrefix, (v) => set((x) => x.copyWith(invoicePrefix: v.trim())), hint: 'A-', kind: TextKind.town),
         ]),
       ]),
     );

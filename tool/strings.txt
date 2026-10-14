@@ -862,3 +862,7 @@ setPrintSizeHelp | How big the writing is on printed bills and estimates. Small 
 printSmaller | Smaller
 printSmall | Small
 printNormal | Normal
+errTooLong | Too long: at most {max} characters
+errBadChars | This contains characters that are not allowed
+errGstin | This is not a valid GSTIN (15 letters and digits)
+errUpi | This is not a valid UPI id (like name@bank)
