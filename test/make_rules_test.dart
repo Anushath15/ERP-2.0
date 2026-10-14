@@ -20,7 +20,7 @@ void main() {
   });
 
   test('daily caps can be changed; the defaults are used otherwise', () {
-    expect(buildRules(src, people()), contains('4000'));
+    expect(buildRules(src, people()), contains('isOwner() ? 24 : (isManager() ? 24 : 16)'), reason: 'defaults: owner 24, manager 24, cashier 16 batches a day');
     final out = buildRules(src, people(caps: {'owner': 10, 'manager': 20, 'cashier': 30}));
     expect(out, contains('isOwner() ? 10 : (isManager() ? 20 : 30)'));
   });

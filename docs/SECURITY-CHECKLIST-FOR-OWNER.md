@@ -2,6 +2,17 @@
 
 Plain English. Nothing here needs coding. The program protects the shop's data with Google's sign-in and strict rules, but **the biggest risk is a person, not the program**: someone who gets into your Gmail or your phone. These steps close that door.
 
+## Emergency: two minutes
+Use this when a person or a device should not have access any more, or something looks wrong (strange sales at night, a phone is lost, someone left on bad terms).
+
+1. **In the program** (any Owner's phone or computer): Settings, **Security**, find the device, press **Stop this device**, then **Stop device**. From this moment that device's changes are refused. (20 seconds)
+2. **In your browser** (type `console.firebase.google.com` yourself): open the project **ASK ERP 2**, **Authentication**, **Users**, find the person, the three dots, **Disable account**. They can no longer sign in and their changes are refused. (60 seconds)
+3. Done for now. Later, the same day: ask the person who looks after the program to take the address off the allowed list and redeploy (section 5 below), and change any shared password.
+
+If you cannot reach the program, do step 2 alone: it is enough to lock the person out. If you cannot reach the console, ask the second Owner to do it; that is why there are two.
+
+**What you will see if the daily limit is reached.** The small status mark at the top turns amber and says **"Sync paused: daily limit reached"**. Settings explains in plain words: everything is safe on this computer, you can keep billing, copying online starts again tomorrow, and **nothing is charged** (the free plan simply stops). A busy shop might see it once in a while; if it appears on a quiet day, or twice in a week, someone may be misusing an account: do the two steps above for anyone you do not recognise.
+
 ## 1. Do these once (about 30 minutes)
 
 **Turn on two-step verification on every account that matters.** That means: the shop Gmail, your personal Gmail, and your GitHub account. With it, a stolen password alone is useless.

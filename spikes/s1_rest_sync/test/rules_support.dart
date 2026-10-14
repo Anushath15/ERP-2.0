@@ -19,7 +19,7 @@ final stranger = 'stranger$run@example.com';
 String? original;
 
 /// Loads the production rules with the test people. [caps] are the daily batch limits (owner, manager, cashier).
-Future<void> loadRules({List<String> owners = const [], List<String> managers = const [], List<String> cashiers = const [], (int, int, int) caps = (4000, 3000, 1500)}) async {
+Future<void> loadRules({List<String> owners = const [], List<String> managers = const [], List<String> cashiers = const [], (int, int, int) caps = (24, 24, 16)}) async {
   original ??= File('../../firebase/firestore.rules').readAsStringSync();
   var t = File('../../firebase/firestore.allowlist.rules').readAsStringSync();
   String list(List<String> l) => l.map((e) => "'$e'").join(', ');
@@ -27,9 +27,9 @@ Future<void> loadRules({List<String> owners = const [], List<String> managers = 
       .replaceAll("/*OWNERS*/'__OWNER_EMAIL__'", list(owners.isEmpty ? [ownerEmail] : owners))
       .replaceAll('/*MANAGERS*/', list(managers.isEmpty ? [manager1] : managers))
       .replaceAll('/*CASHIERS*/', list(cashiers.isEmpty ? [cashier1, cashier2] : cashiers))
-      .replaceAll('/*CAP_OWNER*/4000', '${caps.$1}')
-      .replaceAll('/*CAP_MANAGER*/3000', '${caps.$2}')
-      .replaceAll('/*CAP_CASHIER*/1500', '${caps.$3}');
+      .replaceAll('/*CAP_OWNER*/24', '${caps.$1}')
+      .replaceAll('/*CAP_MANAGER*/24', '${caps.$2}')
+      .replaceAll('/*CAP_CASHIER*/16', '${caps.$3}');
   final r = await client.put(Uri.parse('$fsBase/emulator/v1/projects/$projectId:securityRules'), body: jsonEncode({'rules': {'files': [{'name': 'firestore.rules', 'content': t}]}}));
   expect(r.statusCode, 200, reason: r.body);
 }

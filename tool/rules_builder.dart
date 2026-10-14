@@ -32,9 +32,9 @@ String buildRules(String template, Map<String, dynamic> j) {
       .replaceAll("/*OWNERS*/'__OWNER_EMAIL__'", _list(owners))
       .replaceAll('/*MANAGERS*/', _list(managers))
       .replaceAll('/*CASHIERS*/', _list(cashiers))
-      .replaceAll('/*CAP_OWNER*/4000', '${_cap(j['caps'], 'owner', 4000)}')
-      .replaceAll('/*CAP_MANAGER*/3000', '${_cap(j['caps'], 'manager', 3000)}')
-      .replaceAll('/*CAP_CASHIER*/1500', '${_cap(j['caps'], 'cashier', 1500)}');
+      .replaceAll('/*CAP_OWNER*/24', '${_cap(j['caps'], 'owner', 24)}')
+      .replaceAll('/*CAP_MANAGER*/24', '${_cap(j['caps'], 'manager', 24)}')
+      .replaceAll('/*CAP_CASHIER*/16', '${_cap(j['caps'], 'cashier', 16)}');
   final left = RegExp(r'/\*(OWNERS|MANAGERS|CASHIERS|CAP_[A-Z]+)\*/|__OWNER_EMAIL__').firstMatch(out);
   if (left != null) throw FormatException('The template still has a placeholder: ${left.group(0)}');
   return out;

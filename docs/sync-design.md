@@ -11,7 +11,7 @@ Proven by spikes S1 and S4 (see [spikes.md](spikes.md)). Prototype code: `spikes
 ## Push
 - When: app start, network back, every 10 min (setting), app close, "Sync now".
 - Reachability: a real request to the project (a tiny read of the shop document), not just "wifi connected". Offline = no calls.
-- Batches of up to 500 in one atomic commit, oldest first. After a successful commit, outbox rows are removed only if the record was not edited meanwhile (compared by stamp).
+- Batches of up to **100** documents in one atomic commit, oldest first (changed from 500 by the security hardening: the rules count commits per person per day; see `lib/domain/sync/batch_plan.dart` and docs/threat-model.md finding 9). A batch is sent when 100 are waiting, when the oldest change has waited 90 minutes, or when forced (Copy now, app closing, internet back), not on a fixed 10-minute tick. After a successful commit, outbox rows are removed only if the record was not edited meanwhile (compared by stamp).
 - Failure kinds:
   - Network / 429 / 5xx: rows stay pending, `attempts+1`, exponential backoff with jitter (1 s doubling to 5 min). The same batch is retried.
   - Permanent rejection (rules deny, document too big): the atomic batch is **split in halves recursively** until the single bad record is found; it goes to **Needs attention** with a plain-words reason; the other 499 are delivered. Tested: S4-2.
