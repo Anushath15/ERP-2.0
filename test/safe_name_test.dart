@@ -6,7 +6,7 @@ import 'package:erp2/core/safe_name.dart';
 
 // SECURITY: text that a person typed (a customer name, a note) may become part of a file name. It must never be able to leave the
 // folder, hide in a startup folder, use a name Windows treats specially, or overwrite a file.
-Uint8List Uint8ListOf(List<int> l) => Uint8List.fromList(l);
+Uint8List bytesOf(List<int> l) => Uint8List.fromList(l);
 
 void main() {
   group('safeFileName', () {
@@ -112,7 +112,7 @@ void main() {
     test('nasty names are saved INSIDE the chosen folder, never outside it', () async {
       final saver = IoFileSaver(folder: tmp.path);
       for (final bad in [r'..\..\Startup\evil.pdf', '../../evil.pdf', r'C:\evil.pdf', 'CON', 'NUL.pdf', 'a/b/c.pdf']) {
-        final where = await saver.save(bad, Uint8ListOf([1, 2, 3]));
+        final where = await saver.save(bad, bytesOf([1, 2, 3]));
         expect(where, isNotNull, reason: bad);
         final f = File(where!);
         expect(f.existsSync(), isTrue);
@@ -123,8 +123,8 @@ void main() {
 
     test('a file is never overwritten silently: the second save gets a number', () async {
       final saver = IoFileSaver(folder: tmp.path);
-      final a = await saver.save('Statement X.pdf', Uint8ListOf([1]));
-      final b = await saver.save('Statement X.pdf', Uint8ListOf([2]));
+      final a = await saver.save('Statement X.pdf', bytesOf([1]));
+      final b = await saver.save('Statement X.pdf', bytesOf([2]));
       expect(a, isNot(b));
       expect(File(a!).readAsBytesSync(), [1]);
       expect(File(b!).readAsBytesSync(), [2]);
@@ -132,7 +132,7 @@ void main() {
 
     test('the folder is created if it is missing', () async {
       final saver = IoFileSaver(folder: '${tmp.path}${Platform.pathSeparator}ASK ERP 2.0');
-      final where = await saver.save('x.pdf', Uint8ListOf([9]));
+      final where = await saver.save('x.pdf', bytesOf([9]));
       expect(File(where!).existsSync(), isTrue);
     });
   });
