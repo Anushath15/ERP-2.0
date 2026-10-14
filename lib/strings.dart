@@ -78,6 +78,8 @@ class Strings {
   String get syncSynced => 'Synced';
   String get syncSyncing => 'Syncing';
   String get syncOffline => 'Offline - saved on this PC';
+  String get syncPaused => 'Sync paused: daily limit reached';
+  String get syncPausedHelp => 'Everything is safe on this computer and you can keep billing. Copying online starts again tomorrow. Nothing is charged: the free plan simply stops at its limit.';
   String syncAttention(String count) => 'Needs attention (${count})';
   String lastSyncedAt(String time) => 'Last synced at ${time}';
   String get themeDark => 'Dark';

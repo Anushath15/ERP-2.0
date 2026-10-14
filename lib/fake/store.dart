@@ -100,7 +100,7 @@ enum PaperSize { a4, a5, mm80, mm58 }
 /// How big the printed bill and estimate text is. Small is the default.
 enum PrintTextSize { smaller, small, normal }
 
-enum SyncState { synced, syncing, offline, attention }
+enum SyncState { synced, syncing, offline, attention, paused }
 
 /// What to do when a bill would take a customer over their credit limit (the owner chooses in Settings).
 enum CreditLimitMode { off, warn, block }

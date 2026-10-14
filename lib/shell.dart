@@ -231,6 +231,7 @@ class SyncChip extends ConsumerWidget {
       SyncState.syncing => (l.syncSyncing, BadgeKind.info, Icons.sync),
       SyncState.offline => (l.syncOffline, BadgeKind.warning, Icons.cloud_off_outlined),
       SyncState.attention => (l.syncAttention('1'), BadgeKind.danger, Icons.error_outline),
+      SyncState.paused => (l.syncPaused, BadgeKind.warning, Icons.pause_circle_outline),
     };
     final tip = l.lastSyncedAt(formatTime(now.subtract(const Duration(minutes: 4))));
     return Semantics(

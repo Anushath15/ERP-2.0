@@ -108,7 +108,7 @@ void main() {
 
     test('how many documents fit in one counted batch (measured; the cost of the device and counter checks)', () async {
       final sizes = <int>[];
-      for (final n in [2, 4, 8, 12, 16, 20, 30]) {
+      for (final n in [2, 4, 8, 12, 16, 20, 30, 100, 250, 499]) {
         final docs = [for (var i = 0; i < n; i++) wn('bills', 'bill', (x) => bill(x, owner))];
         try {
           await send(owner, docs);
