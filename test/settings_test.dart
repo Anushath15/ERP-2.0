@@ -27,7 +27,7 @@ void main() {
     final bad = AppSettings.fromJson({'textScale': 'huge', 'accent': 'pink', 'billingScale': 99, 'theme': 7});
     expect(bad.textScale, 1.0);
     expect(bad.accent, Accent.blue);
-    expect(bad.billingScale, 2.5, reason: 'out of range values are clamped');
+    expect(bad.billingScale, 1.0, reason: 'out of range values go back to the default');
     expect(bad.theme, ThemeMode.dark);
   });
 

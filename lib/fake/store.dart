@@ -216,10 +216,11 @@ class AppSettings {
         'printSize': printSize.name,
       };
 
-  /// Tolerant: unknown or damaged values fall back to the defaults.
+  /// SECURITY: tolerant and strict at once. Unknown keys are ignored; wrong types, unknown names and out-of-range or non-finite numbers
+  /// fall back to the defaults. Nothing about permissions or trust is read from here (see docs/threat-model.md).
   static AppSettings fromJson(Map<String, Object?> j) {
     T pick<T extends Enum>(List<T> values, Object? name, T fallback) => values.firstWhere((v) => v.name == name, orElse: () => fallback);
-    double num_(Object? v, double min, double max, double fallback) => v is num ? v.toDouble().clamp(min, max) : fallback;
+    double num_(Object? v, double min, double max, double fallback) => v is num && v.isFinite && v >= min && v <= max ? v.toDouble() : fallback; // out of range or not a number: the default
     bool bool_(Object? v, bool fallback) => v is bool ? v : fallback;
     const d = AppSettings();
     return AppSettings(

@@ -23,3 +23,9 @@ Shop data (customers, bills, prices), the owner's account, backups.
 
 ## Rules plan
 `firebase/firestore.rules` (draft passes the emulator tests). Open items for Phase 2: per-role limits (cashier cannot edit prices, cannot delete products), per-collection field validation, a rules test for each role. Deploy with `firebase deploy --only firestore:rules` after the owner's `firebase login`.
+
+
+## Local settings are preferences, never permissions (finding 2)
+`device.json` (Windows, macOS, Linux) and the browser's local storage hold **display preferences only**: theme, accent, text size, billing text size, density, font, animation level, sounds, paper size and print text size. Anybody who can sit at the computer can edit them, so:
+- **Nothing security-related may ever be read from this file or from local storage.** There is no "this device is trusted" flag, no role, no "approved", no signed-in marker, no shop data. Permission always comes from Firebase (the rules check the signed-in e-mail, the allow-list, the device approval and the role on every request).
+- Everything is validated on read: unknown keys are ignored, wrong types, unknown names, out-of-range and non-finite numbers go back to the defaults, and a missing, damaged, wrong-shaped, binary or oversized (over 64 KB) file means defaults, never a crash. Tests: `test/device_settings_integrity_test.dart`.

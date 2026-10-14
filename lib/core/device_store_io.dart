@@ -6,7 +6,7 @@ import 'device_store.dart';
 DeviceStore createPlatformStore(DeviceStore Function() fallback) {
   final dir = _dir();
   if (dir == null) return fallback();
-  return _FileStore(File('$dir${Platform.pathSeparator}device.json'));
+  return FileDeviceStore(File('$dir${Platform.pathSeparator}device.json'));
 }
 
 String? _dir() {
@@ -17,14 +17,19 @@ String? _dir() {
   return null; // phones: the real per-device settings table arrives with the database (Phase 2)
 }
 
-class _FileStore implements DeviceStore {
-  _FileStore(this.file);
+/// SECURITY: this file holds display preferences only and can be edited by anybody at the computer. It is read defensively: a missing,
+/// damaged, wrong-shaped, binary or enormous file means "defaults", never a crash, and nothing in it is ever trusted for permissions.
+class FileDeviceStore implements DeviceStore {
+  FileDeviceStore(this.file);
   final File file;
+
+  /// A settings file is a few hundred bytes; anything bigger than this is not ours.
+  static const maxBytes = 64 * 1024;
 
   @override
   Map<String, Object?> load() {
     try {
-      if (!file.existsSync()) return {};
+      if (!file.existsSync() || file.lengthSync() > maxBytes) return {};
       final j = jsonDecode(file.readAsStringSync());
       return j is Map ? j.cast<String, Object?>() : {};
     } catch (_) {

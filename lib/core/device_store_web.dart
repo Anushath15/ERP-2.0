@@ -11,7 +11,7 @@ class _WebStore implements DeviceStore {
   Map<String, Object?> load() {
     try {
       final s = web.window.localStorage.getItem(_key);
-      if (s == null) return {};
+      if (s == null || s.length > 64 * 1024) return {}; // settings are tiny; anything bigger is not ours
       final j = jsonDecode(s);
       return j is Map ? j.cast<String, Object?>() : {};
     } catch (_) {
