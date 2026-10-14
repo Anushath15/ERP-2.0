@@ -1,0 +1,8 @@
+{
+  "projectId": "ask-erp-2",
+  "appId": "1:000000000000:web:0000000000000000",
+  "apiKey": "REPLACE-WITH-THE-VALUE-FROM: firebase apps:sdkconfig WEB <appId>",
+  "authDomain": "ask-erp-2.firebaseapp.com",
+  "storageBucket": "",
+  "messagingSenderId": "000000000000"
+}

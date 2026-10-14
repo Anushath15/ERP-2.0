@@ -56,3 +56,6 @@ device.json
 firebase/allowed-emails.local.json
 firebase/deploy/
 .firebaserc.local
+
+# Firebase CLI deploy cache
+.firebase/
