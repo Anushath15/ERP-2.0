@@ -59,3 +59,4 @@ firebase/deploy/
 
 # Firebase CLI deploy cache
 .firebase/
+test/failures/
