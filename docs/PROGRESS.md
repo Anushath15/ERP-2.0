@@ -18,6 +18,8 @@ Evidence and numbers: see the report in the last message and [perf-results.md](p
 ## Security hardening (2026-10-14): ten review findings
 Status of each finding is in [threat-model.md](threat-model.md) (fixed / mitigated / accepted). Production Firestore rules (roles, field checks, device approval, daily counter, audit records) were tested on the emulator (62 rules tests) and **deployed to the real project `ask-erp-2`** (alias `prod`). Release pipeline hardened (pinned actions, `release` environment needing the owner's approval, checksums, attestations); the `v2.0.0-proto.3` tag is **not** pushed yet: it waits for the owner to look at the release environment (see the last report). Owner steps: [SECURITY-CHECKLIST-FOR-OWNER.md](SECURITY-CHECKLIST-FOR-OWNER.md).
 
+**Follow-up (2026-10-14, later):** finding 9 revised: daily commit caps are now cashier 16, manager 24, owner 24 (worst case 8,000 to 12,000 of the 20,000 free writes), the app sends at most 100 documents per commit (`lib/domain/sync/batch_plan.dart`), the honest limit (rules cannot enforce batch size) and a two-minute emergency procedure are written down; finding numbers in `threat-model.md` now match the original review list. Rules redeployed to `ask-erp-2` (a second deploy said "already up to date", so the live rules equal the repo). Five Dependabot pull requests are open, all major-version bumps, none merged (four touch the workflows). The `v2.0.0-proto.3` tag is still **not** pushed: it waits for the owner to say "tag".
+
 ## Phase 0 recap
 Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents, spikes S1-S4 plus Android and browser checks, quota analysis of rule lookups, convergence test: see [spikes.md](spikes.md).
 
