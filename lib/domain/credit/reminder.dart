@@ -156,7 +156,9 @@ class WhatsappLinks {
 /// the rupee sign, ampersands, quotes, plus signs and hashes all survive.
 WhatsappLinks buildWhatsappLinks({required String digits, required String message}) {
   if (!RegExp(r'^[0-9]{8,15}$').hasMatch(digits)) throw ArgumentError.value(digits, 'digits', 'not a WhatsApp number');
-  final text = Uri.encodeQueryComponent(message).replaceAll('+', '%20');
+  // whatever the caller passes, the text of a link never exceeds the reminder limit
+  final capped = message.length > maxReminderLength ? message.substring(0, maxReminderLength) : message;
+  final text = Uri.encodeQueryComponent(capped).replaceAll('+', '%20');
   return WhatsappLinks(appLink: 'whatsapp://send?phone=$digits&text=$text', webLink: 'https://wa.me/$digits?text=$text');
 }
 
