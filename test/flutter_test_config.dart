@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Load the bundled fonts so tests (and screenshots) show real text instead of boxes.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
+  // each test opens its own in-memory copy of the sample shop; they never share an executor
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   Future<void> load(String family, List<String> files) async {
     final loader = FontLoader(family);
     for (final f in files) {

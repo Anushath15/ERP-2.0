@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/responsive.dart';
 import 'tokens.dart';
@@ -18,15 +19,46 @@ class FilterSpec<T> {
   final bool Function(T) test;
 }
 
+/// What a paged list is asked for: the text typed, the filter chip chosen (0 = all) and the sort chosen (0 = default).
+class PageQuery {
+  const PageQuery(this.text, this.filter, this.sort);
+  final String text;
+  final int filter, sort;
+}
+
+/// One page of rows and where the next one starts ([next] null = that was the last page).
+class PageResult<T> {
+  const PageResult(this.rows, this.next);
+  final List<T> rows;
+  final Object? next;
+}
+
+/// For lists that can be huge (a million bills): rows come from the database a page at a time, as the person scrolls. Search,
+/// filter and sort are asked of the database, not done in memory.
+class PagedSource<T> {
+  const PagedSource({required this.load, this.total, this.initial});
+  final Future<PageResult<T>> Function(PageQuery query, Object? cursor) load;
+
+  /// How many rows match, shown under the list when given.
+  final Future<int> Function(PageQuery query)? total;
+
+  /// The first page for an empty search, already read (so the list shows rows in its very first frame).
+  final PageResult<T>? initial;
+}
+
 /// One list screen for almost everything: search, filter chips, a table on wide screens and cards on phones.
 /// Rows are built lazily (virtualised), so 20,000 rows stay smooth.
+String _noText(Object? _) => '';
+
 class DataListScreen<T> extends StatefulWidget {
   const DataListScreen({
     super.key,
     required this.title,
     this.subtitle,
-    required this.items,
-    required this.searchText,
+    this.items = const [],
+    this.searchText = _noText,
+    this.source,
+    this.refreshKey,
     required this.columns,
     required this.phoneTitle,
     this.phoneSubtitle,
@@ -48,6 +80,12 @@ class DataListScreen<T> extends StatefulWidget {
   final String? subtitle;
   final List<T> items;
   final String Function(T) searchText;
+
+  /// When given, rows are loaded page by page from here and [items] is ignored.
+  final PagedSource<T>? source;
+
+  /// Changes when the data behind a paged list changed (a bill was saved): the list starts again from the top.
+  final Object? refreshKey;
   final List<ColumnSpec<T>> columns;
   final Widget Function(BuildContext, T) phoneTitle;
   final String Function(T)? phoneSubtitle;
@@ -75,7 +113,106 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
   String _cacheKey = '';
   Object? _cacheSrc;
 
+  // paged mode
+  List<T> _rows = [];
+  Object? _next;
+  bool _loading = false, _more = true;
+  int _epoch = 0;
+  int? _total;
+  Timer? _debounce;
+  Timer? _spinTimer;
+  bool _spin = false;
+
+  PageQuery get _query => PageQuery(_q.trim(), _filter, _sort);
+
+  @override
+  void initState() {
+    super.initState();
+    final src = widget.source;
+    if (src == null) return;
+    final first = src.initial;
+    if (first != null) {
+      _rows = first.rows;
+      _next = first.next;
+      _more = first.next != null && first.rows.isNotEmpty;
+    } else {
+      unawaited(_reload());
+    }
+  }
+
+  @override
+  void didUpdateWidget(DataListScreen<T> old) {
+    super.didUpdateWidget(old);
+    if (widget.source != null && (old.refreshKey != widget.refreshKey || !identical(old.source, widget.source))) unawaited(_reload());
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _spinTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _reload() async {
+    final epoch = ++_epoch;
+    _loading = false;
+    _total = null;
+    _spin = false;
+    _spinTimer?.cancel();
+    if (_rows.isEmpty) {
+      _spinTimer = Timer(const Duration(milliseconds: 150), () {
+        if (mounted && epoch == _epoch && _rows.isEmpty) setState(() => _spin = true);
+      });
+    }
+    final src = widget.source;
+    if (src == null) return;
+    _loading = true;
+    try {
+      // the old rows stay on screen until the new first page is there (no flash of an empty list)
+      final page = await src.load(_query, null);
+      if (!mounted || epoch != _epoch) return;
+      setState(() {
+        _rows = page.rows;
+        _next = page.next;
+        _more = page.next != null && page.rows.isNotEmpty;
+      });
+    } finally {
+      if (epoch == _epoch) _loading = false;
+    }
+    final totalFn = src.total;
+    if (totalFn != null) {
+      final n = await totalFn(_query);
+      if (mounted && epoch == _epoch) setState(() => _total = n);
+    }
+  }
+
+  Future<void> _loadMore() async {
+    final e = _epoch;
+    final src = widget.source;
+    if (src == null || _loading || !_more) return;
+    _loading = true;
+    try {
+      final page = await src.load(_query, _next);
+      if (!mounted || e != _epoch) return;
+      setState(() {
+        _rows = [..._rows, ...page.rows];
+        _next = page.next;
+        _more = page.next != null && page.rows.isNotEmpty;
+      });
+    } finally {
+      if (e == _epoch) _loading = false;
+    }
+  }
+
+  void _search(String v) {
+    setState(() => _q = v);
+    if (widget.source == null) return;
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 220), () => unawaited(_reload()));
+  }
+
   List<T> _visible() {
+    if (widget.source != null) return _rows;
     if (_q.trim().isEmpty && _filter == 0 && _sort == 0) return widget.items; // nothing to do: keeps lazy lists lazy
     final key = '$_q|$_filter|$_sort';
     if (_cache != null && key == _cacheKey && identical(_cacheSrc, widget.items)) return _cache!;
@@ -125,13 +262,16 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
         const SizedBox(height: 12),
       ],
       Row(children: [
-        Expanded(child: SearchField(hint: widget.searchHint ?? l.searchHere, onChanged: (v) => setState(() => _q = v), autofocus: !phone)),
+        Expanded(child: SearchField(hint: widget.searchHint ?? l.searchHere, onChanged: _search, autofocus: !phone)),
         if (widget.sorts.isNotEmpty) ...[
           const SizedBox(width: 8),
           PopupMenuButton<int>(
             tooltip: l.sortBy,
             icon: const Icon(Icons.sort),
-            onSelected: (v) => setState(() => _sort = v),
+            onSelected: (v) {
+              setState(() => _sort = v);
+              if (widget.source != null) unawaited(_reload());
+            },
             itemBuilder: (_) => [
               PopupMenuItem(value: 0, child: Text(l.sortDefault)),
               for (var i = 0; i < widget.sorts.length; i++) PopupMenuItem(value: i + 1, child: Text(widget.sorts[i].$1)),
@@ -150,7 +290,10 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
                 child: ChoiceChip(
                   label: Text(i == 0 ? l.filterAll : widget.filters[i - 1].label),
                   selected: _filter == i,
-                  onSelected: (_) => setState(() => _filter = i),
+                  onSelected: (_) {
+                    setState(() => _filter = i);
+                    if (widget.source != null) unawaited(_reload());
+                  },
                 ),
               ),
           ]),
@@ -160,7 +303,9 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
     ]);
 
     Widget list;
-    if (rows.isEmpty) {
+    if (rows.isEmpty && widget.source != null && (_loading || _more)) {
+      list = _spin ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink(); // a quick load shows nothing in between
+    } else if (rows.isEmpty) {
       list = EmptyState(
         icon: widget.emptyIcon,
         title: _q.isNotEmpty || _filter > 0 ? l.nothingFound : (widget.emptyTitle ?? l.nothingHere),
@@ -169,10 +314,15 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
       );
     } else if (phone) {
       list = ListView.separated(
-        itemCount: rows.length,
+        itemCount: rows.length + (widget.source != null && _more ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: 8),
         padding: const EdgeInsets.only(bottom: 12),
         itemBuilder: (ctx, i) {
+          if (i >= rows.length) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadMore()));
+            return const Padding(padding: EdgeInsets.all(12), child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))));
+          }
+          if (widget.source != null && i >= rows.length - 8) WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadMore()));
           final e = rows[i];
           return Card(
             child: InkWell(
@@ -210,9 +360,14 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
           const Divider(),
           Expanded(
             child: RepaintBoundary(child: ListView.separated(
-              itemCount: rows.length,
+              itemCount: rows.length + (widget.source != null && _more ? 1 : 0),
               separatorBuilder: (_, _) => const Divider(),
               itemBuilder: (ctx, i) {
+                if (i >= rows.length) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadMore()));
+                  return const Padding(padding: EdgeInsets.all(12), child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))));
+                }
+                if (widget.source != null && i >= rows.length - 8) WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadMore()));
                 final e = rows[i];
                 return InkWell(
                   onTap: widget.onTap == null ? null : () => widget.onTap!(ctx, e),
@@ -243,7 +398,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
         Expanded(child: list),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(l.resultCount(rows.length.toString()), style: th.bodySmall),
+          child: Text(l.resultCount((widget.source != null ? (_total ?? rows.length) : rows.length).toString()), style: th.bodySmall),
         ),
       ]),
     );

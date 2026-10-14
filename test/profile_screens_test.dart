@@ -8,7 +8,7 @@ import 'package:erp2/domain/credit/dues.dart';
 import 'package:erp2/domain/credit/ledger.dart';
 import 'package:erp2/fake/credit_store.dart';
 import 'package:erp2/fake/models.dart';
-import 'package:erp2/fake/seed.dart';
+import 'package:erp2/demo/seed.dart';
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
 
@@ -112,7 +112,7 @@ void main() {
       final s = sample();
       final c = await app(tester, '/customers/${s.c.id}', size: const ScreenSpec('tall', 1280, 3600));
       final n = c.read(creditProvider.notifier);
-      final rec = n.receivePayment(customerId: s.c.id, customerName: s.c.name, amount: 1000, mode: 'cash', at: fixedNow);
+      final rec = await n.receivePayment(customerId: s.c.id, customerName: s.c.name, amount: 1000, mode: 'cash', at: fixedNow);
       await tester.pumpAndSettle();
       final before = c.read(creditProvider)[s.c.id]!.balance;
       final pay = c.read(creditProvider)[s.c.id]!.ledger.lastWhere((e) => e.kind == LedgerKind.payment && e.amountPaise == -1000);

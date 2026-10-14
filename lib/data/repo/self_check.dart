@@ -29,7 +29,7 @@ Future<List<CheckProblem>> selfCheck(AppDatabase db, {bool deep = false}) async 
   await check('A bill day is missing from the day totals', 'SELECT DISTINCT b.day FROM bills b LEFT JOIN day_totals t ON t.day = b.day WHERE t.day IS NULL');
   await check('A bill whose lines are missing or incomplete', 'SELECT b.id FROM bills b WHERE b.item_count <> (SELECT COUNT(*) FROM bill_lines l WHERE l.bill_id = b.id)');
   await check('A bill line without its stock movement', "SELECT l.id FROM bill_lines l WHERE NOT EXISTS (SELECT 1 FROM stock_movements m WHERE m.ref_id = l.bill_id AND m.product_id = l.product_id AND m.kind = 'sale')");
-  await check('A bill with credit but no ledger entry', "SELECT b.id FROM bills b WHERE b.balance_paise > 0 AND NOT EXISTS (SELECT 1 FROM ledger_entries e WHERE e.party_id = b.customer_id AND e.bill_no = b.number AND e.kind = 'billCredit')");
+  await check('A bill with credit but no ledger entry', "SELECT b.id FROM bills b WHERE b.balance_paise > 0 AND b.customer_id IS NOT NULL AND b.cancelled = 0 AND NOT EXISTS (SELECT 1 FROM ledger_entries e WHERE e.party_id = b.customer_id AND e.bill_no = b.number AND e.kind = 'billCredit')");
   await check('An invoice counter behind its newest bill', "SELECT c.name FROM counters c WHERE c.name LIKE 'inv.%' AND c.value < COALESCE((SELECT MAX(seq) FROM bills b WHERE 'inv.' || b.series = c.name),0)");
   await check('A cancelled bill without its cancellation record', 'SELECT b.id FROM bills b WHERE b.cancelled = 1 AND NOT EXISTS (SELECT 1 FROM bill_cancellations c WHERE c.bill_id = b.id)');
   await check('A payment without its ledger entry', 'SELECT p.id FROM payments p WHERE NOT EXISTS (SELECT 1 FROM ledger_entries e WHERE e.ref_id = p.id)');

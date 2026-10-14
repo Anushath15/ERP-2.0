@@ -18,7 +18,7 @@ import 'package:erp2/app.dart';
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/models.dart';
-import 'package:erp2/fake/seed.dart';
+import 'package:erp2/demo/seed.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:erp2/router.dart';
 

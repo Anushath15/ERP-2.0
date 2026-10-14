@@ -8,7 +8,7 @@ import 'package:erp2/features/print/doc_pdf.dart';
 import 'package:erp2/features/print/print_layout.dart';
 import 'package:erp2/features/print/print_preview.dart' show samplePrintDoc;
 import 'package:erp2/fake/models.dart';
-import 'package:erp2/fake/seed.dart';
+import 'package:erp2/demo/seed.dart';
 import 'package:erp2/fake/shop_profile.dart';
 import 'package:erp2/fake/store.dart' show PaperSize, PrintTextSize;
 import 'package:erp2/strings.dart';

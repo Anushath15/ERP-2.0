@@ -14,7 +14,7 @@ import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:erp2/fake/credit_store.dart' show seedCredit;
 import 'package:erp2/fake/models.dart' show PayMode;
-import 'package:erp2/fake/seed.dart';
+import 'package:erp2/demo/seed.dart';
 import 'package:erp2/design/segments.dart';
 import '../helpers.dart';
 

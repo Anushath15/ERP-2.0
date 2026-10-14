@@ -6,9 +6,48 @@ import '../../core/responsive.dart';
 import '../../design/effects.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
-import '../../fake/models.dart';
+import '../../data/repo/report_repo.dart';
+import '../../fake/data_providers.dart';
+import '../../fake/stats.dart';
 import '../../fake/store.dart';
 import '../dashboard/dashboard_screen.dart';
+
+/// Everything one report range shows, read from the day and month summaries (never from the bills themselves).
+class ReportData {
+  const ReportData({required this.sales, required this.bills, required this.cash, required this.upi, required this.card, required this.credit, required this.profit, required this.values, required this.labels, required this.top});
+  final int sales, bills, cash, upi, card, credit, profit;
+  final List<int> values;
+  final List<String> labels;
+  final List<({String name, int amount})> top;
+
+  static ReportData empty(int range, DateTime now) {
+    final b = range == 2 ? 12 : (range == 1 ? 15 : 7);
+    return ReportData(sales: 0, bills: 0, cash: 0, upi: 0, card: 0, credit: 0, profit: 0, values: List.filled(b, 0), labels: List.filled(b, ''), top: const []);
+  }
+}
+
+final reportProvider = FutureProvider.family<ReportData, int>((ref, range) async {
+  final d = ref.watch(appDataProvider);
+  ref.watch(statsProvider); // read again after every bill
+  final now = ref.watch(clockProvider);
+  final today = DateTime(now.year, now.month, now.day);
+  final days = switch (range) { 0 => 7, 1 => 30, _ => 365 };
+  final from = today.subtract(Duration(days: days - 1));
+  final rows = await d.reports.days(from, today);
+  final buckets = range == 2 ? 12 : (range == 1 ? 15 : 7);
+  final span = days / buckets;
+  final values = List<int>.filled(buckets, 0);
+  for (final t in rows) {
+    final date = DateTime.parse(t.day);
+    final age = today.difference(date).inDays;
+    values[buckets - 1 - (age / span).floor().clamp(0, buckets - 1)] += t.sales;
+  }
+  final labels = [for (var i = 0; i < buckets; i++) range == 2 ? '${today.subtract(Duration(days: ((buckets - 1 - i) * span).round())).month}' : two(today.subtract(Duration(days: ((buckets - 1 - i) * span).round())).day)];
+  final sum = DayTotals.sum('range', rows);
+  // profit: what was sold before tax minus what it cost; where no cost is known the old 19% rule of thumb is shown (the card says estimate)
+  final profit = sum.cost > 0 ? sum.taxable - sum.cost : (sum.taxable * 19 / 100).round();
+  return ReportData(sales: sum.sales, bills: sum.bills, cash: sum.cash, upi: sum.upi, card: sum.card, credit: sum.credit, profit: profit, values: values, labels: labels, top: await d.reports.topProducts(from, today));
+});
 
 class ClosingScreen extends ConsumerStatefulWidget {
   const ClosingScreen({super.key});
@@ -30,13 +69,11 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
   Widget build(BuildContext context) {
     final l = tr(context);
     final now = ref.watch(clockProvider);
-    final bills = ref.watch(billsProvider);
+    final today = ref.watch(statsProvider).today;
     final th = Theme.of(context).textTheme;
     bool sameDay(DateTime a) => a.year == now.year && a.month == now.month && a.day == now.day;
-    final todays = [for (final b in bills.take(400)) if (sameDay(b.date) && b.status != DocStatus.cancelled) b];
-    int by(PayMode m) => todays.where((b) => b.mode == m).fold<int>(0, (s, b) => s + b.paidPaise);
-    final cash = by(PayMode.cash), upi = by(PayMode.upi), card = by(PayMode.card);
-    final credit = todays.fold<int>(0, (s, b) => s + (b.totalPaise - b.paidPaise));
+    final cash = today.cash, upi = today.upi, card = today.card;
+    final credit = today.credit;
     final expenses = ref.watch(recsProvider('expenses')).where((r) => sameDay(r.f['date'] as DateTime)).fold<int>(0, (s, r) => s + r.i('amount'));
     const opening = 500000;
     final expected = opening + cash - expenses;
@@ -45,7 +82,7 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
     Widget row(String k, String v, {bool bold = false}) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(children: [Expanded(child: Text(k, style: bold ? th.titleSmall : th.bodyMedium)), Text(v, style: bold ? th.titleMedium : th.bodyMedium)]));
 
     final summary = SectionCard(title: l.closingSummary(formatDate(now)), child: Column(children: [
-      row(l.statBillsToday, '${todays.length}'),
+      row(l.statBillsToday, '${today.bills}'),
       row(l.closingCashSales, '₹ ${formatPaise(cash)}'),
       row(l.payUpi, '₹ ${formatPaise(upi)}'),
       row(l.payCard, '₹ ${formatPaise(card)}'),
@@ -99,27 +136,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget build(BuildContext context) {
     final l = tr(context);
     final now = ref.watch(clockProvider);
-    final bills = ref.watch(billsProvider);
-    final products = ref.watch(productsProvider);
     final th = Theme.of(context).textTheme;
-    final days = switch (_range) { 0 => 7, 1 => 30, _ => 365 };
-    final from = now.subtract(Duration(days: days));
-    // newest first: stop at the first bill older than the range (a 7- or 30-day report never builds the old bills)
-    final inRange = [for (final b in bills.takeWhile((b) => b.date.isAfter(from))) if (b.status != DocStatus.cancelled) b];
-    final total = inRange.fold<int>(0, (s, b) => s + b.totalPaise);
-    final avg = inRange.isEmpty ? 0 : total ~/ inRange.length;
-    final buckets = _range == 2 ? 12 : (_range == 1 ? 15 : 7);
-    final span = days / buckets;
-    final values = List<int>.filled(buckets, 0);
-    for (final b in inRange) {
-      final idx = ((now.difference(b.date).inHours / 24) / span).floor().clamp(0, buckets - 1);
-      values[buckets - 1 - idx] += b.totalPaise;
-    }
-    final labels = [for (var i = 0; i < buckets; i++) _range == 2 ? '${now.subtract(Duration(days: ((buckets - 1 - i) * span).round())).month}' : two(now.subtract(Duration(days: ((buckets - 1 - i) * span).round())).day)];
-    int pay(PayMode m) => inRange.where((b) => b.mode == m).fold<int>(0, (s, b) => s + b.totalPaise);
-    final modes = [(l.payCash, pay(PayMode.cash)), (l.payUpi, pay(PayMode.upi)), (l.payCard, pay(PayMode.card)), (l.payCredit, pay(PayMode.credit))];
-    final top = [for (var i = 0; i < 8; i++) (products[(i * 53 + 11) % products.length].name, 4000000 - i * 380000)];
-    final profit = (total * 0.19).round();
+    final data = ref.watch(reportProvider(_range));
+    final r = data.value ?? ReportData.empty(_range, now);
+    final total = r.sales, avg = r.bills == 0 ? 0 : total ~/ r.bills;
+    final values = r.values;
+    final labels = r.labels;
+    final modes = [(l.payCash, r.cash), (l.payUpi, r.upi), (l.payCard, r.card), (l.payCredit, r.credit)];
+    final top = [for (final t in r.top) (t.name, t.amount)];
+    final profit = r.profit;
 
     Widget share(List<(String, int)> rows, Color color) {
       final mx = rows.fold<int>(1, (m, r) => r.$2 > m ? r.$2 : m);
@@ -139,7 +164,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final stats = Wrap(spacing: 12, runSpacing: 12, children: [
       for (final s in [
         StatCard(label: l.statSales, value: '₹ ${formatPaise(total)}', icon: Icons.trending_up, tone: context.c.success),
-        StatCard(label: l.statBills, value: '${inRange.length}', icon: Icons.receipt_long_outlined),
+        StatCard(label: l.statBills, value: '${r.bills}', icon: Icons.receipt_long_outlined),
         StatCard(label: l.statAvgBill, value: '₹ ${formatPaise(avg)}', icon: Icons.calculate_outlined),
         StatCard(label: l.statProfit, value: '₹ ${formatPaise(profit)}', icon: Icons.savings_outlined, tone: context.c.success, hint: l.profitEstimate),
       ])

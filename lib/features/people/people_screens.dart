@@ -1,3 +1,4 @@
+import '../../data/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,7 +40,7 @@ class CustomersScreen extends ConsumerWidget {
       onAdd: () async {
         final v = await showQuickCustomer(context);
         if (v != null) {
-          ref.read(customersProvider.notifier).add(Customer(id: 'c-new-${items.length}', name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', balancePaise: 0));
+          ref.read(customersProvider.notifier).add(Customer(id: newId(), name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', balancePaise: 0));
           if (context.mounted) toast(context, l.saved);
         }
       },
@@ -85,7 +86,7 @@ class DealersScreen extends ConsumerWidget {
       addLabel: l.addDealer,
       onAdd: () async {
         final v = await showFormSheet(context, title: l.addDealer, saveLabel: l.save, fields: [FieldSpec('name', l.fieldName, required: true, autofocus: true), FieldSpec('phone', l.fieldPhone, type: FieldType.phone), FieldSpec('city', l.fieldCity), FieldSpec('address', l.fieldAddress)]);
-        if (v != null) ref.read(recsProvider('dealers').notifier).add(Rec('d-new-${items.length}', {'name': v['name']!, 'phone': v['phone'] ?? '', 'city': v['city'] ?? '', 'address': v['address'] ?? '', 'balance': 0}));
+        if (v != null) ref.read(recsProvider('dealers').notifier).add(Rec(newId(), {'name': v['name']!, 'phone': v['phone'] ?? '', 'city': v['city'] ?? '', 'address': v['address'] ?? '', 'balance': 0}));
       },
       filters: [FilterSpec(l.filterWeOwe, (r) => owe(r) > 0)],
       sorts: [(l.sortOwedHigh, (a, b) => owe(b).compareTo(owe(a)))],
@@ -124,7 +125,7 @@ class StaffScreen extends ConsumerWidget {
           FieldSpec('name', l.fieldName, required: true),
           FieldSpec('role', l.fieldRole, type: FieldType.dropdown, initial: 'cashier', options: [('manager', l.roleManager), ('cashier', l.roleCashier)]),
         ]);
-        if (v != null) ref.read(recsProvider('staff').notifier).add(Rec('s-new-${items.length}', {'name': v['name']!, 'email': v['email']!, 'role': v['role']!}));
+        if (v != null) ref.read(recsProvider('staff').notifier).add(Rec(newId(), {'name': v['name']!, 'email': v['email']!, 'role': v['role']!}));
       },
       columns: [
         ColumnSpec(l.fieldName, (c, r) => Text(r.s('name'), style: th.titleSmall), flex: 3),

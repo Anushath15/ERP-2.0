@@ -52,6 +52,25 @@ class LedgerRepo {
 
   Future<CreditAccount> account(String partyId, {DatabaseConnectionUser? tx}) async => CreditAccount(ledger: await entries(partyId, tx: tx), bills: await dues(partyId, tx: tx));
 
+  /// The accounts the screens need at start-up: everybody who owes or is owed something, and anybody with an entry in the last
+  /// [recentDays]. Other accounts are loaded when somebody opens them (an account of a long-quiet customer with thousands of old bills
+  /// costs nothing until it is looked at).
+  Future<Map<String, CreditAccount>> loadActiveAccounts(PartyKind kind, {int recentDays = 400}) async {
+    final since = cx.now().subtract(Duration(days: recentDays)).millisecondsSinceEpoch;
+    const ids = 'SELECT party_id FROM party_balance WHERE party_kind = ? AND (balance_paise <> 0 OR party_id IN (SELECT party_id FROM ledger_entries WHERE party_kind = ? AND at >= ?))';
+    final es = await _db.rows('SELECT * FROM ledger_entries WHERE party_id IN ($ids) ORDER BY at, rowid', [kind.name, kind.name, since]);
+    final bs = await _db.rows('SELECT * FROM party_bills WHERE party_id IN ($ids) ORDER BY date, bill_no', [kind.name, kind.name, since]);
+    final ledger = <String, List<LedgerEntry>>{};
+    final bills = <String, List<BillDue>>{};
+    for (final r in es) {
+      ledger.putIfAbsent(r.read<String>('party_id'), () => []).add(_entry(r));
+    }
+    for (final r in bs) {
+      bills.putIfAbsent(r.read<String>('party_id'), () => []).add(_due(r));
+    }
+    return {for (final id in {...ledger.keys, ...bills.keys}) id: CreditAccount(ledger: ledger[id] ?? const [], bills: bills[id] ?? const [])};
+  }
+
   Future<int> balanceOf(String partyId, {DatabaseConnectionUser? tx}) => (tx ?? _db).scalarInt('SELECT balance_paise FROM party_balance WHERE party_id = ?', [partyId]);
 
   /// Balance and open dues only (what a payment needs): cheap even for a customer with thousands of old bills.
@@ -96,7 +115,8 @@ class LedgerRepo {
     await tx.exec('DELETE FROM outbox WHERE coll = ? AND doc_id = ?', ['ledgerEntries', id]);
   }
 
-  Future<void> _putDue(DatabaseConnectionUser tx, PartyKind kind, String partyId, BillDue d) => tx.exec(
+  /// Adds or updates one bill-wise due.
+  Future<void> putDue(DatabaseConnectionUser tx, PartyKind kind, String partyId, BillDue d) => tx.exec(
         'INSERT INTO party_bills(id, party_kind, party_id, bill_no, date, total_paise, paid_paise, cancelled) VALUES (?,?,?,?,?,?,?,?) '
         'ON CONFLICT(party_id, bill_no) DO UPDATE SET paid_paise = excluded.paid_paise, cancelled = excluded.cancelled, total_paise = excluded.total_paise',
         ['$partyId|${d.billNo}', kind.name, partyId, d.billNo, d.date.millisecondsSinceEpoch, d.totalPaise, d.paidPaise, d.cancelled ? 1 : 0],
@@ -107,7 +127,7 @@ class LedgerRepo {
     final old = {for (final b in before) b.billNo: b};
     for (final b in after) {
       final o = old[b.billNo];
-      if (o == null || o.paidPaise != b.paidPaise || o.cancelled != b.cancelled || o.totalPaise != b.totalPaise) await _putDue(tx, kind, partyId, b);
+      if (o == null || o.paidPaise != b.paidPaise || o.cancelled != b.cancelled || o.totalPaise != b.totalPaise) await putDue(tx, kind, partyId, b);
     }
   }
 
@@ -119,7 +139,7 @@ class LedgerRepo {
     final split = splitPayment(total: total, received: received);
     if (split.balance > 0) {
       await addEntry(tx, kind, LedgerEntry.billCredit(id: newId(), customerId: partyId, paise: split.balance, at: at, billNo: billNo, by: cx.actor.name));
-      await _putDue(tx, kind, partyId, BillDue(billNo: billNo, date: at, totalPaise: total, paidPaise: total - split.balance));
+      await putDue(tx, kind, partyId, BillDue(billNo: billNo, date: at, totalPaise: total, paidPaise: total - split.balance));
     }
     if (advance > 0) {
       await addEntry(tx, kind, LedgerEntry.advance(id: newId(), customerId: partyId, paise: advance, at: at, billNo: billNo, by: cx.actor.name, note: 'Extra money kept as advance'));
@@ -135,7 +155,7 @@ class LedgerRepo {
     if (all.any((b) => b.billNo == billNo && b.cancelled)) return false;
     final rev = reverseBillCredit(entries: ledger, customerId: partyId, billNo: billNo, at: at, reason: reason, by: cx.actor.name, entryId: newId());
     await addEntry(tx, kind, rev);
-    await _putDue(tx, kind, partyId, all.firstWhere((b) => b.billNo == billNo).cancel());
+    await putDue(tx, kind, partyId, all.firstWhere((b) => b.billNo == billNo).cancel());
     return true;
   }
 
@@ -208,7 +228,7 @@ class LedgerRepo {
       final no = 'CR-${(await nextCounter(_db, 'cr.${kind.name}')).toString().padLeft(3, '0')}';
       final e = LedgerEntry.manualCredit(id: newId(), customerId: partyId, paise: amount, at: at, reason: reason, by: cx.actor.name, billNo: no);
       await addEntry(_db, kind, e, upload: true);
-      await _putDue(_db, kind, partyId, BillDue(billNo: no, date: at, totalPaise: amount, paidPaise: 0));
+      await putDue(_db, kind, partyId, BillDue(billNo: no, date: at, totalPaise: amount, paidPaise: 0));
       return no;
     });
   }
@@ -219,7 +239,7 @@ class LedgerRepo {
       if (signedPaise > 0) {
         final no = 'ADJ-${(await nextCounter(_db, 'adj.${kind.name}')).toString().padLeft(3, '0')}';
         await addEntry(_db, kind, LedgerEntry.adjustment(id: newId(), customerId: partyId, signedPaise: signedPaise, at: at, reason: reason, by: cx.actor.name, billNo: no), upload: true);
-        await _putDue(_db, kind, partyId, BillDue(billNo: no, date: at, totalPaise: signedPaise, paidPaise: 0));
+        await putDue(_db, kind, partyId, BillDue(billNo: no, date: at, totalPaise: signedPaise, paidPaise: 0));
       } else {
         final open = await dues(partyId, tx: _db, openOnly: true);
         final res = allocatePayment(bills: open, amount: -signedPaise);
@@ -234,7 +254,7 @@ class LedgerRepo {
     if (amount == 0) return Future.value();
     return _db.transaction(() async {
       await addEntry(_db, kind, LedgerEntry.opening(id: newId(), customerId: partyId, paise: amount, at: at, by: cx.actor.name), upload: true);
-      if (amount > 0) await _putDue(_db, kind, partyId, BillDue(billNo: 'OPEN-$partyId', date: at, totalPaise: amount, paidPaise: 0));
+      if (amount > 0) await putDue(_db, kind, partyId, BillDue(billNo: 'OPEN-$partyId', date: at, totalPaise: amount, paidPaise: 0));
     });
   }
 

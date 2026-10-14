@@ -59,7 +59,7 @@ class ShopProfileScreen extends ConsumerWidget {
           field('upi', l.setUpi, s.upiId, (v) => set((x) => x.copyWith(upiId: v)), kind: TextKind.upi),
           field('bank', l.shopBank, s.bankDetails, (v) => set((x) => x.copyWith(bankDetails: v)), lines: 2, kind: TextKind.address),
           field('footer', l.shopFooter, s.billFooter, (v) => set((x) => x.copyWith(billFooter: v)), lines: 2, kind: TextKind.address),
-          field('prefix', l.shopPrefix, s.invoicePrefix, (v) => set((x) => x.copyWith(invoicePrefix: v.trim())), hint: 'A-', kind: TextKind.town),
+          field('prefix', l.shopPrefix, s.invoicePrefix, (v) => set((x) => x.copyWith(invoicePrefix: v.trim())), hint: 'SE-', kind: TextKind.town),
         ]),
       ]),
     );

@@ -5,7 +5,7 @@ import 'package:erp2/app.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:erp2/fake/credit_store.dart' show seedCredit;
-import 'package:erp2/fake/seed.dart';
+import 'package:erp2/demo/seed.dart';
 import 'helpers.dart';
 
 /// Golden images of the key screens, at several text sizes and in both themes.

@@ -4,6 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/money.dart';
+import '../../data/ids.dart';
+import '../../data/repo/bill_repo.dart';
+import '../../data/repo/records_repo.dart' show EstimateLine;
+import '../../domain_lite/bill_calc.dart';
+import '../../fake/actions.dart';
 import '../../core/responsive.dart';
 import '../../core/sound.dart';
 import '../../domain/credit/payment_split.dart';
@@ -68,25 +73,15 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   String _number() {
     final cart = ref.read(cartProvider(mode));
     if (cart.editingNumber != null) return cart.editingNumber!;
-    return mode == DocMode.invoice ? '${ref.read(shopProvider).invoicePrefix}${ref.read(invoiceCounterProvider).toString().padLeft(6, '0')}' : 'EST-${ref.read(estimateCounterProvider).toString().padLeft(5, '0')}';
+    final n = ref.watch(nextNumbersProvider);
+    return mode == DocMode.invoice ? n.invoice : n.estimate;
   }
 
   DateTime _date() => ref.read(cartProvider(mode)).editingDate ?? ref.read(clockProvider);
 
-  PrintDoc _snapshot() {
-    final cart = ref.read(cartProvider(mode));
-    final calc = calcFor(cart, inclusive: ref.read(shopProvider).pricesIncludeGst);
-    int? received;
-    var change = 0, advance = 0;
-    if (mode == DocMode.invoice) {
-      final split = splitPayment(total: calc.grandTotal, received: cart.receivedPaise ?? calc.grandTotal);
-      received = split.received;
-      change = split.change;
-      advance = cart.customer != null && cart.keepAdvance ? split.change : 0;
-      if (advance > 0) change = 0; // kept on account instead of given back
-    }
-    return PrintDoc(mode: mode, number: _number(), date: _date(), editedOn: cart.editingNumber != null ? ref.read(clockProvider) : null, customer: cart.customer?.name ?? tr(context).walkInCustomer, lines: cart.lines, calc: calc, pay: cart.pay, receivedPaise: received, changePaise: change, advanceKeptPaise: advance, newBalancePaise: mode == DocMode.invoice && cart.customer != null ? ref.read(creditProvider.notifier).balanceOf(cart.customer!.id) + (calc.grandTotal - (received ?? calc.grandTotal) > 0 ? calc.grandTotal - (received ?? calc.grandTotal) : 0) - advance : null);
-  }
+  /// What is printed for a document: from the SAVED bill (its real number and amounts), or for an estimate from the cart.
+  PrintDoc _docFrom(CartState cart, BillCalc calc, {required String number, required DateTime date, int? received, int change = 0, int advance = 0, int? newBalance, DateTime? editedOn}) =>
+      PrintDoc(mode: mode, number: number, date: date, editedOn: editedOn, customer: cart.customer?.name ?? tr(context).walkInCustomer, lines: cart.lines, calc: calc, pay: cart.pay, receivedPaise: received, changePaise: change, advanceKeptPaise: advance, newBalancePaise: newBalance);
 
   /// A bill with an unpaid balance needs a named customer: pick one or add one. Returns null if the person gives up
   /// (the bill is then NOT saved).
@@ -112,7 +107,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     }
     final v = await showQuickCustomer(context);
     if (v == null) return null;
-    final c = Customer(id: 'c-new-${ref.read(customersProvider).length + 1}', name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', balancePaise: 0);
+    final c = Customer(id: newId(), name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', balancePaise: 0);
     ref.read(customersProvider.notifier).add(c);
     return c;
   }
@@ -134,13 +129,26 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     return confirmDialog(context, title: l.creditLimitWarnTitle, message: l.creditLimitWarnText(customer.name, m(owes < 0 ? 0 : owes), m(after), m(limit)), confirmLabel: l.saveAnyway);
   }
 
+  bool _saving = false;
+
   Future<void> _save({bool print = false}) async {
+    if (_saving) return; // a second press while the first is being written changes nothing
+    _saving = true;
+    try {
+      await _doSave(print: print);
+    } finally {
+      _saving = false;
+    }
+  }
+
+  Future<void> _doSave({required bool print}) async {
     final l = tr(context);
     var cart = ref.read(cartProvider(mode));
     if (cart.lines.isEmpty) return;
+    final shop = ref.read(shopProvider);
     if (mode == DocMode.invoice) {
-      // Everything below only waits (await) when a question has to be asked; a normal fully-paid sale saves in the same frame.
-      final total = calcFor(cart, inclusive: ref.read(shopProvider).pricesIncludeGst).grandTotal;
+      // Everything below only waits (await) when a question has to be asked; a normal fully-paid sale saves at once.
+      final total = calcFor(cart, inclusive: shop.pricesIncludeGst).grandTotal;
       final split = splitPayment(total: total, received: cart.receivedPaise ?? total);
       if (split.balance > 0 && cart.customer == null) {
         final chosen = await _askCustomer(split.balance);
@@ -151,20 +159,44 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       if (split.balance > 0 && cart.customer != null && !await _checkLimit(cart.customer!, split.balance)) return;
       if (!mounted) return;
     }
-    final doc = _snapshot();
-    final editing = ref.read(cartProvider(mode)).editingNumber != null;
-    if (!editing) {
-      mode == DocMode.invoice ? ref.read(invoiceCounterProvider.notifier).bump() : ref.read(estimateCounterProvider.notifier).bump();
+    cart = ref.read(cartProvider(mode));
+    final calc = calcFor(cart, inclusive: shop.pricesIncludeGst);
+    final editing = cart.editingNumber != null;
+    final at = _date();
+    PrintDoc doc;
+    try {
+      if (mode == DocMode.invoice) {
+        final input = SaveBillInput(
+          idemKey: cart.draftId ?? newId(),
+          at: at,
+          lines: [for (final ln in cart.lines) BillLineInput(productId: ln.product.id, name: ln.product.name, unit: ln.product.unit, qtyMilli: ln.qtyMilli, ratePaise: ln.rate, gstBp: ln.product.gstBp, discountBp: ln.discountBp, costPaise: ln.product.costPaise)],
+          customerId: cart.customer?.id,
+          customerName: cart.customer?.name ?? '',
+          payMode: cart.pay.index,
+          receivedPaise: cart.receivedPaise,
+          keepAdvance: cart.keepAdvance,
+          pricesIncludeGst: shop.pricesIncludeGst,
+        );
+        final saved = await ref.read(billActionsProvider).save(input);
+        final balanceNow = cart.customer == null ? null : ref.read(creditProvider.notifier).balanceOf(cart.customer!.id);
+        doc = _docFrom(cart, calc, number: saved.number, date: saved.at, received: saved.receivedPaise, change: saved.changePaise, advance: saved.advanceKeptPaise, newBalance: balanceNow);
+      } else {
+        final e = await ref.read(estimationsProvider.notifier).save(
+              lines: [for (final ln in cart.lines) EstimateLine(productId: ln.product.id, name: ln.product.name, unit: ln.product.unit, qtyMilli: ln.qtyMilli, ratePaise: ln.rate, discountBp: ln.discountBp)],
+              totalPaise: calc.grandTotal,
+              customerName: cart.customer?.name ?? '',
+              customerId: cart.customer?.id,
+              at: editing ? cart.editingDate! : at,
+              editNumber: cart.editingNumber,
+            );
+        doc = _docFrom(cart, calc, number: e.number, date: e.date, editedOn: editing ? ref.read(clockProvider) : null);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      await showDialog<void>(context: context, builder: (ctx) => AlertDialog(title: Text(l.saveFailedTitle), content: Text(l.saveFailedText('$e')), actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(l.close))]));
+      return; // nothing was saved: the bill stays on the screen so nothing has to be typed again
     }
-    if (mode == DocMode.invoice) {
-      final c = ref.read(cartProvider(mode)).customer;
-      if (c != null) ref.read(creditProvider.notifier).addBill(customerId: c.id, billNo: doc.number, at: doc.date, total: doc.calc.grandTotal, received: doc.receivedPaise ?? doc.calc.grandTotal, advance: doc.advanceKeptPaise);
-    }
-    if (mode == DocMode.estimation) {
-      final e = EstimationDoc(number: doc.number, date: doc.date, customer: doc.customer, lines: doc.lines.length, totalPaise: doc.calc.grandTotal, editedOn: editing ? doc.editedOn : null);
-      final n = ref.read(estimationsProvider.notifier);
-      editing ? n.replace(e) : n.add(e);
-    }
+    if (!mounted) return;
     ref.read(cartProvider(mode).notifier).clear();
     String m(int p) => formatPaise(p, symbol: true);
     toast(context, mode != DocMode.invoice ? l.estimateSaved(doc.number) : (doc.balancePaise > 0 && doc.newBalancePaise != null ? l.billSavedCredit(doc.number, m(doc.receivedPaise! > doc.calc.grandTotal ? doc.calc.grandTotal : doc.receivedPaise!), m(doc.balancePaise), doc.customer, m(doc.newBalancePaise!)) : l.billSaved(doc.number)));

@@ -3,7 +3,7 @@ library;
 
 import 'dart:collection';
 import 'dart:math';
-import 'models.dart';
+import '../domain/models.dart';
 
 const categories = ['Electrical', 'Plumbing', 'Hardware', 'Paints', 'Tools', 'Fasteners', 'Lighting', 'Fans', 'Locks', 'Adhesives'];
 

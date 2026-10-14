@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/money.dart';
+import '../../data/ids.dart';
 import '../../design/form_sheet.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
-import '../../fake/seed.dart';
+import '../../demo/seed.dart';
 
 /// Add or edit a product. Returns the new product, or null if cancelled. Used by Products and by billing quick-add.
 Future<Product?> showProductForm(BuildContext context, {String initialName = '', Product? edit, required String saveLabel}) async {
@@ -27,7 +28,7 @@ Future<Product?> showProductForm(BuildContext context, {String initialName = '',
   if (v == null) return null;
   int paise(String? s) => ((double.tryParse(s ?? '') ?? 0) * 100).round();
   return Product(
-    id: p?.id ?? 'p-new-${DateTime.now().microsecondsSinceEpoch}',
+    id: p?.id ?? newId(),
     name: v['name']!,
     category: v['category']!,
     unit: v['unit']!,

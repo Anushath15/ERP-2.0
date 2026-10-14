@@ -9,6 +9,10 @@ import 'package:erp2/fake/models.dart';
 import 'package:erp2/fake/shop_profile.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:erp2/features/billing/cart.dart';
+import 'package:erp2/data/repo/bill_repo.dart';
+import 'package:erp2/fake/actions.dart';
+import 'package:erp2/fake/data_providers.dart';
+import 'data/helpers.dart' as db;
 import 'helpers.dart';
 
 // What these tests prove: our screens and rules for part payment, credit, receiving payments and reminders.
@@ -238,18 +242,26 @@ void main() {
   });
 
   group('cancelling a bill', () {
-    test('reverses the credit it added (owner, reason) and leaves other bills alone', () {
-      final c = ProviderContainer(overrides: [clockProvider.overrideWithValue(fixedNow)]);
-      addTearDown(c.dispose);
+    test('reverses the credit it added (owner, reason) and leaves other bills alone', () async {
+      final d = db.memoryShop(now: fixedNow);
+      await d.catalog.saveProduct(db.sampleProduct('SCREW', id: 'p1', price: 15000), create: true);
+      await d.catalog.saveCustomer(db.sampleCustomer('X', id: 'x'), create: true);
+      final c = ProviderContainer(overrides: [clockProvider.overrideWithValue(fixedNow), appDataProvider.overrideWithValue(d), bootstrapProvider.overrideWithValue(await Bootstrap.load(d, now: fixedNow))]);
+      addTearDown(() async {
+        c.dispose();
+        await d.close();
+      });
+      BillLineInput line(int qty) => BillLineInput(productId: 'p1', name: 'SCREW', unit: 'pcs', qtyMilli: qty, ratePaise: 15000, gstBp: 1800);
+      final a1 = await c.read(billActionsProvider).save(SaveBillInput(idemKey: 'a1', at: fixedNow, lines: [line(1000)], customerId: 'x', customerName: 'X', receivedPaise: 10000));
+      await c.read(billActionsProvider).save(SaveBillInput(idemKey: 'a2', at: fixedNow, lines: [line(1000)], customerId: 'x', customerName: 'X', receivedPaise: 7000));
       final n = c.read(creditProvider.notifier);
-      n.addBill(customerId: 'x', billNo: 'A-1', at: fixedNow, total: 15000, received: 10000);
-      n.addBill(customerId: 'x', billNo: 'A-2', at: fixedNow, total: 8000, received: 0);
       expect(n.balanceOf('x'), 13000);
-      n.cancelBill(billNo: 'A-1', reason: 'wrong customer', at: fixedNow);
+      expect(await c.read(billActionsProvider).cancel(a1.id, reason: 'wrong customer'), isTrue);
       expect(n.balanceOf('x'), 8000);
-      expect(c.read(creditProvider)['x']!.bills.firstWhere((b) => b.billNo == 'A-1').cancelled, true);
+      expect(c.read(creditProvider)['x']!.bills.firstWhere((b) => b.billNo == a1.number).cancelled, true);
       expect(c.read(creditProvider)['x']!.ledger.last.kind, LedgerKind.billCancel);
-      n.cancelBill(billNo: 'A-1', reason: 'again', at: fixedNow); // already reversed: ignored by the ledger rule
+      expect(await c.read(billActionsProvider).cancel(a1.id, reason: 'again'), isFalse, reason: 'already cancelled: nothing happens twice');
+      expect(n.balanceOf('x'), 8000);
     });
   });
 }

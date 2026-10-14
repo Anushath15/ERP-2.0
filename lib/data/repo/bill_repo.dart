@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import '../../core/money.dart' show divRound;
 import '../../domain/bill_math.dart';
 import '../../domain/credit/account.dart';
 import '../../domain/credit/payment_split.dart';
@@ -8,9 +9,12 @@ import '../ids.dart';
 import 'ledger_repo.dart';
 
 class BillLineInput {
-  const BillLineInput({required this.productId, required this.name, required this.unit, required this.qtyMilli, required this.ratePaise, required this.gstBp, this.discountBp = 0});
+  const BillLineInput({required this.productId, required this.name, required this.unit, required this.qtyMilli, required this.ratePaise, required this.gstBp, this.discountBp = 0, this.costPaise = 0});
   final String productId, name, unit;
   final int qtyMilli, ratePaise, gstBp, discountBp;
+
+  /// What the product cost per unit when sold (for the profit figure). Zero when unknown.
+  final int costPaise;
 }
 
 /// What the billing screen hands over when "Save bill" is pressed.
@@ -28,7 +32,11 @@ class SaveBillInput {
     this.interState = false,
     this.note = '',
     this.oldBillNo,
+    this.fromEstimate,
   });
+
+  /// When this bill is made from a saved estimate: its number. The estimate is marked converted in the same transaction (a second conversion is refused).
+  final String? fromEstimate;
 
   /// Made once per bill on the screen: pressing Save twice, or a retry after a crash, returns the same bill.
   final String idemKey;
@@ -67,9 +75,12 @@ class BillRow {
 
 /// Where the next page of the register starts (keyset paging: never OFFSET).
 class BillCursor {
-  const BillCursor(this.billedAt, this.id);
+  const BillCursor(this.billedAt, this.id, [this.totalPaise = 0]);
   final int billedAt;
   final String id;
+
+  /// Only used when the register is sorted by amount.
+  final int totalPaise;
 }
 
 class BillDetail {
@@ -142,8 +153,8 @@ class BillRepo {
         final l = input.lines[i];
         final c = calc.lines[i];
         await _db.exec(
-          'INSERT INTO bill_lines(id, bill_id, line_no, product_id, name, unit, qty_milli, rate_paise, discount_bp, gst_bp, gross_paise, discount_paise, taxable_paise, tax_paise, total_paise) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-          [newId(), id, i + 1, l.productId, l.name, l.unit, l.qtyMilli, l.ratePaise, l.discountBp, l.gstBp, c.gross, c.discount, c.taxable, c.tax, c.total],
+          'INSERT INTO bill_lines(id, bill_id, line_no, product_id, name, unit, qty_milli, rate_paise, cost_paise, discount_bp, gst_bp, gross_paise, discount_paise, taxable_paise, tax_paise, total_paise) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+          [newId(), id, i + 1, l.productId, l.name, l.unit, l.qtyMilli, l.ratePaise, l.costPaise, l.discountBp, l.gstBp, c.gross, c.discount, c.taxable, c.tax, c.total],
         );
         await _stockMove(l.productId, -l.qtyMilli, 'sale', id, at);
         await _db.exec(
@@ -155,7 +166,18 @@ class BillRepo {
       if (input.customerId != null) {
         await ledger.addBillCredit(_db, PartyKind.customer, partyId: input.customerId!, billNo: number, at: input.at, total: total, received: split.received, advance: advance);
       }
-      await _dayTotals(day, sign: 1, total: total, tax: calc.tax, balance: split.balance, mode: input.payMode);
+      var cost = 0;
+      for (final l in input.lines) {
+        cost += divRound(l.costPaise * l.qtyMilli, 1000);
+      }
+      await _dayTotals(day, sign: 1, total: total, taxable: calc.taxable, cost: cost, tax: calc.tax, balance: split.balance, mode: input.payMode);
+      if (input.fromEstimate != null) {
+        final e = await _db.row('SELECT id, converted_bill_id FROM estimations WHERE number = ?', [input.fromEstimate]);
+        if (e == null) throw StateError('No such estimate.');
+        if (e.readNullable<String>('converted_bill_id') != null) throw StateError('This estimate was already converted.');
+        await _db.exec('UPDATE estimations SET converted_bill_id = ?, updated_at = ?, version = version + 1, hlc = ? WHERE id = ?', [number, cx.nowMs(), cx.hlc.next(), e.read<String>('id')]);
+        await enqueue(cx, _db, 'estimations', e.read<String>('id'));
+      }
       await enqueue(cx, _db, 'bills', id);
       final row = await _db.row('SELECT * FROM bills WHERE id = ?', [id]);
       return _saved(row!, replay: false);
@@ -167,14 +189,14 @@ class BillRepo {
     await _db.exec('INSERT INTO stock_cache(product_id, qty_milli) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET qty_milli = qty_milli + excluded.qty_milli', [productId, qtyMilli]);
   }
 
-  Future<void> _dayTotals(String day, {required int sign, required int total, required int tax, required int balance, required int mode}) async {
+  Future<void> _dayTotals(String day, {required int sign, required int total, required int taxable, required int cost, required int tax, required int balance, required int mode}) async {
     final settled = total - balance;
     final cash = mode == 0 ? settled : 0, upi = mode == 1 ? settled : 0, card = mode >= 2 ? settled : 0;
     await _db.exec(
-      'INSERT INTO day_totals(day, bills, sales_paise, tax_paise, cash_paise, upi_paise, card_paise, credit_paise) VALUES (?,?,?,?,?,?,?,?) '
-      'ON CONFLICT(day) DO UPDATE SET bills = bills + excluded.bills, sales_paise = sales_paise + excluded.sales_paise, tax_paise = tax_paise + excluded.tax_paise, '
+      'INSERT INTO day_totals(day, bills, sales_paise, taxable_paise, cost_paise, tax_paise, cash_paise, upi_paise, card_paise, credit_paise) VALUES (?,?,?,?,?,?,?,?,?,?) '
+      'ON CONFLICT(day) DO UPDATE SET bills = bills + excluded.bills, sales_paise = sales_paise + excluded.sales_paise, taxable_paise = taxable_paise + excluded.taxable_paise, cost_paise = cost_paise + excluded.cost_paise, tax_paise = tax_paise + excluded.tax_paise, '
       'cash_paise = cash_paise + excluded.cash_paise, upi_paise = upi_paise + excluded.upi_paise, card_paise = card_paise + excluded.card_paise, credit_paise = credit_paise + excluded.credit_paise',
-      [day, sign, sign * total, sign * tax, sign * cash, sign * upi, sign * card, sign * balance],
+      [day, sign, sign * total, sign * taxable, sign * cost, sign * tax, sign * cash, sign * upi, sign * card, sign * balance],
     );
   }
 
@@ -204,10 +226,12 @@ class BillRepo {
       final number = b.read<String>('number');
       await _db.exec('INSERT INTO bill_cancellations(id, bill_id, bill_no, reason, by_name, at, created_at, device_id) VALUES (?,?,?,?,?,?,?,?)', [newId(), billId, number, reason.trim(), cx.actor.name, when.millisecondsSinceEpoch, cx.nowMs(), cx.deviceId]);
       await _db.exec('UPDATE bills SET cancelled = 1 WHERE id = ?', [billId]);
-      final lines = await _db.rows('SELECT product_id, qty_milli, total_paise FROM bill_lines WHERE bill_id = ?', [billId]);
+      final lines = await _db.rows('SELECT product_id, qty_milli, total_paise, cost_paise FROM bill_lines WHERE bill_id = ?', [billId]);
+      var cost = 0;
       final billedAt = DateTime.fromMillisecondsSinceEpoch(b.read<int>('billed_at'));
       final month = DataContext.monthOf(billedAt);
       for (final l in lines) {
+        cost += divRound(l.read<int>('cost_paise') * l.read<int>('qty_milli'), 1000);
         await _stockMove(l.read<String>('product_id'), l.read<int>('qty_milli'), 'cancel', billId, when.millisecondsSinceEpoch);
         await _db.exec('UPDATE product_month SET qty_milli = qty_milli - ?, amount_paise = amount_paise - ? WHERE product_id = ? AND month = ?', [l.read<int>('qty_milli'), l.read<int>('total_paise'), l.read<String>('product_id'), month]);
       }
@@ -215,7 +239,7 @@ class BillRepo {
       if (customerId != null) await ledger.cancelBillCredit(_db, PartyKind.customer, partyId: customerId, billNo: number, at: when, reason: reason.trim());
       final tax = b.read<int>('cgst_paise') + b.read<int>('sgst_paise') + b.read<int>('igst_paise');
       final day = b.read<String>('day');
-      await _dayTotals(day, sign: -1, total: b.read<int>('total_paise'), tax: tax, balance: b.read<int>('balance_paise'), mode: b.read<int>('pay_mode'));
+      await _dayTotals(day, sign: -1, total: b.read<int>('total_paise'), taxable: b.read<int>('taxable_paise'), cost: cost, tax: tax, balance: b.read<int>('balance_paise'), mode: b.read<int>('pay_mode'));
       await _db.exec('UPDATE day_totals SET cancelled_bills = cancelled_bills + 1, cancelled_paise = cancelled_paise + ? WHERE day = ?', [b.read<int>('total_paise'), day]);
       await enqueue(cx, _db, 'billCancellations', (await _db.row('SELECT id FROM bill_cancellations WHERE bill_id = ?', [billId]))!.read<String>('id'));
       await _db.exec(
@@ -244,7 +268,8 @@ class BillRepo {
 
   /// One page of the register, newest first. [after] is the cursor of the last row of the previous page. [search] matches the bill
   /// number, the old (ERP 1) bill number or the customer name. [from] and [to] bound the date.
-  Future<List<BillRow>> page({BillCursor? after, String? customerId, String search = '', DateTime? from, DateTime? to, bool onlyCancelled = false, bool onlyDue = false, int limit = 50}) async {
+  /// [status]: 0 all, 1 paid, 2 part paid, 3 unpaid (on credit), 4 cancelled. [byAmount] sorts the biggest bill first instead of the newest.
+  Future<List<BillRow>> page({BillCursor? after, String? customerId, String search = '', DateTime? from, DateTime? to, bool onlyCancelled = false, bool onlyDue = false, int status = 0, bool byAmount = false, int limit = 50}) async {
     final where = <String>[];
     final args = <Object?>[];
     if (customerId != null) {
@@ -265,19 +290,30 @@ class BillRepo {
       where.add('billed_at < ?');
       args.add(to.millisecondsSinceEpoch);
     }
-    if (onlyCancelled) where.add('cancelled = 1');
+    if (onlyCancelled || status == 4) where.add('cancelled = 1');
+    if (status == 1) where.add('cancelled = 0 AND balance_paise = 0');
+    if (status == 2) where.add('cancelled = 0 AND balance_paise > 0 AND balance_paise < total_paise');
+    if (status == 3) where.add('cancelled = 0 AND balance_paise > 0 AND balance_paise >= total_paise');
     if (onlyDue) where.add('balance_paise > 0 AND cancelled = 0');
     if (after != null) {
-      where.add('(billed_at < ? OR (billed_at = ? AND id < ?))');
-      args.addAll([after.billedAt, after.billedAt, after.id]);
+      if (byAmount) {
+        where.add('(total_paise < ? OR (total_paise = ? AND id < ?))');
+        args.addAll([after.totalPaise, after.totalPaise, after.id]);
+      } else {
+        where.add('(billed_at < ? OR (billed_at = ? AND id < ?))');
+        args.addAll([after.billedAt, after.billedAt, after.id]);
+      }
     }
-    final r = await _db.rows('SELECT * FROM bills ${where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}'} ORDER BY billed_at DESC, id DESC LIMIT ?', [...args, limit]);
+    final r = await _db.rows('SELECT * FROM bills ${where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}'} ORDER BY ${byAmount ? 'total_paise DESC, id DESC' : 'billed_at DESC, id DESC'} LIMIT ?', [...args, limit]);
     return [for (final x in r) _row(x)];
   }
 
-  static BillCursor cursorOf(BillRow r) => BillCursor(r.at.millisecondsSinceEpoch, r.id);
+  static BillCursor cursorOf(BillRow r) => BillCursor(r.at.millisecondsSinceEpoch, r.id, r.totalPaise);
 
   Future<int> count({bool includeCancelled = true}) => _db.scalarInt('SELECT COUNT(*) FROM bills ${includeCancelled ? '' : 'WHERE cancelled = 0'}');
+
+  /// Bills and cancelled bills together, from the day summaries (a few thousand rows however many bills there are).
+  Future<int> countFast() => _db.scalarInt('SELECT COALESCE(SUM(bills + cancelled_bills), 0) FROM day_totals');
 
   Future<BillDetail?> detail(String billId) async {
     final b = await _db.row('SELECT * FROM bills WHERE id = ?', [billId]);

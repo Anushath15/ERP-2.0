@@ -157,6 +157,7 @@ CREATE UNIQUE INDEX bills_idem ON bills(idem_key);
 CREATE INDEX bills_billed_at ON bills(billed_at DESC, id DESC);
 CREATE INDEX bills_customer ON bills(customer_id, billed_at DESC, id DESC) WHERE customer_id IS NOT NULL;
 CREATE INDEX bills_old_no ON bills(old_bill_no) WHERE old_bill_no IS NOT NULL;
+CREATE INDEX bills_amount ON bills(total_paise DESC, id DESC);
 CREATE INDEX bills_cancelled ON bills(billed_at DESC) WHERE cancelled = 1;
 CREATE INDEX bills_due ON bills(customer_id, billed_at) WHERE balance_paise > 0;
 
@@ -169,6 +170,7 @@ CREATE TABLE bill_lines (
   unit TEXT NOT NULL DEFAULT 'pcs',
   qty_milli INTEGER NOT NULL,
   rate_paise INTEGER NOT NULL,
+  cost_paise INTEGER NOT NULL DEFAULT 0,
   discount_bp INTEGER NOT NULL DEFAULT 0,
   gst_bp INTEGER NOT NULL DEFAULT 0,
   gross_paise INTEGER NOT NULL,
@@ -297,6 +299,8 @@ CREATE TABLE day_totals (
   day TEXT NOT NULL PRIMARY KEY,
   bills INTEGER NOT NULL DEFAULT 0,
   sales_paise INTEGER NOT NULL DEFAULT 0,
+  taxable_paise INTEGER NOT NULL DEFAULT 0,
+  cost_paise INTEGER NOT NULL DEFAULT 0,
   tax_paise INTEGER NOT NULL DEFAULT 0,
   cash_paise INTEGER NOT NULL DEFAULT 0,
   upi_paise INTEGER NOT NULL DEFAULT 0,

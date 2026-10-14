@@ -1,3 +1,4 @@
+import '../../data/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_fmt.dart';
@@ -143,7 +144,7 @@ class CategoriesScreen extends ConsumerWidget {
       addLabel: l.addCategory,
       onAdd: () async {
         final v = await showFormSheet(context, title: l.addCategory, saveLabel: l.save, fields: [FieldSpec('name', l.fieldName, required: true, autofocus: true)]);
-        if (v != null) ref.read(recsProvider('categories').notifier).add(Rec('k${items.length}', {'name': v['name']!, 'items': 0}));
+        if (v != null) ref.read(recsProvider('categories').notifier).add(Rec(newId(), {'name': v['name']!, 'items': 0}));
       },
       columns: [
         ColumnSpec(l.fieldName, (c, r) => Cell(r.s('name'), bold: true), flex: 4),
@@ -177,7 +178,7 @@ class AdjustmentsScreen extends ConsumerWidget {
         ]);
         if (v == null) return;
         final q = ((double.tryParse(v['qty']!) ?? 0) * 1000).round() * (v['kind'] == 'minus' ? -1 : 1);
-        ref.read(recsProvider('adjustments').notifier).add(Rec('ad-${items.length}', {'date': ref.read(clockProvider), 'product': v['product']!, 'qty': q, 'reason': v['reason']!}));
+        ref.read(recsProvider('adjustments').notifier).add(Rec(newId(), {'date': ref.read(clockProvider), 'product': v['product']!, 'qty': q, 'reason': v['reason']!}));
         if (context.mounted) toast(context, l.saved);
       },
       columns: [

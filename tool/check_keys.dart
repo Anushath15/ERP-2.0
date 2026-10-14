@@ -8,7 +8,7 @@ void main() {
       .map((l) => l.split(' | ').first.trim())
       .toSet();
   final used = <String, String>{};
-  for (final f in Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart') && !f.path.endsWith('strings.dart'))) {
+  for (final f in Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart') && !f.path.endsWith('strings.dart') && !f.path.replaceAll(r'\', '/').startsWith('lib/data/') && !f.path.replaceAll(r'\', '/').startsWith('lib/demo/'))) {
     for (final m in RegExp(r'(?<![\w.])(?:l|rl)\.([a-zA-Z]\w*)').allMatches(f.readAsStringSync())) {
       used.putIfAbsent(m.group(1)!, () => f.path);
     }

@@ -7,8 +7,7 @@ import '../../core/responsive.dart';
 import '../../design/effects.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
-import '../../fake/models.dart';
-import '../../fake/credit_store.dart';
+import '../../fake/stats.dart';
 import '../../fake/store.dart';
 
 /// Simple bar chart drawn with plain boxes (no chart package, no animation).
@@ -52,22 +51,13 @@ class DashboardScreen extends ConsumerWidget {
     final l = tr(context);
     final phone = context.isPhone;
     final now = ref.watch(clockProvider);
-    final bills = ref.watch(billsProvider);
+    final hs = ref.watch(statsProvider);
     final products = ref.watch(productsProvider);
     final th = Theme.of(context).textTheme;
-    bool sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
-    final todays = [for (final b in bills.take(400)) if (sameDay(b.date, now) && b.status != DocStatus.cancelled) b];
-    final todayTotal = todays.fold<int>(0, (s, b) => s + b.totalPaise);
-    final toCollect = ref.watch(creditProvider.notifier).totalToCollect;
-    ref.watch(creditProvider);
+    final todayTotal = hs.today.sales;
     final low = products.where((p) => p.lowStock || p.outOfStock).toList();
-    final week = <int>[];
-    final labels = <String>[];
-    for (var d = 6; d >= 0; d--) {
-      final day = now.subtract(Duration(days: d));
-      week.add(bills.take(1500).where((b) => sameDay(b.date, day) && b.status != DocStatus.cancelled).fold<int>(0, (s, b) => s + b.totalPaise));
-      labels.add('${two(day.day)}/${two(day.month)}');
-    }
+    final week = hs.week;
+    final labels = [for (final d in hs.weekDays) '${two(d.day)}/${two(d.month)}'];
 
     Widget action(IconData i, String label, String path, {bool primary = false}) => Expanded(
           child: PressScale(child: primary
@@ -95,10 +85,10 @@ class DashboardScreen extends ConsumerWidget {
       final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
       final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
       final cards = [
-        StatCard(label: l.statTodaySales, value: '₹ ${formatPaise(todayTotal)}', icon: Icons.trending_up, tone: context.c.success, hint: l.billsCount(todays.length.toString())),
-        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(toCollect)}', icon: Icons.south_west, tone: context.c.warning, hint: l.customersOwing(ref.watch(creditProvider).values.where((a) => a.balance > 0).length.toString())),
+        StatCard(label: l.statTodaySales, value: '₹ ${formatPaise(todayTotal)}', icon: Icons.trending_up, tone: context.c.success, hint: l.billsCount(hs.today.bills.toString())),
+        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(hs.toCollect)}', icon: Icons.south_west, tone: context.c.warning, hint: l.customersOwing(hs.owingPeople.toString())),
         StatCard(label: l.statLow, value: low.length.toString(), icon: Icons.warning_amber_rounded, tone: context.c.danger, hint: l.needReorder),
-        StatCard(label: l.statCashToday, value: '₹ ${formatPaise((todayTotal * 0.62).round())}', icon: Icons.payments_outlined, hint: l.cashEstimate),
+        StatCard(label: l.statCashToday, value: '₹ ${formatPaise(hs.today.cash)}', icon: Icons.payments_outlined, hint: l.cashEstimate),
       ];
       return Wrap(spacing: 12, runSpacing: 12, children: [for (final c in cards) SizedBox(width: w, child: c)]);
     });
@@ -109,11 +99,11 @@ class DashboardScreen extends ConsumerWidget {
       title: l.recentBills,
       trailing: TextButton(onPressed: () => context.go('/sales'), child: Text(l.seeAll)),
       child: Column(children: [
-        for (final b in bills.take(6))
+        for (final b in hs.recent)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(b.customer, style: th.titleSmall), Text('${b.number} · ${formatTime(b.date)}', style: th.bodySmall)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(b.customerName.isEmpty ? l.walkInCustomer : b.customerName, style: th.titleSmall), Text('${b.number} · ${formatTime(b.at)}', style: th.bodySmall)])),
               Text('₹ ${formatPaise(b.totalPaise)}', style: th.titleSmall),
             ]),
           ),

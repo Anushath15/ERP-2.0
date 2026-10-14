@@ -82,6 +82,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
   @override
   void initState() {
     super.initState();
+    unawaited(bookOf(ref, widget.party.kind).ensureLoaded(widget.party.id)); // a quiet account is read from the database when its payment panel opens
     final bal = bookOf(ref, widget.party.kind).balanceOf(widget.party.id);
     _amount = TextEditingController(text: bal > 0 ? (bal / 100).toStringAsFixed(2) : '');
   }
@@ -111,7 +112,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
         setState(() => _error = l.fieldRequired);
         return;
       }
-      final rec = bookOf(ref, widget.party.kind).receivePayment(customerId: widget.party.id, customerName: widget.party.name, amount: amount, mode: _mode, at: _date, note: _note.text.trim(), onlyBills: _manual ? _chosen : null);
+      final rec = await bookOf(ref, widget.party.kind).receivePayment(customerId: widget.party.id, customerName: widget.party.name, amount: amount, mode: _mode, at: _date, note: _note.text.trim(), onlyBills: _manual ? _chosen : null);
       if (context.mounted) Navigator.pop(context, rec);
     }
 
@@ -211,8 +212,8 @@ Future<void> showWriteOff(BuildContext context, WidgetRef ref, Customer c) async
   }
   final ok = await confirmDialog(context, title: l.writeOffTitle(c.name), message: l.writeOffDone(formatPaise(amt, symbol: true)), confirmLabel: l.writeOff, danger: true);
   if (!ok || !context.mounted) return;
-  ref.read(creditProvider.notifier).writeOff(customerId: c.id, amount: amt, reason: v['reason']!, at: ref.read(clockProvider));
-  toast(context, l.writeOffDone(formatPaise(amt, symbol: true)));
+  await ref.read(creditProvider.notifier).writeOff(customerId: c.id, amount: amt, reason: v['reason']!, at: ref.read(clockProvider));
+  if (context.mounted) toast(context, l.writeOffDone(formatPaise(amt, symbol: true)));
 }
 
 // ===================================================================== WhatsApp reminder

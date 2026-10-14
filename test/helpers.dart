@@ -10,8 +10,35 @@ import 'package:erp2/core/link_launcher.dart';
 import 'package:erp2/domain/credit/reminder.dart' show LinkPlatform;
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/fake/store.dart';
+import 'package:drift/native.dart';
+import 'package:erp2/data/app_data.dart';
+import 'package:erp2/data/context.dart';
+import 'package:erp2/data/db/app_database.dart';
+import 'package:erp2/demo/demo_seeder.dart';
+import 'package:erp2/fake/data_providers.dart';
+import 'package:sqlite3/sqlite3.dart' as sql;
 
 final fixedNow = DateTime(2026, 10, 13, 17, 30);
+
+/// The sample shop is made once per test process (a second or so) and each test gets its own in-memory copy of it.
+final _templates = <String, sql.Database>{};
+
+/// The sample numbers the screens were designed with: 757 products, 5,000 customers, 600 recent bills, 300 estimates.
+const testShopCounts = DemoCounts(bills: 600, estimates: 300);
+
+Future<AppData> openDemoShop({DemoCounts counts = testShopCounts, DateTime? now}) async {
+  final key = '${counts.products}/${counts.customers}/${counts.bills}/${counts.estimates}';
+  var template = _templates[key];
+  if (template == null) {
+    template = sql.sqlite3.openInMemory();
+    final db = AppDatabase(NativeDatabase.opened(template), native: false);
+    await seedDemo(AppData(DataContext(db: db, deviceId: 'dev-test', clock: () => fixedNow)), fixedNow, counts: counts);
+    _templates[key] = template;
+  }
+  final copy = sql.sqlite3.copyIntoMemory(template);
+  final t = now ?? fixedNow;
+  return AppData(DataContext(db: AppDatabase(NativeDatabase.opened(copy), native: false), deviceId: 'dev-test', clock: () => t));
+}
 
 class ScreenSpec {
   const ScreenSpec(this.name, this.w, this.h);
@@ -37,13 +64,18 @@ Future<ProviderContainer> pumpApp(
   MotionLevel? motion,
   bool? followSystemMotion,
   List<Override> extraOverrides = const [],
+  DemoCounts counts = testShopCounts,
 }) async {
   tester.view.physicalSize = Size(size.w, size.h);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
+  final (shop, boot) = (await tester.runAsync(() async {
+    final d = await openDemoShop(counts: counts);
+    return (d, await Bootstrap.load(d, now: fixedNow));
+  }))!;
   await tester.pumpWidget(ProviderScope(
     key: UniqueKey(),
-    overrides: [clockProvider.overrideWithValue(fixedNow), deviceStoreProvider.overrideWithValue(store ?? MemoryDeviceStore()), ...extraOverrides],
+    overrides: [clockProvider.overrideWithValue(fixedNow), appDataProvider.overrideWithValue(shop), bootstrapProvider.overrideWithValue(boot), deviceStoreProvider.overrideWithValue(store ?? MemoryDeviceStore()), ...extraOverrides],
     child: ErpApp(initialLocation: location),
   ));
   final container = ProviderScope.containerOf(tester.element(find.byType(ErpApp)));

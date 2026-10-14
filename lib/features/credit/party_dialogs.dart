@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
+import '../../data/ids.dart';
 import '../../design/form_sheet.dart';
 import '../../design/motion.dart';
 import '../../design/segments.dart';
@@ -58,14 +59,16 @@ Future<void> showSettleFully(BuildContext context, PartyRef party) async {
   note.dispose();
   if (ok != true || !context.mounted) return;
   final at = container.read(clockProvider);
-  final r = book.settleFully(customerId: party.id, customerName: party.name, mode: mode, at: at, note: text);
+  final r = await book.settleFully(customerId: party.id, customerName: party.name, mode: mode, at: at, note: text);
   if (r == null || !context.mounted) return;
+  final messenger = ScaffoldMessenger.maybeOf(context);
   toastAction(context, party.kind == PartyKind.customer ? l.settleDone(_m(r.amountPaise), party.name) : l.settleDoneDealer(_m(r.amountPaise), party.name), l.settleUndo, () {
-    if (book.undoPayment(r)) {
-      final m = ScaffoldMessenger.maybeOf(context);
-      m?.hideCurrentSnackBar();
-      m?.showSnackBar(SnackBar(content: Text(l.settleUndone)));
-    }
+    unawaited(() async {
+      if (await book.undoPayment(r)) {
+        messenger?.hideCurrentSnackBar();
+        messenger?.showSnackBar(SnackBar(content: Text(l.settleUndone)));
+      }
+    }());
   }, seconds: 8);
 }
 
@@ -84,8 +87,8 @@ Future<void> showAddCredit(BuildContext context, Customer c) async {
   if (amt <= 0) return;
   final DateTime at = parseDmy(v['date'] ?? '') ?? container.read(clockProvider);
   final reason = (v['note'] ?? '').isEmpty ? v['reason']! : '${v['reason']} (${v['note']})';
-  container.read(creditProvider.notifier).addManualCredit(customerId: c.id, amount: amt, at: at, reason: reason);
-  toast(context, l.addCreditDone(_m(amt), c.name));
+  await container.read(creditProvider.notifier).addManualCredit(customerId: c.id, amount: amt, at: at, reason: reason);
+  if (context.mounted) toast(context, l.addCreditDone(_m(amt), c.name));
 }
 
 /// A new person who already owes money: details, the amount owed now and the date the credit started.
@@ -105,11 +108,11 @@ Future<void> showAddCreditCustomer(BuildContext context) async {
   final amt = parseRupeesToPaise(v['amount'] ?? '') ?? 0;
   if (amt <= 0) return;
   final limit = parseRupeesToPaise(v['limit'] ?? '') ?? 5000000;
-  final id = 'c-new-${container.read(customersProvider).length + 1}';
+  final id = newId();
   final c = Customer(id: id, name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', address: v['address'] ?? '', balancePaise: 0, creditLimitPaise: limit);
   container.read(customersProvider.notifier).add(c);
-  container.read(creditProvider.notifier).addOpening(customerId: id, amount: amt, at: parseDmy(v['date'] ?? '') ?? container.read(clockProvider));
-  toast(context, l.partyAdded(c.name, _m(amt)));
+  await container.read(creditProvider.notifier).addOpening(customerId: id, amount: amt, at: parseDmy(v['date'] ?? '') ?? container.read(clockProvider));
+  if (context.mounted) toast(context, l.partyAdded(c.name, _m(amt)));
 }
 
 /// Edit a customer's or dealer's details.
@@ -150,8 +153,8 @@ Future<void> showReverseEntry(BuildContext context, PartyRef party, LedgerEntry 
   ]);
   if (v == null || !context.mounted) return;
   final at = container.read(clockProvider);
-  container.read(party.kind == PartyKind.customer ? creditProvider.notifier : dealerLedgerProvider.notifier).reverseEntry(partyId: party.id, entryId: e.id, reason: v['reason']!, at: at);
-  toast(context, l.reverseDone);
+  await container.read(party.kind == PartyKind.customer ? creditProvider.notifier : dealerLedgerProvider.notifier).reverseEntry(partyId: party.id, entryId: e.id, reason: v['reason']!, at: at);
+  if (context.mounted) toast(context, l.reverseDone);
 }
 
 /// Dealers: a correction by hand (freight, discount...). Plus = we owe more, minus = we owe less.
@@ -167,6 +170,6 @@ Future<void> showAddAdjustment(BuildContext context, PartyRef party) async {
   if (v == null || !context.mounted) return;
   final amt = parseRupeesToPaise(v['amount'] ?? '') ?? 0;
   if (amt <= 0) return;
-  container.read(dealerLedgerProvider.notifier).addAdjustment(partyId: party.id, signedPaise: v['dir'] == 'less' ? -amt : amt, at: parseDmy(v['date'] ?? '') ?? container.read(clockProvider), reason: v['reason']!);
-  toast(context, l.adjDone(_m(amt)));
+  await container.read(dealerLedgerProvider.notifier).addAdjustment(partyId: party.id, signedPaise: v['dir'] == 'less' ? -amt : amt, at: parseDmy(v['date'] ?? '') ?? container.read(clockProvider), reason: v['reason']!);
+  if (context.mounted) toast(context, l.adjDone(_m(amt)));
 }

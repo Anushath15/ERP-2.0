@@ -1,3 +1,4 @@
+import '../../data/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/money.dart';
@@ -53,7 +54,7 @@ class _CustomerPickerState extends ConsumerState<_CustomerPicker> {
             onPressed: () async {
               final v = await showQuickCustomer(context);
               if (v == null) return;
-              final c = Customer(id: 'c-new-${all.length + 1}', name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', balancePaise: 0);
+              final c = Customer(id: newId(), name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', balancePaise: 0);
               ref.read(customersProvider.notifier).add(c);
               if (context.mounted) Navigator.pop(context, c);
             },

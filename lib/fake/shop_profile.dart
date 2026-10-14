@@ -2,14 +2,24 @@
 /// per-device preferences (text size, theme, printer...) live in AppSettings and never sync.
 library;
 
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/credit/reminder.dart';
+import 'data_providers.dart';
 import 'store.dart' show CreditLimitMode;
 
 /// What the shop chooses to print on an ESTIMATE. All off by default: an estimate is a rough price for the customer.
 class EstimateShows {
   const EstimateShows({this.shopName = false, this.address = false, this.gstin = false, this.phone = false, this.number = false, this.taxLines = false});
   final bool shopName, address, gstin, phone, number, taxLines;
+
+  Map<String, Object?> toJson() => {'shopName': shopName, 'address': address, 'gstin': gstin, 'phone': phone, 'number': number, 'taxLines': taxLines};
+
+  static EstimateShows fromJson(Object? j) {
+    final m = j is Map ? j : const {};
+    bool b(String k) => m[k] == true;
+    return EstimateShows(shopName: b('shopName'), address: b('address'), gstin: b('gstin'), phone: b('phone'), number: b('number'), taxLines: b('taxLines'));
+  }
 
   EstimateShows copyWith({bool? shopName, bool? address, bool? gstin, bool? phone, bool? number, bool? taxLines}) => EstimateShows(
         shopName: shopName ?? this.shopName,
@@ -31,7 +41,7 @@ class ShopProfile {
     this.upiId = 'senthil@okbank',
     this.bankDetails = 'Sample Bank, A/c 0000000000, IFSC SAMP0000000',
     this.billFooter = 'Thank you. Visit again.',
-    this.invoicePrefix = 'A-',
+    this.invoicePrefix = '',
     this.pricesIncludeGst = true,
     this.estimate = const EstimateShows(),
     this.creditLimitMode = CreditLimitMode.warn,
@@ -49,6 +59,53 @@ class ShopProfile {
   final ReminderTone reminderTone;
   final String templateFriendly, templateFirm, countryCode;
   final int guardHours;
+
+  Map<String, Object?> toJson() => {
+        'name': name,
+        'ownerName': ownerName,
+        'address': address,
+        'phone': phone,
+        'gstin': gstin,
+        'upiId': upiId,
+        'bankDetails': bankDetails,
+        'billFooter': billFooter,
+        'invoicePrefix': invoicePrefix,
+        'pricesIncludeGst': pricesIncludeGst,
+        'estimate': estimate.toJson(),
+        'creditLimitMode': creditLimitMode.name,
+        'reminderTone': reminderTone.name,
+        'templateFriendly': templateFriendly,
+        'templateFirm': templateFirm,
+        'guardHours': guardHours,
+        'countryCode': countryCode,
+      };
+
+  /// Tolerant: anything missing or of the wrong type keeps the default (a damaged value never stops the program from starting).
+  static ShopProfile fromJson(Object? j, {ShopProfile base = const ShopProfile()}) {
+    final m = j is Map ? j : const {};
+    String str(String k, String d) => m[k] is String ? m[k] as String : d;
+    return ShopProfile(
+      name: str('name', base.name),
+      ownerName: str('ownerName', base.ownerName),
+      address: str('address', base.address),
+      phone: str('phone', base.phone),
+      gstin: str('gstin', base.gstin),
+      upiId: str('upiId', base.upiId),
+      bankDetails: str('bankDetails', base.bankDetails),
+      billFooter: str('billFooter', base.billFooter),
+      invoicePrefix: str('invoicePrefix', base.invoicePrefix),
+      pricesIncludeGst: m['pricesIncludeGst'] is bool ? m['pricesIncludeGst'] as bool : base.pricesIncludeGst,
+      estimate: m.containsKey('estimate') ? EstimateShows.fromJson(m['estimate']) : base.estimate,
+      creditLimitMode: CreditLimitMode.values.firstWhere((e) => e.name == m['creditLimitMode'], orElse: () => base.creditLimitMode),
+      reminderTone: ReminderTone.values.firstWhere((e) => e.name == m['reminderTone'], orElse: () => base.reminderTone),
+      templateFriendly: str('templateFriendly', base.templateFriendly),
+      templateFirm: str('templateFirm', base.templateFirm),
+      guardHours: m['guardHours'] is int && (m['guardHours'] as int) >= 0 && (m['guardHours'] as int) <= 720 ? m['guardHours'] as int : base.guardHours,
+      countryCode: str('countryCode', base.countryCode),
+    );
+  }
+
+  String toJsonText() => jsonEncode(toJson());
 
   ShopProfile copyWith({
     String? name,
@@ -92,9 +149,14 @@ class ShopProfile {
 
 class ShopNotifier extends Notifier<ShopProfile> {
   @override
-  ShopProfile build() => const ShopProfile();
+  ShopProfile build() => ref.read(bootstrapProvider).shop;
 
-  void set(ShopProfile Function(ShopProfile) change) => state = change(state);
+  /// Changes the shop profile: the screen updates at once and the change is written (and queued to sync) right behind.
+  void set(ShopProfile Function(ShopProfile) change) {
+    state = change(state);
+    final text = state.toJsonText();
+    ref.read(writeQueueProvider).add(() => ref.read(appDataProvider).settings.put('shop.profile', text, upload: true));
+  }
 }
 
 final shopProvider = NotifierProvider<ShopNotifier, ShopProfile>(ShopNotifier.new);

@@ -1,12 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/ids.dart';
 import '../../domain_lite/bill_calc.dart';
+import '../../fake/data_providers.dart';
 import '../../fake/models.dart';
 
 enum DocMode { invoice, estimation }
 
 class CartState {
-  const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise, this.touchedId, this.touchedNew = false, this.touchSeq = 0, this.touchedAtMs = 0, this.receivedPaise, this.keepAdvance = false});
+  const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise, this.touchedId, this.touchedNew = false, this.touchSeq = 0, this.touchedAtMs = 0, this.receivedPaise, this.keepAdvance = false, this.draftId});
   final List<CartLine> lines;
+
+  /// Made when the first line is added; saving twice with the same id returns the same bill (a double click or a retry after a crash never makes two).
+  final String? draftId;
   final Customer? customer;
   final PayMode pay;
   final String? editingNumber; // when editing a saved estimation: number and date stay the same
@@ -24,7 +29,8 @@ class CartState {
   final bool touchedNew;
   final int touchSeq, touchedAtMs;
 
-  CartState copyWith({List<CartLine>? lines, Customer? customer, bool clearCustomer = false, PayMode? pay, String? editingNumber, DateTime? editingDate, DateTime? editedOn, ({String id, bool isNew})? touch, int? received, bool clearReceived = false, bool? keepAdvance}) => CartState(
+  CartState copyWith({List<CartLine>? lines, Customer? customer, bool clearCustomer = false, PayMode? pay, String? editingNumber, DateTime? editingDate, DateTime? editedOn, ({String id, bool isNew})? touch, int? received, bool clearReceived = false, bool? keepAdvance, String? draftId}) => CartState(
+        draftId: draftId ?? this.draftId,
         lines: lines ?? this.lines,
         customer: clearCustomer ? null : (customer ?? this.customer),
         pay: pay ?? this.pay,
@@ -60,7 +66,7 @@ class CartNotifier extends Notifier<CartState> {
     if (i >= 0) {
       setQty(i, state.lines[i].qtyMilli + qtyMilli);
     } else {
-      state = state.copyWith(lines: [...state.lines, CartLine(product: p, qtyMilli: qtyMilli)], touch: (id: p.id, isNew: true));
+      state = state.copyWith(lines: [...state.lines, CartLine(product: p, qtyMilli: qtyMilli)], touch: (id: p.id, isNew: true), draftId: state.draftId ?? newId());
     }
   }
 
@@ -96,16 +102,28 @@ class CartNotifier extends Notifier<CartState> {
 
   void clear() => state = const CartState();
 
-  /// Start editing a saved estimation in place (it keeps its number and its own date).
-  void loadForEdit(EstimationDoc e, List<Product> products, List<Customer> customers) {
-    final prods = products.take(e.lines.clamp(1, 12)).toList();
-    final cust = customers.where((c) => c.name == e.customer).firstOrNull;
+  /// Start editing a saved estimation in place (it keeps its number and its own date). Reads its lines from the database.
+  Future<void> loadForEdit(EstimationDoc e, List<Product> products, List<Customer> customers) async {
+    final d = ref.read(appDataProvider);
+    final lines = await d.estimations.lines(e.number);
+    final byId = {for (final p in products) p.id: p};
+    final custId = await d.estimations.customerIdOf(e.number);
+    final cust = customers.where((c) => c.id == custId).firstOrNull ?? customers.where((c) => c.name == e.customer).firstOrNull;
     state = CartState(
-      lines: [for (var i = 0; i < prods.length; i++) CartLine(product: prods[(i * 7) % prods.length], qtyMilli: 1000 * (1 + i % 4))],
+      lines: [
+        for (final l in lines)
+          CartLine(
+            product: byId[l.productId] ?? Product(id: l.productId, name: l.name, category: '', unit: l.unit, pricePaise: l.ratePaise, costPaise: 0, stockMilli: 0, gstBp: 1800, barcode: ''),
+            qtyMilli: l.qtyMilli,
+            discountBp: l.discountBp,
+            ratePaise: l.ratePaise,
+          ),
+      ],
       customer: cust,
       editingNumber: e.number,
       editingDate: e.date,
       editedOn: e.editedOn,
+      draftId: newId(),
     );
   }
 }
@@ -144,14 +162,3 @@ class PrintDocNotifier extends Notifier<PrintDoc?> {
 }
 
 final printDocProvider = NotifierProvider<PrintDocNotifier, PrintDoc?>(PrintDocNotifier.new);
-
-class CounterNotifier extends Notifier<int> {
-  CounterNotifier(this.start);
-  final int start;
-  @override
-  int build() => start;
-  void bump() => state = state + 1;
-}
-
-final invoiceCounterProvider = NotifierProvider<CounterNotifier, int>(() => CounterNotifier(20001));
-final estimateCounterProvider = NotifierProvider<CounterNotifier, int>(() => CounterNotifier(301));

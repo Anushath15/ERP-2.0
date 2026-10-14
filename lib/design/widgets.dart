@@ -219,3 +219,19 @@ class KeyValue extends StatelessWidget {
     );
   }
 }
+
+/// A card title with an amount at its right edge. A long name or a very big text size never overflows: the name gives way, and the
+/// amount may wrap onto a second line if it must.
+class TitleAmount extends StatelessWidget {
+  const TitleAmount(this.title, this.amount, {super.key});
+  final String title, amount;
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.titleSmall;
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(child: Text(title, style: style)),
+      const SizedBox(width: 8),
+      Flexible(child: Text(amount, style: style, textAlign: TextAlign.right)),
+    ]);
+  }
+}

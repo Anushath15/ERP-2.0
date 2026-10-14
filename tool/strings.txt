@@ -260,7 +260,7 @@ todayIs | Today is {date}
 statTodaySales | Sales today
 statToCollect | Money to collect
 statCashToday | Cash in hand today
-cashEstimate | Cash sales less expenses (estimate)
+cashEstimate | Cash taken today
 billsCount | {count} bills
 customersOwing | {count} customers
 needReorder | Need to order again
@@ -866,3 +866,31 @@ errTooLong | Too long: at most {max} characters
 errBadChars | This contains characters that are not allowed
 errGstin | This is not a valid GSTIN (15 letters and digits)
 errUpi | This is not a valid UPI id (like name@bank)
+# ---- added by the security work (kept here so regenerating never loses them)
+syncPaused | Sync paused: daily limit reached
+syncPausedHelp | Everything is safe on this computer and you can keep billing. Copying online starts again tomorrow. Nothing is charged: the free plan simply stops at its limit.
+secTitle | Security
+secPeople | Who can do what
+secRoleOwner | Owner
+secRoleManager | Manager
+secRoleCashier | Cashier
+secRoleOwnerHelp | Can do everything, approve devices and cancel bills
+secRoleManagerHelp | Can change products, prices, customers and purchases
+secRoleCashierHelp | Can bill and take payments, and add a new customer
+secDevices | Devices
+secDeviceWaiting | Waiting for your approval
+secDeviceApproved | Approved
+secDeviceStopped | Stopped
+secApprove | Approve
+secRevoke | Stop this device
+secRevokeTitle | Stop this device?
+secRevokeText | {name} will stop working at once. It must ask again and you must approve it before it can be used.
+secRevokeConfirm | Stop device
+secSignIns | Last sign-ins
+secTwoStep | Two-step verification
+secTwoStepHelp | Turn on two-step verification for every Google account that signs in here. The program cannot check this for you, so please check it yourself.
+secTwoStepOpen | Open Google settings
+secTwoStepFail | Could not open the page. Visit myaccount.google.com and search for 2-Step Verification.
+saveFailedTitle | The bill could not be saved
+saveFailedText | Nothing was saved and nothing was taken from your stock, so you can try again. The bill is still on the screen. Reason: {reason}
+oldBillNo | Old bill no.

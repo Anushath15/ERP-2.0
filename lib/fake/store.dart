@@ -8,88 +8,179 @@ import '../design/motion_level.dart';
 import '../design/tokens.dart' show Accent, DensityMode, FontChoice;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models.dart';
-import 'seed.dart';
+import '../data/app_data.dart';
+import '../data/repo/records_repo.dart' show EstimateLine;
+import 'data_providers.dart';
 
 final clockProvider = Provider<DateTime>((ref) {
   final n = DateTime.now();
   return DateTime(n.year, n.month, n.day, n.hour, n.minute);
 });
 
+/// Starts a write behind the scenes: the screen already shows the change, the database gets it right after (in order).
+void _write(Ref ref, Future<void> Function(AppData d) job) => ref.read(writeQueueProvider).add(() => job(ref.read(appDataProvider)));
+
 class ProductsNotifier extends Notifier<List<Product>> {
   @override
-  List<Product> build() => seedProducts();
-  void add(Product p) => state = [p, ...state];
-  void update(Product p) => state = [for (final x in state) x.id == p.id ? p : x];
+  List<Product> build() => ref.read(bootstrapProvider).products;
+
+  void add(Product p) {
+    state = [p, ...state];
+    _write(ref, (d) => d.catalog.saveProduct(p, create: true));
+  }
+
+  void update(Product p) {
+    state = [for (final x in state) x.id == p.id ? p : x];
+    _write(ref, (d) => d.catalog.saveProduct(p, create: false));
+  }
+
+  /// Reads the named products again from the database (their stock changed: a sale, a purchase, a stock change).
+  Future<void> reload(Iterable<String> ids) async {
+    final d = ref.read(appDataProvider);
+    final fresh = <String, Product>{};
+    for (final id in ids.toSet()) {
+      final p = await d.catalog.product(id);
+      if (p != null) fresh[id] = p;
+    }
+    state = [for (final x in state) fresh[x.id] ?? x];
+  }
 }
 
 final productsProvider = NotifierProvider<ProductsNotifier, List<Product>>(ProductsNotifier.new);
 
 class CustomersNotifier extends Notifier<List<Customer>> {
   @override
-  List<Customer> build() => seedCustomers();
-  void add(Customer c) => state = [c, ...state];
-  void update(Customer c) => state = [for (final x in state) x.id == c.id ? c : x];
-  void updatePhone(String id, String phone) => state = [for (final c in state) c.id == id ? c.copyWith(phone: phone) : c];
+  List<Customer> build() => ref.read(bootstrapProvider).customers;
+
+  void add(Customer c) {
+    state = [c, ...state];
+    _write(ref, (d) => d.catalog.saveCustomer(c, create: true));
+  }
+
+  void update(Customer c) {
+    state = [for (final x in state) x.id == c.id ? c : x];
+    _write(ref, (d) => d.catalog.saveCustomer(c, create: false));
+  }
+
+  void updatePhone(String id, String phone) {
+    final c = state.firstWhere((x) => x.id == id);
+    update(c.copyWith(phone: phone));
+  }
+
+  /// What the customer owes now (after a bill, a payment or an adjustment). The balance itself lives in the ledger; this keeps the list in step.
+  void setBalance(String id, int balancePaise) {
+    state = [for (final c in state) c.id == id ? Customer(id: c.id, name: c.name, phone: c.phone, city: c.city, balancePaise: balancePaise, creditLimitPaise: c.creditLimitPaise, address: c.address) : c];
+  }
 }
 
 final customersProvider = NotifierProvider<CustomersNotifier, List<Customer>>(CustomersNotifier.new);
 
-final billBookProvider = Provider<BillBook>((ref) => BillBook(ref.watch(clockProvider), customers: ref.read(customersProvider)));
-
-/// All 20,000 bills, built once on first use.
-final billsProvider = Provider<List<BillSummary>>((ref) => ref.watch(billBookProvider).all());
-
 class EstimationsNotifier extends Notifier<List<EstimationDoc>> {
   @override
-  List<EstimationDoc> build() => seedEstimations(ref.watch(clockProvider), ref.read(customersProvider));
-  void add(EstimationDoc e) => state = [e, ...state];
-  void replace(EstimationDoc e) => state = [for (final x in state) x.number == e.number ? e : x];
-  void remove(String number) => state = [for (final x in state) if (x.number != number) x];
+  List<EstimationDoc> build() => ref.read(bootstrapProvider).estimations;
+
+  Future<void> reload() async => state = await ref.read(appDataProvider).estimations.list();
+
+  /// Saves a new estimate (or [editNumber] in place). Returns what was saved, with its number.
+  Future<EstimationDoc> save({required List<EstimateLine> lines, required int totalPaise, required String customerName, String? customerId, required DateTime at, String? editNumber}) async {
+    final d = ref.read(appDataProvider);
+    final doc = await ref.read(writeQueueProvider).run(() => d.estimations.save(lines: lines, totalPaise: totalPaise, customerName: customerName, customerId: customerId, at: at, editNumber: editNumber));
+    await reload();
+    await ref.read(nextNumbersProvider.notifier).refresh();
+    return doc;
+  }
+
+  Future<void> markConverted(String number, String billNumber) async {
+    final d = ref.read(appDataProvider);
+    await ref.read(writeQueueProvider).run(() => d.estimations.markConverted(number, billNumber));
+    await reload();
+  }
+
+  Future<void> remove(String number, {String reason = ''}) async {
+    state = [for (final x in state) if (x.number != number) x];
+    final d = ref.read(appDataProvider);
+    await ref.read(writeQueueProvider).run(() => d.estimations.remove(number, reason: reason));
+  }
 }
 
 final estimationsProvider = NotifierProvider<EstimationsNotifier, List<EstimationDoc>>(EstimationsNotifier.new);
 
-/// Generic record lists (dealers, purchases, expenses, ...), keyed by kind.
+/// The number the next bill and the next estimate will get (shown before saving; the real number is taken inside the save).
+class NextNumbers {
+  const NextNumbers(this.invoice, this.estimate);
+  final String invoice, estimate;
+}
+
+class NextNumbersNotifier extends Notifier<NextNumbers> {
+  @override
+  NextNumbers build() {
+    final b = ref.read(bootstrapProvider);
+    return NextNumbers(b.nextInvoice, b.nextEstimate);
+  }
+
+  Future<void> refresh() async {
+    final d = ref.read(appDataProvider);
+    state = NextNumbers(await d.bills.peekNextNumber(), await d.estimations.peekNextNumber());
+  }
+}
+
+final nextNumbersProvider = NotifierProvider<NextNumbersNotifier, NextNumbers>(NextNumbersNotifier.new);
+
+/// Generic record lists (dealers, purchases, expenses, ...), keyed by kind. Dealers, categories and stock changes live in their own
+/// tables; everything else is a small record each.
 class RecsNotifier extends Notifier<List<Rec>> {
   RecsNotifier(this.kind);
   final String kind;
+
   @override
-  List<Rec> build() {
-    final now = ref.watch(clockProvider);
-    final customers = ref.read(customersProvider);
-    final products = ref.watch(productsProvider);
+  List<Rec> build() => kind == 'dealers' ? ref.read(bootstrapProvider).dealers : (kind == 'categories' ? ref.read(bootstrapProvider).categories : (ref.read(bootstrapProvider).recs[kind] ?? const []));
+
+  void add(Rec r) {
+    state = [r, ...state];
     switch (kind) {
       case 'dealers':
-        return seedDealers();
+        _write(ref, (d) => d.catalog.saveDealer(r, create: true));
       case 'categories':
-        return seedCategories(products);
-      case 'purchases':
-        return seedPurchases(now, ref.read(recsProvider('dealers')));
-      case 'purchaseReturns':
-        return seedPurchaseReturns(now, ref.read(recsProvider('dealers')));
-      case 'salesReturns':
-        return seedSalesReturns(now, customers);
-      case 'delivery':
-        return seedDelivery(now, customers);
+        _write(ref, (d) => d.catalog.addCategory(r.s('name')));
       case 'adjustments':
-        return seedAdjustments(now, products);
-      case 'expenses':
-        return seedExpenses(now);
-      case 'warranty':
-        return seedWarranty(now, customers, products);
-      case 'projects':
-        return seedProjects();
-      case 'staff':
-        return seedStaff();
-      case 'notifications':
-        return seedNotifications(now);
+        final product = ref.read(productsProvider).where((p) => p.name == r.s('product')).firstOrNull;
+        if (product == null) return;
+        _write(ref, (d) async {
+          await d.stock.adjust(productId: product.id, qtyMilli: r.i('qty'), reason: r.s('reason'), at: (r.f['date'] as DateTime?) ?? ref.read(clockProvider));
+          await ref.read(productsProvider.notifier).reload([product.id]);
+        });
+      case 'purchases' || 'salesReturns' || 'purchaseReturns':
+        final (prefix, width) = switch (kind) { 'purchases' => ('PUR', 5), 'salesReturns' => ('SRT', 4), _ => ('PRT', 4) };
+        _write(ref, (d) async {
+          final saved = await d.records.putNumbered(kind, r, prefix: prefix, width: width);
+          state = [for (final x in state) x.id == saved.id ? saved : x]; // now it has its real number
+        });
+      default:
+        _write(ref, (d) => d.records.put(kind, r, create: true));
     }
-    return const [];
   }
 
-  void add(Rec r) => state = [r, ...state];
-  void replace(Rec r) => state = [for (final x in state) x.id == r.id ? r : x];
-  void remove(String id) => state = [for (final x in state) if (x.id != id) x];
+  void replace(Rec r) {
+    state = [for (final x in state) x.id == r.id ? r : x];
+    switch (kind) {
+      case 'dealers':
+        _write(ref, (d) => d.catalog.saveDealer(r, create: false));
+      case 'categories' || 'adjustments':
+        break; // a category name or a stock change is not edited
+      default:
+        _write(ref, (d) => d.records.put(kind, r, create: false));
+    }
+  }
+
+  void remove(String id) {
+    state = [for (final x in state) if (x.id != id) x];
+    if (kind != 'dealers' && kind != 'categories' && kind != 'adjustments') _write(ref, (d) => d.records.remove(id));
+  }
+
+  /// A dealer's balance changed (a purchase on credit, a payment): keeps the dealer list in step.
+  void setBalance(String id, int balancePaise) {
+    state = [for (final x in state) x.id == id ? x.with_({'balance': balancePaise}) : x];
+  }
 }
 
 final recsProvider = NotifierProvider.family<RecsNotifier, List<Rec>, String>(RecsNotifier.new);

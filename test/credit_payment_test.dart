@@ -6,6 +6,7 @@ import 'package:erp2/fake/credit_store.dart';
 import 'package:erp2/fake/models.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:erp2/features/billing/cart.dart';
+import 'package:erp2/fake/data_providers.dart';
 import 'helpers.dart';
 
 // The owner's "Credit" payment: tap Credit, a "Paid now" field appears (default 0) with Nothing / Half / Full buttons.
@@ -42,7 +43,9 @@ void main() {
 
   testWidgets('a named customer: the same panel shows what they owe now', (tester) async {
     final c = await billing(tester);
-    c.read(creditProvider.notifier).addBill(customerId: 't1', billNo: 'OLD-1', at: fixedNow.subtract(const Duration(days: 5)), total: 20000, received: 0, advance: 0);
+    final d = c.read(appDataProvider);
+    await d.db.transaction(() => d.ledger.addBillCredit(d.db, PartyKind.customer, partyId: 't1', billNo: 'OLD-1', at: fixedNow.subtract(const Duration(days: 5)), total: 20000, received: 0));
+    await c.read(creditProvider.notifier).refreshParty('t1');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Credit'));
     await tester.pumpAndSettle();

@@ -1,3 +1,4 @@
+import '../../data/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_fmt.dart';
@@ -35,7 +36,7 @@ class PurchasesScreen extends ConsumerWidget {
           FieldSpec('status', l.colStatus, type: FieldType.dropdown, initial: 'received', options: [('received', l.statusReceived), ('pending', l.statusPending)]),
         ]);
         if (v == null) return;
-        ref.read(recsProvider('purchases').notifier).add(Rec('pu-new-${items.length}', {'no': 'PUR-${(items.length + 1).toString().padLeft(5, '0')}', 'date': ref.read(clockProvider), 'dealer': v['dealer']!, 'invoice': v['invoice']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round(), 'status': v['status']!}));
+        ref.read(recsProvider('purchases').notifier).add(Rec(newId(), {'no': 'PUR-${(items.length + 1).toString().padLeft(5, '0')}', 'date': ref.read(clockProvider), 'dealer': v['dealer']!, 'invoice': v['invoice']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round(), 'status': v['status']!}));
         if (context.mounted) toast(context, l.saved);
       },
       filters: [FilterSpec(l.statusReceived, (r) => r.s('status') == 'received'), FilterSpec(l.statusPending, (r) => r.s('status') == 'pending')],
@@ -47,7 +48,7 @@ class PurchasesScreen extends ConsumerWidget {
         ColumnSpec(l.colAmount, (c, r) => Cell(formatPaise(r.i('amount')), bold: true), width: 120, numeric: true),
         ColumnSpec(l.colStatus, (c, r) => status(r), width: 110),
       ],
-      phoneTitle: (c, r) => Row(children: [Expanded(child: Text(r.s('dealer'), style: th.titleSmall)), Text('₹ ${formatPaise(r.i('amount'))}', style: th.titleSmall)]),
+      phoneTitle: (c, r) => TitleAmount(r.s('dealer'), '₹ ${formatPaise(r.i('amount'))}'),
       phoneSubtitle: (r) => '${r.s('no')} · ${_d(r, 'date')}',
       phoneTrailing: (c, r) => status(r),
       onTap: (ctx, r) => showDetail(ctx, title: r.s('no'), subtitle: r.s('dealer'), body: [
@@ -71,7 +72,6 @@ class SalesReturnsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
     final items = ref.watch(recsProvider('salesReturns'));
-    final th = Theme.of(context).textTheme;
     return DataListScreen<Rec>(
       title: l.navSalesReturns,
       subtitle: l.salesReturnsSubtitle,
@@ -85,7 +85,7 @@ class SalesReturnsScreen extends ConsumerWidget {
           FieldSpec('amount', l.fieldAmount, type: FieldType.money, required: true),
         ]);
         if (v == null) return;
-        ref.read(recsProvider('salesReturns').notifier).add(Rec('sr-new-${items.length}', {'no': 'SRT-${(items.length + 1).toString().padLeft(4, '0')}', 'date': ref.read(clockProvider), 'customer': l.walkInCustomer, 'bill': v['bill']!, 'reason': v['reason']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
+        ref.read(recsProvider('salesReturns').notifier).add(Rec(newId(), {'no': 'SRT-${(items.length + 1).toString().padLeft(4, '0')}', 'date': ref.read(clockProvider), 'customer': l.walkInCustomer, 'bill': v['bill']!, 'reason': v['reason']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
         if (context.mounted) toast(context, l.returnSaved);
       },
       columns: [
@@ -96,7 +96,7 @@ class SalesReturnsScreen extends ConsumerWidget {
         ColumnSpec(l.fieldReason, (c, r) => Cell(r.s('reason'), muted: true), flex: 3),
         ColumnSpec(l.colAmount, (c, r) => Cell(formatPaise(r.i('amount')), bold: true), width: 110, numeric: true),
       ],
-      phoneTitle: (c, r) => Row(children: [Expanded(child: Text(r.s('customer'), style: th.titleSmall)), Text('₹ ${formatPaise(r.i('amount'))}', style: th.titleSmall)]),
+      phoneTitle: (c, r) => TitleAmount(r.s('customer'), '₹ ${formatPaise(r.i('amount'))}'),
       phoneSubtitle: (r) => '${r.s('no')} · ${r.s('bill')} · ${r.s('reason')}',
     );
   }
@@ -109,7 +109,6 @@ class PurchaseReturnsScreen extends ConsumerWidget {
     final l = tr(context);
     final items = ref.watch(recsProvider('purchaseReturns'));
     final dealers = ref.watch(recsProvider('dealers'));
-    final th = Theme.of(context).textTheme;
     return DataListScreen<Rec>(
       title: l.navPurchaseReturns,
       subtitle: l.purchaseReturnsSubtitle,
@@ -123,7 +122,7 @@ class PurchaseReturnsScreen extends ConsumerWidget {
           FieldSpec('amount', l.fieldAmount, type: FieldType.money, required: true),
         ]);
         if (v == null) return;
-        ref.read(recsProvider('purchaseReturns').notifier).add(Rec('pr-new-${items.length}', {'no': 'PRT-${(items.length + 1).toString().padLeft(4, '0')}', 'date': ref.read(clockProvider), 'dealer': v['dealer']!, 'reason': v['reason']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
+        ref.read(recsProvider('purchaseReturns').notifier).add(Rec(newId(), {'no': 'PRT-${(items.length + 1).toString().padLeft(4, '0')}', 'date': ref.read(clockProvider), 'dealer': v['dealer']!, 'reason': v['reason']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
         if (context.mounted) toast(context, l.returnSaved);
       },
       columns: [
@@ -133,7 +132,7 @@ class PurchaseReturnsScreen extends ConsumerWidget {
         ColumnSpec(l.fieldReason, (c, r) => Cell(r.s('reason'), muted: true), flex: 3),
         ColumnSpec(l.colAmount, (c, r) => Cell(formatPaise(r.i('amount')), bold: true), width: 110, numeric: true),
       ],
-      phoneTitle: (c, r) => Row(children: [Expanded(child: Text(r.s('dealer'), style: th.titleSmall)), Text('₹ ${formatPaise(r.i('amount'))}', style: th.titleSmall)]),
+      phoneTitle: (c, r) => TitleAmount(r.s('dealer'), '₹ ${formatPaise(r.i('amount'))}'),
       phoneSubtitle: (r) => '${r.s('no')} · ${r.s('reason')}',
     );
   }
@@ -185,7 +184,6 @@ class ExpensesScreen extends ConsumerWidget {
     final now = ref.watch(clockProvider);
     final month = items.where((r) => (r.f['date'] as DateTime).month == now.month && (r.f['date'] as DateTime).year == now.year).fold<int>(0, (s, r) => s + r.i('amount'));
     final today = items.where((r) => formatDate(r.f['date'] as DateTime) == formatDate(now)).fold<int>(0, (s, r) => s + r.i('amount'));
-    final th = Theme.of(context).textTheme;
     return DataListScreen<Rec>(
       title: l.navExpenses,
       subtitle: l.expensesSubtitle,
@@ -199,7 +197,7 @@ class ExpensesScreen extends ConsumerWidget {
           FieldSpec('note', l.fieldNote),
         ]);
         if (v == null) return;
-        ref.read(recsProvider('expenses').notifier).add(Rec('ex-new-${items.length}', {'date': now, 'category': v['category']!, 'note': v['note'] ?? '', 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
+        ref.read(recsProvider('expenses').notifier).add(Rec(newId(), {'date': now, 'category': v['category']!, 'note': v['note'] ?? '', 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
         if (context.mounted) toast(context, l.saved);
       },
       stats: [StatCard(label: l.statExpToday, value: '₹ ${formatPaise(today)}', icon: Icons.today_outlined), StatCard(label: l.statExpMonth, value: '₹ ${formatPaise(month)}', icon: Icons.calendar_month_outlined, tone: context.c.warning)],
@@ -209,7 +207,7 @@ class ExpensesScreen extends ConsumerWidget {
         ColumnSpec(l.fieldNote, (c, r) => Cell(r.s('note'), muted: true), flex: 3),
         ColumnSpec(l.colAmount, (c, r) => Cell(formatPaise(r.i('amount')), bold: true), width: 120, numeric: true),
       ],
-      phoneTitle: (c, r) => Row(children: [Expanded(child: Text(r.s('category'), style: th.titleSmall)), Text('₹ ${formatPaise(r.i('amount'))}', style: th.titleSmall)]),
+      phoneTitle: (c, r) => TitleAmount(r.s('category'), '₹ ${formatPaise(r.i('amount'))}'),
       phoneSubtitle: (r) => '${_d(r, 'date')} · ${r.s('note')}',
     );
   }
@@ -263,7 +261,7 @@ class ProjectsScreen extends ConsumerWidget {
       onAdd: () async {
         final v = await showFormSheet(context, title: l.addProject, saveLabel: l.save, fields: [FieldSpec('name', l.fieldProjectName, required: true, autofocus: true), FieldSpec('customer', l.colCustomer), FieldSpec('budget', l.fieldBudget, type: FieldType.money)]);
         if (v == null) return;
-        ref.read(recsProvider('projects').notifier).add(Rec('hp-new-${items.length}', {'name': v['name']!, 'customer': v['customer'] ?? '', 'budget': ((double.tryParse(v['budget'] ?? '') ?? 0) * 100).round(), 'spent': 0, 'status': 'planning'}));
+        ref.read(recsProvider('projects').notifier).add(Rec(newId(), {'name': v['name']!, 'customer': v['customer'] ?? '', 'budget': ((double.tryParse(v['budget'] ?? '') ?? 0) * 100).round(), 'spent': 0, 'status': 'planning'}));
       },
       columns: [
         ColumnSpec(l.fieldProjectName, (c, r) => Cell(r.s('name'), bold: true), flex: 4),

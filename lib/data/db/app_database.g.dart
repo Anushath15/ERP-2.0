@@ -5953,6 +5953,18 @@ class BillLines extends Table with TableInfo<BillLines, DbBillLine> {
     requiredDuringInsert: true,
     $customConstraints: 'NOT NULL',
   );
+  static const VerificationMeta _costPaiseMeta = const VerificationMeta(
+    'costPaise',
+  );
+  late final GeneratedColumn<int> costPaise = GeneratedColumn<int>(
+    'cost_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
   static const VerificationMeta _discountBpMeta = const VerificationMeta(
     'discountBp',
   );
@@ -6041,6 +6053,7 @@ class BillLines extends Table with TableInfo<BillLines, DbBillLine> {
     unit,
     qtyMilli,
     ratePaise,
+    costPaise,
     discountBp,
     gstBp,
     grossPaise,
@@ -6119,6 +6132,12 @@ class BillLines extends Table with TableInfo<BillLines, DbBillLine> {
       );
     } else if (isInserting) {
       context.missing(_ratePaiseMeta);
+    }
+    if (data.containsKey('cost_paise')) {
+      context.handle(
+        _costPaiseMeta,
+        costPaise.isAcceptableOrUnknown(data['cost_paise']!, _costPaiseMeta),
+      );
     }
     if (data.containsKey('discount_bp')) {
       context.handle(
@@ -6217,6 +6236,10 @@ class BillLines extends Table with TableInfo<BillLines, DbBillLine> {
         DriftSqlType.int,
         data['${effectivePrefix}rate_paise'],
       )!,
+      costPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cost_paise'],
+      )!,
       discountBp: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}discount_bp'],
@@ -6266,6 +6289,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
   final String unit;
   final int qtyMilli;
   final int ratePaise;
+  final int costPaise;
   final int discountBp;
   final int gstBp;
   final int grossPaise;
@@ -6282,6 +6306,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
     required this.unit,
     required this.qtyMilli,
     required this.ratePaise,
+    required this.costPaise,
     required this.discountBp,
     required this.gstBp,
     required this.grossPaise,
@@ -6301,6 +6326,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
     map['unit'] = Variable<String>(unit);
     map['qty_milli'] = Variable<int>(qtyMilli);
     map['rate_paise'] = Variable<int>(ratePaise);
+    map['cost_paise'] = Variable<int>(costPaise);
     map['discount_bp'] = Variable<int>(discountBp);
     map['gst_bp'] = Variable<int>(gstBp);
     map['gross_paise'] = Variable<int>(grossPaise);
@@ -6321,6 +6347,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
       unit: Value(unit),
       qtyMilli: Value(qtyMilli),
       ratePaise: Value(ratePaise),
+      costPaise: Value(costPaise),
       discountBp: Value(discountBp),
       gstBp: Value(gstBp),
       grossPaise: Value(grossPaise),
@@ -6345,6 +6372,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
       unit: serializer.fromJson<String>(json['unit']),
       qtyMilli: serializer.fromJson<int>(json['qty_milli']),
       ratePaise: serializer.fromJson<int>(json['rate_paise']),
+      costPaise: serializer.fromJson<int>(json['cost_paise']),
       discountBp: serializer.fromJson<int>(json['discount_bp']),
       gstBp: serializer.fromJson<int>(json['gst_bp']),
       grossPaise: serializer.fromJson<int>(json['gross_paise']),
@@ -6366,6 +6394,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
       'unit': serializer.toJson<String>(unit),
       'qty_milli': serializer.toJson<int>(qtyMilli),
       'rate_paise': serializer.toJson<int>(ratePaise),
+      'cost_paise': serializer.toJson<int>(costPaise),
       'discount_bp': serializer.toJson<int>(discountBp),
       'gst_bp': serializer.toJson<int>(gstBp),
       'gross_paise': serializer.toJson<int>(grossPaise),
@@ -6385,6 +6414,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
     String? unit,
     int? qtyMilli,
     int? ratePaise,
+    int? costPaise,
     int? discountBp,
     int? gstBp,
     int? grossPaise,
@@ -6401,6 +6431,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
     unit: unit ?? this.unit,
     qtyMilli: qtyMilli ?? this.qtyMilli,
     ratePaise: ratePaise ?? this.ratePaise,
+    costPaise: costPaise ?? this.costPaise,
     discountBp: discountBp ?? this.discountBp,
     gstBp: gstBp ?? this.gstBp,
     grossPaise: grossPaise ?? this.grossPaise,
@@ -6419,6 +6450,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
       unit: data.unit.present ? data.unit.value : this.unit,
       qtyMilli: data.qtyMilli.present ? data.qtyMilli.value : this.qtyMilli,
       ratePaise: data.ratePaise.present ? data.ratePaise.value : this.ratePaise,
+      costPaise: data.costPaise.present ? data.costPaise.value : this.costPaise,
       discountBp: data.discountBp.present
           ? data.discountBp.value
           : this.discountBp,
@@ -6450,6 +6482,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
           ..write('unit: $unit, ')
           ..write('qtyMilli: $qtyMilli, ')
           ..write('ratePaise: $ratePaise, ')
+          ..write('costPaise: $costPaise, ')
           ..write('discountBp: $discountBp, ')
           ..write('gstBp: $gstBp, ')
           ..write('grossPaise: $grossPaise, ')
@@ -6471,6 +6504,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
     unit,
     qtyMilli,
     ratePaise,
+    costPaise,
     discountBp,
     gstBp,
     grossPaise,
@@ -6491,6 +6525,7 @@ class DbBillLine extends DataClass implements Insertable<DbBillLine> {
           other.unit == this.unit &&
           other.qtyMilli == this.qtyMilli &&
           other.ratePaise == this.ratePaise &&
+          other.costPaise == this.costPaise &&
           other.discountBp == this.discountBp &&
           other.gstBp == this.gstBp &&
           other.grossPaise == this.grossPaise &&
@@ -6509,6 +6544,7 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
   final Value<String> unit;
   final Value<int> qtyMilli;
   final Value<int> ratePaise;
+  final Value<int> costPaise;
   final Value<int> discountBp;
   final Value<int> gstBp;
   final Value<int> grossPaise;
@@ -6526,6 +6562,7 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
     this.unit = const Value.absent(),
     this.qtyMilli = const Value.absent(),
     this.ratePaise = const Value.absent(),
+    this.costPaise = const Value.absent(),
     this.discountBp = const Value.absent(),
     this.gstBp = const Value.absent(),
     this.grossPaise = const Value.absent(),
@@ -6544,6 +6581,7 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
     this.unit = const Value.absent(),
     required int qtyMilli,
     required int ratePaise,
+    this.costPaise = const Value.absent(),
     this.discountBp = const Value.absent(),
     this.gstBp = const Value.absent(),
     required int grossPaise,
@@ -6572,6 +6610,7 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
     Expression<String>? unit,
     Expression<int>? qtyMilli,
     Expression<int>? ratePaise,
+    Expression<int>? costPaise,
     Expression<int>? discountBp,
     Expression<int>? gstBp,
     Expression<int>? grossPaise,
@@ -6590,6 +6629,7 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
       if (unit != null) 'unit': unit,
       if (qtyMilli != null) 'qty_milli': qtyMilli,
       if (ratePaise != null) 'rate_paise': ratePaise,
+      if (costPaise != null) 'cost_paise': costPaise,
       if (discountBp != null) 'discount_bp': discountBp,
       if (gstBp != null) 'gst_bp': gstBp,
       if (grossPaise != null) 'gross_paise': grossPaise,
@@ -6610,6 +6650,7 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
     Value<String>? unit,
     Value<int>? qtyMilli,
     Value<int>? ratePaise,
+    Value<int>? costPaise,
     Value<int>? discountBp,
     Value<int>? gstBp,
     Value<int>? grossPaise,
@@ -6628,6 +6669,7 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
       unit: unit ?? this.unit,
       qtyMilli: qtyMilli ?? this.qtyMilli,
       ratePaise: ratePaise ?? this.ratePaise,
+      costPaise: costPaise ?? this.costPaise,
       discountBp: discountBp ?? this.discountBp,
       gstBp: gstBp ?? this.gstBp,
       grossPaise: grossPaise ?? this.grossPaise,
@@ -6665,6 +6707,9 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
     }
     if (ratePaise.present) {
       map['rate_paise'] = Variable<int>(ratePaise.value);
+    }
+    if (costPaise.present) {
+      map['cost_paise'] = Variable<int>(costPaise.value);
     }
     if (discountBp.present) {
       map['discount_bp'] = Variable<int>(discountBp.value);
@@ -6704,6 +6749,7 @@ class BillLinesCompanion extends UpdateCompanion<DbBillLine> {
           ..write('unit: $unit, ')
           ..write('qtyMilli: $qtyMilli, ')
           ..write('ratePaise: $ratePaise, ')
+          ..write('costPaise: $costPaise, ')
           ..write('discountBp: $discountBp, ')
           ..write('gstBp: $gstBp, ')
           ..write('grossPaise: $grossPaise, ')
@@ -11246,6 +11292,30 @@ class DayTotals extends Table with TableInfo<DayTotals, DbDayTotal> {
     $customConstraints: 'NOT NULL DEFAULT 0',
     defaultValue: const CustomExpression('0'),
   );
+  static const VerificationMeta _taxablePaiseMeta = const VerificationMeta(
+    'taxablePaise',
+  );
+  late final GeneratedColumn<int> taxablePaise = GeneratedColumn<int>(
+    'taxable_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _costPaiseMeta = const VerificationMeta(
+    'costPaise',
+  );
+  late final GeneratedColumn<int> costPaise = GeneratedColumn<int>(
+    'cost_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
   static const VerificationMeta _taxPaiseMeta = const VerificationMeta(
     'taxPaise',
   );
@@ -11335,6 +11405,8 @@ class DayTotals extends Table with TableInfo<DayTotals, DbDayTotal> {
     day,
     bills,
     salesPaise,
+    taxablePaise,
+    costPaise,
     taxPaise,
     cashPaise,
     upiPaise,
@@ -11373,6 +11445,21 @@ class DayTotals extends Table with TableInfo<DayTotals, DbDayTotal> {
       context.handle(
         _salesPaiseMeta,
         salesPaise.isAcceptableOrUnknown(data['sales_paise']!, _salesPaiseMeta),
+      );
+    }
+    if (data.containsKey('taxable_paise')) {
+      context.handle(
+        _taxablePaiseMeta,
+        taxablePaise.isAcceptableOrUnknown(
+          data['taxable_paise']!,
+          _taxablePaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cost_paise')) {
+      context.handle(
+        _costPaiseMeta,
+        costPaise.isAcceptableOrUnknown(data['cost_paise']!, _costPaiseMeta),
       );
     }
     if (data.containsKey('tax_paise')) {
@@ -11447,6 +11534,14 @@ class DayTotals extends Table with TableInfo<DayTotals, DbDayTotal> {
         DriftSqlType.int,
         data['${effectivePrefix}sales_paise'],
       )!,
+      taxablePaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taxable_paise'],
+      )!,
+      costPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cost_paise'],
+      )!,
       taxPaise: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}tax_paise'],
@@ -11491,6 +11586,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
   final String day;
   final int bills;
   final int salesPaise;
+  final int taxablePaise;
+  final int costPaise;
   final int taxPaise;
   final int cashPaise;
   final int upiPaise;
@@ -11502,6 +11599,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
     required this.day,
     required this.bills,
     required this.salesPaise,
+    required this.taxablePaise,
+    required this.costPaise,
     required this.taxPaise,
     required this.cashPaise,
     required this.upiPaise,
@@ -11516,6 +11615,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
     map['day'] = Variable<String>(day);
     map['bills'] = Variable<int>(bills);
     map['sales_paise'] = Variable<int>(salesPaise);
+    map['taxable_paise'] = Variable<int>(taxablePaise);
+    map['cost_paise'] = Variable<int>(costPaise);
     map['tax_paise'] = Variable<int>(taxPaise);
     map['cash_paise'] = Variable<int>(cashPaise);
     map['upi_paise'] = Variable<int>(upiPaise);
@@ -11531,6 +11632,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
       day: Value(day),
       bills: Value(bills),
       salesPaise: Value(salesPaise),
+      taxablePaise: Value(taxablePaise),
+      costPaise: Value(costPaise),
       taxPaise: Value(taxPaise),
       cashPaise: Value(cashPaise),
       upiPaise: Value(upiPaise),
@@ -11550,6 +11653,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
       day: serializer.fromJson<String>(json['day']),
       bills: serializer.fromJson<int>(json['bills']),
       salesPaise: serializer.fromJson<int>(json['sales_paise']),
+      taxablePaise: serializer.fromJson<int>(json['taxable_paise']),
+      costPaise: serializer.fromJson<int>(json['cost_paise']),
       taxPaise: serializer.fromJson<int>(json['tax_paise']),
       cashPaise: serializer.fromJson<int>(json['cash_paise']),
       upiPaise: serializer.fromJson<int>(json['upi_paise']),
@@ -11566,6 +11671,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
       'day': serializer.toJson<String>(day),
       'bills': serializer.toJson<int>(bills),
       'sales_paise': serializer.toJson<int>(salesPaise),
+      'taxable_paise': serializer.toJson<int>(taxablePaise),
+      'cost_paise': serializer.toJson<int>(costPaise),
       'tax_paise': serializer.toJson<int>(taxPaise),
       'cash_paise': serializer.toJson<int>(cashPaise),
       'upi_paise': serializer.toJson<int>(upiPaise),
@@ -11580,6 +11687,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
     String? day,
     int? bills,
     int? salesPaise,
+    int? taxablePaise,
+    int? costPaise,
     int? taxPaise,
     int? cashPaise,
     int? upiPaise,
@@ -11591,6 +11700,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
     day: day ?? this.day,
     bills: bills ?? this.bills,
     salesPaise: salesPaise ?? this.salesPaise,
+    taxablePaise: taxablePaise ?? this.taxablePaise,
+    costPaise: costPaise ?? this.costPaise,
     taxPaise: taxPaise ?? this.taxPaise,
     cashPaise: cashPaise ?? this.cashPaise,
     upiPaise: upiPaise ?? this.upiPaise,
@@ -11606,6 +11717,10 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
       salesPaise: data.salesPaise.present
           ? data.salesPaise.value
           : this.salesPaise,
+      taxablePaise: data.taxablePaise.present
+          ? data.taxablePaise.value
+          : this.taxablePaise,
+      costPaise: data.costPaise.present ? data.costPaise.value : this.costPaise,
       taxPaise: data.taxPaise.present ? data.taxPaise.value : this.taxPaise,
       cashPaise: data.cashPaise.present ? data.cashPaise.value : this.cashPaise,
       upiPaise: data.upiPaise.present ? data.upiPaise.value : this.upiPaise,
@@ -11628,6 +11743,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
           ..write('day: $day, ')
           ..write('bills: $bills, ')
           ..write('salesPaise: $salesPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('costPaise: $costPaise, ')
           ..write('taxPaise: $taxPaise, ')
           ..write('cashPaise: $cashPaise, ')
           ..write('upiPaise: $upiPaise, ')
@@ -11644,6 +11761,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
     day,
     bills,
     salesPaise,
+    taxablePaise,
+    costPaise,
     taxPaise,
     cashPaise,
     upiPaise,
@@ -11659,6 +11778,8 @@ class DbDayTotal extends DataClass implements Insertable<DbDayTotal> {
           other.day == this.day &&
           other.bills == this.bills &&
           other.salesPaise == this.salesPaise &&
+          other.taxablePaise == this.taxablePaise &&
+          other.costPaise == this.costPaise &&
           other.taxPaise == this.taxPaise &&
           other.cashPaise == this.cashPaise &&
           other.upiPaise == this.upiPaise &&
@@ -11672,6 +11793,8 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
   final Value<String> day;
   final Value<int> bills;
   final Value<int> salesPaise;
+  final Value<int> taxablePaise;
+  final Value<int> costPaise;
   final Value<int> taxPaise;
   final Value<int> cashPaise;
   final Value<int> upiPaise;
@@ -11684,6 +11807,8 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
     this.day = const Value.absent(),
     this.bills = const Value.absent(),
     this.salesPaise = const Value.absent(),
+    this.taxablePaise = const Value.absent(),
+    this.costPaise = const Value.absent(),
     this.taxPaise = const Value.absent(),
     this.cashPaise = const Value.absent(),
     this.upiPaise = const Value.absent(),
@@ -11697,6 +11822,8 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
     required String day,
     this.bills = const Value.absent(),
     this.salesPaise = const Value.absent(),
+    this.taxablePaise = const Value.absent(),
+    this.costPaise = const Value.absent(),
     this.taxPaise = const Value.absent(),
     this.cashPaise = const Value.absent(),
     this.upiPaise = const Value.absent(),
@@ -11710,6 +11837,8 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
     Expression<String>? day,
     Expression<int>? bills,
     Expression<int>? salesPaise,
+    Expression<int>? taxablePaise,
+    Expression<int>? costPaise,
     Expression<int>? taxPaise,
     Expression<int>? cashPaise,
     Expression<int>? upiPaise,
@@ -11723,6 +11852,8 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
       if (day != null) 'day': day,
       if (bills != null) 'bills': bills,
       if (salesPaise != null) 'sales_paise': salesPaise,
+      if (taxablePaise != null) 'taxable_paise': taxablePaise,
+      if (costPaise != null) 'cost_paise': costPaise,
       if (taxPaise != null) 'tax_paise': taxPaise,
       if (cashPaise != null) 'cash_paise': cashPaise,
       if (upiPaise != null) 'upi_paise': upiPaise,
@@ -11738,6 +11869,8 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
     Value<String>? day,
     Value<int>? bills,
     Value<int>? salesPaise,
+    Value<int>? taxablePaise,
+    Value<int>? costPaise,
     Value<int>? taxPaise,
     Value<int>? cashPaise,
     Value<int>? upiPaise,
@@ -11751,6 +11884,8 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
       day: day ?? this.day,
       bills: bills ?? this.bills,
       salesPaise: salesPaise ?? this.salesPaise,
+      taxablePaise: taxablePaise ?? this.taxablePaise,
+      costPaise: costPaise ?? this.costPaise,
       taxPaise: taxPaise ?? this.taxPaise,
       cashPaise: cashPaise ?? this.cashPaise,
       upiPaise: upiPaise ?? this.upiPaise,
@@ -11773,6 +11908,12 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
     }
     if (salesPaise.present) {
       map['sales_paise'] = Variable<int>(salesPaise.value);
+    }
+    if (taxablePaise.present) {
+      map['taxable_paise'] = Variable<int>(taxablePaise.value);
+    }
+    if (costPaise.present) {
+      map['cost_paise'] = Variable<int>(costPaise.value);
     }
     if (taxPaise.present) {
       map['tax_paise'] = Variable<int>(taxPaise.value);
@@ -11807,6 +11948,8 @@ class DayTotalsCompanion extends UpdateCompanion<DbDayTotal> {
           ..write('day: $day, ')
           ..write('bills: $bills, ')
           ..write('salesPaise: $salesPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('costPaise: $costPaise, ')
           ..write('taxPaise: $taxPaise, ')
           ..write('cashPaise: $cashPaise, ')
           ..write('upiPaise: $upiPaise, ')
@@ -14940,6 +15083,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'bills_old_no',
     'CREATE INDEX bills_old_no ON bills (old_bill_no) WHERE old_bill_no IS NOT NULL',
   );
+  late final Index billsAmount = Index(
+    'bills_amount',
+    'CREATE INDEX bills_amount ON bills (total_paise DESC, id DESC)',
+  );
   late final Index billsCancelled = Index(
     'bills_cancelled',
     'CREATE INDEX bills_cancelled ON bills (billed_at DESC) WHERE cancelled = 1',
@@ -15074,6 +15221,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     billsBilledAt,
     billsCustomer,
     billsOldNo,
+    billsAmount,
     billsCancelled,
     billsDue,
     billLines,
@@ -19200,6 +19348,7 @@ typedef $BillLinesCreateCompanionBuilder = BillLinesCompanion Function({
   Value<String> unit,
   required int qtyMilli,
   required int ratePaise,
+  Value<int> costPaise,
   Value<int> discountBp,
   Value<int> gstBp,
   required int grossPaise,
@@ -19218,6 +19367,7 @@ typedef $BillLinesUpdateCompanionBuilder = BillLinesCompanion Function({
   Value<String> unit,
   Value<int> qtyMilli,
   Value<int> ratePaise,
+  Value<int> costPaise,
   Value<int> discountBp,
   Value<int> gstBp,
   Value<int> grossPaise,
@@ -19302,6 +19452,11 @@ class $BillLinesFilterComposer extends Composer<_$AppDatabase, BillLines> {
 
   ColumnFilters<int> get ratePaise => $composableBuilder(
     column: $table.ratePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get costPaise => $composableBuilder(
+    column: $table.costPaise,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19425,6 +19580,11 @@ class $BillLinesOrderingComposer extends Composer<_$AppDatabase, BillLines> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get costPaise => $composableBuilder(
+    column: $table.costPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get discountBp => $composableBuilder(
     column: $table.discountBp,
     builder: (column) => ColumnOrderings(column),
@@ -19532,6 +19692,9 @@ class $BillLinesAnnotationComposer extends Composer<_$AppDatabase, BillLines> {
 
   GeneratedColumn<int> get ratePaise =>
       $composableBuilder(column: $table.ratePaise, builder: (column) => column);
+
+  GeneratedColumn<int> get costPaise =>
+      $composableBuilder(column: $table.costPaise, builder: (column) => column);
 
   GeneratedColumn<int> get discountBp => $composableBuilder(
     column: $table.discountBp,
@@ -19647,6 +19810,7 @@ class $BillLinesTableManager
                 Value<String> unit = const Value.absent(),
                 Value<int> qtyMilli = const Value.absent(),
                 Value<int> ratePaise = const Value.absent(),
+                Value<int> costPaise = const Value.absent(),
                 Value<int> discountBp = const Value.absent(),
                 Value<int> gstBp = const Value.absent(),
                 Value<int> grossPaise = const Value.absent(),
@@ -19664,6 +19828,7 @@ class $BillLinesTableManager
                 unit: unit,
                 qtyMilli: qtyMilli,
                 ratePaise: ratePaise,
+                costPaise: costPaise,
                 discountBp: discountBp,
                 gstBp: gstBp,
                 grossPaise: grossPaise,
@@ -19683,6 +19848,7 @@ class $BillLinesTableManager
                 Value<String> unit = const Value.absent(),
                 required int qtyMilli,
                 required int ratePaise,
+                Value<int> costPaise = const Value.absent(),
                 Value<int> discountBp = const Value.absent(),
                 Value<int> gstBp = const Value.absent(),
                 required int grossPaise,
@@ -19700,6 +19866,7 @@ class $BillLinesTableManager
                 unit: unit,
                 qtyMilli: qtyMilli,
                 ratePaise: ratePaise,
+                costPaise: costPaise,
                 discountBp: discountBp,
                 gstBp: gstBp,
                 grossPaise: grossPaise,
@@ -22512,6 +22679,8 @@ typedef $DayTotalsCreateCompanionBuilder = DayTotalsCompanion Function({
   required String day,
   Value<int> bills,
   Value<int> salesPaise,
+  Value<int> taxablePaise,
+  Value<int> costPaise,
   Value<int> taxPaise,
   Value<int> cashPaise,
   Value<int> upiPaise,
@@ -22525,6 +22694,8 @@ typedef $DayTotalsUpdateCompanionBuilder = DayTotalsCompanion Function({
   Value<String> day,
   Value<int> bills,
   Value<int> salesPaise,
+  Value<int> taxablePaise,
+  Value<int> costPaise,
   Value<int> taxPaise,
   Value<int> cashPaise,
   Value<int> upiPaise,
@@ -22555,6 +22726,16 @@ class $DayTotalsFilterComposer extends Composer<_$AppDatabase, DayTotals> {
 
   ColumnFilters<int> get salesPaise => $composableBuilder(
     column: $table.salesPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get costPaise => $composableBuilder(
+    column: $table.costPaise,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22617,6 +22798,16 @@ class $DayTotalsOrderingComposer extends Composer<_$AppDatabase, DayTotals> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get costPaise => $composableBuilder(
+    column: $table.costPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get taxPaise => $composableBuilder(
     column: $table.taxPaise,
     builder: (column) => ColumnOrderings(column),
@@ -22671,6 +22862,14 @@ class $DayTotalsAnnotationComposer extends Composer<_$AppDatabase, DayTotals> {
     column: $table.salesPaise,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get costPaise =>
+      $composableBuilder(column: $table.costPaise, builder: (column) => column);
 
   GeneratedColumn<int> get taxPaise =>
       $composableBuilder(column: $table.taxPaise, builder: (column) => column);
@@ -22731,6 +22930,8 @@ class $DayTotalsTableManager
                 Value<String> day = const Value.absent(),
                 Value<int> bills = const Value.absent(),
                 Value<int> salesPaise = const Value.absent(),
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> costPaise = const Value.absent(),
                 Value<int> taxPaise = const Value.absent(),
                 Value<int> cashPaise = const Value.absent(),
                 Value<int> upiPaise = const Value.absent(),
@@ -22743,6 +22944,8 @@ class $DayTotalsTableManager
                 day: day,
                 bills: bills,
                 salesPaise: salesPaise,
+                taxablePaise: taxablePaise,
+                costPaise: costPaise,
                 taxPaise: taxPaise,
                 cashPaise: cashPaise,
                 upiPaise: upiPaise,
@@ -22757,6 +22960,8 @@ class $DayTotalsTableManager
                 required String day,
                 Value<int> bills = const Value.absent(),
                 Value<int> salesPaise = const Value.absent(),
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> costPaise = const Value.absent(),
                 Value<int> taxPaise = const Value.absent(),
                 Value<int> cashPaise = const Value.absent(),
                 Value<int> upiPaise = const Value.absent(),
@@ -22769,6 +22974,8 @@ class $DayTotalsTableManager
                 day: day,
                 bills: bills,
                 salesPaise: salesPaise,
+                taxablePaise: taxablePaise,
+                costPaise: costPaise,
                 taxPaise: taxPaise,
                 cashPaise: cashPaise,
                 upiPaise: upiPaise,
