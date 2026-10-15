@@ -291,31 +291,50 @@ void main() {
     });
   });
 
-  test('ERP 1 says the customer owes nothing but a bill shows 60 unpaid: the bill is marked paid, the balance is 0 and the report lists it', () async {
-    final p = planOf(backup({
-      'erp_products': [
-        {'id': 'P1', 'name': 'Pipe', 'price': 110, 'buyingPrice': 60, 'stock': 5}
-      ],
-      'erp_customers': [
-        {'id': 'C1', 'name': 'Ram', 'outstanding': 0}
-      ],
-      'erp_sales_invoices': [
-        {
-          'id': 'B1', 'date': '2025-05-01T10:00:00Z', 'customerId': 'C1', 'totalAmount': 110.0, 'amountPaid': 50.0, 'paymentMode': 'UPI',
-          'items': [
-            {'productId': 'P1', 'qty': 1, 'price': 110, 'taxRate': 18, 'total': 110}
-          ]
-        }
-      ],
-    }));
+  Map<String, Object?> ramShop(String billId) => backup({
+        'erp_products': [
+          {'id': 'P1', 'name': 'Pipe', 'price': 110, 'buyingPrice': 60, 'stock': 5}
+        ],
+        'erp_customers': [
+          {'id': 'C1', 'name': 'Ram', 'outstanding': 0}
+        ],
+        'erp_sales_invoices': [
+          {
+            'id': billId, 'date': '2025-05-01T10:00:00Z', 'customerId': 'C1', 'totalAmount': 110.0, 'amountPaid': 50.0, 'paymentMode': 'UPI',
+            'items': [
+              {'productId': 'P1', 'qty': 1, 'price': 110, 'taxRate': 18, 'total': 110}
+            ]
+          }
+        ],
+      });
+
+  test('the one correction the owner named is applied, listed in the report and written to the audit record', () async {
+    final p = planOf(ramShop('INV-2627-000001'));
     expect(p.bills.single.balance, 0);
     expect(p.bills.single.received, 11000);
-    expect(p.openingCustomer, isEmpty);
-    expect(p.issues.buckets.values.any((b) => b.reason.contains('marked paid for the difference')), isTrue);
+    expect(p.corrections.single.billOldNo, 'INV-2627-000001');
+    expect(p.decisions, isEmpty);
+    expect(buildReport(p), contains('APPLIED (named by the owner)'));
     final d = memoryShop();
     final r = await writePlan(d, p, nowMs: 1);
     expect(r.mismatches, isEmpty);
     expect(await d.db.scalarInt('SELECT COALESCE(SUM(balance_paise),0) FROM party_balance'), 0);
-    expect(await d.db.scalarInt('SELECT COUNT(*) FROM party_bills'), 0);
+    expect(await d.db.scalarInt("SELECT COUNT(*) FROM audit WHERE what LIKE 'Corrected during import: bill INV-2627-000001%'"), 1);
+  });
+
+  test('any other shortfall is NOT changed: it stays as ERP 1 recorded it and is listed as needing a decision from the owner', () async {
+    final p = planOf(ramShop('INV-OTHER-1'));
+    expect(p.corrections, isEmpty);
+    expect(p.bills.single.balance, 6000, reason: 'the bill is left exactly as ERP 1 had it');
+    expect(p.decisions.single.customer, 'Ram');
+    expect(p.decisions.single.differencePaise, 6000);
+    expect(p.decisions.single.bills.single, contains('INV-OTHER-1'));
+    final t = buildReport(p);
+    expect(t, contains('NEEDS A DECISION FROM THE OWNER'));
+    expect(t, contains('Ram'));
+    final d = memoryShop();
+    final r = await writePlan(d, p, nowMs: 1);
+    expect(r.mismatches, isEmpty, reason: 'the customer balance still equals the ERP 1 figure (through an opening entry)');
+    expect(await d.db.scalarInt('SELECT COUNT(*) FROM audit'), 0);
   });
 }

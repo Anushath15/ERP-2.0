@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -7,6 +8,13 @@ import 'package:erp2/data/db/app_database.dart';
 import 'package:erp2/data/db/errors.dart';
 import 'package:erp2/data/repo/series_registry.dart';
 import 'package:erp2/demo/demo_seeder.dart';
+import 'package:erp2/data/app_data.dart';
+import 'package:erp2/data/context.dart';
+import 'package:erp2/data/db/open.dart';
+import 'package:erp2/data/importer/erp1_writer.dart';
+import 'package:erp2/data/importer/swap.dart';
+import 'package:erp2/import/erp1/plan.dart';
+import '../../tool/import/synthetic.dart';
 import 'helpers.dart';
 
 // Opening the shop at start-up: real and demo data in separate files, a stable device id, clear outcomes when the file cannot be opened.
@@ -110,5 +118,30 @@ void main() {
       expect(await SeriesRegistry(d.settings, 'dev-test').all(), isEmpty);
       await d.close();
     });
+  });
+
+  test('start-up after a confirmed import: the imported shop opens, the earlier (even demo-like) data is kept aside, and the counts are the real ones', () async {
+    // the earlier data on this computer
+    final first = await bootApp(paths: paths, mode: DataMode.real, background: false) as BootReady;
+    await first.data.catalog.saveProduct(sampleProduct('Earlier item', id: 'early'), create: true);
+    await first.data.close();
+    // the new file, made the way the Import page makes it
+    final newFile = '${paths.dataDir}${Platform.pathSeparator}import${Platform.pathSeparator}erp1.sqlite';
+    final db = await openShopDatabase(newFile);
+    final d = AppData(DataContext(db: db, deviceId: 'import'));
+    await writePlan(d, Erp1Plan.parse(jsonEncode(Synthetic(bills: 30, products: 25, customers: 4, dealers: 1, flaws: false).build())), nowMs: 1760000000000);
+    final counts = await shopCounts(d);
+    await db.close();
+    await requestImportSwap(dataDir: paths.dataDir, newFile: newFile, expected: counts, source: 'x.json');
+
+    final o = await bootApp(paths: paths, mode: DataMode.real, background: false) as BootReady;
+    expect(o.swap!.ok, isTrue, reason: o.swap!.message);
+    expect(await o.data.catalog.productCount(), 25);
+    expect(o.boot.customers, hasLength(4));
+    expect(o.boot.customers.every((c) => !c.name.startsWith('Demo')), isTrue);
+    expect(await o.data.reports.shopCounts().then((c) => c.bills), 30);
+    expect((await o.data.reports.shopCounts()).importedFromErp1, isNotNull);
+    expect((await previousData(paths.dataDir)).single.products, 1);
+    await o.data.close();
   });
 }

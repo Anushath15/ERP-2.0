@@ -3,6 +3,12 @@ import '../../domain/stock_value.dart';
 import '../context.dart';
 import '../db/app_database.dart';
 
+class ShopCounts {
+  const ShopCounts({required this.products, required this.customers, required this.dealers, required this.bills, this.lastBill, this.importedFromErp1});
+  final int products, customers, dealers, bills;
+  final DateTime? lastBill, importedFromErp1;
+}
+
 class DayTotals {
   const DayTotals({required this.day, this.bills = 0, this.sales = 0, this.taxable = 0, this.cost = 0, this.tax = 0, this.cash = 0, this.upi = 0, this.card = 0, this.credit = 0, this.cancelledBills = 0, this.cancelledPaise = 0});
   final String day;
@@ -79,6 +85,26 @@ class ReportRepo {
   }
 
   Future<int> weOwe() async => _db.scalarInt("SELECT COALESCE(SUM(balance_paise), 0) FROM party_balance WHERE party_kind = 'dealer' AND balance_paise > 0");
+
+  /// How much the shop's data holds right now (live rows) and when the last bill was made: the Health page shows it so the owner can see the real data is in use.
+  Future<ShopCounts> shopCounts() async {
+    final last = await _db.rows('SELECT MAX(billed_at) AS t FROM bills');
+    final t = last.isEmpty ? null : last.first.readNullable<int>('t');
+    final from = await _db.rows("SELECT value FROM kv WHERE name = 'import.erp1'");
+    int? importedAt;
+    if (from.isNotEmpty) {
+      final m = RegExp(r'"at":(\d+)').firstMatch(from.first.read<String>('value'));
+      if (m != null) importedAt = int.parse(m.group(1)!);
+    }
+    return ShopCounts(
+      products: await _db.scalarInt('SELECT COUNT(*) FROM products WHERE deleted_at IS NULL'),
+      customers: await _db.scalarInt('SELECT COUNT(*) FROM customers WHERE deleted_at IS NULL'),
+      dealers: await _db.scalarInt('SELECT COUNT(*) FROM dealers WHERE deleted_at IS NULL'),
+      bills: await _db.scalarInt('SELECT COUNT(*) FROM bills'),
+      lastBill: t == null ? null : DateTime.fromMillisecondsSinceEpoch(t),
+      importedFromErp1: importedAt == null ? null : DateTime.fromMillisecondsSinceEpoch(importedAt),
+    );
+  }
 
   /// Every product that is not deleted, with its stock figure and its prices: the input of the ONE stock-value calculation ([StockValuation.compute]).
   Future<List<StockLine>> stockLines() async {

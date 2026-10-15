@@ -83,7 +83,7 @@ class _BootRootState extends State<BootRoot> {
             return DateTime(n.year, n.month, n.day, n.hour, n.minute);
           }),
         ],
-        child: ErpApp(initialLocation: o.needsSetup ? '/wizard' : '/', dbLocation: o.location, runChecks: o.mode == DataMode.real),
+        child: ErpApp(initialLocation: o.needsSetup ? '/wizard' : (o.swap != null ? '/health' : '/'), dbLocation: o.location, runChecks: o.mode == DataMode.real),
       );
     }
     final theme = buildTheme(WidgetsBinding.instance.platformDispatcher.platformBrightness);

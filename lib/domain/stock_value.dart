@@ -54,7 +54,7 @@ class NegativeStock {
 }
 
 class StockValuation {
-  StockValuation._(this.activeValue, this.inactiveValue, this.activeProducts, this.inactiveProducts, this.activeQtyMilli, this.inactiveQtyMilli, this.unpricedProducts, this.unpricedQtyMilli, this.negatives, this.chosen);
+  StockValuation._(this.activeValue, this.inactiveValue, this.activeProducts, this.inactiveProducts, this.activeQtyMilli, this.inactiveQtyMilli, this.unpricedProducts, this.unpricedQtyMilli, this.negatives, this.unpricedItems, this.chosen);
 
   /// Value per rule of the active, costed products with stock above zero.
   final Map<ValuationRule, int> activeValue;
@@ -68,6 +68,9 @@ class StockValuation {
 
   /// Products with stock below zero: counted as 0 and listed so they can be fixed.
   final List<NegativeStock> negatives;
+
+  /// The products behind [unpricedProducts], so the owner can type their buying prices (name order).
+  final List<NegativeStock> unpricedItems;
 
   /// The rule the shop chose, or null if it has not chosen yet.
   final ValuationRule? chosen;
@@ -84,6 +87,7 @@ class StockValuation {
     final inactive = {for (final r in ValuationRule.values) r: 0};
     var ap = 0, ip = 0, aq = 0, iq = 0, up = 0, uq = 0;
     final neg = <NegativeStock>[];
+    final unpriced = <NegativeStock>[];
     for (final l in lines) {
       if (l.stockMilli < 0) {
         neg.add(NegativeStock(l.id, l.name, l.stockMilli));
@@ -93,6 +97,7 @@ class StockValuation {
       if (!l.costKnown) {
         up++;
         uq += l.stockMilli;
+        unpriced.add(NegativeStock(l.id, l.name, l.stockMilli));
         continue;
       }
       final target = l.active ? active : inactive;
@@ -110,7 +115,9 @@ class StockValuation {
         iq += l.stockMilli;
       }
     }
-    return StockValuation._(active, inactive, ap, ip, aq, iq, up, uq, neg, chosen);
+    neg.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    unpriced.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return StockValuation._(active, inactive, ap, ip, aq, iq, up, uq, neg, unpriced, chosen);
   }
 
   static int _value(int unitPaise, int qtyMilli) => (unitPaise * qtyMilli / 1000).round();

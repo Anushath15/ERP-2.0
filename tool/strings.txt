@@ -397,25 +397,9 @@ expGst | GST summary
 expGstHelp | Tax collected, by rate
 # ---- import
 importSubtitle | Bring your data from the old ERP 1.0 program
-importStep1 | Step 1: choose the backup file
 importHelp | Choose the backup file you saved from the old program. First we only check it and show you what we found. Nothing is changed yet.
 chooseBackupFile | Choose backup file
 importSafe | Your old file is only read. It is never changed.
-importReport | What we found
-importWarnings | Please look at these
-warnNegStock | {count} items have less than zero stock
-warnNoCost | {count} items have no cost price
-warnDupNames | {count} products have the same name
-warnBadDates | {count} bills have a wrong date
-importWarnHelp | These do not stop the import. You can fix them later.
-importNow | Import now
-importDone | Import finished
-importProof | We checked that nothing was lost:
-proofProducts | Number of products is the same
-proofStock | Stock of every product is the same
-proofBalances | What customers and dealers owe is the same
-proofBills | Bills and totals are the same
-importAgain | Import another file
 # ---- settings
 setShop | Shop details
 setShopName | Shop name
@@ -984,3 +968,80 @@ stockValueHelp | Three ways to value the same stock. Until the shop chooses, the
 ruleSaved | Stock value rule saved.
 healthStockValue | Stock value
 healthStockValueHelp | {errors} negative-stock error(s); {unpriced} product(s) with cost not set.
+
+# ---- Import from ERP 1 (real), going back, counts, Fix these
+importNotSupported | Importing needs the Windows or Mac program. Open this page there.
+importChecking | Reading and checking the file...
+importCannotUse | This file cannot be used
+importChooseAnother | Choose another file
+importWhatWeFound | What we found
+importFileName | File: {name}
+importChecksumOk | The file is exactly as ERP 1 saved it (its own check code matched).
+importChecksumNone | This backup has no check code, so every record was checked one by one instead.
+importChecksumBad | The file does not match its check code. It was changed or damaged after ERP 1 saved it. Make a fresh backup copy in ERP 1 and choose that one.
+importCountsLine | {products} products, {customers} customers, {dealers} dealers, {bills} bills, {estimates} estimates
+importSalesLine | Sales in the file: {total} in {bills} bills. This month ({month}): {monthTotal}.
+importOwedLine | Customers who owe money: {n}, in total {total}.
+importStockQtyLine | Stock in hand (all products together): {qty}
+importValueTitle | What the stock is worth, three ways
+importValueAvg | Average cost (recommended): {v}
+importValueBuy | Latest buying price: {v}
+importValueSell | Selling price: {v}
+importNoCostLine | {n} products with stock have no buying price. They are left out of these totals. You can type their prices afterwards on the Fix these page.
+importNegativeLine | {n} products have negative stock. They count as 0. You can correct them afterwards on the Fix these page.
+importRejectedLine | {n} records cannot be imported and will be left out. The full report lists each one with the reason.
+importRepairedLine | {n} values were rounded or tidied. The full report lists them.
+importCorrectionsTitle | Corrections you asked for
+importDecisionsTitle | Needs your decision (nothing was changed)
+importFullReport | Full report
+importCopyReport | Copy the report
+importReportCopied | The report is copied.
+importNothingChanged | Nothing has been changed yet. Your current data is untouched.
+importCreate | Create the new data from this file
+importCreateHelp | This makes a NEW data file next to your current one. Your current data is not touched. You decide about switching afterwards.
+importStageReading | Reading the backup...
+importStageWriting | Writing the new data...
+importStageChecking | Checking the new data...
+importCreated | The new data is ready and passed every check
+importChecksTitle | Checks on the new data
+importCheckWritten | Read back from the new file: every total equals the backup
+importCheckIntegrity | The database integrity check passed
+importCheckSelf | The program's own consistency check found no problems
+importCheckFailed | A check did not pass: {what}
+importNewHolds | The new data holds {products} products, {customers} customers and {bills} bills.
+importSwitchTitle | Switch to the new data
+importSwitchHelp | Your current data is first put aside, untouched, and you can go back to it for 30 days. Then the program opens on the new data.
+importSwitchNow | Switch to the new data now
+importNotNow | Not now
+importSwitching | Switching...
+importSwitchFailed | The switch did not happen. {why}
+importDifferentFile | Start again with another file
+goBackTitle | Go back to the previous data
+goBackHelp | For 30 days after a switch you can go back to the data that was in use before it.
+goBackItem | Data from {date}: {products} products, {customers} customers, {bills} bills. Available until {until}.
+goBackNow | Go back to this data
+goBackConfirm | The data in use now is put aside (kept for 30 days) and the earlier data comes back. Continue?
+swapImported | Your ERP 1 data has been in use since {date}: {products} products, {customers} customers, {bills} bills.
+swapWentBack | You went back to the earlier data on {date}.
+swapFailed | The data switch did not happen: {why}
+swapGotIt | Got it
+healthCountsTitle | What is in your data
+healthCountsLine | {products} products, {customers} customers, {dealers} dealers, {bills} bills
+healthLastBill | Last bill: {date}
+healthImportedFrom | Imported from ERP 1 on {date}
+fixTitle | Fix these
+fixSubtitle | Things in your stock that need your attention
+fixNoCostTitle | Stock with no buying price
+fixNoCostHelp | Type what you paid for each one. Until then it is left out of the stock value.
+fixBuyingPrice | Buying price
+fixSave | Save
+fixSaved | Buying price saved.
+fixNegTitle | Negative stock
+fixNegHelp | The record says more was sold than was in stock. One tap writes a stock change that brings it to zero, with a reason you can read in Stock changes. Nothing changes silently.
+fixCorrect | Correct with a stock change
+fixCorrectConfirm | Add {qty} to {name}? This writes a stock change (Corrected negative stock, was {was}) and brings the stock to 0.
+fixCorrected | The stock change is written.
+fixNothing | Nothing needs fixing.
+fixLink | Fix these ({n})
+fixPriceInvalid | Type a price above zero.
+fixInactiveLine | {n} inactive products still have stock ({qty}). They are in the stock value on a separate line.

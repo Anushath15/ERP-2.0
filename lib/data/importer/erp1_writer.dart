@@ -104,6 +104,9 @@ Future<WriteResult> writePlan(AppData d, Erp1Plan p, {required int nowMs}) async
     for (final r in p.records) {
       await db.exec('INSERT OR IGNORE INTO records(id, kind, data, at, created_at, updated_at, device_id) VALUES (?,?,?,?,?,?,?)', [r.id, r.kind, RecordsRepo.encode(r.fields), r.atMs, now, now, dev]);
     }
+    for (final c in p.corrections) {
+      await db.exec('INSERT OR IGNORE INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', ['e1-corr-${c.billOldNo}', c.auditText, 'bill', 'e1-bill-${c.billOldNo}', 'balance_paise', '${c.amountPaise}', '0', 'Import from ERP 1', now, dev]);
+    }
     await db.exec("INSERT INTO counters(name, value) VALUES ('inv.ERP1', ?) ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)", [p.bills.length]);
     await _profile(d, p, now);
     await rebuildSummaries(db);
@@ -163,3 +166,12 @@ Future<List<String>> verifyAgainstPlan(AppData d, Erp1Plan p) async {
   await eq('stock quantity (milli)', await db.scalarInt('SELECT COALESCE(SUM(qty_milli),0) FROM stock_cache'), wantStock);
   return bad;
 }
+
+/// What a shop database holds, read from it (live rows only): used to show the owner what the new file contains.
+Future<Map<String, int>> shopCounts(AppData d) async => {
+      'products': await d.db.scalarInt('SELECT COUNT(*) FROM products WHERE deleted_at IS NULL'),
+      'customers': await d.db.scalarInt('SELECT COUNT(*) FROM customers WHERE deleted_at IS NULL'),
+      'dealers': await d.db.scalarInt('SELECT COUNT(*) FROM dealers WHERE deleted_at IS NULL'),
+      'bills': await d.db.scalarInt('SELECT COUNT(*) FROM bills'),
+      'estimates': await d.db.scalarInt('SELECT COUNT(*) FROM estimations'),
+    };

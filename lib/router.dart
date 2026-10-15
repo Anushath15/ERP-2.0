@@ -12,6 +12,8 @@ import 'features/dashboard/dashboard_screen.dart';
 import 'features/money/money_screens.dart';
 import 'features/people/people_screens.dart';
 import 'features/print/print_preview.dart';
+import 'features/import/import_erp1_screen.dart';
+import 'features/stock/fix_these_screen.dart';
 import 'features/reports/reports_screens.dart';
 import 'features/sales/sales_screens.dart';
 import 'features/shop/shop_profile_screen.dart';
@@ -42,6 +44,7 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/delivery', pageBuilder: (c, s) => _p(c, s, const DeliveryScreen())),
           GoRoute(path: '/products', pageBuilder: (c, s) => _p(c, s, ProductsScreen(autoAdd: s.uri.queryParameters['add'] == '1'), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/categories', pageBuilder: (c, s) => _p(c, s, const CategoriesScreen())),
+          GoRoute(path: '/fix', pageBuilder: (c, s) => _p(c, s, const FixTheseScreen())),
           GoRoute(path: '/inventory', pageBuilder: (c, s) => _p(c, s, const InventoryScreen())),
           GoRoute(path: '/purchases', pageBuilder: (c, s) => _p(c, s, const PurchasesScreen())),
           GoRoute(path: '/purchase-returns', pageBuilder: (c, s) => _p(c, s, const PurchaseReturnsScreen())),

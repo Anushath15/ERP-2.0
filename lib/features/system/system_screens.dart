@@ -16,6 +16,9 @@ import '../../data/repo/self_check.dart';
 import '../../fake/health.dart';
 import '../../fake/stock_value_provider.dart';
 import '../stock/stock_value_sheet.dart';
+import '../import/import_erp1_screen.dart';
+import '../import/import_providers.dart';
+import '../../data/importer/swap.dart';
 import '../../core/money.dart';
 import '../../fake/stats.dart';
 import '../../strings.dart';
@@ -182,6 +185,9 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     final c = context.c;
     final info = ref.watch(healthInfoProvider).value;
     final sv = ref.watch(stockValuationProvider).value;
+    final counts = ref.watch(shopCountsProvider).value;
+    final swapRes = ref.watch(swapResultProvider).value;
+    final fixCount = sv == null ? 0 : sv.negatives.length + sv.unpricedProducts;
     final health = ref.watch(fileHealthProvider);
     final List<String> problems = _found ?? ref.watch(selfCheckProblemsProvider);
     Widget item(IconData icon, Color color, String title, String value, {String? help, Widget? action}) => SectionCard(
@@ -201,7 +207,9 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
       item(Icons.storage_outlined, info?.freeBytes != null && info!.freeBytes! < 500 * 1024 * 1024 ? c.warning : c.primary, l.freeDisk, info?.freeBytes == null ? l.healthUnknown : _size(info!.freeBytes!), help: l.freeDiskHelp),
       item(Icons.cloud_upload_outlined, (info?.pendingUploads ?? 0) > 0 ? c.warning : c.success, l.syncBacklog, l.syncBacklogValue('${info?.pendingUploads ?? 0}'), help: l.syncBacklogHelp),
       item(Icons.inventory_outlined, problems.isEmpty ? c.success : c.warning, l.healthTotals, problems.isEmpty ? l.healthTotalsOk : l.healthProblemsFound(problems.length.toString()), help: l.healthTotalsHelp, action: OutlinedButton(key: const ValueKey('rebuildTotals'), onPressed: () => _rebuild(l), child: Text(l.rebuildTotals))),
-      item(Icons.account_balance_outlined, (sv?.negatives.isNotEmpty ?? false) ? c.warning : c.primary, l.healthStockValue, sv == null ? l.healthUnknown : '₹ ${formatPaise(sv.shownTotal)}', help: sv == null ? null : '${ruleCaption(l, sv)}. ${l.healthStockValueHelp(sv.negatives.length.toString(), sv.unpricedProducts.toString())}', action: OutlinedButton(key: const ValueKey('stockValueDetails'), onPressed: () => showStockValueSheet(context, ref), child: Text(l.stockValueTitle))),
+      item(Icons.fact_check_outlined, c.primary, l.healthCountsTitle, counts == null ? l.healthUnknown : l.healthCountsLine('${counts.products}', '${counts.customers}', '${counts.dealers}', '${counts.bills}'),
+          help: [if (counts?.lastBill != null) l.healthLastBill(formatDate(counts!.lastBill!)), if (counts?.importedFromErp1 != null) l.healthImportedFrom(formatDate(counts!.importedFromErp1!))].join('. ')),
+      item(Icons.account_balance_outlined, (sv?.negatives.isNotEmpty ?? false) ? c.warning : c.primary, l.healthStockValue, sv == null ? l.healthUnknown : '₹ ${formatPaise(sv.shownTotal)}', help: sv == null ? null : '${ruleCaption(l, sv)}. ${l.healthStockValueHelp(sv.negatives.length.toString(), sv.unpricedProducts.toString())}', action: Wrap(spacing: 8, runSpacing: 8, children: [OutlinedButton(key: const ValueKey('stockValueDetails'), onPressed: () => showStockValueSheet(context, ref), child: Text(l.stockValueTitle)), if (fixCount > 0) FilledButton(key: const ValueKey('fixThese'), onPressed: () => context.go('/fix'), child: Text(l.fixLink('$fixCount')))])),
       item(Icons.memory, c.primary, l.databaseSize, info?.fileBytes == null ? l.healthUnknown : _size(info!.fileBytes!), help: l.databaseSizeHelp('1,000,000')),
     ];
     final attention = SectionCard(
@@ -222,9 +230,34 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
         final cols = (bc.maxWidth / ctx.textFactor) > 980 ? 3 : ((bc.maxWidth / ctx.textFactor) > 620 ? 2 : 1);
         final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
         return SingleChildScrollView(padding: const EdgeInsets.only(bottom: 24), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (swapRes != null) ...[
+            SectionCard(
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(swapRes.ok ? Icons.check_circle_outline : Icons.error_outline, color: swapRes.ok ? c.success : c.danger),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(swapRes.ok
+                      ? (swapRes.kind == 'goback' ? l.swapWentBack(formatDate(swapRes.at)) : l.swapImported(formatDate(swapRes.at), '${swapRes.counts['products'] ?? '-'}', '${swapRes.counts['customers'] ?? '-'}', '${swapRes.counts['bills'] ?? '-'}'))
+                      : l.swapFailed(swapRes.message)),
+                ),
+                TextButton(
+                  key: const ValueKey('swapGotIt'),
+                  onPressed: () async {
+                    final dir = ref.read(dataDirProvider);
+                    if (dir != null) await clearSwapResult(dir);
+                    ref.invalidate(swapResultProvider);
+                  },
+                  child: Text(l.swapGotIt),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 12),
+          ],
           Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]),
           const SizedBox(height: 12),
           attention,
+          const SizedBox(height: 12),
+          const GoBackCard(),
         ]));
       }),
     );

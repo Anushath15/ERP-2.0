@@ -155,6 +155,20 @@ String buildReport(Erp1Plan p, {String? fileName, bool dryRun = true, String? va
   o.writeln('  Customers whose balance is NOT explained by their bills and payments in the file: ${p.openingCustomer.length} (carried in as an "opening balance" entry; largest ${big.take(5).map((e) => '${p.customers[e.key]!.name} ${rupees(e.value)}').join('; ')})');
   o.writeln('  Dealers likewise: ${p.openingDealer.length}');
 
+  h('3b. Corrections applied, and differences that need a decision from the owner');
+  if (p.corrections.isEmpty) o.writeln('  Corrections applied: none');
+  for (final c in p.corrections) {
+    o.writeln('  APPLIED (named by the owner): ${c.auditText}. Also written to the audit record.');
+  }
+  if (p.decisions.isEmpty) {
+    o.writeln('  Needs a decision from the owner: none');
+  } else {
+    o.writeln('  NEEDS A DECISION FROM THE OWNER (nothing was changed): ERP 1 shows these customers owing less than their unpaid bills add up to.');
+    for (final d in p.decisions) {
+      o.writeln('    ${d.customer}: bills ${d.bills.join('; ')}; difference ${rupees(d.differencePaise)}');
+    }
+  }
+
   h('4. Stock');
   o.writeln('  Products with stock figures: ${p.products.values.where((x) => !x.placeholder).length}; total quantity ${qty(r.stockMilli)}; negative stock: ${r.negativeProducts} product(s) (kept as they are)');
   o.writeln('  Products whose opening stock had to be made up to match ERP 1\'s figure: ${p.openingStock.length}');

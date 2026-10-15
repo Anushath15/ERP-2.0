@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
-import '../../design/effects.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../data/repo/report_repo.dart';
@@ -246,86 +245,3 @@ class ExportScreen extends ConsumerWidget {
   }
 }
 
-class ImportScreen extends ConsumerStatefulWidget {
-  const ImportScreen({super.key});
-  @override
-  ConsumerState<ImportScreen> createState() => _ImportScreenState();
-}
-
-class _ImportScreenState extends ConsumerState<ImportScreen> {
-  int _step = 0; // 0 choose file, 1 dry-run report, 2 done
-  bool _checking = false;
-
-  /// Demo of a slow step: the report takes about a second to build, so a placeholder shows (after 150 ms) instead of a frozen screen.
-  Future<void> _check() async {
-    setState(() => _checking = true);
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (mounted) setState(() { _checking = false; _step = 1; });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = tr(context);
-    final th = Theme.of(context).textTheme;
-    final c = context.c;
-    Widget stepBody;
-    if (_step == 0) {
-      stepBody = SectionCard(title: l.importStep1, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(l.importHelp, style: th.bodyMedium),
-        const SizedBox(height: 14),
-        FilledButton.icon(onPressed: _checking ? null : _check, icon: const Icon(Icons.folder_open), label: Text(l.chooseBackupFile)),
-        const SizedBox(height: 8),
-        Text(l.importSafe, style: th.bodySmall),
-      ]));
-    } else if (_step == 1) {
-      stepBody = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        SectionCard(title: l.importReport, child: Column(children: [
-          for (final r in [(l.statItems, '757'), (l.navCustomers, '4,982'), (l.navDealers, '38'), (l.statBills, '12,604'), (l.statStockValue, '₹ 18,42,760.00'), (l.statToCollect, '₹ 6,31,200.00')])
-            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Row(children: [Expanded(child: Text(r.$1)), Text(r.$2, style: th.titleSmall)])),
-        ])),
-        const SizedBox(height: 12),
-        SectionCard(title: l.importWarnings, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          StatusBadge(l.warnNegStock('11'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded),
-          const SizedBox(height: 6),
-          StatusBadge(l.warnNoCost('64'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded),
-          const SizedBox(height: 6),
-          StatusBadge(l.warnDupNames('3'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded),
-          const SizedBox(height: 6),
-          StatusBadge(l.warnBadDates('2'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded),
-          const SizedBox(height: 10),
-          Text(l.importWarnHelp, style: th.bodySmall),
-        ])),
-        const SizedBox(height: 12),
-        Row(children: [
-          OutlinedButton(onPressed: () => setState(() => _step = 0), child: Text(l.cancel)),
-          const SizedBox(width: 10),
-          Expanded(child: FilledButton.icon(onPressed: () => setState(() => _step = 2), icon: const Icon(Icons.download_done), label: Text(l.importNow))),
-        ]),
-      ]);
-    } else {
-      stepBody = SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [Icon(Icons.check_circle, color: c.success, size: 32), const SizedBox(width: 10), Expanded(child: Text(l.importDone, style: th.titleLarge))]),
-        const SizedBox(height: 10),
-        Text(l.importProof, style: th.bodyMedium),
-        const SizedBox(height: 10),
-        for (final r in [l.proofProducts, l.proofStock, l.proofBalances, l.proofBills]) Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(children: [Icon(Icons.check, size: 18, color: c.success), const SizedBox(width: 8), Expanded(child: Text(r))])),
-        const SizedBox(height: 14),
-        OutlinedButton(onPressed: () => setState(() => _step = 0), child: Text(l.importAgain)),
-      ]));
-    }
-    return PageFrame(
-      title: l.navImport,
-      subtitle: l.importSubtitle,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            stepBody,
-            if (_checking) const SizedBox(height: 200, child: DelayedLoader(loading: true, skeleton: SkeletonBlocks(rows: 3), child: SizedBox.shrink())),
-          ]),
-        ),
-      ),
-    );
-  }
-}

@@ -10,6 +10,7 @@ import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
+import 'import_helpers.dart';
 
 class FakeSound implements SoundPlayer {
   final played = <SoundKind>[];
@@ -142,7 +143,7 @@ void main() {
 
   group('skeleton placeholder appears only for loads slower than 150 ms', () {
     testWidgets('fast load: nothing flashes; slow load: skeleton (Full) after 150 ms', (tester) async {
-      await pumpApp(tester, size: desktop1366, location: '/import', motion: MotionLevel.full, followSystemMotion: false);
+      await pumpApp(tester, size: desktop1366, location: '/import', motion: MotionLevel.full, followSystemMotion: false, extraOverrides: importOverrides());
       await tester.pump(const Duration(seconds: 1));
       await tester.tap(find.byIcon(Icons.folder_open));
       await tester.pump();
@@ -155,7 +156,7 @@ void main() {
     });
 
     testWidgets('Gentle shows a plain spinner instead of shimmer', (tester) async {
-      await pumpApp(tester, size: desktop1366, location: '/import', motion: MotionLevel.gentle, followSystemMotion: false);
+      await pumpApp(tester, size: desktop1366, location: '/import', motion: MotionLevel.gentle, followSystemMotion: false, extraOverrides: importOverrides());
       await tester.pump(const Duration(seconds: 1));
       await tester.tap(find.byIcon(Icons.folder_open));
       await tester.pump();

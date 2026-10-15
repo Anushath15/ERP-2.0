@@ -160,6 +160,9 @@ class RecsNotifier extends Notifier<List<Rec>> {
     }
   }
 
+  /// Shows a record that was already written elsewhere (nothing is saved here).
+  void showOnly(Rec r) => state = [r, ...state];
+
   void replace(Rec r) {
     state = [for (final x in state) x.id == r.id ? r : x];
     switch (kind) {

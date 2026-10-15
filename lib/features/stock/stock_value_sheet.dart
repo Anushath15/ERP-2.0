@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/money.dart';
 import '../../design/detail_sheet.dart';
 import '../../design/widgets.dart';
@@ -60,6 +61,11 @@ class _Body extends StatelessWidget {
             ]),
           ),
         ),
+      if (v.unpricedProducts > 0 || v.negatives.isNotEmpty)
+        Padding(padding: const EdgeInsets.only(bottom: 8), child: FilledButton(key: const ValueKey('sheetFix'), onPressed: () {
+          Navigator.pop(context);
+          context.go('/fix');
+        }, child: Text(l.fixLink('${v.unpricedProducts + v.negatives.length}')))),
       if (v.unpricedProducts > 0) ...[
         StatusBadge(l.costNotSetLine(v.unpricedProducts.toString(), formatQty(v.unpricedQtyMilli)), kind: BadgeKind.warning, icon: Icons.sell_outlined),
         Padding(padding: const EdgeInsets.only(top: 4, bottom: 8), child: Text(l.costNotSetHelp, style: th.bodySmall)),

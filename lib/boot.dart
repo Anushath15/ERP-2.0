@@ -11,6 +11,7 @@ import 'data/context.dart';
 import 'data/db/errors.dart';
 import 'data/db/open.dart';
 import 'data/ids.dart';
+import 'data/importer/swap.dart';
 import 'data/repo/series_registry.dart';
 import 'demo/demo_seeder.dart';
 import 'fake/data_providers.dart';
@@ -21,13 +22,16 @@ sealed class BootOutcome {
 }
 
 class BootReady extends BootOutcome {
-  const BootReady(super.mode, {required this.data, required this.boot, required this.needsSetup, required this.dataDir, required this.deviceId, required this.location});
+  const BootReady(super.mode, {this.swap, required this.data, required this.boot, required this.needsSetup, required this.dataDir, required this.deviceId, required this.location});
   final AppData data;
   final Bootstrap boot;
 
   /// True until the first-run set-up has been completed (shop details, this computer's bill letter).
   final bool needsSetup;
   final String dataDir, deviceId, location;
+
+  /// Set when this start-up switched the data file (an ERP 1 import or a go-back); the app then opens on the Health page to show the real counts.
+  final SwapResult? swap;
 }
 
 class BootProblem extends BootOutcome {
@@ -51,6 +55,8 @@ Future<void> saveMode(AppPaths paths, DataMode mode) => paths.writeText('mode', 
 Future<BootOutcome> bootApp({required AppPaths paths, required DataMode mode, DateTime Function()? clock, bool background = true, DemoCounts demoCounts = const DemoCounts()}) async {
   final now = clock ?? DateTime.now;
   final deviceId = await loadDeviceId(paths);
+  // a data switch the owner confirmed (an ERP 1 import, or going back) happens HERE, before the file is opened
+  final swap = (mode == DataMode.real && paths.dataDir.isNotEmpty) ? await applyPendingSwap(paths.dataDir) : null;
   final location = paths.dbLocation(mode == DataMode.demo ? 'demo' : 'shop');
   try {
     final db = await openShopDatabase(location, background: background);
@@ -67,7 +73,7 @@ Future<BootOutcome> bootApp({required AppPaths paths, required DataMode mode, Da
     data.bills.series = mine ?? 'A';
     final t = now();
     final boot = await Bootstrap.load(data, now: DateTime(t.year, t.month, t.day, t.hour, t.minute));
-    return BootReady(mode, data: data, boot: boot, needsSetup: !created || mine == null, dataDir: paths.dataDir, deviceId: deviceId, location: location);
+    return BootReady(mode, swap: swap, data: data, boot: boot, needsSetup: !created || mine == null, dataDir: paths.dataDir, deviceId: deviceId, location: location);
   } on DatabaseOpenException catch (e) {
     return BootProblem(mode, e);
   }

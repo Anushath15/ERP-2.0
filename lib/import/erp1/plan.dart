@@ -133,6 +133,33 @@ class PCategory {
   String get id => 'e1-cat-${name.toLowerCase().hashCode.toRadixString(16)}';
 }
 
+/// A correction the OWNER named. Nothing else is ever corrected silently.
+class ImportCorrection {
+  const ImportCorrection({required this.billOldNo, required this.clearPaise, required this.reason});
+  final String billOldNo, reason;
+  final int clearPaise;
+}
+
+/// The corrections the owner has confirmed (15 Oct 2026: ram's part-paid bill was settled; ERP 1 shows the customer owing nothing).
+const ownerConfirmedCorrections = [
+  ImportCorrection(billOldNo: 'INV-2627-000001', clearPaise: 6000, reason: 'owner confirmed on 2026-10-15 that the 60.00 unpaid on this bill was cleared'),
+];
+
+class AppliedCorrection {
+  AppliedCorrection(this.billOldNo, this.amountPaise, this.reason);
+  final String billOldNo, reason;
+  final int amountPaise;
+  String get auditText => 'Corrected during import: bill $billOldNo, ${amountPaise ~/ 100}.${(amountPaise % 100).toString().padLeft(2, '0')} marked paid ($reason)';
+}
+
+/// A difference the importer did NOT change: ERP 1's balance for a customer is lower than the bills still showing unpaid add up to.
+class NeedsDecision {
+  NeedsDecision(this.customer, this.bills, this.differencePaise);
+  final String customer;
+  final List<String> bills; // "INV-... unpaid 60.00"
+  final int differencePaise;
+}
+
 /// The whole validated import.
 class Erp1Plan {
   final issues = IssueLog();
@@ -150,6 +177,9 @@ class Erp1Plan {
   final records = <PRecord>[];
   final categories = <String, PCategory>{};
   final settings = <String, String>{};
+  final corrections = <AppliedCorrection>[];
+  final decisions = <NeedsDecision>[];
+  List<ImportCorrection> allowedCorrections = ownerConfirmedCorrections;
   final openingCustomer = <String, int>{}; // the residual opening entries (to list large ones)
   final openingDealer = <String, int>{};
   final openingStock = <String, int>{};
@@ -166,7 +196,7 @@ class Erp1Plan {
   };
 
   /// Reads the backup text. Throws [ImportInputError] for something that is not a backup at all; anything wrong inside a record is logged, not thrown.
-  static Erp1Plan parse(String text) {
+  static Erp1Plan parse(String text, {List<ImportCorrection> corrections = ownerConfirmedCorrections}) {
     Object? root;
     try {
       root = jsonDecode(text);
@@ -176,7 +206,12 @@ class Erp1Plan {
     if (root is! Map<String, dynamic>) throw ImportInputError('This file is not an ERP 1 backup (it is not a set of saved records). Nothing was changed.');
     final data = root['data'];
     if (data is! Map<String, dynamic>) throw ImportInputError('This file is not an ERP 1 backup (it has no "data" section). Nothing was changed.');
-    final p = Erp1Plan();
+    final p = Erp1Plan()..allowedCorrections = corrections;
+    final meta0 = root['_metadata'];
+    final fmt = meta0 is Map ? '${meta0['format'] ?? ''}' : '';
+    if (!fmt.startsWith('senthil_erp') && !data.keys.any((k) => knownKeys.contains(k))) {
+      throw ImportInputError('This file is not an ERP 1 backup: none of the lists ERP 1 saves (products, customers, bills ...) are in it. Nothing was changed.');
+    }
     final meta = root['_metadata'];
     if (meta is Map<String, dynamic>) {
       p.backupFormat = text_(meta['format']);
@@ -900,37 +935,38 @@ class _Builder {
   }
 
   // ---------------------------------------------------------------- balances and stock close
-  /// ERP 1's own balance of a customer is the authority. If the bills still showing money unpaid add up to MORE than ERP 1 says the customer owes, the
-  /// difference was settled some way ERP 1 did not record as a payment, so the oldest unpaid bills are marked paid for the difference (listed in the report).
+  /// Only the corrections the owner named are applied (each listed in the report and written to the audit table). Every other place where ERP 1's balance
+  /// of a customer is lower than the unpaid bills add up to is left exactly as it is and listed as "needs the owner's decision".
   void _clearShortfalls() {
+    final billByNo = {for (final b in p.bills) b.oldNo: b};
+    for (final c in p.allowedCorrections) {
+      final b = billByNo[c.billOldNo];
+      if (b == null || b.cancelled || b.balance < c.clearPaise) {
+        log.add('bills', c.billOldNo, IssueKind.note, 'a correction the owner named could not be applied (bill missing, cancelled or owing less than named)');
+        continue;
+      }
+      final i = p.entries.indexWhere((e) => e.kind == 'billCredit' && e.billNo == c.billOldNo);
+      if (i >= 0) {
+        final e = p.entries[i];
+        if (e.amountPaise == c.clearPaise) {
+          p.entries.removeAt(i);
+        } else {
+          p.entries[i] = PEntry(e.id, e.partyKind, e.partyId, e.kind, e.amountPaise - c.clearPaise, e.atMs, billNo: e.billNo, note: e.note, mode: e.mode, refId: e.refId);
+        }
+      }
+      b.balance -= c.clearPaise;
+      b.received += c.clearPaise;
+      p.corrections.add(AppliedCorrection(c.billOldNo, c.clearPaise, c.reason));
+    }
     final sums = <String, int>{};
     for (final e in p.entries) {
       if (e.partyKind == 'customer') sums[e.partyId] = (sums[e.partyId] ?? 0) + e.amountPaise;
     }
-    final billByNo = {for (final b in p.bills) b.oldNo: b};
-    final custById = {for (final c in p.customers.values) c.id: c};
-    for (final id in sums.keys) {
-      final c = custById[id];
-      if (c == null) continue;
-      var deficit = sums[id]! - c.outstandingPaise;
-      if (deficit <= 0) continue;
-      final credits = p.entries.where((e) => e.partyId == id && e.kind == 'billCredit').toList()..sort((a, b) => a.atMs.compareTo(b.atMs));
-      for (final e in credits) {
-        if (deficit <= 0) break;
-        final cut = deficit < e.amountPaise ? deficit : e.amountPaise;
-        final b = billByNo[e.billNo];
-        if (b == null) continue;
-        final i = p.entries.indexOf(e);
-        if (cut == e.amountPaise) {
-          p.entries.removeAt(i);
-        } else {
-          p.entries[i] = PEntry(e.id, e.partyKind, e.partyId, e.kind, e.amountPaise - cut, e.atMs, billNo: e.billNo, note: e.note, mode: e.mode, refId: e.refId);
-        }
-        b.balance -= cut;
-        b.received += cut;
-        deficit -= cut;
-        log.add('bills', b.oldNo, IssueKind.repaired, 'ERP 1 shows the customer owing less than the bills say: the unpaid part of this bill was marked paid for the difference');
-      }
+    for (final c in p.customers.values) {
+      final sum = sums[c.id] ?? 0;
+      if (sum <= c.outstandingPaise) continue;
+      final open = [for (final b in p.bills) if (b.customerOldId == c.oldId && !b.cancelled && b.balance > 0) '${b.oldNo} unpaid ${b.balance ~/ 100}.${(b.balance % 100).toString().padLeft(2, '0')}'];
+      p.decisions.add(NeedsDecision(c.name, open, sum - c.outstandingPaise));
     }
   }
 
