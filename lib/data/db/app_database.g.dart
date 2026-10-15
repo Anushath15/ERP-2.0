@@ -970,6 +970,18 @@ class Products extends Table with TableInfo<Products, DbProduct> {
     $customConstraints: 'NOT NULL DEFAULT \'\'',
     defaultValue: const CustomExpression('\'\''),
   );
+  static const VerificationMeta _avgCostPaiseMeta = const VerificationMeta(
+    'avgCostPaise',
+  );
+  late final GeneratedColumn<int> avgCostPaise = GeneratedColumn<int>(
+    'avg_cost_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -990,6 +1002,7 @@ class Products extends Table with TableInfo<Products, DbProduct> {
     deviceId,
     version,
     hlc,
+    avgCostPaise,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1123,6 +1136,15 @@ class Products extends Table with TableInfo<Products, DbProduct> {
         hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
       );
     }
+    if (data.containsKey('avg_cost_paise')) {
+      context.handle(
+        _avgCostPaiseMeta,
+        avgCostPaise.isAcceptableOrUnknown(
+          data['avg_cost_paise']!,
+          _avgCostPaiseMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1204,6 +1226,10 @@ class Products extends Table with TableInfo<Products, DbProduct> {
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
       )!,
+      avgCostPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}avg_cost_paise'],
+      )!,
     );
   }
 
@@ -1235,6 +1261,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
   final String deviceId;
   final int version;
   final String hlc;
+  final int avgCostPaise;
   const DbProduct({
     required this.id,
     required this.name,
@@ -1254,6 +1281,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     required this.deviceId,
     required this.version,
     required this.hlc,
+    required this.avgCostPaise,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1280,6 +1308,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     map['device_id'] = Variable<String>(deviceId);
     map['version'] = Variable<int>(version);
     map['hlc'] = Variable<String>(hlc);
+    map['avg_cost_paise'] = Variable<int>(avgCostPaise);
     return map;
   }
 
@@ -1307,6 +1336,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
       deviceId: Value(deviceId),
       version: Value(version),
       hlc: Value(hlc),
+      avgCostPaise: Value(avgCostPaise),
     );
   }
 
@@ -1334,6 +1364,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
       deviceId: serializer.fromJson<String>(json['device_id']),
       version: serializer.fromJson<int>(json['version']),
       hlc: serializer.fromJson<String>(json['hlc']),
+      avgCostPaise: serializer.fromJson<int>(json['avg_cost_paise']),
     );
   }
   @override
@@ -1358,6 +1389,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
       'device_id': serializer.toJson<String>(deviceId),
       'version': serializer.toJson<int>(version),
       'hlc': serializer.toJson<String>(hlc),
+      'avg_cost_paise': serializer.toJson<int>(avgCostPaise),
     };
   }
 
@@ -1380,6 +1412,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     String? deviceId,
     int? version,
     String? hlc,
+    int? avgCostPaise,
   }) => DbProduct(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -1399,6 +1432,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     deviceId: deviceId ?? this.deviceId,
     version: version ?? this.version,
     hlc: hlc ?? this.hlc,
+    avgCostPaise: avgCostPaise ?? this.avgCostPaise,
   );
   DbProduct copyWithCompanion(ProductsCompanion data) {
     return DbProduct(
@@ -1424,6 +1458,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
       version: data.version.present ? data.version.value : this.version,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      avgCostPaise: data.avgCostPaise.present
+          ? data.avgCostPaise.value
+          : this.avgCostPaise,
     );
   }
 
@@ -1447,7 +1484,8 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
           ..write('deletedAt: $deletedAt, ')
           ..write('deviceId: $deviceId, ')
           ..write('version: $version, ')
-          ..write('hlc: $hlc')
+          ..write('hlc: $hlc, ')
+          ..write('avgCostPaise: $avgCostPaise')
           ..write(')'))
         .toString();
   }
@@ -1472,6 +1510,7 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     deviceId,
     version,
     hlc,
+    avgCostPaise,
   );
   @override
   bool operator ==(Object other) =>
@@ -1494,7 +1533,8 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
           other.deletedAt == this.deletedAt &&
           other.deviceId == this.deviceId &&
           other.version == this.version &&
-          other.hlc == this.hlc);
+          other.hlc == this.hlc &&
+          other.avgCostPaise == this.avgCostPaise);
 }
 
 class ProductsCompanion extends UpdateCompanion<DbProduct> {
@@ -1516,6 +1556,7 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
   final Value<String> deviceId;
   final Value<int> version;
   final Value<String> hlc;
+  final Value<int> avgCostPaise;
   final Value<int> rowid;
   const ProductsCompanion({
     this.id = const Value.absent(),
@@ -1536,6 +1577,7 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     this.deviceId = const Value.absent(),
     this.version = const Value.absent(),
     this.hlc = const Value.absent(),
+    this.avgCostPaise = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProductsCompanion.insert({
@@ -1557,6 +1599,7 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     required String deviceId,
     this.version = const Value.absent(),
     this.hlc = const Value.absent(),
+    this.avgCostPaise = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -1583,6 +1626,7 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     Expression<String>? deviceId,
     Expression<int>? version,
     Expression<String>? hlc,
+    Expression<int>? avgCostPaise,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1604,6 +1648,7 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
       if (deviceId != null) 'device_id': deviceId,
       if (version != null) 'version': version,
       if (hlc != null) 'hlc': hlc,
+      if (avgCostPaise != null) 'avg_cost_paise': avgCostPaise,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1627,6 +1672,7 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     Value<String>? deviceId,
     Value<int>? version,
     Value<String>? hlc,
+    Value<int>? avgCostPaise,
     Value<int>? rowid,
   }) {
     return ProductsCompanion(
@@ -1648,6 +1694,7 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
       deviceId: deviceId ?? this.deviceId,
       version: version ?? this.version,
       hlc: hlc ?? this.hlc,
+      avgCostPaise: avgCostPaise ?? this.avgCostPaise,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1709,6 +1756,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
+    if (avgCostPaise.present) {
+      map['avg_cost_paise'] = Variable<int>(avgCostPaise.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1736,6 +1786,7 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
           ..write('deviceId: $deviceId, ')
           ..write('version: $version, ')
           ..write('hlc: $hlc, ')
+          ..write('avgCostPaise: $avgCostPaise, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15732,6 +15783,7 @@ typedef $ProductsCreateCompanionBuilder = ProductsCompanion Function({
   required String deviceId,
   Value<int> version,
   Value<String> hlc,
+  Value<int> avgCostPaise,
   Value<int> rowid,
 });
 typedef $ProductsUpdateCompanionBuilder = ProductsCompanion Function({
@@ -15753,6 +15805,7 @@ typedef $ProductsUpdateCompanionBuilder = ProductsCompanion Function({
   Value<String> deviceId,
   Value<int> version,
   Value<String> hlc,
+  Value<int> avgCostPaise,
   Value<int> rowid,
 });
 
@@ -15931,6 +15984,11 @@ class $ProductsFilterComposer extends Composer<_$AppDatabase, Products> {
 
   ColumnFilters<String> get hlc => $composableBuilder(
     column: $table.hlc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get avgCostPaise => $composableBuilder(
+    column: $table.avgCostPaise,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16132,6 +16190,11 @@ class $ProductsOrderingComposer extends Composer<_$AppDatabase, Products> {
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get avgCostPaise => $composableBuilder(
+    column: $table.avgCostPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $ProductsAnnotationComposer extends Composer<_$AppDatabase, Products> {
@@ -16199,6 +16262,11 @@ class $ProductsAnnotationComposer extends Composer<_$AppDatabase, Products> {
 
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<int> get avgCostPaise => $composableBuilder(
+    column: $table.avgCostPaise,
+    builder: (column) => column,
+  );
 
   Expression<T> stockMovementsRefs<T extends Object>(
     Expression<T> Function($StockMovementsAnnotationComposer a) f,
@@ -16352,6 +16420,7 @@ class $ProductsTableManager
                 Value<String> deviceId = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
+                Value<int> avgCostPaise = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductsCompanion(
                 id: id,
@@ -16372,6 +16441,7 @@ class $ProductsTableManager
                 deviceId: deviceId,
                 version: version,
                 hlc: hlc,
+                avgCostPaise: avgCostPaise,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -16394,6 +16464,7 @@ class $ProductsTableManager
                 required String deviceId,
                 Value<int> version = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
+                Value<int> avgCostPaise = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductsCompanion.insert(
                 id: id,
@@ -16414,6 +16485,7 @@ class $ProductsTableManager
                 deviceId: deviceId,
                 version: version,
                 hlc: hlc,
+                avgCostPaise: avgCostPaise,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -10,7 +10,9 @@ import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
+import '../../fake/stock_value_provider.dart';
 import '../products/product_form.dart';
+import 'stock_value_sheet.dart';
 
 Widget _stockCell(BuildContext context, Product p) {
   final l = tr(context);
@@ -99,9 +101,9 @@ class InventoryScreen extends ConsumerWidget {
     final l = tr(context);
     final items = ref.watch(productsProvider);
     final th = Theme.of(context).textTheme;
-    // One shared valuation rule for now (buying price; unpriced and negative stock = 0; the shop has not chosen a rule yet, see docs/erp1-import-map.md section 7) so totals can never disagree between screens.
+    // per-row value for the "highest value" sort only; the TOTAL comes from the one shared calculation (stockValuationProvider)
     int value(Product p) => p.stockMilli <= 0 ? 0 : p.costPaise * p.stockMilli ~/ 1000;
-    final total = items.fold<int>(0, (s, p) => s + value(p));
+    final sv = ref.watch(stockValuationProvider).value;
     final low = items.where((p) => p.lowStock).length;
     final out = items.where((p) => p.outOfStock).length;
     return DataListScreen<Product>(
@@ -111,7 +113,7 @@ class InventoryScreen extends ConsumerWidget {
       searchText: (p) => '${p.name} ${p.barcode}',
       searchHint: l.searchProductHint,
       stats: [
-        StatCard(label: l.statStockValue, value: '₹ ${formatPaise(total)}', icon: Icons.account_balance_outlined, hint: l.valuationRule),
+        InkWell(onTap: () => showStockValueSheet(context, ref), child: StatCard(label: l.statStockValue, value: sv == null ? '…' : '₹ ${formatPaise(sv.shownTotal)}', icon: Icons.account_balance_outlined, hint: sv == null ? null : ruleCaption(l, sv))),
         StatCard(label: l.statItems, value: items.length.toString(), icon: Icons.inventory_2_outlined),
         StatCard(label: l.statLow, value: low.toString(), icon: Icons.warning_amber_rounded, tone: context.c.warning),
         StatCard(label: l.statOut, value: out.toString(), icon: Icons.block, tone: context.c.danger),

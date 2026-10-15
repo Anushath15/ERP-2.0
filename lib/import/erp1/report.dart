@@ -2,6 +2,9 @@
 /// check against ERP 1's own screens. Plain text so it can be shown, saved or read out.
 library;
 
+import '../../domain/stock_value.dart';
+import 'checksum.dart';
+import 'convert.dart';
 import 'plan.dart';
 
 /// Totals of a plan, in paise and milli-units. The same figures are read back from the new database after a write and must match.
@@ -46,6 +49,7 @@ class Recon {
         dealerOwedPaise += d.outstandingPaise;
       }
     }
+    final lines = <StockLine>[];
     for (final pr in p.products.values) {
       if (pr.placeholder) continue;
       stockMilli += pr.stockMilli;
@@ -54,11 +58,10 @@ class Recon {
         deletedProducts++;
         continue;
       }
-      final stock = pr.stockMilli;
-      int v(int rate) => (stock * rate / 1000).round();
-      final bucket = !pr.active ? inactive : (pr.costPaise == 0 && pr.avgCostPaise == 0 ? unpriced : active);
-      bucket.add(pr, stock, v(pr.pricePaise), v(pr.costPaise), v(pr.avgCostPaise));
+      lines.add(StockLine(id: pr.id, name: pr.name, active: pr.active, stockMilli: pr.stockMilli, sellPaise: pr.pricePaise, buyPaise: pr.costPaise, avgPaise: pr.avgCostPaise));
+      if (example == null && pr.stockMilli > 0 && pr.pricePaise > 0 && pr.costPaise > 0 && pr.avgCostPaise > 0 && pr.costPaise != pr.avgCostPaise && pr.active) example = pr;
     }
+    valuation = StockValuation.compute(lines);
   }
 
   int bills = 0, cancelledBills = 0, salesPaise = 0, cancelledPaise = 0, creditOnBillsPaise = 0;
@@ -67,45 +70,8 @@ class Recon {
   int stockMilli = 0, negativeProducts = 0, deletedProducts = 0;
   final salesByMonth = <String, int>{};
   final paymentsByMonth = <String, int>{};
-  final active = ValueBucket(), unpriced = ValueBucket(), inactive = ValueBucket();
-
-  /// The three candidate rules for "what is my stock worth", for ACTIVE products that have a buying price, with the other groups beside them.
-  ValueBucket get all => ValueBucket()
-    ..merge(active)
-    ..merge(unpriced)
-    ..merge(inactive);
-}
-
-class ValueBucket {
-  int products = 0, qtyMilli = 0, atSelling = 0, atBuying = 0, atAverage = 0, negativeProducts = 0, negativeAtSelling = 0, negativeAtBuying = 0, negativeAtAverage = 0;
+  late final StockValuation valuation;
   PProduct? example;
-  void add(PProduct p, int stock, int selling, int buying, int average) {
-    products++;
-    qtyMilli += stock;
-    atSelling += selling;
-    atBuying += buying;
-    atAverage += average;
-    if (stock < 0) {
-      negativeProducts++;
-      negativeAtSelling += selling;
-      negativeAtBuying += buying;
-      negativeAtAverage += average;
-    }
-    if (example == null && stock > 0 && p.pricePaise > 0 && p.costPaise > 0 && p.avgCostPaise > 0 && p.costPaise != p.pricePaise) example = p;
-  }
-
-  void merge(ValueBucket o) {
-    products += o.products;
-    qtyMilli += o.qtyMilli;
-    atSelling += o.atSelling;
-    atBuying += o.atBuying;
-    atAverage += o.atAverage;
-    negativeProducts += o.negativeProducts;
-    negativeAtSelling += o.negativeAtSelling;
-    negativeAtBuying += o.negativeAtBuying;
-    negativeAtAverage += o.negativeAtAverage;
-    example ??= o.example;
-  }
 }
 
 String rupees(int paise) {
@@ -142,6 +108,16 @@ String buildReport(Erp1Plan p, {String? fileName, bool dryRun = true, String? va
   if (fileName != null) o.writeln('Backup file: $fileName');
   o.writeln('Backup format: ${p.backupFormat ?? 'not stated'}; taken: ${p.backupStamp ?? 'not stated'}');
 
+  h('0. The file itself');
+  o.writeln('  Checksum: ${switch (p.checksum) {
+    ChecksumResult.ok => 'CHECKED AND CORRECT (SHA-256 re-computed the way ERP 1 does; the file is exactly as ERP 1 wrote it)',
+    ChecksumResult.mismatch => 'DOES NOT MATCH - the file was changed or damaged after ERP 1 wrote it. Do not trust it; make a fresh backup copy.',
+    ChecksumResult.notPresent => 'none in this file (an older ERP 1 backup); each record is checked one by one instead',
+    ChecksumResult.unsupported => 'uses a method this tool does not know; each record is checked one by one instead',
+  }}');
+  o.writeln('  Lists in the file: ${p.actualKeys}${p.declaredKeys == null ? '' : ' (ERP 1 says ${p.declaredKeys})'}; records: ${p.actualRecords}${p.declaredRecords == null ? '' : ' (ERP 1 says ${p.declaredRecords})'}');
+  if (p.declaredRecords != null && p.declaredRecords != p.actualRecords) o.writeln('  WARNING: the number of records differs from what ERP 1 wrote into the file.');
+
   h('1. Counts (read in the file / will be written)');
   const keyOf = {
     'products': 'erp_products', 'customers': 'erp_customers', 'dealers': 'erp_dealers', 'bills': 'erp_sales_invoices', 'estimates': 'erp_estimations',
@@ -161,6 +137,8 @@ String buildReport(Erp1Plan p, {String? fileName, bool dryRun = true, String? va
 
   h('2. Sales and payments');
   o.writeln('  Bills counted (not cancelled): ${r.bills}, total ${rupees(r.salesPaise)}; money still owed on them: ${rupees(r.creditOnBillsPaise)}');
+  final bm = moment(p.backupStamp)?.month;
+  if (bm != null) o.writeln('  This month ($bm, the month of the backup): sales ${rupees(r.salesByMonth[bm] ?? 0)}, payments received ${rupees(r.paymentsByMonth[bm] ?? 0)}');
   o.writeln('  Cancelled bills: ${r.cancelledBills}, total ${rupees(r.cancelledPaise)} (kept, marked cancelled, not counted in sales)');
   o.writeln('  Customer payments: ${rupees(r.customerPaymentsPaise)}; dealer payments: ${rupees(r.dealerPaymentsPaise)}');
   o.writeln('  Month by month (sales / payments received):');
@@ -208,23 +186,21 @@ String buildReport(Erp1Plan p, {String? fileName, bool dryRun = true, String? va
 }
 
 void _valuation(StringBuffer o, Recon r, String? chosen) {
-  o.writeln('\n  STOCK VALUE: a decision is needed (no rule has been applied).');
-  void row(String name, ValueBucket b) {
-    o.writeln('    ${name.padRight(46)} ${b.products.toString().padLeft(6)} products   at selling price ${rupees(b.atSelling).padLeft(16)}   at buying price ${rupees(b.atBuying).padLeft(16)}   at average cost ${rupees(b.atAverage).padLeft(16)}');
+  final v = r.valuation;
+  o.writeln('\n  STOCK VALUE: a decision is needed (no rule has been applied; the setting is ${chosen ?? 'NOT SET'}). Same calculation as the Inventory and Health screens.');
+  o.writeln('    Counted: products with stock above zero and a known cost. Average cost = the average where ERP 1 has one, else the latest buying price.');
+  String name(ValuationRule x) => switch (x) { ValuationRule.average => 'Average cost (recommended)', ValuationRule.buying => 'Latest buying price', ValuationRule.selling => 'Selling price' };
+  for (final x in ValuationRule.values) {
+    o.writeln('    ${name(x).padRight(30)} active ${rupees(v.activeValue[x]!).padLeft(18)}   + inactive ${rupees(v.inactiveValue[x]!).padLeft(16)}   = TOTAL ${rupees(v.total(x)).padLeft(18)}');
   }
-
-  row('Active products with a buying price', r.active);
-  row('Active products with NO buying price (cost 0)', r.unpriced);
-  row('Inactive products', r.inactive);
-  row('Everything above', r.all);
-  if (r.all.negativeProducts > 0) {
-    o.writeln('    ${r.all.negativeProducts} product(s) have NEGATIVE stock; they are included in the totals above as ${rupees(r.all.negativeAtSelling)} (selling), ${rupees(r.all.negativeAtBuying)} (buying), ${rupees(r.all.negativeAtAverage)} (average). Counting them as zero instead would give ${rupees(r.all.atSelling - r.all.negativeAtSelling)} / ${rupees(r.all.atBuying - r.all.negativeAtBuying)} / ${rupees(r.all.atAverage - r.all.negativeAtAverage)}.');
-  }
-  final ex = r.all.example;
+  o.writeln('    Active products counted: ${v.activeProducts} (quantity ${qty(v.activeQtyMilli)}); inactive products with stock, included above as their own part: ${v.inactiveProducts} (quantity ${qty(v.inactiveQtyMilli)}).');
+  o.writeln('    COST NOT SET: ${v.unpricedProducts} product(s) with stock, quantity ${qty(v.unpricedQtyMilli)}. They are NOT in any total above (never valued at the selling price or as zero inside a total); fix their buying price to include them.');
+  o.writeln('    NEGATIVE STOCK (errors to fix, counted as 0): ${v.negatives.length}${v.negatives.isEmpty ? '' : ' - ${v.negatives.take(10).map((n) => '${n.name} ${qty(n.stockMilli)}').join('; ')}${v.negatives.length > 10 ? '; ...' : ''}'}');
+  final ex = r.example;
   if (ex != null) {
     final q = ex.stockMilli;
-    o.writeln('    Example from your own list: "${ex.name}", ${qty(q)} in stock, sells at ${rupees(ex.pricePaise)}, bought at ${rupees(ex.costPaise)}, average cost ${rupees(ex.avgCostPaise)}.');
-    o.writeln('      Selling price rule says ${rupees((q * ex.pricePaise / 1000).round())}; buying price rule says ${rupees((q * ex.costPaise / 1000).round())}; average cost rule says ${rupees((q * ex.avgCostPaise / 1000).round())}.');
+    o.writeln('    Example from your own list: "${ex.name}", ${qty(q)} in stock, sells at ${rupees(ex.pricePaise)}, last bought at ${rupees(ex.costPaise)}, average cost ${rupees(ex.avgCostPaise)}.');
+    o.writeln('      Average cost rule says ${rupees((q * ex.avgCostPaise / 1000).round())}; latest buying price rule says ${rupees((q * ex.costPaise / 1000).round())}; selling price rule says ${rupees((q * ex.pricePaise / 1000).round())}.');
   }
-  o.writeln('    The setting "valuation.rule" is ${chosen ?? 'NOT SET'}; the Reports page will show all three until it is set.');
+  o.writeln('    Until the shop chooses, the screens show the average-cost number, marked recommended and not chosen yet, with the other two beside it.');
 }

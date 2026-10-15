@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import '../../domain/stock_value.dart';
 import '../context.dart';
 import '../db/app_database.dart';
 
@@ -79,6 +80,17 @@ class ReportRepo {
 
   Future<int> weOwe() async => _db.scalarInt("SELECT COALESCE(SUM(balance_paise), 0) FROM party_balance WHERE party_kind = 'dealer' AND balance_paise > 0");
 
-  /// Stock value under a rule (selling price, buying price); negative stock counts as zero.
-  Future<int> stockValue({required bool bySellingPrice}) => _db.scalarInt('SELECT COALESCE(SUM(CASE WHEN COALESCE(s.qty_milli,0) > 0 THEN (${bySellingPrice ? 'p.price_paise' : 'p.cost_paise'} * s.qty_milli) / 1000 ELSE 0 END), 0) FROM products p LEFT JOIN stock_cache s ON s.product_id = p.id WHERE p.deleted_at IS NULL');
+  /// Every product that is not deleted, with its stock figure and its prices: the input of the ONE stock-value calculation ([StockValuation.compute]).
+  Future<List<StockLine>> stockLines() async {
+    final r = await _db.rows('SELECT p.id, p.name, p.active, p.price_paise, p.cost_paise, p.avg_cost_paise, COALESCE(s.qty_milli, 0) AS stock FROM products p LEFT JOIN stock_cache s ON s.product_id = p.id WHERE p.deleted_at IS NULL');
+    return [
+      for (final x in r) StockLine(id: x.read<String>('id'), name: x.read<String>('name'), active: x.read<int>('active') == 1, stockMilli: x.read<int>('stock'), sellPaise: x.read<int>('price_paise'), buyPaise: x.read<int>('cost_paise'), avgPaise: x.read<int>('avg_cost_paise')),
+    ];
+  }
+
+  /// The stock value under every rule, with the shop's chosen rule (setting `valuation.rule`) if there is one.
+  Future<StockValuation> stockValuation() async {
+    final rule = await _db.rows("SELECT value FROM kv WHERE name = 'valuation.rule'");
+    return StockValuation.compute(await stockLines(), chosen: ruleFromSetting(rule.isEmpty ? null : rule.first.read<String>('value')));
+  }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:erp2/import/erp1/checksum.dart';
 import 'package:erp2/import/erp1/convert.dart';
 import 'package:erp2/import/erp1/plan.dart';
 import 'package:erp2/import/erp1/report.dart';
@@ -80,12 +81,30 @@ void main() {
     test('the report names the three stock values and does not choose one', () {
       final t = buildReport(plan);
       expect(t, contains('DRY RUN'));
-      expect(t, contains('at selling price'));
-      expect(t, contains('at buying price'));
-      expect(t, contains('at average cost'));
+      expect(t, contains('Average cost (recommended)'));
+      expect(t, contains('Latest buying price'));
+      expect(t, contains('Selling price'));
       expect(t, contains('NOT SET'));
+      expect(t, contains('COST NOT SET'));
+      expect(t, contains('NEGATIVE STOCK'));
+      expect(t, contains('This month'));
       expect(t, contains('Old bill no.'));
       expect(t, contains('Example from your own list'));
+    });
+
+    test('the own checksum of the file is re-computed the way ERP 1 does it; any change is caught', () {
+      expect(plan.checksum, ChecksumResult.ok);
+      expect(buildReport(plan), contains('CHECKED AND CORRECT'));
+      final edited = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+      ((edited['data'] as Map<String, dynamic>)['erp_sales_invoices'] as List<dynamic>)[10]['totalAmount'] = 1.0;
+      final p2 = Erp1Plan.parse(jsonEncode(edited));
+      expect(p2.checksum, ChecksumResult.mismatch);
+      expect(buildReport(p2), contains('DOES NOT MATCH'));
+      expect(planOf(backup({})).checksum, ChecksumResult.notPresent);
+    });
+
+    test('canonical text follows JavaScript: whole-number doubles have no .0, keys sorted, nested order kept', () {
+      expect(canonicalText({'b': [1, 2.0, 'x"y'], 'a': {'z': 1.5, 'y': null}}), '[["a",{"z":1.5,"y":null}],["b",[1,2,"x\\"y"]]]');
     });
 
     test('a dry run needs no database at all (planning is pure)', () {

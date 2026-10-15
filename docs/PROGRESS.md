@@ -36,6 +36,13 @@ Also fixed: the Inventory screen's hint said "At average cost price" but used th
 **Needed from the owner:** the ERP 1 backup copy (steps in the import map, section 8) and the stock-value choice (selling / buying / average cost; worked example from the real data comes with the report).
 Not verified: any real ERP 1 data; ERP 1's checksum; the in-app import screen is not built (command only).
 
+## Gate 2B follow-up (2026-10-15): slow save, stock value, file check
+- **Slow save found and measured** (details and tables in `docs/perf-results.md`, failure mode #32): SQLite's checkpoint inside a save cost about 13 ms once in ~20 saves (now moved to quiet moments between saves, with SQLite's own checkpoint kept as a net); the rare 120-200 ms save is the disk flush of `synchronous=FULL` on this PC (proved by switching to NORMAL: it disappears) and cannot be removed without losing power-cut safety. Re-measured, 3,000 saves at person speed on the 4.7 GB file: p50 5.2 ms, p95 6.4 ms, p99 15.2 ms, p99.9 179 ms, max 197 ms; 0.8% of saves over 50 ms. Kill test re-run with checkpoints firing: 200 kills, 0 problems.
+- **Stock value** is now one calculation (`lib/domain/stock_value.dart`) used by Inventory, Health and the import report, and one setting (`valuation.rule`, unset until the owner's father chooses). Until then average cost is shown as "Recommended, not chosen yet"; cost-not-set, inactive and negative stock are separate lines as asked. Needed a schema change: `products.avg_cost_paise` (version 2, migration + test from version 1 pass).
+- **File check:** the importer re-computes ERP 1's own SHA-256 checksum and the record counts and prints the result at the top of the report; tampering is caught in tests.
+- Found and fixed: the power-cut test reused a stale built writer after a schema change and waited 30 s per run; it now rebuilds when sources change.
+- Tests: 587 pass (11 skipped). Waiting: the owner's ERP 1 copy (dry run), the report approval, then the real `--write`, then the in-app import screen.
+
 ## Phase 0 recap
 Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents, spikes S1-S4 plus Android and browser checks, quota analysis of rule lookups, convergence test: see [spikes.md](spikes.md).
 

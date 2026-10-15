@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:erp2/data/app_data.dart';
 import 'package:erp2/data/context.dart';
+import 'package:erp2/data/db/app_database.dart';
 import 'package:erp2/data/db/open.dart';
 import 'package:erp2/data/repo/bill_repo.dart';
 import 'package:erp2/domain/credit/account.dart';
@@ -13,7 +14,8 @@ import 'package:erp2/domain/models.dart';
 Future<void> main(List<String> args) async {
   final path = args[0];
   final r = Random(int.parse(args[1]));
-  final db = await openShopDatabase(path);
+  // tiny policy + small gaps so kills also land in the middle of the program's own checkpoints
+  final db = await openShopDatabase(path, checkpoints: const CheckpointPolicy(commitsBetween: 5, idleMs: 3, tickMs: 10));
   final d = AppData(DataContext(db: db, deviceId: 'dev-kill'));
   d.bills.series = 'K';
   if (await d.catalog.productCount() == 0) {
@@ -36,6 +38,7 @@ Future<void> main(List<String> args) async {
     ];
     final customer = r.nextInt(100) < 60 ? 'c${r.nextInt(10)}' : null;
     final received = customer != null && r.nextBool() ? r.nextInt(3000) : null;
+    await Future<void>.delayed(const Duration(milliseconds: 3));
     final key = 'kill-${DateTime.now().microsecondsSinceEpoch}-${r.nextInt(1 << 30)}';
     final s = await d.bills.saveBill(SaveBillInput(idemKey: key, at: DateTime.now(), lines: lines, customerId: customer, customerName: customer ?? '', receivedPaise: received, payMode: r.nextInt(3)));
     n++;

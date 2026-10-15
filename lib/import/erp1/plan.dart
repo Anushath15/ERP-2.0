@@ -3,6 +3,7 @@
 library;
 
 import 'dart:convert';
+import 'checksum.dart';
 import 'convert.dart';
 
 /// The file is not an ERP 1 backup, or is too damaged to read at all. The message is plain English for the owner.
@@ -153,6 +154,9 @@ class Erp1Plan {
   final openingDealer = <String, int>{};
   final openingStock = <String, int>{};
   String? backupStamp, backupFormat;
+  ChecksumResult checksum = ChecksumResult.notPresent;
+  int? declaredKeys, declaredRecords;
+  int actualKeys = 0, actualRecords = 0;
   int backupMs = 0;
 
   static const knownKeys = {
@@ -178,6 +182,13 @@ class Erp1Plan {
       p.backupFormat = text_(meta['format']);
       p.backupStamp = text_(meta['timestamp']);
       p.backupMs = moment(meta['timestamp'])?.ms ?? 0;
+      p.declaredKeys = meta['keyCount'] is int ? meta['keyCount'] as int : null;
+      p.declaredRecords = meta['recordCount'] is int ? meta['recordCount'] as int : null;
+    }
+    p.checksum = verifyChecksum(data, meta);
+    p.actualKeys = data.length;
+    for (final v in data.values) {
+      p.actualRecords += v is List ? v.length : 1;
     }
     try {
       _Builder(p, data).run();

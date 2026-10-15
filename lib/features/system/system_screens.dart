@@ -14,6 +14,9 @@ import '../../data/db/integrity.dart';
 import '../../data/repo/rebuild.dart';
 import '../../data/repo/self_check.dart';
 import '../../fake/health.dart';
+import '../../fake/stock_value_provider.dart';
+import '../stock/stock_value_sheet.dart';
+import '../../core/money.dart';
 import '../../fake/stats.dart';
 import '../../strings.dart';
 import '../../core/data_mode.dart';
@@ -178,6 +181,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     final th = Theme.of(context).textTheme;
     final c = context.c;
     final info = ref.watch(healthInfoProvider).value;
+    final sv = ref.watch(stockValuationProvider).value;
     final health = ref.watch(fileHealthProvider);
     final List<String> problems = _found ?? ref.watch(selfCheckProblemsProvider);
     Widget item(IconData icon, Color color, String title, String value, {String? help, Widget? action}) => SectionCard(
@@ -197,6 +201,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
       item(Icons.storage_outlined, info?.freeBytes != null && info!.freeBytes! < 500 * 1024 * 1024 ? c.warning : c.primary, l.freeDisk, info?.freeBytes == null ? l.healthUnknown : _size(info!.freeBytes!), help: l.freeDiskHelp),
       item(Icons.cloud_upload_outlined, (info?.pendingUploads ?? 0) > 0 ? c.warning : c.success, l.syncBacklog, l.syncBacklogValue('${info?.pendingUploads ?? 0}'), help: l.syncBacklogHelp),
       item(Icons.inventory_outlined, problems.isEmpty ? c.success : c.warning, l.healthTotals, problems.isEmpty ? l.healthTotalsOk : l.healthProblemsFound(problems.length.toString()), help: l.healthTotalsHelp, action: OutlinedButton(key: const ValueKey('rebuildTotals'), onPressed: () => _rebuild(l), child: Text(l.rebuildTotals))),
+      item(Icons.account_balance_outlined, (sv?.negatives.isNotEmpty ?? false) ? c.warning : c.primary, l.healthStockValue, sv == null ? l.healthUnknown : '₹ ${formatPaise(sv.shownTotal)}', help: sv == null ? null : '${ruleCaption(l, sv)}. ${l.healthStockValueHelp(sv.negatives.length.toString(), sv.unpricedProducts.toString())}', action: OutlinedButton(key: const ValueKey('stockValueDetails'), onPressed: () => showStockValueSheet(context, ref), child: Text(l.stockValueTitle))),
       item(Icons.memory, c.primary, l.databaseSize, info?.fileBytes == null ? l.healthUnknown : _size(info!.fileBytes!), help: l.databaseSizeHelp('1,000,000')),
     ];
     final attention = SectionCard(

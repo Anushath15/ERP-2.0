@@ -9,6 +9,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:erp2/import/erp1/checksum.dart';
 
 class Synthetic {
   Synthetic({this.bills = 2000, this.products = 300, this.customers = 120, this.dealers = 15, this.seed = 7, this.flaws = true});
@@ -179,8 +180,12 @@ class Synthetic {
       data['erp_mystery_list'] = [1, 2, 3];
       planted.add('a list the importer has no home for');
     }
+    var records = 0;
+    for (final v in data.values) {
+      records += v is List ? v.length : 1;
+    }
     return {
-      '_metadata': {'format': 'senthil_erp_full_backup_v2', 'timestamp': '2025-07-01T10:00:00.000Z', 'keyCount': data.length, 'recordCount': 0, 'checksum': 'synthetic'},
+      '_metadata': {'format': 'senthil_erp_full_backup_v2', 'timestamp': '2025-07-01T10:00:00.000Z', 'keyCount': data.length, 'recordCount': records, 'checksumAlgorithm': 'sha256', 'checksum': checksumOf(data)},
       'data': data,
     };
   }

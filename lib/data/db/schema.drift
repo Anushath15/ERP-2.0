@@ -40,7 +40,8 @@ CREATE TABLE products (
   deleted_at INTEGER,
   device_id TEXT NOT NULL,
   version INTEGER NOT NULL DEFAULT 1,
-  hlc TEXT NOT NULL DEFAULT ''
+  hlc TEXT NOT NULL DEFAULT '',
+  avg_cost_paise INTEGER NOT NULL DEFAULT 0
 ) AS DbProduct;
 CREATE INDEX products_name ON products(name COLLATE NOCASE);
 CREATE INDEX products_barcode ON products(barcode) WHERE barcode <> '';

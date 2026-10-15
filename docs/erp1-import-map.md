@@ -22,7 +22,7 @@ The importer accepts this file (a COPY). It does not open ERP 1's live data fold
 
 | ERP 1 (key) | Fields used | Goes to | Notes |
 |---|---|---|---|
-| Products (`erp_products`) | `id, name, category, unit, price, buyingPrice (avgCost if 0), taxRate/gst, hsn, barcode/sku, minStock, status/isActive, stock, isDeleted` | `products`, `stock_cache`, `stock_movements` | `price` is the selling price. `stock` becomes an **opening movement** sized so that the stock after import equals ERP 1's stock exactly (see §4). Products with `isDeleted` come in as deleted rows (history stays readable). Duplicate barcodes: second one is blanked and listed. |
+| Products (`erp_products`) | `id, name, category, unit, price, buyingPrice (avgCost if 0), taxRate/gst, hsn, barcode/sku, minStock, status/isActive, stock, isDeleted` | `products`, `stock_cache`, `stock_movements` | `price` is the selling price; `buyingPrice` → `cost_paise`; `avgCost` → `avg_cost_paise`. `stock` becomes an **opening movement** sized so that the stock after import equals ERP 1's stock exactly (see §4). Products with `isDeleted` come in as deleted rows (history stays readable). Duplicate barcodes: second one is blanked and listed. |
 | Categories (`erp_categories`) | `name` | `categories` | Also created from products' category text if missing. |
 | Customers (`erp_customers`) | `id, name, phone, whatsapp, address, area, pin, gst, creditLimit, outstanding, isDeleted/isActive` | `customers` (`old_id`), opening balance in `ledger_entries` | `area` → `city`. `whatsapp`, `type`, `creditDays`, `notes` have no column yet: **listed, not dropped silently** (kept in the import log). |
 | Dealers (`erp_dealers`) | `id, companyName/name, phone, address, gst, outstanding` | `dealers`, ledger (`party_kind=dealer`) | |
@@ -59,8 +59,13 @@ Customer type/whatsapp/credit days/notes; per-line batch or serial data; order d
 - Hostile or corrupt input (not JSON, wrong shape, a 5 MB name, `NaN`, negative stock, cyclic ids, absurd dates, 10 million items) is answered with a plain message or a per-record rejection, never a crash and never a partial database.
 - Idempotent: the same file imported again into the same import database changes nothing (ids are derived from ERP 1 ids).
 
-## 7. Stock value — the open decision (see the report)
-The report prints stock value **three ways** side by side — at selling price, at buying price (ERP 1 `buyingPrice`), at average cost — with the same product count each: priced stock, unpriced stock (cost 0) and inactive products listed separately, and negative-stock products counted at zero or as-is. The importer **does not choose**; the setting key `valuation.rule` stays unset until the owner's father picks one.
+## 7. Stock value (one calculation, one setting)
+`lib/domain/stock_value.dart` is the ONLY place stock value is worked out; the Inventory screen, the Health screen, exports and this report all call it, so the numbers cannot disagree. Setting: `valuation.rule` = `average` | `buying` | `selling`; unset until the owner's father chooses. Until then the screens show the **average cost** number marked "Recommended, not chosen yet" and, one tap away, all three side by side.
+- **Average cost** = the average where known (ERP 1 `avgCost`, stored in `products.avg_cost_paise`, schema version 2), else the latest buying price (`products.cost_paise` = ERP 1 `buyingPrice`). **Latest buying price** and **Selling price** are the other two.
+- Counted: not deleted, stock above 0, a cost known. Active products are the main line; **inactive products with stock are included on a separate line**.
+- **Cost not set** (no buying price and no average): own line, quantity only, not in any total, never valued at the selling price or as 0 inside a total.
+- **Negative stock** counts as 0 and is listed as an error to fix.
+- Not yet built: ERP 2.0 does not update the average cost by itself when a new purchase is received (purchases are still plain records); a product created in ERP 2.0 has no average and uses its buying price.
 
 ## 8. How to run it (and what the owner does)
 **Tool:** `dart run tool/import_erp1.dart <backup.json>` is a dry run (reads, checks, prints the report, writes nothing). `--report report.txt` also saves the report. `--write new.sqlite` writes a NEW database and then reads every total back and compares it with the backup. The in-app screen for this is not built yet (it is a thin wrapper over the same code); until then the dry run is run by Claude on the owner's copy.
@@ -74,6 +79,6 @@ Nothing is opened, changed or deleted in ERP 1. The tool reads only the copy.
 
 ## 9. Not verified (as of this commit)
 - Nothing was run on a real ERP 1 backup; every number above is from synthetic files built to ERP 1's record shapes. Field names were taken from ERP 1's source; a real file may use others (the importer lists what it could not use, it does not guess).
-- The backup's own checksum (`_metadata.checksum`) is not re-computed yet, so a silently damaged backup is not detected by that route; the validation of each record is.
+- The backup's own checksum IS re-computed (`lib/import/erp1/checksum.dart`, same text and SHA-256 as ERP 1's `backupFormat.js`; proven on synthetic files and by tampering tests). Not yet proven against a file written by the real ERP 1: if its number formatting differs the report says MISMATCH and the record-by-record checks still run.
 - How ERP 1 treats `inclusive/exclusive` GST on the invoice header (as against each line) is read from the lines only.
 - Returns: ERP 1's effect on stock/balances is assumed to be already inside the product `stock` and customer `outstanding` figures.

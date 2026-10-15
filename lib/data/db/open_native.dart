@@ -18,7 +18,7 @@ int readUserVersion(File file) {
   }
 }
 
-Future<AppDatabase> openShopDatabase(String location, {bool background = false, int busyTimeoutMs = 5000}) async {
+Future<AppDatabase> openShopDatabase(String location, {bool background = false, int busyTimeoutMs = 5000, CheckpointPolicy? checkpoints}) async {
   final file = File(location);
   try {
     await file.parent.create(recursive: true);
@@ -52,5 +52,6 @@ Future<AppDatabase> openShopDatabase(String location, {bool background = false, 
     if (e is DatabaseOpenException) rethrow;
     throw DatabaseOpenException(DbProblem.other, detail: '$e');
   }
+  if (checkpoints != null || background) await db.startControlledCheckpoints(checkpoints ?? const CheckpointPolicy());
   return db;
 }

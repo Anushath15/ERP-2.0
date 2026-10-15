@@ -25,8 +25,13 @@ Future<String> buildWriter(String projectDir) async {
   final out = '$projectDir/build/killbundle';
   final exe = File('$out/bundle/bin/writer.exe');
   final exeUnix = File('$out/bundle/bin/writer');
-  if (exe.existsSync()) return exe.path;
-  if (exeUnix.existsSync()) return exeUnix.path;
+  // rebuild when any source is newer than the built writer (a stale writer from an older schema made every run wait 30 s)
+  final built = exe.existsSync() ? exe : (exeUnix.existsSync() ? exeUnix : null);
+  if (built != null) {
+    final builtAt = built.lastModifiedSync();
+    final stale = [for (final d in ['lib', 'tool/kill_test']) ...Directory('$projectDir/$d').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'))].any((f) => f.lastModifiedSync().isAfter(builtAt));
+    if (!stale) return built.path;
+  }
   final r = await Process.run('dart', ['build', 'cli', '-t', 'tool/kill_test/writer.dart', '-o', out], workingDirectory: projectDir, runInShell: true);
   if (r.exitCode != 0) throw StateError('Could not build the writer: ${r.stdout}${r.stderr}');
   return exe.existsSync() ? exe.path : exeUnix.path;

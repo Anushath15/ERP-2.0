@@ -170,7 +170,6 @@ noProductsYet | No products yet
 noProductsHelp | Add your first product, or import your old list from Excel.
 inventorySubtitle | How much of each item is left, and what it is worth
 statStockValue | Stock worth
-valuationRule | At buying price (rule not chosen yet)
 statItems | Items
 statLow | Almost finished
 statOut | Out of stock
@@ -966,3 +965,22 @@ rebuildTitle | Recalculate stock and balances?
 rebuildText | The program adds up your bills, stock movements and payments again and corrects the totals it keeps (stock left, customer and dealer balances, daily and monthly figures). Your bills and payments are not changed. It takes a few seconds.
 rebuildDone | Done. Every total was added up again from your records.
 attentionHelp2 | Your bills and payments are safe on this computer. The details above are for whoever looks after the program. Pressing Recalculate fixes totals that are out of step.
+# ---- stock value (one calculation for Inventory, Health, exports and the ERP 1 import report)
+stockValueTitle | Stock value
+stockValueRecommended | Recommended rule: average cost (not chosen yet)
+stockValueChosen | Your rule: {rule}
+ruleAverage | Average cost (latest buying price where there is no average)
+ruleBuying | Latest buying price
+ruleSelling | Selling price
+useThisRule | Use this rule
+ruleInUse | In use
+stockValueActive | Active products
+stockValueInactive | Inactive products with stock (included)
+stockValueTotal | Total
+costNotSetLine | Cost not set: {count} product(s), quantity {qty}. Not in any total.
+costNotSetHelp | Add a buying price to these products to include them. They are never valued at the selling price.
+negativeStockLine | Negative stock: {count} product(s). Counted as 0. Fix these.
+stockValueHelp | Three ways to value the same stock. Until the shop chooses, the recommended one is shown. The same number is used on the Inventory page, the Health page and in exports.
+ruleSaved | Stock value rule saved.
+healthStockValue | Stock value
+healthStockValueHelp | {errors} negative-stock error(s); {unpriced} product(s) with cost not set.

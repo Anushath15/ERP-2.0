@@ -124,3 +124,29 @@ Run with `dart run tool/perf/db_scale.dart 1000000` (the database is a test file
 
 Background checks (separate connection, billing carries on): SQLite `quick_check` **7.1 s**; the program's own self-check of every total **21 s** (it was 120 s: two checks were made index-friendly and the slowest, "every bill line has its stock movement", moved to the deep form because a bill is saved with its movements in one transaction). The self-check found 0 problems in the generated file.
 **Not verified:** a slower PC (this machine has a fast SSD and 16 threads), the browser (WebAssembly) at this size, a 3-hour continuous billing session.
+
+
+---
+
+# The slow save: what it was (2026-10-15)
+Question: one save in 400 took 213 ms (budget 100 ms) at 1,000,000 bills. Measured with `tool/perf/save_tail.dart` (per-save time, whether the main database file was written during that save = a checkpoint inside it, WAL size), 2,000 to 20,000 saves per run, on the 4.7 GB file unless stated.
+
+| Question tested | Result |
+|---|---|
+| Is it SQLite's automatic WAL checkpoint? | Partly. A save that contains a checkpoint costs 14.7 ms median (against 1.7 ms) and happens about every 20th save, which is what made the 95th percentile 13 ms. But the 120-210 ms saves were NOT those: of 6 saves over 50 ms in a 10,000-save run only 1 contained a checkpoint. With checkpoints switched off entirely, 4 saves in 3,000 still took 116-176 ms. |
+| Cold index pages read from disk? | No. 3,000 random cold lookups in the file: max 10.8 ms, none over 50 ms (`tool/perf/read_tail.dart`). A 200 MB page cache removed the slow saves in one run but 65 MB and 32 MB did not, so the cache is not the cause. |
+| Does it depend on the file size? | No. The same slow saves appear with a 220 MB database (1 in 4,000 to 1 in 8,000 back-to-back). |
+| Is it the disk flush? | Yes. 20,000 back-to-back saves with `synchronous=FULL`: 5 and 3 saves over 50 ms (up to 193 ms); with `synchronous=NORMAL` (no flush per commit; NOT safe against power cuts): 0 and 1 (max 52 ms). With a person-speed pause between saves (350 ms), FULL: 9 of 1,000 saves over 50 ms, median 5.1 ms; NORMAL: 1 of 1,000, median 0.8 ms. A plain 16 KB write-and-flush loop with no database never stalled (max 10 ms, 18,000 flushes), so it is the flush of the database log on this disk after it has been idle, not the program. |
+
+What was changed: checkpoints now run between saves (`CheckpointPolicy`, `AppDatabase.startControlledCheckpoints`), SQLite's automatic one stays as a net at 4,000 pages. The kill test (200 hard kills, 22,326 bills) was re-run with checkpoints firing constantly: 0 problems.
+What cannot be changed without losing the power-cut guarantee: the flush on every commit.
+
+**Re-measured** (4.7 GB file, 1,000,000+ bills, real policy, a 350 ms pause between saves like a person at the counter, 3,000 saves):
+| | p50 | p95 | p99 | p99.9 | max | over 50 ms |
+|---|---|---|---|---|---|---|
+| Before (SQLite checkpoint inside the save), 10,000 saves back to back | 1.7 ms | 13.2 ms | 17.4 ms | 42.9 ms | 204 ms | 6 |
+| Before, 1,000 saves with 350 ms pauses (220 MB file) | 5.1 ms | 14.8 ms | 20.3 ms | 197 ms | 197 ms | 9 |
+| **After (controlled checkpoints), 3,000 saves with 350 ms pauses** | **5.2 ms** | **6.4 ms** | **15.2 ms** | **179 ms** | **197 ms** | **25 (0.8%)** |
+| After, 10,000 saves back to back with 12 ms pauses | 2.8 ms | 4.2 ms | 15.2 ms | 23.7 ms | 199 ms | 3 |
+
+Reading it: the 95th percentile is within budget and halved; the 99th is 15 ms; about 1 save in 120 (0.8%) is held up 120-200 ms by the disk flush, which is over the 100 ms budget and is listed in failure-modes.md (#32). **Not verified:** the shop PC's own disk (a spinning disk would make every save slower, not only the tail).

@@ -169,7 +169,6 @@ class Strings {
   String get noProductsHelp => 'Add your first product, or import your old list from Excel.';
   String get inventorySubtitle => 'How much of each item is left, and what it is worth';
   String get statStockValue => 'Stock worth';
-  String get valuationRule => 'At buying price (rule not chosen yet)';
   String get statItems => 'Items';
   String get statLow => 'Almost finished';
   String get statOut => 'Out of stock';
@@ -938,4 +937,22 @@ class Strings {
   String get rebuildText => 'The program adds up your bills, stock movements and payments again and corrects the totals it keeps (stock left, customer and dealer balances, daily and monthly figures). Your bills and payments are not changed. It takes a few seconds.';
   String get rebuildDone => 'Done. Every total was added up again from your records.';
   String get attentionHelp2 => 'Your bills and payments are safe on this computer. The details above are for whoever looks after the program. Pressing Recalculate fixes totals that are out of step.';
+  String get stockValueTitle => 'Stock value';
+  String get stockValueRecommended => 'Recommended rule: average cost (not chosen yet)';
+  String stockValueChosen(String rule) => 'Your rule: ${rule}';
+  String get ruleAverage => 'Average cost (latest buying price where there is no average)';
+  String get ruleBuying => 'Latest buying price';
+  String get ruleSelling => 'Selling price';
+  String get useThisRule => 'Use this rule';
+  String get ruleInUse => 'In use';
+  String get stockValueActive => 'Active products';
+  String get stockValueInactive => 'Inactive products with stock (included)';
+  String get stockValueTotal => 'Total';
+  String costNotSetLine(String count, String qty) => 'Cost not set: ${count} product(s), quantity ${qty}. Not in any total.';
+  String get costNotSetHelp => 'Add a buying price to these products to include them. They are never valued at the selling price.';
+  String negativeStockLine(String count) => 'Negative stock: ${count} product(s). Counted as 0. Fix these.';
+  String get stockValueHelp => 'Three ways to value the same stock. Until the shop chooses, the recommended one is shown. The same number is used on the Inventory page, the Health page and in exports.';
+  String get ruleSaved => 'Stock value rule saved.';
+  String get healthStockValue => 'Stock value';
+  String healthStockValueHelp(String errors, String unpriced) => '${errors} negative-stock error(s); ${unpriced} product(s) with cost not set.';
 }
