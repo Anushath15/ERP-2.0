@@ -290,4 +290,32 @@ void main() {
       expect(await d.db.scalarInt('SELECT COUNT(*) FROM outbox'), 0, reason: 'nothing is queued for upload by an import');
     });
   });
+
+  test('ERP 1 says the customer owes nothing but a bill shows 60 unpaid: the bill is marked paid, the balance is 0 and the report lists it', () async {
+    final p = planOf(backup({
+      'erp_products': [
+        {'id': 'P1', 'name': 'Pipe', 'price': 110, 'buyingPrice': 60, 'stock': 5}
+      ],
+      'erp_customers': [
+        {'id': 'C1', 'name': 'Ram', 'outstanding': 0}
+      ],
+      'erp_sales_invoices': [
+        {
+          'id': 'B1', 'date': '2025-05-01T10:00:00Z', 'customerId': 'C1', 'totalAmount': 110.0, 'amountPaid': 50.0, 'paymentMode': 'UPI',
+          'items': [
+            {'productId': 'P1', 'qty': 1, 'price': 110, 'taxRate': 18, 'total': 110}
+          ]
+        }
+      ],
+    }));
+    expect(p.bills.single.balance, 0);
+    expect(p.bills.single.received, 11000);
+    expect(p.openingCustomer, isEmpty);
+    expect(p.issues.buckets.values.any((b) => b.reason.contains('marked paid for the difference')), isTrue);
+    final d = memoryShop();
+    final r = await writePlan(d, p, nowMs: 1);
+    expect(r.mismatches, isEmpty);
+    expect(await d.db.scalarInt('SELECT COALESCE(SUM(balance_paise),0) FROM party_balance'), 0);
+    expect(await d.db.scalarInt('SELECT COUNT(*) FROM party_bills'), 0);
+  });
 }

@@ -43,6 +43,9 @@ Not verified: any real ERP 1 data; ERP 1's checksum; the in-app import screen is
 - Found and fixed: the power-cut test reused a stale built writer after a schema change and waited 30 s per run; it now rebuilds when sources change.
 - Tests: 587 pass (11 skipped). Waiting: the owner's ERP 1 copy (dry run), the report approval, then the real `--write`, then the in-app import screen.
 
+## Gate 2B: first import of the owner's real ERP 1 backup (2026-10-15)
+Owner approved the dry-run report and said the Rs 60 on one bill was cleared. New importer rule (with a test): if ERP 1's balance for a customer is lower than the unpaid bills add up to, the oldest unpaid bills are marked paid for the difference and listed in the report. Written to a NEW file `build/real_import/shop_import.sqlite` (git-ignored, NOT swapped into any live data folder): 800 products, 10 categories, 4 customers, 2 bills (Rs 14,285.00, nothing owed), 7 estimates, 55 stock movements, stock total 5,753.5 with 6 negative-stock errors; integrity_check ok, schema 2, the program's own self-check: no problems, nothing queued for upload. Not done yet: swap into the live data folder, the in-app import screen.
+
 ## Phase 0 recap
 Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents, spikes S1-S4 plus Android and browser checks, quota analysis of rule lookups, convergence test: see [spikes.md](spikes.md).
 

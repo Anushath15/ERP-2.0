@@ -900,7 +900,42 @@ class _Builder {
   }
 
   // ---------------------------------------------------------------- balances and stock close
+  /// ERP 1's own balance of a customer is the authority. If the bills still showing money unpaid add up to MORE than ERP 1 says the customer owes, the
+  /// difference was settled some way ERP 1 did not record as a payment, so the oldest unpaid bills are marked paid for the difference (listed in the report).
+  void _clearShortfalls() {
+    final sums = <String, int>{};
+    for (final e in p.entries) {
+      if (e.partyKind == 'customer') sums[e.partyId] = (sums[e.partyId] ?? 0) + e.amountPaise;
+    }
+    final billByNo = {for (final b in p.bills) b.oldNo: b};
+    final custById = {for (final c in p.customers.values) c.id: c};
+    for (final id in sums.keys) {
+      final c = custById[id];
+      if (c == null) continue;
+      var deficit = sums[id]! - c.outstandingPaise;
+      if (deficit <= 0) continue;
+      final credits = p.entries.where((e) => e.partyId == id && e.kind == 'billCredit').toList()..sort((a, b) => a.atMs.compareTo(b.atMs));
+      for (final e in credits) {
+        if (deficit <= 0) break;
+        final cut = deficit < e.amountPaise ? deficit : e.amountPaise;
+        final b = billByNo[e.billNo];
+        if (b == null) continue;
+        final i = p.entries.indexOf(e);
+        if (cut == e.amountPaise) {
+          p.entries.removeAt(i);
+        } else {
+          p.entries[i] = PEntry(e.id, e.partyKind, e.partyId, e.kind, e.amountPaise - cut, e.atMs, billNo: e.billNo, note: e.note, mode: e.mode, refId: e.refId);
+        }
+        b.balance -= cut;
+        b.received += cut;
+        deficit -= cut;
+        log.add('bills', b.oldNo, IssueKind.repaired, 'ERP 1 shows the customer owing less than the bills say: the unpaid part of this bill was marked paid for the difference');
+      }
+    }
+  }
+
   void _closeLedgers() {
+    _clearShortfalls();
     final byParty = <String, List<PEntry>>{};
     for (final e in p.entries) {
       byParty.putIfAbsent(e.partyId, () => []).add(e);
