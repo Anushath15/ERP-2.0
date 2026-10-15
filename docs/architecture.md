@@ -32,3 +32,18 @@ All visible text is English and lives in one file (`tool/strings.txt`, turned in
 
 ## Build and CI
 GitHub Actions: analyze, test, build Windows, Android, Web, macOS (unsigned). Config files with Firebase keys come from GitHub secrets, never from the repo.
+
+
+## What the code looks like now (Phase 2, Gate 2A)
+```
+lib/data/            no Flutter here: database, repositories, queue, checks
+  db/                schema.drift, AppDatabase (migrations), open (native / web), errors, integrity (separate isolate)
+  repo/              catalog, bills, ledger (customers and dealers), records, estimations, reminders, stock, reports, series registry, self-check
+  platform/          free disk space
+  write_queue.dart   every write the screens start goes through one ordered queue (a disk guard runs before each)
+lib/domain/          pure rules: bill maths, credit ledger, dues, payment split, reminders, models
+lib/fake/            (name kept for now) the Riverpod providers between the screens and the repositories: store, credit_store, data_providers (Bootstrap), stats, actions, health
+lib/demo/            the made-up sample shop and the seeder that fills the separate demo file
+lib/boot.dart        opens the shop (real or demo) and decides whether the first-run set-up is still to do; boot_root.dart is the first widget
+```
+Screens never touch SQL. Small edits update the screen at once and are written right behind (one ordered queue, failures shown in a banner); bills, payments and everything that moves money wait for the database before they show as done.

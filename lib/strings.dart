@@ -928,4 +928,14 @@ class Strings {
   String errOtherSql(String detail) => 'The data could not be saved (${detail}).';
   String get errSaveGeneric => 'Something went wrong while saving. Nothing was changed.';
   String errDiskGuard(String mb) => 'The disk has only ${mb} MB free, so saving is stopped to protect your data. Free some space (empty the Recycle Bin, move files to another drive) and try again. Your work is safe on this computer.';
+  String selfCheckBanner(String count) => 'The program\'s daily check found ${count} figure(s) on your books that do not add up. Nothing is lost. Please tell whoever looks after the program (Settings, Health shows the details).';
+  String get healthDamaged => 'The data file needs repair';
+  String get healthNeverChecked => 'Not checked yet';
+  String healthProblemsFound(String count) => '${count} thing(s) do not add up';
+  String get healthUnknown => 'Not known on this device';
+  String get noBackupYet => 'No backup yet';
+  String get rebuildTitle => 'Recalculate stock and balances?';
+  String get rebuildText => 'The program adds up your bills, stock movements and payments again and corrects the totals it keeps (stock left, customer and dealer balances, daily and monthly figures). Your bills and payments are not changed. It takes a few seconds.';
+  String get rebuildDone => 'Done. Every total was added up again from your records.';
+  String get attentionHelp2 => 'Your bills and payments are safe on this computer. The details above are for whoever looks after the program. Pressing Recalculate fixes totals that are out of step.';
 }

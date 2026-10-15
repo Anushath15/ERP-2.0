@@ -5,6 +5,7 @@ analyzer:
     - spikes/**
     - build/**
     - lib/strings.dart
+    - test/data/generated/**
     - android/**
     - web/**
     - windows/**

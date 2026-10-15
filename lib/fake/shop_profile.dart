@@ -33,13 +33,13 @@ class EstimateShows {
 
 class ShopProfile {
   const ShopProfile({
-    this.name = 'Senthil Enterprises',
-    this.ownerName = 'Senthil Kumar',
-    this.address = '12 Market Street, Coimbatore - 641001',
-    this.phone = '98765 43210',
-    this.gstin = '33AAAAA0000A1Z5',
-    this.upiId = 'senthil@okbank',
-    this.bankDetails = 'Sample Bank, A/c 0000000000, IFSC SAMP0000000',
+    this.name = '',
+    this.ownerName = '',
+    this.address = '',
+    this.phone = '',
+    this.gstin = '',
+    this.upiId = '',
+    this.bankDetails = '',
     this.billFooter = 'Thank you. Visit again.',
     this.invoicePrefix = '',
     this.pricesIncludeGst = true,
@@ -50,7 +50,20 @@ class ShopProfile {
     this.templateFirm = defaultFirmTemplate,
     this.guardHours = 24,
     this.countryCode = '91',
+    this.openingCashPaise = 0,
   });
+
+  /// The made-up shop of the demo mode (never used for a real shop, whose profile starts empty and is filled in by the set-up).
+  static const sample = ShopProfile(
+    name: 'Senthil Enterprises',
+    ownerName: 'Senthil Kumar',
+    address: '12 Market Street, Coimbatore - 641001',
+    phone: '98765 43210',
+    gstin: '33AAAAA0000A1Z5',
+    upiId: 'senthil@okbank',
+    bankDetails: 'Sample Bank, A/c 0000000000, IFSC SAMP0000000',
+    openingCashPaise: 500000,
+  );
 
   final String name, ownerName, address, phone, gstin, upiId, bankDetails, billFooter, invoicePrefix;
   final bool pricesIncludeGst;
@@ -59,6 +72,9 @@ class ShopProfile {
   final ReminderTone reminderTone;
   final String templateFriendly, templateFirm, countryCode;
   final int guardHours;
+
+  /// Cash in the drawer at the start of each day (the day closing starts from it).
+  final int openingCashPaise;
 
   Map<String, Object?> toJson() => {
         'name': name,
@@ -78,6 +94,7 @@ class ShopProfile {
         'templateFirm': templateFirm,
         'guardHours': guardHours,
         'countryCode': countryCode,
+        'openingCashPaise': openingCashPaise,
       };
 
   /// Tolerant: anything missing or of the wrong type keeps the default (a damaged value never stops the program from starting).
@@ -102,6 +119,7 @@ class ShopProfile {
       templateFirm: str('templateFirm', base.templateFirm),
       guardHours: m['guardHours'] is int && (m['guardHours'] as int) >= 0 && (m['guardHours'] as int) <= 720 ? m['guardHours'] as int : base.guardHours,
       countryCode: str('countryCode', base.countryCode),
+      openingCashPaise: m['openingCashPaise'] is int && (m['openingCashPaise'] as int) >= 0 && (m['openingCashPaise'] as int) <= 100000000000 ? m['openingCashPaise'] as int : base.openingCashPaise,
     );
   }
 
@@ -125,6 +143,7 @@ class ShopProfile {
     String? templateFirm,
     int? guardHours,
     String? countryCode,
+    int? openingCashPaise,
   }) =>
       ShopProfile(
         name: name ?? this.name,
@@ -144,6 +163,7 @@ class ShopProfile {
         templateFirm: templateFirm ?? this.templateFirm,
         guardHours: guardHours ?? this.guardHours,
         countryCode: countryCode ?? this.countryCode,
+        openingCashPaise: openingCashPaise ?? this.openingCashPaise,
       );
 }
 

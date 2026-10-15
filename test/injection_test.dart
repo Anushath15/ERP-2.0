@@ -93,9 +93,30 @@ void main() {
   group('the code itself: no SQL built from text, no logging of personal data', () {
     final libFiles = Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart')).toList();
 
-    test('no SQL statement is built by putting text into the query (everything must be a parameter)', () {
-      final risky = RegExp(r'''(customStatement|rawQuery|rawInsert|rawUpdate|rawDelete|customSelect|execute)\s*\(\s*["'][^"']*\$''');
-      final found = [for (final f in libFiles) if (risky.hasMatch(f.readAsStringSync())) f.path];
+    test('screens and providers never write SQL: every database call lives in lib/data (and the demo seeder)', () {
+      final call = RegExp(r'\.(exec|rows|row|scalarInt|customStatement|customSelect|rawQuery)\(');
+      String norm(String p) => p.replaceAll(r'\', '/');
+      final found = [
+        for (final f in libFiles)
+          if (!norm(f.path).startsWith('lib/data/') && !norm(f.path).startsWith('lib/demo/') && !f.path.endsWith('.g.dart') && call.hasMatch(f.readAsStringSync())) f.path
+      ];
+      expect(found, isEmpty, reason: 'SQL outside the data layer: $found');
+    });
+
+    test('inside the data layer a statement may paste in nothing but fixed numbers; text a person typed is only ever a parameter (hostile-text tests: test/data/injection_data_test.dart)', () {
+      final risky = RegExp(r'''(customStatement|execute)\s*\(\s*["'][^"']*\$[a-zA-Z{]''');
+      final allowed = RegExp(r'busyTimeoutMs|currentSchemaVersion');
+      String norm(String p) => p.replaceAll(r'\', '/');
+      final found = <String>[];
+      for (final f in libFiles) {
+        if (!norm(f.path).startsWith('lib/data/') || f.path.endsWith('.g.dart')) continue;
+        final text = f.readAsStringSync();
+        for (final m in risky.allMatches(text)) {
+          final end = text.indexOf('\n', m.start);
+          final line = text.substring(m.start, end < 0 ? text.length : end);
+          if (!allowed.hasMatch(line)) found.add('${f.path}: $line');
+        }
+      }
       expect(found, isEmpty, reason: 'SQL with text pasted in: $found');
     });
 

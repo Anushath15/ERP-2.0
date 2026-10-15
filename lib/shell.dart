@@ -192,7 +192,7 @@ class TopBar extends ConsumerWidget {
           onPressed: () => ref.read(navExpandedProvider.notifier).toggle(ref.read(navExpandedProvider) ?? context.isDesktop),
           icon: const Icon(Icons.menu),
         ),
-        Expanded(child: Text(ref.watch(shopProvider).name, style: th.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        Expanded(child: Text(ref.watch(shopProvider).name.isEmpty ? l.appName : ref.watch(shopProvider).name, style: th.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
         const Flexible(child: SyncChip()),
         const SizedBox(width: 8),
         IconButton(tooltip: l.textSmaller, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.down(x.textScale))), icon: const Icon(Icons.text_decrease)),

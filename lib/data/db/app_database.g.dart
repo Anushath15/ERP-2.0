@@ -15055,7 +15055,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final StockMovements stockMovements = StockMovements(this);
   late final Index stockMovementsProduct = Index(
     'stock_movements_product',
-    'CREATE INDEX stock_movements_product ON stock_movements (product_id, at)',
+    'CREATE INDEX stock_movements_product ON stock_movements (product_id, at, qty_milli)',
   );
   late final Index stockMovementsRef = Index(
     'stock_movements_ref',
@@ -15086,6 +15086,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index billsAmount = Index(
     'bills_amount',
     'CREATE INDEX bills_amount ON bills (total_paise DESC, id DESC)',
+  );
+  late final Index billsSeq = Index(
+    'bills_seq',
+    'CREATE INDEX bills_seq ON bills (seq)',
+  );
+  late final Index billsOpen = Index(
+    'bills_open',
+    'CREATE INDEX bills_open ON bills (billed_at DESC, id DESC) WHERE balance_paise > 0 AND cancelled = 0',
   );
   late final Index billsCancelled = Index(
     'bills_cancelled',
@@ -15161,6 +15169,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final DayTotals dayTotals = DayTotals(this);
   late final ProductMonth productMonth = ProductMonth(this);
+  late final Index productMonthByMonth = Index(
+    'product_month_by_month',
+    'CREATE INDEX product_month_by_month ON product_month (month, product_id, amount_paise)',
+  );
   late final Counters counters = Counters(this);
   late final Reminders reminders = Reminders(this);
   late final Index remindersCustomer = Index(
@@ -15222,6 +15234,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     billsCustomer,
     billsOldNo,
     billsAmount,
+    billsSeq,
+    billsOpen,
     billsCancelled,
     billsDue,
     billLines,
@@ -15248,6 +15262,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     partyBalanceOwed,
     dayTotals,
     productMonth,
+    productMonthByMonth,
     counters,
     reminders,
     remindersCustomer,

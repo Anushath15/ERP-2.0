@@ -10,6 +10,12 @@ import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
 import 'security_card.dart';
+import '../../data/db/integrity.dart';
+import '../../data/repo/rebuild.dart';
+import '../../data/repo/self_check.dart';
+import '../../fake/health.dart';
+import '../../fake/stats.dart';
+import '../../strings.dart';
 import '../../core/data_mode.dart';
 import '../../fake/data_providers.dart';
 
@@ -129,14 +135,51 @@ class HealthScreen extends ConsumerStatefulWidget {
 
 class _HealthScreenState extends ConsumerState<HealthScreen> {
   bool _checking = false;
-  bool _fixed = false;
+  List<String>? _found; // what the check just run found (null = not run on this visit)
+
+  String _size(int bytes) => bytes >= 1024 * 1024 * 1024 ? '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB' : '${(bytes / (1024 * 1024)).round()} MB';
+
+  Future<void> _checkNow(Strings l) async {
+    setState(() => _checking = true);
+    final loc = ref.read(dbFilePathProvider);
+    final d = ref.read(appDataProvider);
+    final found = <String>[];
+    if (loc != null) found.addAll(await checkDatabaseFile(loc));
+    found.addAll([for (final p in await selfCheck(d.db)) '$p']);
+    await d.settings.put('selfcheck.last', '${d.cx.nowMs()}');
+    ref.read(selfCheckProblemsProvider.notifier).set(found);
+    ref.invalidate(healthInfoProvider);
+    if (!mounted) return;
+    setState(() {
+      _checking = false;
+      _found = found;
+    });
+    toast(context, found.isEmpty ? l.healthChecked : l.healthProblemsFound(found.length.toString()));
+  }
+
+  Future<void> _rebuild(Strings l) async {
+    final ok = await confirmDialog(context, title: l.rebuildTitle, message: l.rebuildText, confirmLabel: l.rebuildTotals);
+    if (!ok || !mounted) return;
+    final d = ref.read(appDataProvider);
+    await ref.read(writeQueueProvider).run(() => rebuildSummaries(d.db));
+    await ref.read(productsProvider.notifier).reload([for (final p in ref.read(productsProvider)) p.id]);
+    await ref.read(statsProvider.notifier).refresh();
+    ref.read(selfCheckProblemsProvider.notifier).set(const []);
+    ref.invalidate(healthInfoProvider);
+    if (mounted) {
+      setState(() => _found = const []);
+      toast(context, l.rebuildDone);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = tr(context);
-    final now = ref.watch(clockProvider);
     final th = Theme.of(context).textTheme;
     final c = context.c;
+    final info = ref.watch(healthInfoProvider).value;
+    final health = ref.watch(fileHealthProvider);
+    final List<String> problems = _found ?? ref.watch(selfCheckProblemsProvider);
     Widget item(IconData icon, Color color, String title, String value, {String? help, Widget? action}) => SectionCard(
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(icon, color: color, size: 30),
@@ -144,27 +187,27 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: th.bodySmall), Text(value, style: th.titleMedium), if (help != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(help, style: th.bodySmall)), if (action != null) Padding(padding: const EdgeInsets.only(top: 8), child: action)])),
           ]),
         );
+    final damaged = health == FileHealth.damaged;
+    final last = info?.lastFullCheck ?? info?.lastSelfCheck;
     final cards = [
-      item(Icons.verified_outlined, c.success, l.healthIntegrity, l.healthOk, help: l.healthIntegrityHelp(formatDateTime(now.subtract(const Duration(hours: 2)))), action: OutlinedButton.icon(onPressed: _checking ? null : () async { setState(() => _checking = true); await Future<void>.delayed(const Duration(milliseconds: 700)); if (context.mounted) { setState(() => _checking = false); toast(context, l.healthChecked); } }, icon: _checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.search), label: Text(l.checkNow))),
-      item(Icons.save_alt, c.success, l.lastBackup, formatDateTime(now.subtract(const Duration(hours: 5))), help: l.backupsKept('30'), action: FilledButton.icon(onPressed: () => toast(context, l.backupDone), icon: const Icon(Icons.save_alt), label: Text(l.backupNow))),
-      item(Icons.storage_outlined, c.primary, l.freeDisk, '212 GB', help: l.freeDiskHelp),
-      item(Icons.cloud_upload_outlined, c.warning, l.syncBacklog, l.syncBacklogValue('0'), help: l.syncBacklogHelp),
-      item(Icons.inventory_outlined, c.success, l.healthTotals, l.healthTotalsOk, help: l.healthTotalsHelp, action: OutlinedButton(onPressed: () => toast(context, l.healthChecked), child: Text(l.rebuildTotals))),
-      item(Icons.memory, c.primary, l.databaseSize, '116 MB', help: l.databaseSizeHelp('50,000')),
+      item(damaged ? Icons.error_outline : Icons.verified_outlined, damaged ? c.danger : c.success, l.healthIntegrity, damaged ? l.healthDamaged : (problems.isEmpty ? l.healthOk : l.healthProblemsFound(problems.length.toString())),
+          help: last == null ? l.healthNeverChecked : l.healthIntegrityHelp(formatDateTime(last)),
+          action: OutlinedButton.icon(key: const ValueKey('checkNow'), onPressed: _checking ? null : () => _checkNow(l), icon: _checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.search), label: Text(l.checkNow))),
+      item(Icons.save_alt, info?.lastBackup == null ? c.warning : c.success, l.lastBackup, info?.lastBackup == null ? l.noBackupYet : formatDateTime(info!.lastBackup!), help: l.backupsKept('30')),
+      item(Icons.storage_outlined, info?.freeBytes != null && info!.freeBytes! < 500 * 1024 * 1024 ? c.warning : c.primary, l.freeDisk, info?.freeBytes == null ? l.healthUnknown : _size(info!.freeBytes!), help: l.freeDiskHelp),
+      item(Icons.cloud_upload_outlined, (info?.pendingUploads ?? 0) > 0 ? c.warning : c.success, l.syncBacklog, l.syncBacklogValue('${info?.pendingUploads ?? 0}'), help: l.syncBacklogHelp),
+      item(Icons.inventory_outlined, problems.isEmpty ? c.success : c.warning, l.healthTotals, problems.isEmpty ? l.healthTotalsOk : l.healthProblemsFound(problems.length.toString()), help: l.healthTotalsHelp, action: OutlinedButton(key: const ValueKey('rebuildTotals'), onPressed: () => _rebuild(l), child: Text(l.rebuildTotals))),
+      item(Icons.memory, c.primary, l.databaseSize, info?.fileBytes == null ? l.healthUnknown : _size(info!.fileBytes!), help: l.databaseSizeHelp('1,000,000')),
     ];
     final attention = SectionCard(
       title: l.needsAttention,
-      child: _fixed
+      child: problems.isEmpty && (info?.needAttention ?? 0) == 0 && !damaged
           ? Row(children: [Icon(Icons.check_circle_outline, color: c.success), const SizedBox(width: 8), Expanded(child: Text(l.nothingNeedsAttention))])
           : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              StatusBadge(l.attentionItem, kind: BadgeKind.danger, icon: Icons.error_outline),
+              for (final p in problems.take(8)) Padding(padding: const EdgeInsets.only(bottom: 6), child: StatusBadge(p, kind: BadgeKind.danger, icon: Icons.error_outline)),
+              if ((info?.needAttention ?? 0) > 0) StatusBadge(l.syncAttention('${info!.needAttention}'), kind: BadgeKind.danger, icon: Icons.error_outline),
               const SizedBox(height: 8),
-              Text(l.attentionHelp, style: th.bodyMedium),
-              const SizedBox(height: 10),
-              Wrap(spacing: 8, runSpacing: 8, children: [
-                FilledButton(onPressed: () => setState(() => _fixed = true), child: Text(l.tryAgain)),
-                OutlinedButton(onPressed: () => toast(context, l.demoOnly), child: Text(l.sendLog)),
-              ]),
+              Text(l.attentionHelp2, style: th.bodyMedium),
             ]),
     );
     return PageFrame(

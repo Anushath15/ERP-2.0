@@ -21,7 +21,7 @@ PrintDoc invoice() => samplePrintDoc(products, now);
 String joined(PrintLayout p) => p.allText.join('\n');
 
 void main() {
-  const shop = ShopProfile();
+  const shop = ShopProfile.sample;
 
   group('estimate printout (owner choice: nothing about the shop and no tax lines unless switched on)', () {
     test('by default it shows ONLY: ESTIMATE, customer, date, the item table and the TOTAL, with the note line', () {

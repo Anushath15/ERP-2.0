@@ -93,3 +93,34 @@ Setup: 1,000,000 bills over 5 years (3 to 8 lines each, 5.0 on average), 5,000,0
 The first visit of Money to collect cost one 41 ms frame (budget 33 ms; the second visit cost 20 ms). About 22 ms of that was work done only once: building the list of 134 customers with ageing and overdue amounts. The app now prepares that list right after the first screen is drawn, while nobody is waiting. **First visit now 18.7 ms (second visit 17.9 ms).** Pass.
 Worst frame on the first visit of each page, now: Reports 24.5 ms, Settings 23.1 ms, everything else 9 to 20 ms. All under 33 ms.
 The motion test `scan x20 + save` used to compare wall-clock times and failed on a busy computer. It now uses the test's own clock: it checks that 20 scans and a save need no animation time at all, with Off and with Full. It passed twice while another heavy test ran at the same time.
+
+
+---
+
+# Real repository layer, 1,000,000 bills (Phase 2, Gate 2A, 2026-10-15)
+Run with `dart run tool/perf/db_scale.dart 1000000` (the database is a test file and is not committed). It builds a file in the REAL schema (1,000,000 bills over 5 years, 5.0 lines each, 5,000,000 lines and stock movements, 50,000 products with barcodes, 5,000 customers, credit on 10% of bills, every summary table, FTS5, every index) and measures through the same repositories the screens use. SQLite WAL, `synchronous=FULL`; this machine: SSD, 16 threads. **File size 4,362 MB (4.4 GB, 4,577 bytes per bill with all indexes).** Build time 297 s.
+
+| Measure (budget) | p50 | p95 | max | Result |
+|---|---|---|---|---|
+| Cold start: open + first bills + today (1000 ms) | 16.0 ms | | | pass |
+| Start-up: read 50,000 products and 5,000 customers into memory | 431 ms | | | pass (inside the 1000 ms budget) |
+| New bill: product search per keystroke, FTS5 (50 ms) | 2.2 ms | 4.2 ms | 16.9 ms | pass |
+| New bill: barcode scan lookup (50 ms) | 0.06 ms | 0.14 ms | 0.6 ms | pass |
+| Sales register: first page of 50 (300 ms) | 0.43 ms | 0.68 ms | 1.0 ms | pass |
+| Sales register: next page, keyset (300 ms) | 0.65 ms | 1.0 ms | 1.8 ms | pass |
+| Sales register: a page 900 days back (300 ms) | 59 ms | 62 ms | 65 ms | pass |
+| Sales register: search by bill number (300 ms) | 19 ms | 21 ms | 24 ms | pass (was 423 ms before the search was made index-based) |
+| Sales register: search by customer name (300 ms) | 19 ms | 21 ms | 21 ms | pass (was 412 ms) |
+| Sales register: filter "on credit" (300 ms) | 0.5 ms | 1.0 ms | 1.0 ms | pass (was 484 ms; partial index) |
+| Sales register: sorted by amount (300 ms) | 1.0 ms | 1.3 ms | 1.3 ms | pass |
+| Home: day totals, to collect, low stock (300 ms) | 27 ms | 28 ms | 28 ms | pass |
+| Reports: a year of sales by day (300 ms) | 1.1 ms | 1.1 ms | 1.1 ms | pass |
+| Reports: top products of a year (300 ms) | 222 ms | 227 ms | 227 ms | pass, close (was 400 ms; covering index) |
+| Reports: top products of the last 30 days (300 ms) | 82 ms | 112 ms | 112 ms | pass |
+| Customer profile: whole account, 37 ledger entries (300 ms) | 1.5 ms | 10.7 ms | 10.7 ms | pass |
+| Money to collect: 500 biggest balances (300 ms) | 4.2 ms | 5.1 ms | 5.1 ms | pass |
+| **SAVE BILL**, one transaction with everything (100 ms) | **1.9 ms** | **12.2 ms** | **213 ms** | p50 and p95 pass; **one save in 400 took 213 ms** (earlier runs: 31 ms and 79 ms); the likely cause is SQLite's automatic WAL checkpoint, not yet proven or tuned |
+| Receive payment, one transaction (100 ms) | 2.5 ms | 3.8 ms | 12.5 ms | pass |
+
+Background checks (separate connection, billing carries on): SQLite `quick_check` **7.1 s**; the program's own self-check of every total **21 s** (it was 120 s: two checks were made index-friendly and the slowest, "every bill line has its stock movement", moved to the deep form because a bill is saved with its movements in one transaction). The self-check found 0 problems in the generated file.
+**Not verified:** a slower PC (this machine has a fast SSD and 16 threads), the browser (WebAssembly) at this size, a 3-hour continuous billing session.

@@ -19,10 +19,12 @@ class ProblemBanner extends ConsumerWidget {
     final error = ref.watch(writeErrorProvider);
     final disk = ref.watch(diskLevelProvider);
     final demo = ref.watch(appModeProvider) == DataMode.demo;
+    final selfCheck = ref.watch(selfCheckProblemsProvider);
     final c = context.c;
     final items = <(String, Color, VoidCallback?)>[
       if (error != null) (error, c.danger, () => ref.read(writeErrorProvider.notifier).set(null)),
       if (demo) (l.demoBanner, c.info, () => unawaited(ref.read(modeSwitcherProvider)(DataMode.real))),
+      if (selfCheck.isNotEmpty) (l.selfCheckBanner(selfCheck.length.toString()), c.warning, () => ref.read(selfCheckProblemsProvider.notifier).set(const [])),
       if (disk == DiskLevel.low) (l.diskLowBanner, c.warning, null),
       if (disk == DiskLevel.full) (l.diskFullBanner, c.danger, null),
     ];

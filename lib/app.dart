@@ -85,6 +85,14 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       }
       await d.settings.put('integrity.lastFull', '${d.cx.nowMs()}');
     }
+    // once a day: the program's own check that every summary still equals its raw rows (a separate connection; sales carry on)
+    final lastSelf = int.tryParse(await d.settings.get('selfcheck.last') ?? '') ?? 0;
+    if (d.cx.nowMs() - lastSelf > const Duration(hours: 20).inMilliseconds) {
+      final found = await selfCheckFile(widget.dbLocation!);
+      if (!mounted) return;
+      ref.read(selfCheckProblemsProvider.notifier).set(found);
+      await d.settings.put('selfcheck.last', '${d.cx.nowMs()}');
+    }
     unawaited(ref.read(diskLevelProvider.notifier).refresh());
     _diskTimer = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(ref.read(diskLevelProvider.notifier).refresh()));
   }

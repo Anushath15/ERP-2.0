@@ -188,16 +188,23 @@ class WizardScreen extends ConsumerStatefulWidget {
 class _WizardScreenState extends ConsumerState<WizardScreen> {
   int _step = 0;
   static const _total = 7;
-  late final _name = TextEditingController(text: ref.read(shopProvider).name);
-  late final _owner = TextEditingController(text: ref.read(shopProvider).ownerName);
-  late final _address = TextEditingController(text: ref.read(shopProvider).address);
-  late final _phone = TextEditingController(text: ref.read(shopProvider).phone);
-  late final _gst = TextEditingController(text: ref.read(shopProvider).gstin);
-  late final _prefix = TextEditingController(text: ref.read(shopProvider).invoicePrefix);
+  late final TextEditingController _name, _owner, _address, _phone, _gst, _prefix;
   String? _letter;
   String? _error;
   bool _busy = false;
   int _stockChoice = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final shop = ref.read(shopProvider);
+    _name = TextEditingController(text: shop.name);
+    _owner = TextEditingController(text: shop.ownerName);
+    _address = TextEditingController(text: shop.address);
+    _phone = TextEditingController(text: shop.phone);
+    _gst = TextEditingController(text: shop.gstin);
+    _prefix = TextEditingController(text: shop.invoicePrefix);
+  }
 
   @override
   void dispose() {

@@ -111,7 +111,8 @@ CREATE TABLE stock_movements (
   created_at INTEGER NOT NULL,
   device_id TEXT NOT NULL
 ) AS DbStockMovement;
-CREATE INDEX stock_movements_product ON stock_movements(product_id, at);
+-- includes the quantity, so a product's stock can be added up from the index alone (the self-check does it for every product)
+CREATE INDEX stock_movements_product ON stock_movements(product_id, at, qty_milli);
 CREATE INDEX stock_movements_ref ON stock_movements(ref_id) WHERE ref_id IS NOT NULL;
 
 CREATE TABLE stock_cache (
@@ -158,6 +159,9 @@ CREATE INDEX bills_billed_at ON bills(billed_at DESC, id DESC);
 CREATE INDEX bills_customer ON bills(customer_id, billed_at DESC, id DESC) WHERE customer_id IS NOT NULL;
 CREATE INDEX bills_old_no ON bills(old_bill_no) WHERE old_bill_no IS NOT NULL;
 CREATE INDEX bills_amount ON bills(total_paise DESC, id DESC);
+CREATE INDEX bills_seq ON bills(seq);
+-- bills with something still to pay, newest first: the register's "part paid" and "on credit" filters
+CREATE INDEX bills_open ON bills(billed_at DESC, id DESC) WHERE balance_paise > 0 AND cancelled = 0;
 CREATE INDEX bills_cancelled ON bills(billed_at DESC) WHERE cancelled = 1;
 CREATE INDEX bills_due ON bills(customer_id, billed_at) WHERE balance_paise > 0;
 
@@ -317,6 +321,9 @@ CREATE TABLE product_month (
   amount_paise INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (product_id, month)
 ) AS DbProductMonth;
+
+-- covers the "best sellers of the last N months" report without touching the table
+CREATE INDEX product_month_by_month ON product_month(month, product_id, amount_paise);
 
 CREATE TABLE counters (
   name TEXT NOT NULL PRIMARY KEY,

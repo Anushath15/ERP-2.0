@@ -1,3 +1,3 @@
 import 'app_database.dart';
 
-Future<AppDatabase> openShopDatabase(String location, {bool background = false}) => throw UnsupportedError('This platform has no database support');
+Future<AppDatabase> openShopDatabase(String location, {bool background = false, int busyTimeoutMs = 5000}) => throw UnsupportedError('This platform has no database support');

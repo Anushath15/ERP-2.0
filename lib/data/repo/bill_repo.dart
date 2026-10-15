@@ -266,46 +266,79 @@ class BillRepo {
         oldBillNo: r.readNullable<String>('old_bill_no'),
       );
 
-  /// One page of the register, newest first. [after] is the cursor of the last row of the previous page. [search] matches the bill
-  /// number, the old (ERP 1) bill number or the customer name. [from] and [to] bound the date.
+  /// One page of the register, newest first. [after] is the cursor of the last row of the previous page. [from] and [to] bound the date.
   /// [status]: 0 all, 1 paid, 2 part paid, 3 unpaid (on credit), 4 cancelled. [byAmount] sorts the biggest bill first instead of the newest.
+  ///
+  /// [search] finds a bill by the START of its number (`A-0001`, `se-b-`), by its number's digits (`123`), by the start of its old
+  /// (ERP 1) number, or by the customer: any customer whose name or phone CONTAINS the text, plus bills that carry the name as text
+  /// only (bills without a linked customer, looked for in the last 90 days). Each of these uses an index, so a million bills answer in
+  /// milliseconds; a plain "contains" scan of every bill would take about half a second.
   Future<List<BillRow>> page({BillCursor? after, String? customerId, String search = '', DateTime? from, DateTime? to, bool onlyCancelled = false, bool onlyDue = false, int status = 0, bool byAmount = false, int limit = 50}) async {
-    final where = <String>[];
-    final args = <Object?>[];
+    final base = <String>[];
+    final baseArgs = <Object?>[];
     if (customerId != null) {
-      where.add('customer_id = ?');
-      args.add(customerId);
-    }
-    final q = search.trim();
-    if (q.isNotEmpty) {
-      where.add("(number LIKE ? ESCAPE '\\' OR old_bill_no LIKE ? ESCAPE '\\' OR customer_name LIKE ? ESCAPE '\\')");
-      final like = '%${q.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
-      args.addAll([like, like, like]);
+      base.add('customer_id = ?');
+      baseArgs.add(customerId);
     }
     if (from != null) {
-      where.add('billed_at >= ?');
-      args.add(from.millisecondsSinceEpoch);
+      base.add('billed_at >= ?');
+      baseArgs.add(from.millisecondsSinceEpoch);
     }
     if (to != null) {
-      where.add('billed_at < ?');
-      args.add(to.millisecondsSinceEpoch);
+      base.add('billed_at < ?');
+      baseArgs.add(to.millisecondsSinceEpoch);
     }
-    if (onlyCancelled || status == 4) where.add('cancelled = 1');
-    if (status == 1) where.add('cancelled = 0 AND balance_paise = 0');
-    if (status == 2) where.add('cancelled = 0 AND balance_paise > 0 AND balance_paise < total_paise');
-    if (status == 3) where.add('cancelled = 0 AND balance_paise > 0 AND balance_paise >= total_paise');
-    if (onlyDue) where.add('balance_paise > 0 AND cancelled = 0');
+    if (onlyCancelled || status == 4) base.add('cancelled = 1');
+    if (status == 1) base.add('cancelled = 0 AND balance_paise = 0');
+    if (status == 2) base.add('cancelled = 0 AND balance_paise > 0 AND balance_paise < total_paise');
+    if (status == 3) base.add('cancelled = 0 AND balance_paise > 0 AND balance_paise >= total_paise');
+    if (onlyDue) base.add('balance_paise > 0 AND cancelled = 0');
     if (after != null) {
       if (byAmount) {
-        where.add('(total_paise < ? OR (total_paise = ? AND id < ?))');
-        args.addAll([after.totalPaise, after.totalPaise, after.id]);
+        base.add('(total_paise < ? OR (total_paise = ? AND id < ?))');
+        baseArgs.addAll([after.totalPaise, after.totalPaise, after.id]);
       } else {
-        where.add('(billed_at < ? OR (billed_at = ? AND id < ?))');
-        args.addAll([after.billedAt, after.billedAt, after.id]);
+        base.add('(billed_at < ? OR (billed_at = ? AND id < ?))');
+        baseArgs.addAll([after.billedAt, after.billedAt, after.id]);
       }
     }
-    final r = await _db.rows('SELECT * FROM bills ${where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}'} ORDER BY ${byAmount ? 'total_paise DESC, id DESC' : 'billed_at DESC, id DESC'} LIMIT ?', [...args, limit]);
-    return [for (final x in r) _row(x)];
+    final order = byAmount ? 'total_paise DESC, id DESC' : 'billed_at DESC, id DESC';
+
+    Future<List<BillRow>> run(List<String> extra, List<Object?> extraArgs) async {
+      final where = [...base, ...extra];
+      final r = await _db.rows('SELECT * FROM bills ${where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}'} ORDER BY $order LIMIT ?', [...baseArgs, ...extraArgs, limit]);
+      return [for (final x in r) _row(x)];
+    }
+
+    final q = search.trim();
+    if (q.isEmpty) return run(const [], const []);
+
+    String upper(String t) => '$t￿';
+    final branches = <Future<List<BillRow>>>[];
+    final up = q.toUpperCase();
+    branches.add(run(['number >= ? AND number < ?'], [up, upper(up)]));
+    branches.add(run(['old_bill_no >= ? AND old_bill_no < ?'], [up, upper(up)]));
+    if (up != q) branches.add(run(['old_bill_no >= ? AND old_bill_no < ?'], [q, upper(q)]));
+    final digits = int.tryParse(q);
+    if (digits != null && RegExp(r'^[0-9]{1,9}$').hasMatch(q)) branches.add(run(['seq = ?'], [digits]));
+    final like = '%${q.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+    final people = await _db.rows("SELECT id FROM customers WHERE deleted_at IS NULL AND (name LIKE ? ESCAPE '\\' OR phone LIKE ? ESCAPE '\\') LIMIT 60", [like, like]);
+    if (people.isNotEmpty) {
+      final ids = [for (final x in people) x.read<String>('id')];
+      branches.add(run(['customer_id IN (${List.filled(ids.length, '?').join(',')})'], ids));
+    }
+    final recent = cx.now().subtract(const Duration(days: 90)).millisecondsSinceEpoch;
+    branches.add(run(["customer_id IS NULL AND customer_name <> '' AND billed_at >= ? AND customer_name LIKE ? ESCAPE '\\'"], [recent, like]));
+
+    final seen = <String>{};
+    final merged = <BillRow>[];
+    for (final rows in await Future.wait(branches)) {
+      for (final r in rows) {
+        if (seen.add(r.id)) merged.add(r);
+      }
+    }
+    merged.sort(byAmount ? (a, b) => b.totalPaise != a.totalPaise ? b.totalPaise.compareTo(a.totalPaise) : b.id.compareTo(a.id) : (a, b) => b.at != a.at ? b.at.compareTo(a.at) : b.id.compareTo(a.id));
+    return merged.length > limit ? merged.sublist(0, limit) : merged;
   }
 
   static BillCursor cursorOf(BillRow r) => BillCursor(r.at.millisecondsSinceEpoch, r.id, r.totalPaise);

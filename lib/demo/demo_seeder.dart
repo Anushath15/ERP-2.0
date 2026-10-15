@@ -10,6 +10,7 @@ import '../domain/bill_math.dart';
 import '../domain/credit/account.dart';
 import '../domain/credit/ledger.dart';
 import '../domain/models.dart';
+import '../fake/shop_profile.dart';
 import 'seed.dart';
 import 'seed_credit.dart';
 
@@ -46,6 +47,8 @@ Future<void> seedDemo(AppData d, DateTime now, {DemoCounts counts = const DemoCo
   }
 
   await db.transaction(() async {
+    await d.settings.put('shop.profile', ShopProfile.sample.toJsonText());
+
     // categories
     await db.batch((b) {
       for (final c in categories) {

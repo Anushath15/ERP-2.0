@@ -16,13 +16,16 @@ class DatabaseTooNewException implements Exception {
 
 @DriftDatabase(include: {'schema.drift'})
 class AppDatabase extends _$AppDatabase {
-  AppDatabase(super.e, {this.native = true});
+  AppDatabase(super.e, {this.native = true, this.busyTimeoutMs = 5000});
+
+  /// How long a write waits for another program that has the file locked before it gives up.
+  final int busyTimeoutMs;
 
   /// WAL and a durable fsync are for files on disk; the in-memory and browser databases ignore them.
   final bool native;
 
   @override
-  int get schemaVersion => currentSchemaVersion;
+  int get schemaVersion => 1; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
 
   /// Numbered migrations: key = the version the step produces. Every step runs inside the upgrade transaction; the caller
   /// makes a backup first (see DatabaseOpener) and a failed step leaves the old file untouched.
@@ -42,9 +45,9 @@ class AppDatabase extends _$AppDatabase {
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
           if (native) {
+            await customStatement('PRAGMA busy_timeout = $busyTimeoutMs');
             await customStatement('PRAGMA journal_mode = WAL');
             await customStatement('PRAGMA synchronous = FULL');
-            await customStatement('PRAGMA busy_timeout = 5000');
           }
         },
       );

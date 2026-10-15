@@ -75,6 +75,7 @@ class _BootRootState extends State<BootRoot> {
           bootstrapProvider.overrideWithValue(o.boot),
           deviceStoreProvider.overrideWithValue(_store),
           dataDirProvider.overrideWithValue(o.dataDir.isEmpty ? null : o.dataDir),
+          dbFilePathProvider.overrideWithValue(o.dataDir.isEmpty ? null : o.location),
           appModeProvider.overrideWith(() => _FixedMode(o.mode)),
           modeSwitcherProvider.overrideWithValue(_switch),
           clockProvider.overrideWith((ref) {

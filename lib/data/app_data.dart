@@ -3,6 +3,7 @@ import 'db/app_database.dart';
 import 'repo/bill_repo.dart';
 import 'repo/catalog_repo.dart';
 import 'repo/ledger_repo.dart';
+import 'repo/outbox_repo.dart';
 import 'repo/records_repo.dart';
 import 'repo/report_repo.dart';
 
@@ -17,7 +18,8 @@ class AppData {
         reminders = ReminderRepo(cx),
         stock = StockRepo(cx),
         settings = SettingsRepo(cx),
-        reports = ReportRepo(cx) {
+        reports = ReportRepo(cx),
+        outbox = OutboxRepo(cx) {
     bills = BillRepo(cx, ledger);
   }
 
@@ -30,6 +32,7 @@ class AppData {
   final StockRepo stock;
   final SettingsRepo settings;
   final ReportRepo reports;
+  final OutboxRepo outbox;
   late final BillRepo bills;
 
   AppDatabase get db => cx.db;

@@ -53,3 +53,12 @@ Future<int?> _df(String path) async {
   return kb == null ? null : kb * 1024;
 }
 
+
+Future<int?> fileSizeBytes(String path) async {
+  try {
+    final f = File(path);
+    return f.existsSync() ? f.lengthSync() : null;
+  } catch (_) {
+    return null;
+  }
+}

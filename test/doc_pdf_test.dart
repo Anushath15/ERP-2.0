@@ -53,7 +53,7 @@ PrintDoc bigInvoice(int lines) {
 }
 
 void main() {
-  const shop = ShopProfile();
+  const shop = ShopProfile.sample;
   final outDir = Directory('build/test_pdfs')..createSync(recursive: true);
 
   Future<Uint8List> make(PrintDoc doc, PaperSize paper, PrintTextSize size, String name) async {

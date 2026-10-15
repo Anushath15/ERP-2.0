@@ -8,6 +8,7 @@ import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../data/repo/report_repo.dart';
 import '../../fake/data_providers.dart';
+import '../../fake/shop_profile.dart';
 import '../../fake/stats.dart';
 import '../../fake/store.dart';
 import '../dashboard/dashboard_screen.dart';
@@ -75,7 +76,7 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
     final cash = today.cash, upi = today.upi, card = today.card;
     final credit = today.credit;
     final expenses = ref.watch(recsProvider('expenses')).where((r) => sameDay(r.f['date'] as DateTime)).fold<int>(0, (s, r) => s + r.i('amount'));
-    const opening = 500000;
+    final opening = ref.watch(shopProvider).openingCashPaise;
     final expected = opening + cash - expenses;
     final countedPaise = ((double.tryParse(_counted.text) ?? 0) * 100).round();
     final diff = countedPaise - expected;

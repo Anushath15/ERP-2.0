@@ -64,7 +64,7 @@ class ReportRepo {
   Future<List<({String name, int amount})>> topProducts(DateTime from, DateTime to, {int limit = 8}) async {
     final long = to.difference(from).inDays > 40;
     final r = long
-        ? await _db.rows('SELECT p.name AS name, SUM(m.amount_paise) AS amount FROM product_month m JOIN products p ON p.id = m.product_id WHERE m.month >= ? AND m.month <= ? GROUP BY m.product_id ORDER BY amount DESC LIMIT ?', [DataContext.monthOf(from), DataContext.monthOf(to), limit])
+        ? await _db.rows('SELECT p.name AS name, t.amount AS amount FROM (SELECT product_id, SUM(amount_paise) AS amount FROM product_month WHERE month >= ? AND month <= ? GROUP BY product_id ORDER BY amount DESC LIMIT ?) t JOIN products p ON p.id = t.product_id ORDER BY t.amount DESC', [DataContext.monthOf(from), DataContext.monthOf(to), limit])
         : await _db.rows('SELECT l.name AS name, SUM(l.total_paise) AS amount FROM bill_lines l JOIN bills b ON b.id = l.bill_id WHERE b.billed_at >= ? AND b.billed_at < ? AND b.cancelled = 0 GROUP BY l.product_id ORDER BY amount DESC LIMIT ?', [from.millisecondsSinceEpoch, to.add(const Duration(days: 1)).millisecondsSinceEpoch, limit]);
     return [for (final x in r) (name: x.read<String>('name'), amount: x.read<int>('amount'))];
   }

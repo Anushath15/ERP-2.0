@@ -18,7 +18,7 @@ int readUserVersion(File file) {
   }
 }
 
-Future<AppDatabase> openShopDatabase(String location, {bool background = false}) async {
+Future<AppDatabase> openShopDatabase(String location, {bool background = false, int busyTimeoutMs = 5000}) async {
   final file = File(location);
   try {
     await file.parent.create(recursive: true);
@@ -39,9 +39,11 @@ Future<AppDatabase> openShopDatabase(String location, {bool background = false})
     }
   }
   final executor = background ? NativeDatabase.createInBackground(file) : NativeDatabase(file);
-  final db = AppDatabase(executor);
+  final db = AppDatabase(executor, busyTimeoutMs: busyTimeoutMs);
   try {
     await db.customSelect('SELECT 1').get(); // opens the file and runs create / migrate
+    // prove the file can be WRITTEN (a read-only file opens fine for reading and only fails at the first save, in the middle of a sale)
+    await db.customStatement('PRAGMA user_version = $currentSchemaVersion');
   } on SqliteException catch (e) {
     await db.close();
     throw DatabaseOpenException(classifySqlite(e), detail: e.message);

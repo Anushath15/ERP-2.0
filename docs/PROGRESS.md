@@ -1,8 +1,8 @@
 # Progress
 
-**READY FOR OWNER REVIEW (Phase 1: screens with sample data).** Phase 2 does not start until the owner says "go".
+**PHASE 2 IN PROGRESS (the owner said "go").** Gate 2A (real database) is done; next is Gate 2B (import from ERP 1, dry run first, STOP for the owner). The owner review of Phase 1 and the security hardening are done.
 
-_Last updated: 2026-10-14 (security hardening)_
+_Last updated: 2026-10-15 (Phase 2, Gate 2A)_
 
 ## How to look at it
 **Start with [REVIEW-GUIDE.md](REVIEW-GUIDE.md)**: a 15-minute walkthrough (₹150 bill with ₹100 given, the Credit button, Money to collect, customer and dealer profiles, Settle fully with Undo, WhatsApp preview, the Shop profile and the estimate printout, 200% text, 100 lines). Sample data is fake; nothing is saved or sent.
@@ -21,6 +21,12 @@ Status of each finding is in [threat-model.md](threat-model.md) (fixed / mitigat
 **Follow-up (2026-10-14, later):** finding 9 revised: daily commit caps are now cashier 20 (raised from 16 on the owner's request), manager 24, owner 24 (worst case 10,000 to 12,000 of the 20,000 free writes), the app sends at most 100 documents per commit (`lib/domain/sync/batch_plan.dart`), the honest limit (rules cannot enforce batch size) and a two-minute emergency procedure are written down; finding numbers in `threat-model.md` now match the original review list. Rules redeployed to `ask-erp-2` (a second deploy said "already up to date", so the live rules equal the repo). Five Dependabot pull requests are open, all major-version bumps, none merged (four touch the workflows). The `v2.0.0-proto.3` tag is still **not** pushed: it waits for the owner to say "tag".
 
 **Owner decisions on the follow-up (2026-10-14):** cashier cap raised to 20 commits a day (rules redeployed). `cupertino_icons` 1 to 2 merged after the full tests passed and all 416 screenshots came out byte-identical (the app code does not use that package's icons). The four workflow pull requests (checkout, attest-build-provenance, download-artifact, upload-artifact) stay open **until `v2.0.0-proto.3` is built, approved and verified**; then they go in together on one branch, tested with a test release run (not a public tag). The upload-artifact PR failed CI only because its branch was cut before a golden-image fix on main (the settings screenshot captured before the logo loaded), not because of the action. Tag still **not** pushed: waiting for the owner to say "tag".
+
+## Phase 2, Gate 2A: the real database (done, 2026-10-15)
+What now works: every screen reads and writes a real SQLite database through repositories (`lib/data`); the sample shop moved behind **Demo mode** (Settings, its own file `demo.sqlite`, an amber strip on every page while it is on); the first-run set-up asks for shop details, a bill-number prefix and **this computer's series letter** (a letter held by another computer is refused); the program starts with plain-English screens for a newer, damaged, locked, read-only or unreachable data file; a health check of the file runs after start-up in a separate isolate (weekly full check, daily self-check of every total), the disk is watched (warning under 500 MB, saving stopped under 100 MB), and the Health page shows the real figures and a working **Recalculate** (rebuilds every total from the raw rows).
+Evidence (all run on this PC): see `docs/data-model.md` and `docs/perf-results.md` ("Real repository layer"). Power-cut test: **200 kills in the middle of saving, 20,002 bills, 0 problems, every acknowledged bill present** (`dart run tool/kill_test/run.dart 200`; the test suite runs 25 of them). The browser build opens the same schema in WebAssembly (checked in Chromium: demo shop seeded, survives a reload).
+Found and fixed in earlier work while doing this: the prototype's `main.dart` never used the real device-settings store (settings were not remembered between runs); strings added during the security work were typed into the generated `strings.dart` and would have been lost on the next regeneration (they are in `tool/strings.txt` now); the sample "shop profile" (name, GSTIN, UPI id, bank) was the default for every shop (now empty for a real shop, filled only by the demo seeder).
+Not verified: a real power cut (only process kills; SQLite `synchronous=FULL` is on), the browser build on Safari and Firefox, the Android build (not started), a restore (Gate 2C).
 
 ## Phase 0 recap
 Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents, spikes S1-S4 plus Android and browser checks, quota analysis of rule lookups, convergence test: see [spikes.md](spikes.md).

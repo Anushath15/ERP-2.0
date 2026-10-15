@@ -40,6 +40,14 @@ class CatalogRepo {
     return r == null ? null : _product(r);
   }
 
+  /// A scanned barcode: one product or none. (The `barcode <> ''` part is what lets SQLite use the barcode index.)
+  Future<Product?> productByBarcode(String code) async {
+    final c = code.trim();
+    if (c.isEmpty) return null;
+    final r = await _db.row("$_productSelect WHERE p.barcode = ? AND p.barcode <> '' AND p.deleted_at IS NULL", [c]);
+    return r == null ? null : _product(r);
+  }
+
   Future<int> productCount() => _db.scalarInt('SELECT COUNT(*) FROM products WHERE deleted_at IS NULL');
 
   /// Search as you type: every word is a prefix ("hav swi" finds HAVELLS ... SWITCH), or a barcode. Uses the FTS5 index.
