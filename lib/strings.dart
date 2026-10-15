@@ -169,7 +169,7 @@ class Strings {
   String get noProductsHelp => 'Add your first product, or import your old list from Excel.';
   String get inventorySubtitle => 'How much of each item is left, and what it is worth';
   String get statStockValue => 'Stock worth';
-  String get valuationRule => 'At average cost price';
+  String get valuationRule => 'At buying price (rule not chosen yet)';
   String get statItems => 'Items';
   String get statLow => 'Almost finished';
   String get statOut => 'Out of stock';

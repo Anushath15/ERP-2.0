@@ -99,7 +99,7 @@ class InventoryScreen extends ConsumerWidget {
     final l = tr(context);
     final items = ref.watch(productsProvider);
     final th = Theme.of(context).textTheme;
-    // One shared valuation rule (average cost; unpriced stock = 0) so totals can never disagree between screens.
+    // One shared valuation rule for now (buying price; unpriced and negative stock = 0; the shop has not chosen a rule yet, see docs/erp1-import-map.md section 7) so totals can never disagree between screens.
     int value(Product p) => p.stockMilli <= 0 ? 0 : p.costPaise * p.stockMilli ~/ 1000;
     final total = items.fold<int>(0, (s, p) => s + value(p));
     final low = items.where((p) => p.lowStock).length;

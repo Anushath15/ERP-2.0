@@ -1,6 +1,6 @@
 # Progress
 
-**PHASE 2 IN PROGRESS (the owner said "go").** Gate 2A (real database) is done; next is Gate 2B (import from ERP 1, dry run first, STOP for the owner). The owner review of Phase 1 and the security hardening are done.
+**PHASE 2 IN PROGRESS (the owner said "go").** Gate 2A (real database) is done; Gate 2B (import from ERP 1) is built and tested on synthetic files and is waiting at its STOP for the owner's backup copy and the stock-value decision. The owner review of Phase 1 and the security hardening are done.
 
 _Last updated: 2026-10-15 (Phase 2, Gate 2A)_
 
@@ -27,6 +27,14 @@ What now works: every screen reads and writes a real SQLite database through rep
 Evidence (all run on this PC): see `docs/data-model.md` and `docs/perf-results.md` ("Real repository layer"). Power-cut test: **200 kills in the middle of saving, 20,002 bills, 0 problems, every acknowledged bill present** (`dart run tool/kill_test/run.dart 200`; the test suite runs 25 of them). The browser build opens the same schema in WebAssembly (checked in Chromium: demo shop seeded, survives a reload).
 Found and fixed in earlier work while doing this: the prototype's `main.dart` never used the real device-settings store (settings were not remembered between runs); strings added during the security work were typed into the generated `strings.dart` and would have been lost on the next regeneration (they are in `tool/strings.txt` now); the sample "shop profile" (name, GSTIN, UPI id, bank) was the default for every shop (now empty for a real shop, filled only by the demo seeder).
 Not verified: a real power cut (only process kills; SQLite `synchronous=FULL` is on), the browser build on Safari and Firefox, the Android build (not started), a restore (Gate 2C).
+
+## Phase 2, Gate 2B: import from ERP 1 (built 2026-10-15, STOP: waiting for the owner)
+What exists: `docs/erp1-import-map.md` (every ERP 1 list, its fields, where each goes, what has no home); the importer (`lib/import/erp1/` reading and checking, `lib/data/importer/erp1_writer.dart` writing, `tool/import_erp1.dart` command); a report with counts per list, sales and payments per month, customer and dealer balances, stock, **stock value three ways side by side (no rule applied; `valuation.rule` stays unset)**, every record rejected/repaired/noted with its reason, lists with no home, old bill numbers.
+Rules it keeps: dry run by default; writes only a NEW file, in one transaction (a failure deletes the half-built file); stable ids from ERP 1 ids so a second run adds nothing; nothing queued for upload; original bill numbers kept in `old_bill_no` (searchable); customer/dealer balances and stock are made to equal ERP 1's figures exactly (opening entries), and anything the file could not explain is listed.
+Run on **synthetic** files only (invented shop, planted flaws): 100,000 bills (95 MB file): read and check 5.9 s, write 26 s into a 220 MB database, every total read back equals the backup, the program's own consistency check finds 0 problems. 27 new tests (units, 12 planted flaws, hostile files: not JSON, truncated, wrong types, 5 MB names, 1e300, NaN, impossible dates, 200,000-deep nesting, 100,000 bad rows, idempotent second run, non-empty database refused, failure leaves nothing).
+Also fixed: the Inventory screen's hint said "At average cost price" but used the buying price; it now says "At buying price (rule not chosen yet)".
+**Needed from the owner:** the ERP 1 backup copy (steps in the import map, section 8) and the stock-value choice (selling / buying / average cost; worked example from the real data comes with the report).
+Not verified: any real ERP 1 data; ERP 1's checksum; the in-app import screen is not built (command only).
 
 ## Phase 0 recap
 Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents, spikes S1-S4 plus Android and browser checks, quota analysis of rule lookups, convergence test: see [spikes.md](spikes.md).
