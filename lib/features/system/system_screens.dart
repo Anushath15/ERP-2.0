@@ -16,9 +16,11 @@ import '../../data/repo/self_check.dart';
 import '../../fake/health.dart';
 import '../../fake/stock_value_provider.dart';
 import '../stock/stock_value_sheet.dart';
+import '../../fake/backup_controller.dart';
 import '../import/import_erp1_screen.dart';
 import '../import/import_providers.dart';
 import '../../data/importer/swap.dart';
+import '../../data/backup/backup_types.dart' show freshnessOf, BackupFreshness;
 import '../../core/money.dart';
 import '../../fake/stats.dart';
 import '../../strings.dart';
@@ -34,7 +36,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _pin = false;
-  bool _autoBackup = true;
 
   @override
   Widget build(BuildContext context) {
@@ -63,13 +64,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     const anim = AnimationsCard();
     const sounds = SoundsCard();
 
+    final lastBk = ref.watch(backupControllerProvider).last;
     final backup = SectionCard(title: l.setBackup, child: Column(children: [
-      row(l.lastBackup, l.lastBackupValue(formatDateTime(now.subtract(const Duration(hours: 5)))), FilledButton.icon(onPressed: () => toast(context, l.backupDone), icon: const Icon(Icons.save_alt), label: Text(l.backupNow))),
-      row(l.autoBackup, l.autoBackupHelp, Switch(value: _autoBackup, onChanged: (v) => setState(() => _autoBackup = v))),
-      row(l.restore, l.restoreHelp, OutlinedButton.icon(onPressed: () async {
-        final ok = await confirmDialog(context, title: l.restoreConfirmTitle, message: l.restoreConfirmText, confirmLabel: l.restore, danger: true);
-        if (ok && context.mounted) toast(context, l.demoOnly);
-      }, icon: const Icon(Icons.restore), label: Text(l.chooseFile))),
+      row(l.lastBackup, lastBk == null ? l.noBackupYet : l.lastBackupValue(formatDateTime(lastBk)), FilledButton.icon(key: const ValueKey('openBackups'), onPressed: () => context.go('/backups'), icon: const Icon(Icons.save_alt), label: Text(l.navBackups))),
+      row(l.restore, l.restoreHelp, OutlinedButton.icon(key: const ValueKey('openRestore'), onPressed: () => context.go('/restore'), icon: const Icon(Icons.restore), label: Text(l.restoreTitle))),
     ]));
 
     final sync = SectionCard(title: l.setSync, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -184,6 +182,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     final th = Theme.of(context).textTheme;
     final c = context.c;
     final info = ref.watch(healthInfoProvider).value;
+    final bk = ref.watch(backupControllerProvider).last;
     final sv = ref.watch(stockValuationProvider).value;
     final counts = ref.watch(shopCountsProvider).value;
     final swapRes = ref.watch(swapResultProvider).value;
@@ -203,7 +202,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
       item(damaged ? Icons.error_outline : Icons.verified_outlined, damaged ? c.danger : c.success, l.healthIntegrity, damaged ? l.healthDamaged : (problems.isEmpty ? l.healthOk : l.healthProblemsFound(problems.length.toString())),
           help: last == null ? l.healthNeverChecked : l.healthIntegrityHelp(formatDateTime(last)),
           action: OutlinedButton.icon(key: const ValueKey('checkNow'), onPressed: _checking ? null : () => _checkNow(l), icon: _checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.search), label: Text(l.checkNow))),
-      item(Icons.save_alt, info?.lastBackup == null ? c.warning : c.success, l.lastBackup, info?.lastBackup == null ? l.noBackupYet : formatDateTime(info!.lastBackup!), help: l.backupsKept('30')),
+      item(Icons.save_alt, backupColor(ref, c), l.lastBackup, bk == null ? l.noBackupYet : formatDateTime(bk), help: l.backupsSubtitle, action: OutlinedButton(key: const ValueKey('healthBackups'), onPressed: () => context.go('/backups'), child: Text(l.healthBackupLink))),
       item(Icons.storage_outlined, info?.freeBytes != null && info!.freeBytes! < 500 * 1024 * 1024 ? c.warning : c.primary, l.freeDisk, info?.freeBytes == null ? l.healthUnknown : _size(info!.freeBytes!), help: l.freeDiskHelp),
       item(Icons.cloud_upload_outlined, (info?.pendingUploads ?? 0) > 0 ? c.warning : c.success, l.syncBacklog, l.syncBacklogValue('${info?.pendingUploads ?? 0}'), help: l.syncBacklogHelp),
       item(Icons.inventory_outlined, problems.isEmpty ? c.success : c.warning, l.healthTotals, problems.isEmpty ? l.healthTotalsOk : l.healthProblemsFound(problems.length.toString()), help: l.healthTotalsHelp, action: OutlinedButton(key: const ValueKey('rebuildTotals'), onPressed: () => _rebuild(l), child: Text(l.rebuildTotals))),
@@ -237,7 +236,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(swapRes.ok
-                      ? (swapRes.kind == 'goback' ? l.swapWentBack(formatDate(swapRes.at)) : l.swapImported(formatDate(swapRes.at), '${swapRes.counts['products'] ?? '-'}', '${swapRes.counts['customers'] ?? '-'}', '${swapRes.counts['bills'] ?? '-'}'))
+                      ? (swapRes.kind == 'goback' ? l.swapWentBack(formatDate(swapRes.at)) : swapRes.kind == 'restore' ? l.swapRestored(formatDate(swapRes.at), '${swapRes.counts['products'] ?? '-'}', '${swapRes.counts['customers'] ?? '-'}', '${swapRes.counts['bills'] ?? '-'}') : l.swapImported(formatDate(swapRes.at), '${swapRes.counts['products'] ?? '-'}', '${swapRes.counts['customers'] ?? '-'}', '${swapRes.counts['bills'] ?? '-'}'))
                       : l.swapFailed(swapRes.message)),
                 ),
                 TextButton(
@@ -350,4 +349,9 @@ class MoreScreen extends StatelessWidget {
       ],
     ]);
   }
+}
+
+Color backupColor(WidgetRef ref, AppColors c) {
+  final f = freshnessOf(ref.read(backupControllerProvider).last, DateTime.now());
+  return switch (f) { BackupFreshness.fresh => c.success, BackupFreshness.amber => c.warning, BackupFreshness.red => c.danger };
 }

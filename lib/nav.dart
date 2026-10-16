@@ -52,6 +52,7 @@ final navGroups = <NavGroup>[
     NavItem('/import', Icons.upload_file_outlined, (l) => l.navImport),
     NavItem('/shop', Icons.storefront_outlined, (l) => l.navShop),
     NavItem('/settings', Icons.settings_outlined, (l) => l.navSettings),
+    NavItem('/backups', Icons.save_alt, (l) => l.navBackups),
     NavItem('/health', Icons.health_and_safety_outlined, (l) => l.navHealth),
     NavItem('/help', Icons.help_outline, (l) => l.navHelp),
     NavItem('/about', Icons.info_outline, (l) => l.navAbout),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../backup/backups_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/date_fmt.dart';
@@ -131,6 +132,7 @@ class DashboardScreen extends ConsumerWidget {
     final body = <Widget>[
       Text(l.greeting, style: th.headlineSmall),
       Text(l.todayIs(formatDate(now)), style: th.bodySmall),
+      const BackupStatusLine(),
       const SizedBox(height: 14),
       actions,
       const SizedBox(height: 14),

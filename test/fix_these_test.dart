@@ -3,7 +3,6 @@ import 'package:erp2/fake/data_providers.dart';
 import 'package:erp2/fake/stock_value_provider.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'helpers.dart';

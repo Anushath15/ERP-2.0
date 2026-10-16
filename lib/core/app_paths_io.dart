@@ -20,6 +20,14 @@ class FileAppPaths implements AppPaths {
   String get dataDir => '$base${Platform.pathSeparator}data';
 
   @override
+  String? get defaultBackupFolder {
+    final env = Platform.environment;
+    final home = Platform.isWindows ? env['USERPROFILE'] : env['HOME'];
+    if (home == null) return null;
+    return [home, 'Documents', 'ASK ERP 2', 'Backups'].join(Platform.pathSeparator);
+  }
+
+  @override
   String dbLocation(String name) => '$dataDir${Platform.pathSeparator}$name.sqlite';
 
   File _file(String name) => File('$base${Platform.pathSeparator}$name');

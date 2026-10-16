@@ -17,7 +17,10 @@ void main() {
         await d.catalog.saveProduct(sampleProduct('Item $i', id: 'p$i'), create: true);
         await Future<void>.delayed(const Duration(milliseconds: 8));
       }
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // a slow machine needs longer: wait (up to 10 s) for the quiet-moment checkpoint instead of guessing
+      for (var i = 0; i < 200 && db.controlledCheckpoints == 0; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
       expect(db.controlledCheckpoints, greaterThan(0), reason: 'the program folded the log back into the file by itself');
       expect(await db.scalarInt('SELECT COUNT(*) FROM products'), 30);
       await db.close();

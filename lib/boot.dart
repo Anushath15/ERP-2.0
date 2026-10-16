@@ -68,6 +68,7 @@ Future<BootOutcome> bootApp({required AppPaths paths, required DataMode mode, Da
       await SeriesRegistry(data.settings, deviceId).claim('A');
       await data.settings.put('shop.created', '${data.cx.nowMs()}');
     }
+    if (await data.settings.get('shop.id') == null) await data.settings.put('shop.id', newId()); // names this shop; a backup of another shop is refused by it
     final mine = await SeriesRegistry(data.settings, deviceId).mine();
     final created = await data.settings.get('shop.created') != null;
     data.bills.series = mine ?? 'A';

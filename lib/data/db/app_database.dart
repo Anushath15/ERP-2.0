@@ -34,8 +34,12 @@ class AppDatabase extends _$AppDatabase {
   final bool native;
 
   Timer? _checkpointTimer;
-  int _lastWriteMs = 0, _commitsSince = 0, _activeTransactions = 0;
+  int _lastWriteMs = 0, _commitsSince = 0, _activeTransactions = 0, _commitsTotal = 0;
   bool _checkpointBusy = false;
+
+  /// How many saves have been made since this program opened the data, and when the last one finished: the backup schedule asks "has anything changed".
+  int get commitCount => _commitsTotal;
+  int get lastWriteMs => _lastWriteMs;
 
   /// How many controlled (idle-moment) checkpoints have run, for tests and the Health page.
   int controlledCheckpoints = 0;
@@ -50,6 +54,7 @@ class AppDatabase extends _$AppDatabase {
       _activeTransactions--;
       _lastWriteMs = DateTime.now().millisecondsSinceEpoch;
       _commitsSince++;
+      _commitsTotal++;
     }
   }
 

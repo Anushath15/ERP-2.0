@@ -11,6 +11,9 @@ abstract class AppPaths {
   /// The database for [name] (`shop` or `demo`): a file path on the desktop, a database name in the browser.
   String dbLocation(String name);
 
+  /// Where backups go unless the owner chooses another folder: `Documents\ASK ERP 2\Backups` on a computer, null in the browser.
+  String? get defaultBackupFolder;
+
   /// A small text value kept on this device only (null when not set yet).
   Future<String?> readText(String name);
   Future<void> writeText(String name, String text);

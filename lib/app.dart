@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show AppExitResponse;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,8 @@ import 'design/text_zoom.dart';
 import 'features/credit/credit_screens.dart' show creditRowsProvider;
 import 'boot_root.dart' show DamagedFileScreen;
 import 'data/db/integrity.dart';
+import 'fake/backup_controller.dart';
+import 'strings.dart';
 import 'fake/credit_store.dart';
 import 'fake/data_providers.dart';
 import 'fake/health.dart';
@@ -52,7 +55,14 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       ref.read(reminderLogProvider);
       ref.read(creditRowsProvider); // the Money to collect list (134 rows with ageing), so its first visit only has to draw it
     });
-    if (widget.runChecks && widget.dbLocation != null) unawaited(_startChecks());
+    if (widget.runChecks && widget.dbLocation != null) {
+      unawaited(_startChecks());
+      // closing the program makes one last backup when something was saved since the previous one
+      _exitListener = AppLifecycleListener(onExitRequested: () async {
+        await ref.read(backupControllerProvider.notifier).backupOnClose();
+        return AppExitResponse.exit;
+      });
+    }
     if (!kDebugMode) {
       // The auto-protect guard only runs in real (profile/release) builds; debug frames are always slow.
       _guard = FrameGuard(onReduce: _reduceMotion);
@@ -95,9 +105,11 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     }
     unawaited(ref.read(diskLevelProvider.notifier).refresh());
     _diskTimer = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(ref.read(diskLevelProvider.notifier).refresh()));
+    unawaited(ref.read(backupControllerProvider.notifier).start());
   }
 
   Timer? _diskTimer;
+  AppLifecycleListener? _exitListener;
 
   void _onTimings(List<FrameTiming> timings) {
     for (final t in timings) {
@@ -118,6 +130,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     _diskTimer?.cancel();
+    _exitListener?.dispose();
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     if (!kDebugMode) SchedulerBinding.instance.removeTimingsCallback(_onTimings);
@@ -163,7 +176,11 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
         final mq = MediaQuery.of(context);
         return MediaQuery(
           data: mq.copyWith(textScaler: TextScaler.linear(mq.textScaler.scale(1) * s.textScale)),
-          child: MotionScope(motion: Motion(level), child: child ?? const SizedBox.shrink()),
+          child: Stack(children: [
+            MotionScope(motion: Motion(level), child: child ?? const SizedBox.shrink()),
+            if (ref.watch(backupControllerProvider.select((x) => x.closing)))
+              Positioned.fill(child: Material(color: Colors.black54, child: Center(child: Card(child: Padding(padding: const EdgeInsets.all(24), child: Text(const Strings().backupClosing, style: Theme.of(context).textTheme.titleMedium)))))),
+          ]),
         );
       },
     );

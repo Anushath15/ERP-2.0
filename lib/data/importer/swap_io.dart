@@ -27,6 +27,15 @@ Future<void> requestImportSwap({required String dataDir, required String newFile
   await File(_pendingFile(dataDir)).writeAsString(jsonEncode({'kind': 'import', 'file': p.relative(newFile, from: dataDir), 'expected': expected, 'source': source, 'requestedAt': DateTime.now().toIso8601String()}));
 }
 
+/// A restore from a backup file: the file is first COPIED into the data folder (the backup itself is never moved or changed), then the same careful
+/// switch as an import happens at start-up, and finally this computer's own bill letter and bill counters are carried over so a bill number is never reused.
+Future<void> requestRestore({required String dataDir, required String backupFile, required String source}) async {
+  final imp = Directory(p.join(dataDir, 'import'))..createSync(recursive: true);
+  final copy = p.join(imp.path, 'restore-${_stamp(DateTime.now())}.sqlite');
+  await File(backupFile).copy(copy);
+  await File(_pendingFile(dataDir)).writeAsString(jsonEncode({'kind': 'restore', 'file': p.relative(copy, from: dataDir), 'expected': <String, int>{}, 'source': source, 'requestedAt': DateTime.now().toIso8601String()}));
+}
+
 Future<void> requestGoBack({required String dataDir, required String stamp}) async {
   await File(_pendingFile(dataDir)).writeAsString(jsonEncode({'kind': 'goback', 'stamp': stamp, 'requestedAt': DateTime.now().toIso8601String()}));
 }
@@ -124,7 +133,7 @@ Future<SwapResult?> applyPendingSwap(String dataDir, {DateTime? now}) async {
   SwapResult fail(String m) => SwapResult(ok: false, kind: kind, message: '$m Your data is as it was.', at: at);
   late SwapResult result;
   try {
-    result = kind == 'goback' ? await _goBack(dataDir, '${req['stamp']}', at, fail) : await _importSwap(dataDir, req, at, fail);
+    result = kind == 'goback' ? await _goBack(dataDir, '${req['stamp']}', at, fail) : await _importSwap(dataDir, req, at, fail, restore: kind == 'restore');
   } catch (e) {
     result = fail('The switch could not be completed ($e).');
   }
@@ -133,7 +142,7 @@ Future<SwapResult?> applyPendingSwap(String dataDir, {DateTime? now}) async {
   return result;
 }
 
-Future<SwapResult> _importSwap(String dir, Map<String, dynamic> req, DateTime at, SwapResult Function(String) fail) async {
+Future<SwapResult> _importSwap(String dir, Map<String, dynamic> req, DateTime at, SwapResult Function(String) fail, {bool restore = false}) async {
   final newFile = p.normalize(p.join(dir, '${req['file']}'));
   if (!p.isWithin(dir, newFile) || !File(newFile).existsSync()) return fail('The new data file was not found.');
   final expected = {for (final e in (req['expected'] as Map? ?? {}).entries) '${e.key}': (e.value as num).toInt()};
@@ -150,6 +159,7 @@ Future<SwapResult> _importSwap(String dir, Map<String, dynamic> req, DateTime at
   try {
     _moveSet(live, p.join(prev.path, 'shop.sqlite'), moved);
     File(newFile).renameSync(live);
+    if (restore && moved.isNotEmpty) _carryOver(p.join(prev.path, 'shop.sqlite'), live);
     final after = _verify(live, expected: expected, full: false);
     if (after != null) throw StateError(after);
   } catch (e) {
@@ -164,14 +174,14 @@ Future<SwapResult> _importSwap(String dir, Map<String, dynamic> req, DateTime at
   }
   await File(p.join(prev.path, 'meta.json')).writeAsString(jsonEncode({
     'at': at.toIso8601String(),
-    'reason': 'Before importing from ERP 1 (${req['source'] ?? ''})',
+    'reason': restore ? 'Before restoring from a backup (${req['source'] ?? ''})' : 'Before importing from ERP 1 (${req['source'] ?? ''})',
     'products': before?['products'],
     'customers': before?['customers'],
     'bills': before?['bills'],
     'bytes': beforeBytes,
     'hadData': moved.isNotEmpty,
   }));
-  return SwapResult(ok: true, kind: 'import', message: 'Your ERP 1 data is now in use.', at: at, prevStamp: stamp, counts: _counts(live) ?? const <String, int>{});
+  return SwapResult(ok: true, kind: restore ? 'restore' : 'import', message: restore ? 'Your data was restored from the backup.' : 'Your ERP 1 data is now in use.', at: at, prevStamp: stamp, counts: _counts(live) ?? const <String, int>{});
 }
 
 Future<SwapResult> _goBack(String dir, String stamp, DateTime at, SwapResult Function(String) fail) async {
@@ -211,6 +221,38 @@ Future<SwapResult> _goBack(String dir, String stamp, DateTime at, SwapResult Fun
   final metaOld = File(p.join(prev, 'meta.json'));
   if (metaOld.existsSync()) metaOld.renameSync(p.join(prev, 'meta.restored.json'));
   return SwapResult(ok: true, kind: 'goback', message: 'You are back on the earlier data.', at: at, prevStamp: newStamp, counts: _counts(live) ?? const <String, int>{});
+}
+
+/// After a restore from an OLDER backup: this computer keeps its bill letter (and the shop's list of letters), and every bill counter keeps the higher
+/// of the two values, so a bill number that was already used after the backup was made is never handed out again.
+void _carryOver(String previousFile, String restoredFile) {
+  Database? old, now;
+  try {
+    old = sqlite3.open(previousFile, mode: OpenMode.readOnly);
+    now = sqlite3.open(restoredFile);
+    final oldSeries = old.select("SELECT value FROM kv WHERE name = 'shop.series'");
+    if (oldSeries.isNotEmpty) {
+      final merged = <String, dynamic>{};
+      final cur = now.select("SELECT value FROM kv WHERE name = 'shop.series'");
+      for (final raw in [if (cur.isNotEmpty) cur.first.values.first as String, oldSeries.first.values.first as String]) {
+        try {
+          final m = jsonDecode(raw);
+          if (m is Map) {
+            for (final e in m.entries) {
+              merged.putIfAbsent('${e.key}', () => e.value);
+            }
+          }
+        } catch (_) {}
+      }
+      now.execute("INSERT INTO kv(name, value, updated_at) VALUES ('shop.series', ?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value", [jsonEncode(merged), DateTime.now().millisecondsSinceEpoch]);
+    }
+    for (final r in old.select("SELECT name, value FROM counters WHERE name LIKE 'inv.%'")) {
+      now.execute('INSERT INTO counters(name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)', [r['name'], r['value']]);
+    }
+  } finally {
+    old?.close();
+    now?.close();
+  }
 }
 
 /// The earlier data sets that can still be gone back to (30 days), newest first.

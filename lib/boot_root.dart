@@ -10,6 +10,7 @@ import 'design/app_logo.dart';
 import 'design/theme.dart';
 import 'design/tokens.dart';
 import 'design/widgets.dart';
+import 'fake/backup_controller.dart';
 import 'fake/data_providers.dart';
 import 'fake/health.dart';
 import 'fake/store.dart';
@@ -74,6 +75,8 @@ class _BootRootState extends State<BootRoot> {
           appDataProvider.overrideWithValue(o.data),
           bootstrapProvider.overrideWithValue(o.boot),
           deviceStoreProvider.overrideWithValue(_store),
+          appPathsProvider.overrideWithValue(_paths),
+          deviceIdProvider.overrideWithValue(o.deviceId),
           dataDirProvider.overrideWithValue(o.dataDir.isEmpty ? null : o.dataDir),
           dbFilePathProvider.overrideWithValue(o.dataDir.isEmpty ? null : o.location),
           appModeProvider.overrideWith(() => _FixedMode(o.mode)),

@@ -5,6 +5,9 @@ import '../../core/data_mode.dart';
 import '../../data/platform/disk_space.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
+import 'package:go_router/go_router.dart';
+import '../../data/backup/backup_types.dart';
+import '../../fake/backup_controller.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/health.dart';
 
@@ -21,12 +24,18 @@ class ProblemBanner extends ConsumerWidget {
     final demo = ref.watch(appModeProvider) == DataMode.demo;
     final selfCheck = ref.watch(selfCheckProblemsProvider);
     final c = context.c;
-    final items = <(String, Color, VoidCallback?)>[
-      if (error != null) (error, c.danger, () => ref.read(writeErrorProvider.notifier).set(null)),
-      if (demo) (l.demoBanner, c.info, () => unawaited(ref.read(modeSwitcherProvider)(DataMode.real))),
-      if (selfCheck.isNotEmpty) (l.selfCheckBanner(selfCheck.length.toString()), c.warning, () => ref.read(selfCheckProblemsProvider.notifier).set(const [])),
-      if (disk == DiskLevel.low) (l.diskLowBanner, c.warning, null),
-      if (disk == DiskLevel.full) (l.diskFullBanner, c.danger, null),
+    final bk = ref.watch(backupControllerProvider);
+    final now = DateTime.now();
+    final prevFy = previousFinancialYear(now);
+    final yearlyDue = ref.read(backupControllerProvider.notifier).available && now.month >= 4 && now.month <= 6 && !ref.watch(backupListProvider).any((b) => b.kind == BackupKind.archive && b.fy == prevFy) && (ref.watch(backupListProvider).isNotEmpty);
+    final items = <(String, Color, VoidCallback?, String?)>[
+      if (error != null) (error, c.danger, () => ref.read(writeErrorProvider.notifier).set(null), null),
+      if (demo) (l.demoBanner, c.info, () => unawaited(ref.read(modeSwitcherProvider)(DataMode.real)), l.demoLeave),
+      if (selfCheck.isNotEmpty) (l.selfCheckBanner(selfCheck.length.toString()), c.warning, () => ref.read(selfCheckProblemsProvider.notifier).set(const []), null),
+      if (disk == DiskLevel.low) (l.diskLowBanner, c.warning, null, null),
+      if (disk == DiskLevel.full) (l.diskFullBanner, c.danger, null, null),
+      if (bk.lastError != null) (l.backupFailed(bk.lastError!), c.danger, () => ref.read(backupControllerProvider.notifier).dismissError(), null),
+      if (yearlyDue) (l.backupYearlyReminder(prevFy), c.info, () => context.go('/backups'), l.backupYearlyGo),
     ];
     if (items.isEmpty) return const SizedBox.shrink();
     return Column(children: [
@@ -40,7 +49,7 @@ class ProblemBanner extends ConsumerWidget {
             Icon(Icons.warning_amber_rounded, color: i.$2),
             const SizedBox(width: 10),
             Expanded(child: Text(i.$1, style: Theme.of(context).textTheme.bodyMedium)),
-            if (i.$3 != null) TextButton(onPressed: i.$3, child: Text(i.$1 == l.demoBanner ? l.demoLeave : l.dismiss)),
+            if (i.$3 != null) TextButton(onPressed: i.$3, child: Text(i.$4 ?? l.dismiss)),
           ]),
         ),
     ]);

@@ -8,6 +8,9 @@ class _WebPaths implements AppPaths {
   String get dataDir => '';
 
   @override
+  String? get defaultBackupFolder => null;
+
+  @override
   String dbLocation(String name) => 'ask_erp2_$name';
 
   @override
