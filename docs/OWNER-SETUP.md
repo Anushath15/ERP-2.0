@@ -57,3 +57,14 @@ The security rules contain the list of allowed e-mail addresses. The real addres
 - Android phone: allow "install from unknown sources" for the test APK (Phase 4).
 - Keep the Android signing key file safe (Phase 4): copy it to a USB drive and one more place. If it is lost, updates to the same app are impossible.
 - Windows may warn "Windows protected your PC" for the unsigned installer: click **More info > Run anyway**.
+
+## 6. Supabase (cloud database, free plan)
+Do these yourself (I cannot create accounts, organisations or passwords for you):
+1. <https://supabase.com/dashboard> > **New organization**: name `Senthil Enterprises`, type Personal, plan **Free**. Do not add a card.
+2. **New project**: name `ask-erp-2`, region **Mumbai (ap-south-1)** if offered. Set a **Database password**: let the generator make it and save it in your password manager. Do not paste it in chat.
+3. When the project is ready: **Project Settings > API**. Send me only the **Project URL** and the **anon / publishable** key (both are meant to be public). Never send the `service_role` or secret key.
+4. **Authentication > Sign In / Providers**: keep **Email** on. Switch **Confirm email** on.
+5. **SQL Editor**: I will tell you when `supabase/migrations/0001_sync.sql` has been tested; paste and Run it only then.
+6. (Later, before the first sign-in) **Google sign-in**: Google Cloud console > new project `ask-erp-2-login` > APIs & Services > OAuth consent screen (External, app name `ASK ERP 2.0`, your e-mail) > Credentials > Create OAuth client ID (Web). Authorised redirect URI: `https://qksovlwyxpxahszjqdkz.supabase.co/auth/v1/callback`. Then Supabase > Authentication > Sign In / Providers > Google: paste the client ID and secret there (never in chat). I will give the desktop and Android details when Gate 2D starts.
+7. Add the same two addresses as members of the organisation (Organization settings > Team) so one person can never lock you out.
+Keep-alive: the free plan pauses an unused project after about a week; see docs/supabase-sync-design.md.
