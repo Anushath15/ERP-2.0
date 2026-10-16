@@ -29,6 +29,7 @@ class SaveBillInput {
     this.receivedPaise,
     this.keepAdvance = false,
     this.pricesIncludeGst = true,
+    this.roundOff = true,
     this.interState = false,
     this.note = '',
     this.oldBillNo,
@@ -48,6 +49,9 @@ class SaveBillInput {
   final int? receivedPaise; // null = exactly the total
   final bool keepAdvance;
   final bool pricesIncludeGst, interState;
+
+  /// The shop's "round the total to the nearest rupee" choice at the moment of saving.
+  final bool roundOff;
   final String note;
   final String? oldBillNo;
 }
@@ -129,7 +133,7 @@ class BillRepo {
       final dup = await _db.row('SELECT * FROM bills WHERE idem_key = ?', [input.idemKey]);
       if (dup != null) return _saved(dup, replay: true);
 
-      final calc = calcBillIn([for (final l in input.lines) CalcLineIn(rate: l.ratePaise, qtyMilli: l.qtyMilli, gstBp: l.gstBp, discountBp: l.discountBp)], inclusive: input.pricesIncludeGst, interState: input.interState);
+      final calc = calcBillIn([for (final l in input.lines) CalcLineIn(rate: l.ratePaise, qtyMilli: l.qtyMilli, gstBp: l.gstBp, discountBp: l.discountBp)], inclusive: input.pricesIncludeGst, interState: input.interState, roundOff: input.roundOff);
       final total = calc.grandTotal;
       final received = input.receivedPaise ?? total;
       final split = splitPayment(total: total, received: received);

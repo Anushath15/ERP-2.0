@@ -34,7 +34,8 @@ LineCalc calcLineIn(CalcLineIn l, {required bool inclusive}) {
   return LineCalc(gross: gross, discount: disc, taxable: net, tax: tax, total: net + tax);
 }
 
-BillCalc calcBillIn(List<CalcLineIn> lines, {bool inclusive = true, bool interState = false}) {
+/// [roundOff] true: the grand total is rounded to the nearest rupee (default). false: the exact total to the paisa.
+BillCalc calcBillIn(List<CalcLineIn> lines, {bool inclusive = true, bool interState = false, bool roundOff = true}) {
   var taxable = 0, cgst = 0, sgst = 0, igst = 0, disc = 0, sum = 0;
   final out = <LineCalc>[];
   for (final l in lines) {
@@ -51,6 +52,6 @@ BillCalc calcBillIn(List<CalcLineIn> lines, {bool inclusive = true, bool interSt
       sgst += c.tax - half; // the two halves always add up to the tax exactly
     }
   }
-  final grand = ((sum + 50) ~/ 100) * 100;
+  final grand = roundOff ? ((sum + 50) ~/ 100) * 100 : sum;
   return BillCalc(lines: out, taxable: taxable, cgst: cgst, sgst: sgst, igst: igst, discount: disc, roundOff: grand - sum, grandTotal: grand, itemCount: lines.length);
 }

@@ -1,12 +1,14 @@
 name: Supabase keep-alive
 # A free Supabase project pauses after about a week without activity. This pings it twice a week.
-# Needs two repository secrets (Settings > Secrets and variables > Actions): SUPABASE_URL and SUPABASE_ANON_KEY.
+# Needs two repository VARIABLES (Settings > Secrets and variables > Actions > Variables): SUPABASE_URL and SUPABASE_ANON_KEY.
+# Both are public by design (the publishable key can only call ping()), so no secret is used.
 on:
   schedule:
     - cron: '17 3 * * 1,4'
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   ping:
@@ -15,9 +17,9 @@ jobs:
     steps:
       - name: Call ping()
         env:
-          URL: ${{ secrets.SUPABASE_URL }}
-          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          URL: ${{ vars.SUPABASE_URL }}
+          KEY: ${{ vars.SUPABASE_ANON_KEY }}
         run: |
-          test -n "$URL" || { echo "SUPABASE_URL secret is not set yet"; exit 0; }
+          test -n "$URL" || { echo "SUPABASE_URL variable is not set yet"; exit 0; }
           curl --fail --silent --show-error -X POST "$URL/rest/v1/rpc/ping" \
             -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}'

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/logo_image.dart';
 import '../../core/validators.dart';
+import '../shop/shop_profile_screen.dart' show ShopLogo, logoPickerProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/sound.dart';
@@ -318,9 +320,24 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
         ]);
       case 4:
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Container(height: 120, decoration: BoxDecoration(color: context.c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.m), border: Border.all(color: context.c.border)), child: Center(child: Icon(Icons.image_outlined, size: 48, color: context.c.textMuted))),
+          Container(height: 120, decoration: BoxDecoration(color: context.c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.m), border: Border.all(color: context.c.border)), child: Center(child: ref.watch(shopProvider).logoPng.isEmpty ? Icon(Icons.image_outlined, size: 48, color: context.c.textMuted) : ShopLogo(png: ref.watch(shopProvider).logoPng, size: 96))),
           const SizedBox(height: 12),
-          OutlinedButton.icon(onPressed: () => toast(context, l.demoOnly), icon: const Icon(Icons.upload_file), label: Text(l.chooseFile)),
+          OutlinedButton.icon(
+            key: const ValueKey('wizard-logo-choose'),
+            onPressed: () async {
+              final bytes = await ref.read(logoPickerProvider)();
+              if (bytes == null || !context.mounted) return;
+              final b64 = prepareLogo(bytes);
+              if (b64 == null) {
+                toast(context, l.logoBad);
+                return;
+              }
+              ref.read(shopProvider.notifier).set((x) => x.copyWith(logoPng: b64));
+              toast(context, l.logoSaved);
+            },
+            icon: const Icon(Icons.upload_file),
+            label: Text(l.chooseFile),
+          ),
           const SizedBox(height: 8),
           Text(l.wizLogoHelp, style: th.bodySmall),
         ]);

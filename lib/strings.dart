@@ -1069,4 +1069,11 @@ class Strings {
   String get restoreWorking => 'Restoring...';
   String swapRestored(String date, String products, String customers, String bills) => 'Your data was restored from a backup on ${date}: ${products} products, ${customers} customers, ${bills} bills.';
   String get healthBackupLink => 'Backups';
+  String exportSaved(String format, String where) => '${format} file saved: ${where}';
+  String get exportFailed => 'The file could not be saved. Check the disk space and try again.';
+  String get exportEmpty => 'There is nothing to export yet.';
+  String exportCapped(String n) => 'Only the first ${n} rows are in the PDF. Use Excel or CSV for everything.';
+  String get logoBad => 'This picture could not be used. Choose a PNG or JPG picture under 4 MB.';
+  String get logoRemove => 'Use the program logo';
+  String get logoSaved => 'Logo saved';
 }

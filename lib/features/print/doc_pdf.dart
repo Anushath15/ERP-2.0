@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import '../../core/logo_image.dart';
 import '../../fake/shop_profile.dart';
 import '../../fake/store.dart' show PaperSize, PrintTextSize;
 import '../../strings.dart';
@@ -60,6 +61,10 @@ Future<Uint8List> buildDocPdf({
       ]);
 
   final children = <pw.Widget>[
+    if (!roll && logoBytes(shop.logoPng) != null) ...[
+      pw.Align(alignment: pw.Alignment.centerLeft, child: pw.Image(pw.MemoryImage(logoBytes(shop.logoPng)!), height: 44)),
+      pw.SizedBox(height: 4),
+    ],
     if (lay.header.isNotEmpty) ...[
       pw.Column(crossAxisAlignment: roll ? pw.CrossAxisAlignment.center : pw.CrossAxisAlignment.start, children: [for (final h in lay.header) text(h, align: roll ? pw.TextAlign.center : pw.TextAlign.left)]),
       pw.SizedBox(height: roll ? 4 : 8),

@@ -43,6 +43,8 @@ class ShopProfile {
     this.billFooter = 'Thank you. Visit again.',
     this.invoicePrefix = '',
     this.pricesIncludeGst = true,
+    this.roundOff = true,
+    this.logoPng = '',
     this.estimate = const EstimateShows(),
     this.creditLimitMode = CreditLimitMode.warn,
     this.reminderTone = ReminderTone.friendly,
@@ -67,6 +69,12 @@ class ShopProfile {
 
   final String name, ownerName, address, phone, gstin, upiId, bankDetails, billFooter, invoicePrefix;
   final bool pricesIncludeGst;
+
+  /// Round each bill total to the nearest rupee (the difference is printed as Round off). Off: the exact total.
+  final bool roundOff;
+
+  /// The shop's own logo as a small PNG in base64 (empty = the program's logo). Made by `prepareLogo`.
+  final String logoPng;
   final EstimateShows estimate;
   final CreditLimitMode creditLimitMode;
   final ReminderTone reminderTone;
@@ -87,6 +95,8 @@ class ShopProfile {
         'billFooter': billFooter,
         'invoicePrefix': invoicePrefix,
         'pricesIncludeGst': pricesIncludeGst,
+        'roundOff': roundOff,
+        'logoPng': logoPng,
         'estimate': estimate.toJson(),
         'creditLimitMode': creditLimitMode.name,
         'reminderTone': reminderTone.name,
@@ -112,6 +122,8 @@ class ShopProfile {
       billFooter: str('billFooter', base.billFooter),
       invoicePrefix: str('invoicePrefix', base.invoicePrefix),
       pricesIncludeGst: m['pricesIncludeGst'] is bool ? m['pricesIncludeGst'] as bool : base.pricesIncludeGst,
+      roundOff: m['roundOff'] is bool ? m['roundOff'] as bool : base.roundOff,
+      logoPng: m['logoPng'] is String && (m['logoPng'] as String).length <= 300000 ? m['logoPng'] as String : base.logoPng,
       estimate: m.containsKey('estimate') ? EstimateShows.fromJson(m['estimate']) : base.estimate,
       creditLimitMode: CreditLimitMode.values.firstWhere((e) => e.name == m['creditLimitMode'], orElse: () => base.creditLimitMode),
       reminderTone: ReminderTone.values.firstWhere((e) => e.name == m['reminderTone'], orElse: () => base.reminderTone),
@@ -136,6 +148,8 @@ class ShopProfile {
     String? billFooter,
     String? invoicePrefix,
     bool? pricesIncludeGst,
+    bool? roundOff,
+    String? logoPng,
     EstimateShows? estimate,
     CreditLimitMode? creditLimitMode,
     ReminderTone? reminderTone,
@@ -156,6 +170,8 @@ class ShopProfile {
         billFooter: billFooter ?? this.billFooter,
         invoicePrefix: invoicePrefix ?? this.invoicePrefix,
         pricesIncludeGst: pricesIncludeGst ?? this.pricesIncludeGst,
+        roundOff: roundOff ?? this.roundOff,
+        logoPng: logoPng ?? this.logoPng,
         estimate: estimate ?? this.estimate,
         creditLimitMode: creditLimitMode ?? this.creditLimitMode,
         reminderTone: reminderTone ?? this.reminderTone,

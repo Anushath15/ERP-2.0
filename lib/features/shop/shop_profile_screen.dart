@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/logo_image.dart';
 import '../../core/responsive.dart';
 import '../../core/validators.dart';
 import '../../design/form_sheet.dart' show textProblemMessage;
@@ -45,9 +48,25 @@ class ShopProfileScreen extends ConsumerWidget {
       title: l.setShop,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-          const AppLogo(size: 56),
+          ShopLogo(png: s.logoPng, size: 56),
           ConstrainedBox(constraints: const BoxConstraints(maxWidth: 240), child: Text(l.shopLogoNote, style: th.bodySmall)),
-          OutlinedButton.icon(onPressed: () => toast(context, l.demoOnly), icon: const Icon(Icons.image_outlined), label: Text(l.chooseFile)),
+          OutlinedButton.icon(
+            key: const ValueKey('shop-logo-choose'),
+            onPressed: () async {
+              final bytes = await ref.read(logoPickerProvider)();
+              if (bytes == null || !context.mounted) return;
+              final b64 = prepareLogo(bytes);
+              if (b64 == null) {
+                toast(context, l.logoBad);
+                return;
+              }
+              set((x) => x.copyWith(logoPng: b64));
+              toast(context, l.logoSaved);
+            },
+            icon: const Icon(Icons.image_outlined),
+            label: Text(l.chooseFile),
+          ),
+          if (s.logoPng.isNotEmpty) TextButton(key: const ValueKey('shop-logo-remove'), onPressed: () => set((x) => x.copyWith(logoPng: '')), child: Text(l.logoRemove)),
         ]),
         const SizedBox(height: 14),
         wrap([
@@ -68,7 +87,7 @@ class ShopProfileScreen extends ConsumerWidget {
       title: l.setTax,
       child: Column(children: [
         SwitchListTile(key: const ValueKey('shop-inclusive'), contentPadding: EdgeInsets.zero, title: Text(l.setPricesIncludeGst), subtitle: Text(l.setPricesIncludeGstHelp), value: s.pricesIncludeGst, onChanged: (v) => set((x) => x.copyWith(pricesIncludeGst: v))),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(l.setRoundOff), subtitle: Text(l.setRoundOffHelp), value: true, onChanged: (_) => toast(context, l.demoOnly)),
+        SwitchListTile(key: const ValueKey('shop-roundoff'), contentPadding: EdgeInsets.zero, title: Text(l.setRoundOff), subtitle: Text(l.setRoundOffHelp), value: s.roundOff, onChanged: (v) => set((x) => x.copyWith(roundOff: v))),
       ]),
     );
 
@@ -105,5 +124,28 @@ class ShopProfileScreen extends ConsumerWidget {
             )
           : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in [details, tax, estimate, reminders, credit]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),
     );
+  }
+}
+
+/// Opens the picture chooser (PNG or JPG). Overridden in tests so no real file dialog is needed.
+final logoPickerProvider = Provider<Future<Uint8List?> Function()>((ref) => () async {
+      const types = XTypeGroup(label: 'Picture', extensions: ['png', 'jpg', 'jpeg']);
+      final f = await openFile(acceptedTypeGroups: [types]);
+      if (f == null) return null;
+      if (await f.length() > maxLogoInputBytes) return Uint8List(0);
+      return f.readAsBytes();
+    });
+
+/// The shop's own logo when it has one, else the program's logo.
+class ShopLogo extends StatelessWidget {
+  const ShopLogo({super.key, required this.png, this.size = 40});
+  final String png;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = logoBytes(png);
+    if (bytes == null) return AppLogo(size: size);
+    return Image.memory(bytes, width: size, height: size, fit: BoxFit.contain, filterQuality: FilterQuality.high, errorBuilder: (_, _, _) => AppLogo(size: size));
   }
 }

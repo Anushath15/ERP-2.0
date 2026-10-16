@@ -130,7 +130,7 @@ class CartNotifier extends Notifier<CartState> {
 
 final cartProvider = NotifierProvider.family<CartNotifier, CartState, DocMode>(CartNotifier.new);
 
-BillCalc calcFor(CartState s, {required bool inclusive}) => calcBill(s.lines, inclusive: inclusive);
+BillCalc calcFor(CartState s, {required bool inclusive, bool roundOff = true}) => calcBill(s.lines, inclusive: inclusive, roundOff: roundOff);
 
 /// Snapshot used by the print preview screens.
 class PrintDoc {

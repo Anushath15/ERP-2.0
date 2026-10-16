@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
@@ -10,7 +11,9 @@ import '../../fake/data_providers.dart';
 import '../../fake/shop_profile.dart';
 import '../../fake/stats.dart';
 import '../../fake/store.dart';
+import '../../data/repo/export_repo.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../export/export_action.dart';
 
 /// Everything one report range shows, read from the day and month summaries (never from the bills themselves).
 class ReportData {
@@ -178,7 +181,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return PageFrame(
       title: l.navReports,
       subtitle: l.reportsSubtitle,
-      actions: [OutlinedButton.icon(onPressed: () => toast(context, l.exportedDemo), icon: const Icon(Icons.ios_share), label: Text(l.navExport))],
+      actions: [OutlinedButton.icon(key: const ValueKey('reports-export'), onPressed: () => context.go('/export'), icon: const Icon(Icons.ios_share), label: Text(l.navExport))],
       child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
         SegmentedButton<int>(
           showSelectedIcon: false,
@@ -205,13 +208,13 @@ class ExportScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
-    final items = <(IconData, String, String)>[
-      (Icons.receipt_long_outlined, l.expSales, l.expSalesHelp),
-      (Icons.inventory_2_outlined, l.expProducts, l.expProductsHelp),
-      (Icons.people_outline, l.expCustomers, l.expCustomersHelp),
-      (Icons.account_balance_wallet_outlined, l.expDues, l.expDuesHelp),
-      (Icons.payments_outlined, l.expExpenses, l.expExpensesHelp),
-      (Icons.percent, l.expGst, l.expGstHelp),
+    final items = <(IconData, String, String, ExportKind)>[
+      (Icons.receipt_long_outlined, l.expSales, l.expSalesHelp, ExportKind.sales),
+      (Icons.inventory_2_outlined, l.expProducts, l.expProductsHelp, ExportKind.products),
+      (Icons.people_outline, l.expCustomers, l.expCustomersHelp, ExportKind.customers),
+      (Icons.account_balance_wallet_outlined, l.expDues, l.expDuesHelp, ExportKind.dues),
+      (Icons.payments_outlined, l.expExpenses, l.expExpensesHelp, ExportKind.expenses),
+      (Icons.percent, l.expGst, l.expGstHelp, ExportKind.gst),
     ];
     final th = Theme.of(context).textTheme;
     return PageFrame(
@@ -233,7 +236,12 @@ class ExportScreen extends ConsumerWidget {
                     Text(it.$3, style: th.bodySmall),
                     const SizedBox(height: 12),
                     Wrap(spacing: 8, runSpacing: 8, children: [
-                      for (final f in ['Excel', 'CSV', 'PDF']) OutlinedButton(onPressed: () => toast(context, l.exportedDemoFile(f)), child: Text(f)),
+                      for (final f in ExportFormat.values)
+                        OutlinedButton(
+                          key: ValueKey('export-${it.$4.name}-${f.name}'),
+                          onPressed: () => runExport(context, ref, it.$4, f),
+                          child: Text(switch (f) { ExportFormat.excel => 'Excel', ExportFormat.csv => 'CSV', ExportFormat.pdf => 'PDF' }),
+                        ),
                     ]),
                   ]),
                 ),

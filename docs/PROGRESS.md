@@ -98,3 +98,11 @@ Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents
 - Which Google account owns the Firebase project (OWNER-SETUP step 3)?
 - Is the WhatsApp message wording (Friendly and Firm) right for your customers? Edit in Settings > Reminders.
 - Is the Phase 1 look right? Corrections go in as a list; I apply them before Phase 2.
+
+## Gate 2C done; controls that did nothing now work (2026-10-17)
+- **Gate 2C** (automatic backups and restore) is pushed (`4dd78a3`) and CI is green. Not done: speed checks re-run on mains power.
+- **Export** page and the Reports Export button now write real files: Excel (`.xlsx`), CSV (with a byte-order mark so Excel reads the rupee sign) and PDF, for sales, products, customers, money to collect, expenses and the GST register (`lib/domain/export`, `lib/features/export`). Saved in Downloads/ASK ERP 2.0. A negative amount stays a number in CSV; text is never a formula. PDF holds the first 5,000 rows, Excel and CSV hold everything.
+- **Round to whole rupees** switch (Shop profile) now works: it is saved in the shop profile and used when a bill is saved; with it off a bill keeps its exact total. Saved bills show the maths that matches what was saved.
+- **Logo**: Choose a file works in the Shop profile and in the set-up wizard (PNG or JPG up to 4 MB, shrunk to 256 px) and is printed on the A4 invoice.
+- **Click-through robot** (`CLICK=1 flutter test test/click_through_test.dart`): presses every button on 36 screens. It found one real bug (PDF export refused tables over 20 pages, fixed). Still not working: **Print** (no printer connected yet, Owner Feature Batch 2) and **Change password** (Gate 2D sign-in).
+- **Cloud database is now Supabase** (see supabase-sync-design.md): migration tested on a local PostgreSQL and run on the real project; Google sign-in once per computer is Gate 2D.

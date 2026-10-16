@@ -10,4 +10,5 @@ CalcLineIn _in(CartLine l) => CalcLineIn(rate: l.rate, qtyMilli: l.qtyMilli, gst
 
 LineCalc calcLine(CartLine l, {required bool inclusive}) => calcLineIn(_in(l), inclusive: inclusive);
 
-BillCalc calcBill(List<CartLine> lines, {bool inclusive = true, bool interState = false}) => calcBillIn([for (final l in lines) _in(l)], inclusive: inclusive, interState: interState);
+BillCalc calcBill(List<CartLine> lines, {bool inclusive = true, bool interState = false, bool roundOff = true}) =>
+    calcBillIn([for (final l in lines) _in(l)], inclusive: inclusive, interState: interState, roundOff: roundOff);

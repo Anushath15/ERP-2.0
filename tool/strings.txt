@@ -1101,3 +1101,10 @@ restoreFailedSafety | The safety copy could not be made, so nothing was restored
 restoreWorking | Restoring...
 swapRestored | Your data was restored from a backup on {date}: {products} products, {customers} customers, {bills} bills.
 healthBackupLink | Backups
+exportSaved | {format} file saved: {where}
+exportFailed | The file could not be saved. Check the disk space and try again.
+exportEmpty | There is nothing to export yet.
+exportCapped | Only the first {n} rows are in the PDF. Use Excel or CSV for everything.
+logoBad | This picture could not be used. Choose a PNG or JPG picture under 4 MB.
+logoRemove | Use the program logo
+logoSaved | Logo saved

@@ -79,7 +79,9 @@ class SalesRegisterScreen extends ConsumerWidget {
       final d = await ref.read(appDataProvider).bills.detail(b.id);
       if (d == null || !ctx.mounted) return;
       final lines = linesAsCart([for (final x in d.lines) (productId: x.productId, name: x.name, unit: x.unit, qtyMilli: x.qtyMilli, ratePaise: x.ratePaise, discountBp: x.discountBp, gstBp: x.gstBp)]);
-      final calc = calcBill(lines, inclusive: d.pricesIncludeGst);
+      // a bill saved while "round to the rupee" was off has its exact total: show the maths that matches what was saved
+      var calc = calcBill(lines, inclusive: d.pricesIncludeGst);
+      if (calc.grandTotal != b.totalPaise) calc = calcBill(lines, inclusive: d.pricesIncludeGst, roundOff: false);
       final cancelledNow = b.cancelled;
       final pay = payModeOf(b.payMode);
       unawaited(showDetail(ctx, title: b.number, subtitle: '${custName(b)}  ·  ${formatDateTime(b.at)}${b.oldBillNo == null ? '' : '  ·  ${l.oldBillNo}: ${b.oldBillNo}'}', body: [

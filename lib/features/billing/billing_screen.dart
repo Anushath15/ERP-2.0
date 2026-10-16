@@ -149,7 +149,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final shop = ref.read(shopProvider);
     if (mode == DocMode.invoice) {
       // Everything below only waits (await) when a question has to be asked; a normal fully-paid sale saves at once.
-      final total = calcFor(cart, inclusive: shop.pricesIncludeGst).grandTotal;
+      final total = calcFor(cart, inclusive: shop.pricesIncludeGst, roundOff: shop.roundOff).grandTotal;
       final split = splitPayment(total: total, received: cart.receivedPaise ?? total);
       if (split.balance > 0 && cart.customer == null) {
         final chosen = await _askCustomer(split.balance);
@@ -161,7 +161,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       if (!mounted) return;
     }
     cart = ref.read(cartProvider(mode));
-    final calc = calcFor(cart, inclusive: shop.pricesIncludeGst);
+    final calc = calcFor(cart, inclusive: shop.pricesIncludeGst, roundOff: shop.roundOff);
     final editing = cart.editingNumber != null;
     final at = _date();
     PrintDoc doc;
@@ -177,6 +177,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           receivedPaise: cart.receivedPaise,
           keepAdvance: cart.keepAdvance,
           pricesIncludeGst: shop.pricesIncludeGst,
+          roundOff: shop.roundOff,
         );
         final saved = await ref.read(billActionsProvider).save(input);
         final balanceNow = cart.customer == null ? null : ref.read(creditProvider.notifier).balanceOf(cart.customer!.id);
@@ -222,7 +223,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final cart = ref.watch(cartProvider(mode));
     final products = ref.watch(productsProvider);
     final settings = ref.watch(settingsProvider);
-    final calc = calcFor(cart, inclusive: ref.watch(shopProvider).pricesIncludeGst);
+    final shopNow = ref.watch(shopProvider);
+    final calc = calcFor(cart, inclusive: shopNow.pricesIncludeGst, roundOff: shopNow.roundOff);
     final inBill = {for (final ln in cart.lines) ln.product.id: ln.qtyMilli};
     final notifier = ref.read(cartProvider(mode).notifier);
     final phone = context.isPhone;
