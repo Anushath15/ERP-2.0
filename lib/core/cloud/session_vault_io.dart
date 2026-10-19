@@ -53,12 +53,25 @@ class FileSessionVault implements SessionVault {
       }
       file.parent.createSync(recursive: true);
       final tmp = File('${file.path}.tmp');
+      if (!Platform.isWindows) {
+        // no encryption service here: at least only this user may read the file (made private BEFORE the secret is written into it)
+        tmp.createSync();
+        _ownerOnly(file.parent.path, '700');
+        _ownerOnly(tmp.path, '600');
+      }
       tmp.writeAsBytesSync(_protect(Uint8List.fromList(utf8.encode(value))), flush: true);
       tmp.renameSync(file.path);
     } catch (_) {
       // not keeping the sign-in is not worth a crash: the person signs in again next time
     }
   }
+}
+
+/// Best effort: a phone may not have `chmod`, where the app's own folder is already private to the app.
+void _ownerOnly(String path, String mode) {
+  try {
+    Process.runSync('chmod', [mode, path]);
+  } catch (_) {}
 }
 
 // ---- Windows DPAPI (crypt32.dll) through dart:ffi: no plugin ----
