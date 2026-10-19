@@ -1,6 +1,10 @@
+import 'dart:async';
+import '../purchases/purchase_screens.dart';
+import '../../fake/actions.dart' show purchasesVersionProvider;
 import '../../data/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../design/data_list.dart';
@@ -8,18 +12,31 @@ import '../../design/detail_sheet.dart';
 import '../../design/form_sheet.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
+import '../../fake/actions.dart' show returnsVersionProvider;
+import '../../fake/data_providers.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
 
 String _d(Rec r, String k) => formatDate(r.f[k] as DateTime);
+
+/// The purchases with items (read from the database) and the older plain notes kept from before items were saved.
+final purchaseListRecsProvider = FutureProvider.autoDispose<List<Rec>>((ref) async {
+  final real = await ref.watch(purchaseListProvider.future);
+  final older = ref.watch(recsProvider('purchases'));
+  return [
+    for (final r in real)
+      Rec(r.id, {'no': r.number, 'date': r.at, 'dealer': r.dealerName, 'invoice': r.invoiceNo, 'amount': r.totalPaise, 'status': r.received ? 'received' : 'pending', 'real': 1, 'dealerId': r.dealerId}),
+    ...older,
+  ];
+});
 
 class PurchasesScreen extends ConsumerWidget {
   const PurchasesScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
-    final items = ref.watch(recsProvider('purchases'));
-    final dealers = ref.watch(recsProvider('dealers'));
+    final list = ref.watch(purchaseListRecsProvider);
+    final items = list.asData?.value ?? const <Rec>[];
     final th = Theme.of(context).textTheme;
     Widget status(Rec r) => r.s('status') == 'received' ? StatusBadge(l.statusReceived, kind: BadgeKind.success) : StatusBadge(l.statusPending, kind: BadgeKind.warning);
     return DataListScreen<Rec>(
@@ -28,17 +45,7 @@ class PurchasesScreen extends ConsumerWidget {
       items: items,
       searchText: (r) => '${r.s('no')} ${r.s('dealer')} ${r.s('invoice')}',
       addLabel: l.addPurchase,
-      onAdd: () async {
-        final v = await showFormSheet(context, title: l.addPurchase, saveLabel: l.save, note: l.pendingNoStock, fields: [
-          FieldSpec('dealer', l.navDealers, type: FieldType.dropdown, initial: dealers.first.s('name'), options: [for (final d in dealers) (d.s('name'), d.s('name'))]),
-          FieldSpec('invoice', l.fieldDealerInvoice, required: true, autofocus: true),
-          FieldSpec('amount', l.fieldAmount, type: FieldType.money, required: true),
-          FieldSpec('status', l.colStatus, type: FieldType.dropdown, initial: 'received', options: [('received', l.statusReceived), ('pending', l.statusPending)]),
-        ]);
-        if (v == null) return;
-        ref.read(recsProvider('purchases').notifier).add(Rec(newId(), {'no': 'PUR-${(items.length + 1).toString().padLeft(5, '0')}', 'date': ref.read(clockProvider), 'dealer': v['dealer']!, 'invoice': v['invoice']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round(), 'status': v['status']!}));
-        if (context.mounted) toast(context, l.saved);
-      },
+      onAdd: () => context.go('/purchases/new'),
       filters: [FilterSpec(l.statusReceived, (r) => r.s('status') == 'received'), FilterSpec(l.statusPending, (r) => r.s('status') == 'pending')],
       columns: [
         ColumnSpec(l.colNo, (c, r) => Cell(r.s('no'), bold: true), width: 110),
@@ -51,27 +58,77 @@ class PurchasesScreen extends ConsumerWidget {
       phoneTitle: (c, r) => TitleAmount(r.s('dealer'), '₹ ${formatPaise(r.i('amount'))}'),
       phoneSubtitle: (r) => '${r.s('no')} · ${_d(r, 'date')}',
       phoneTrailing: (c, r) => status(r),
-      onTap: (ctx, r) => showDetail(ctx, title: r.s('no'), subtitle: r.s('dealer'), body: [
-        KeyValue(l.colDate, _d(r, 'date')),
-        KeyValue(l.fieldDealerInvoice, r.s('invoice')),
-        KeyValue(l.colAmount, '₹ ${formatPaise(r.i('amount'))}', bold: true),
-        KeyValue(l.colStatus, r.s('status') == 'received' ? l.statusReceived : l.statusPending),
-        if (r.s('status') == 'pending') Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.pendingNoStock, style: th.bodySmall)),
-      ], actions: [
-        if (r.s('status') == 'pending')
-          FilledButton.icon(onPressed: () { ref.read(recsProvider('purchases').notifier).replace(r.with_({'status': 'received'})); Navigator.pop(ctx); toast(context, l.markedReceived); }, icon: const Icon(Icons.inventory_outlined), label: Text(l.markReceived)),
-      ]),
+      onTap: (ctx, r) async {
+        if (r.i('real') == 1) {
+          final row = (await ref.read(appDataProvider).purchases.list()).where((x) => x.id == r.id).firstOrNull;
+          if (row != null && context.mounted) await showPurchasePopup(context, ref, row);
+          return;
+        }
+        unawaited(showDetail(ctx, title: r.s('no'), subtitle: r.s('dealer'), body: [
+          KeyValue(l.colDate, _d(r, 'date')),
+          KeyValue(l.fieldDealerInvoice, r.s('invoice')),
+          KeyValue(l.colAmount, '₹ ${formatPaise(r.i('amount'))}', bold: true),
+          KeyValue(l.colStatus, r.s('status') == 'received' ? l.statusReceived : l.statusPending),
+          Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.purOlderNote, style: th.bodySmall)),
+        ], actions: [
+          if (r.s('status') == 'pending')
+            FilledButton.icon(
+              onPressed: () {
+                ref.read(recsProvider('purchases').notifier).replace(r.with_({'status': 'received'}));
+                Navigator.of(ctx, rootNavigator: true).pop();
+                toast(context, l.markedReceived);
+              },
+              icon: const Icon(Icons.inventory_outlined),
+              label: Text(l.markReceived),
+            ),
+        ]));
+      },
     );
   }
 }
 
+/// The sales returns made from saved bills (read from the database) and any older notes kept from before returns were counted.
+final salesReturnListProvider = FutureProvider.autoDispose<List<Rec>>((ref) async {
+  ref.watch(returnsVersionProvider);
+  final d = ref.read(appDataProvider);
+  final real = await d.returns.list();
+  final older = ref.watch(recsProvider('salesReturns'));
+  return [
+    for (final r in real)
+      Rec(r.id, {
+        'no': r.number,
+        'date': r.at,
+        'customer': r.customerName,
+        'bill': r.billNo,
+        'reason': r.reason,
+        'amount': r.totalPaise,
+        'debt': r.dueReducedPaise,
+        'credit': r.creditKeptPaise,
+        'cash': r.refundedPaise,
+        'real': 1,
+      }),
+    ...older,
+  ];
+});
 
 class SalesReturnsScreen extends ConsumerWidget {
   const SalesReturnsScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
-    final items = ref.watch(recsProvider('salesReturns'));
+    final list = ref.watch(salesReturnListProvider);
+    final items = list.asData?.value ?? const <Rec>[];
+    String settled(Rec r) {
+      if (r.i('real') != 1) return l.retOldNote;
+      final parts = [
+        if (r.i('debt') > 0) '${l.retSettledDebt}: ${formatPaise(r.i('debt'), symbol: true)}',
+        if (r.i('credit') > 0) '${l.retSettledCredit}: ${formatPaise(r.i('credit'), symbol: true)}',
+        if (r.i('cash') > 0) '${l.retSettledCash}: ${formatPaise(r.i('cash'), symbol: true)}',
+      ];
+      return parts.join(' · ');
+    }
+
+    String who(Rec r) => r.s('customer').isEmpty ? l.walkInCustomer : r.s('customer');
     return DataListScreen<Rec>(
       title: l.navSalesReturns,
       subtitle: l.salesReturnsSubtitle,
@@ -79,61 +136,92 @@ class SalesReturnsScreen extends ConsumerWidget {
       searchText: (r) => '${r.s('no')} ${r.s('customer')} ${r.s('bill')}',
       addLabel: l.addReturn,
       onAdd: () async {
-        final v = await showFormSheet(context, title: l.addReturn, saveLabel: l.save, fields: [
-          FieldSpec('bill', l.colBillNo, required: true, autofocus: true, hint: 'A-019990'),
-          FieldSpec('reason', l.fieldReason, type: FieldType.multiline, required: true),
-          FieldSpec('amount', l.fieldAmount, type: FieldType.money, required: true),
+        final v = await showFormSheet(context, title: l.addReturn, saveLabel: l.continueLabel, note: l.retAskBill, fields: [
+          FieldSpec('bill', l.colBillNo, required: true, autofocus: true, hint: 'A-000001'),
         ]);
-        if (v == null) return;
-        ref.read(recsProvider('salesReturns').notifier).add(Rec(newId(), {'no': 'SRT-${(items.length + 1).toString().padLeft(4, '0')}', 'date': ref.read(clockProvider), 'customer': l.walkInCustomer, 'bill': v['bill']!, 'reason': v['reason']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
-        if (context.mounted) toast(context, l.returnSaved);
+        if (v == null || !context.mounted) return;
+        final id = await ref.read(appDataProvider).returns.billIdByNumber(v['bill']!);
+        if (!context.mounted) return;
+        if (id == null) {
+          toast(context, l.retNoBill);
+          return;
+        }
+        context.go('/sales-returns/bill/$id');
       },
       columns: [
         ColumnSpec(l.colNo, (c, r) => Cell(r.s('no'), bold: true), width: 100),
         ColumnSpec(l.colDate, (c, r) => Cell(_d(r, 'date'), muted: true), width: 100),
-        ColumnSpec(l.colCustomer, (c, r) => Cell(r.s('customer')), flex: 3),
+        ColumnSpec(l.colCustomer, (c, r) => Cell(who(r)), flex: 3),
         ColumnSpec(l.colBillNo, (c, r) => Cell(r.s('bill'), muted: true), width: 110),
         ColumnSpec(l.fieldReason, (c, r) => Cell(r.s('reason'), muted: true), flex: 3),
+        ColumnSpec(l.retHowDone, (c, r) => Cell(settled(r), muted: true), flex: 3),
         ColumnSpec(l.colAmount, (c, r) => Cell(formatPaise(r.i('amount')), bold: true), width: 110, numeric: true),
       ],
-      phoneTitle: (c, r) => TitleAmount(r.s('customer'), '₹ ${formatPaise(r.i('amount'))}'),
+      phoneTitle: (c, r) => TitleAmount(who(r), '₹ ${formatPaise(r.i('amount'))}'),
       phoneSubtitle: (r) => '${r.s('no')} · ${r.s('bill')} · ${r.s('reason')}',
     );
   }
 }
+
+/// The returns given back to dealers (read from the database) and the older plain notes kept from before items were saved.
+final purchaseReturnListProvider = FutureProvider.autoDispose<List<Rec>>((ref) async {
+  ref.watch(purchasesVersionProvider);
+  final real = await ref.read(appDataProvider).purchaseReturns.list();
+  final older = ref.watch(recsProvider('purchaseReturns'));
+  return [
+    for (final r in real)
+      Rec(r.id, {'no': r.number, 'date': r.at, 'dealer': r.dealerName, 'purchase': r.purchaseNo, 'reason': r.reason, 'amount': r.totalPaise, 'debt': r.dueReducedPaise, 'credit': r.creditKeptPaise, 'cash': r.refundedPaise, 'real': 1}),
+    ...older,
+  ];
+});
 
 class PurchaseReturnsScreen extends ConsumerWidget {
   const PurchaseReturnsScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
-    final items = ref.watch(recsProvider('purchaseReturns'));
-    final dealers = ref.watch(recsProvider('dealers'));
+    final list = ref.watch(purchaseReturnListProvider);
+    final items = list.asData?.value ?? const <Rec>[];
+    String settled(Rec r) {
+      if (r.i('real') != 1) return l.retOldNote;
+      final parts = [
+        if (r.i('debt') > 0) '${l.pretSettledDebt}: ${formatPaise(r.i('debt'), symbol: true)}',
+        if (r.i('credit') > 0) '${l.pretCreditKept}: ${formatPaise(r.i('credit'), symbol: true)}',
+        if (r.i('cash') > 0) '${l.pretSettledCash}: ${formatPaise(r.i('cash'), symbol: true)}',
+      ];
+      return parts.join(' · ');
+    }
+
     return DataListScreen<Rec>(
       title: l.navPurchaseReturns,
       subtitle: l.purchaseReturnsSubtitle,
       items: items,
-      searchText: (r) => '${r.s('no')} ${r.s('dealer')}',
+      searchText: (r) => '${r.s('no')} ${r.s('dealer')} ${r.s('purchase')}',
       addLabel: l.addReturn,
       onAdd: () async {
-        final v = await showFormSheet(context, title: l.addReturn, saveLabel: l.save, fields: [
-          FieldSpec('dealer', l.navDealers, type: FieldType.dropdown, initial: dealers.first.s('name'), options: [for (final d in dealers) (d.s('name'), d.s('name'))]),
-          FieldSpec('reason', l.fieldReason, type: FieldType.multiline, required: true),
-          FieldSpec('amount', l.fieldAmount, type: FieldType.money, required: true),
+        final v = await showFormSheet(context, title: l.addReturn, saveLabel: l.continueLabel, note: l.pretAskNumber, fields: [
+          FieldSpec('purchase', l.pretPurchaseNo, required: true, autofocus: true, hint: 'PUR-00001'),
         ]);
-        if (v == null) return;
-        ref.read(recsProvider('purchaseReturns').notifier).add(Rec(newId(), {'no': 'PRT-${(items.length + 1).toString().padLeft(4, '0')}', 'date': ref.read(clockProvider), 'dealer': v['dealer']!, 'reason': v['reason']!, 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
-        if (context.mounted) toast(context, l.returnSaved);
+        if (v == null || !context.mounted) return;
+        final id = await ref.read(appDataProvider).purchaseReturns.purchaseIdByNumber(v['purchase']!);
+        if (!context.mounted) return;
+        if (id == null) {
+          toast(context, l.pretNoPurchase);
+          return;
+        }
+        context.go('/purchase-returns/purchase/$id');
       },
       columns: [
         ColumnSpec(l.colNo, (c, r) => Cell(r.s('no'), bold: true), width: 100),
         ColumnSpec(l.colDate, (c, r) => Cell(_d(r, 'date'), muted: true), width: 100),
-        ColumnSpec(l.navDealers, (c, r) => Cell(r.s('dealer')), flex: 4),
+        ColumnSpec(l.navDealers, (c, r) => Cell(r.s('dealer')), flex: 3),
+        ColumnSpec(l.pretPurchaseNo, (c, r) => Cell(r.s('purchase'), muted: true), width: 110),
         ColumnSpec(l.fieldReason, (c, r) => Cell(r.s('reason'), muted: true), flex: 3),
+        ColumnSpec(l.pretHowDone, (c, r) => Cell(settled(r), muted: true), flex: 3),
         ColumnSpec(l.colAmount, (c, r) => Cell(formatPaise(r.i('amount')), bold: true), width: 110, numeric: true),
       ],
       phoneTitle: (c, r) => TitleAmount(r.s('dealer'), '₹ ${formatPaise(r.i('amount'))}'),
-      phoneSubtitle: (r) => '${r.s('no')} · ${r.s('reason')}',
+      phoneSubtitle: (r) => '${r.s('no')} · ${r.s('purchase')} · ${r.s('reason')}',
     );
   }
 }
@@ -168,8 +256,8 @@ class DeliveryScreen extends ConsumerWidget {
       phoneSubtitle: (r) => '${r.s('bill')}\n${r.s('address')}',
       phoneTrailing: (c, r) => badge(r),
       onTap: (ctx, r) => showDetail(ctx, title: r.s('bill'), subtitle: r.s('customer'), body: [KeyValue(l.fieldAddress, r.s('address')), KeyValue(l.colStatus, st(r.s('status')).$1, bold: true)], actions: [
-        if (r.s('status') == 'pending') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'out'})); Navigator.pop(ctx); toast(context, l.saved); }, icon: const Icon(Icons.local_shipping_outlined), label: Text(l.markOut)),
-        if (r.s('status') == 'out') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'delivered'})); Navigator.pop(ctx); toast(context, l.saved); }, icon: const Icon(Icons.check), label: Text(l.markDelivered)),
+        if (r.s('status') == 'pending') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'out'})); Navigator.of(ctx, rootNavigator: true).pop(); toast(context, l.saved); }, icon: const Icon(Icons.local_shipping_outlined), label: Text(l.markOut)),
+        if (r.s('status') == 'out') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'delivered'})); Navigator.of(ctx, rootNavigator: true).pop(); toast(context, l.saved); }, icon: const Icon(Icons.check), label: Text(l.markDelivered)),
       ]),
     );
   }
@@ -240,39 +328,6 @@ class WarrantyScreen extends ConsumerWidget {
       phoneTitle: (c, r) => Text(r.s('item'), style: th.titleSmall),
       phoneSubtitle: (r) => '${r.s('customer')}\n${l.colWarrantyTill}: ${_d(r, 'till')}',
       phoneTrailing: (c, r) => badge(r),
-    );
-  }
-}
-
-class ProjectsScreen extends ConsumerWidget {
-  const ProjectsScreen({super.key});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = tr(context);
-    final items = ref.watch(recsProvider('projects'));
-    final th = Theme.of(context).textTheme;
-    (String, BadgeKind) st(String s) => switch (s) { 'running' => (l.projRunning, BadgeKind.info), 'done' => (l.projDone, BadgeKind.success), _ => (l.projPlanning, BadgeKind.neutral) };
-    return DataListScreen<Rec>(
-      title: l.navProjects,
-      subtitle: l.projectsSubtitle,
-      items: items,
-      searchText: (r) => '${r.s('name')} ${r.s('customer')}',
-      addLabel: l.addProject,
-      onAdd: () async {
-        final v = await showFormSheet(context, title: l.addProject, saveLabel: l.save, fields: [FieldSpec('name', l.fieldProjectName, required: true, autofocus: true), FieldSpec('customer', l.colCustomer), FieldSpec('budget', l.fieldBudget, type: FieldType.money)]);
-        if (v == null) return;
-        ref.read(recsProvider('projects').notifier).add(Rec(newId(), {'name': v['name']!, 'customer': v['customer'] ?? '', 'budget': ((double.tryParse(v['budget'] ?? '') ?? 0) * 100).round(), 'spent': 0, 'status': 'planning'}));
-      },
-      columns: [
-        ColumnSpec(l.fieldProjectName, (c, r) => Cell(r.s('name'), bold: true), flex: 4),
-        ColumnSpec(l.colCustomer, (c, r) => Cell(r.s('customer'), muted: true), flex: 3),
-        ColumnSpec(l.fieldBudget, (c, r) => Cell(formatPaise(r.i('budget')), muted: true), width: 120, numeric: true),
-        ColumnSpec(l.colSpent, (c, r) => Cell(formatPaise(r.i('spent')), bold: true), width: 120, numeric: true),
-        ColumnSpec(l.colStatus, (c, r) => StatusBadge(st(r.s('status')).$1, kind: st(r.s('status')).$2), width: 110),
-      ],
-      phoneTitle: (c, r) => Text(r.s('name'), style: th.titleSmall),
-      phoneSubtitle: (r) => '${r.s('customer')}\n${l.colSpent}: ₹ ${formatPaise(r.i('spent'))} / ₹ ${formatPaise(r.i('budget'))}',
-      phoneTrailing: (c, r) => StatusBadge(st(r.s('status')).$1, kind: st(r.s('status')).$2),
     );
   }
 }

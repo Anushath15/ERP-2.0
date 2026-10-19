@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +28,7 @@ import '../../fake/store.dart';
 import '../../fake/shop_profile.dart';
 import '../products/product_form.dart';
 import 'bill_panel.dart';
+import 'discount_profit_bar.dart';
 import 'cart.dart';
 import 'customer_picker.dart';
 import 'product_picker.dart';
@@ -82,7 +84,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   /// What is printed for a document: from the SAVED bill (its real number and amounts), or for an estimate from the cart.
   PrintDoc _docFrom(CartState cart, BillCalc calc, {required String number, required DateTime date, int? received, int change = 0, int advance = 0, int? newBalance, DateTime? editedOn}) =>
-      PrintDoc(mode: mode, number: number, date: date, editedOn: editedOn, customer: cart.customer?.name ?? tr(context).walkInCustomer, lines: cart.lines, calc: calc, pay: cart.pay, receivedPaise: received, changePaise: change, advanceKeptPaise: advance, newBalancePaise: newBalance);
+      PrintDoc(extraDiscountBp: cart.extraDiscountBp, mode: mode, number: number, date: date, editedOn: editedOn, customer: cart.customer?.name ?? tr(context).walkInCustomer, customerPhone: cart.customer?.phone ?? '', customerGstin: cart.customer?.gstin ?? '', lines: cart.lines, calc: calc, pay: cart.pay, receivedPaise: received, changePaise: change, advanceKeptPaise: advance, newBalancePaise: newBalance);
 
   /// A bill with an unpaid balance needs a named customer: pick one or add one. Returns null if the person gives up
   /// (the bill is then NOT saved).
@@ -108,7 +110,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     }
     final v = await showQuickCustomer(context);
     if (v == null) return null;
-    final c = Customer(id: newId(), name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', balancePaise: 0);
+    final c = Customer(id: newId(), name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', gstin: v['gstin'] ?? '', balancePaise: 0);
     ref.read(customersProvider.notifier).add(c);
     return c;
   }
@@ -178,6 +180,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           keepAdvance: cart.keepAdvance,
           pricesIncludeGst: shop.pricesIncludeGst,
           roundOff: shop.roundOff,
+          extraDiscountPaise: cart.extraDiscountPaise,
+          extraDiscountBp: cart.extraDiscountBp,
         );
         final saved = await ref.read(billActionsProvider).save(input);
         final balanceNow = cart.customer == null ? null : ref.read(creditProvider.notifier).balanceOf(cart.customer!.id);
@@ -190,6 +194,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               customerId: cart.customer?.id,
               at: editing ? cart.editingDate! : at,
               editNumber: cart.editingNumber,
+              extraDiscountPaise: cart.extraDiscountPaise,
+              extraDiscountBp: cart.extraDiscountBp,
             );
         doc = _docFrom(cart, calc, number: e.number, date: e.date, editedOn: editing ? ref.read(clockProvider) : null);
       }
@@ -233,7 +239,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
     final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd, onScan: () => playSound(ref, SoundKind.scan)));
 
-    Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount));
+    final discountBar = DiscountProfitBar(mode: mode, cart: cart, calc: calc, onAmount: notifier.setExtraDiscountAmount, onPercent: notifier.setExtraDiscountPercent);
+    Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount, trailing: discountBar));
     final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, customerBalance: cart.customer == null ? null : ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear);
 
     final shortcuts = <ShortcutActivator, VoidCallback>{
@@ -309,5 +316,6 @@ Future<Map<String, String>?> showQuickCustomer(BuildContext context) {
     FieldSpec('name', l.fieldName, required: true, autofocus: true),
     FieldSpec('phone', l.fieldPhone, type: FieldType.phone, hint: '98765 43210', check: (v) => normalizePhone(v) == null ? l.errPhone : null),
     FieldSpec('city', l.fieldCity),
+    FieldSpec('gstin', l.fieldGstinOptional, kind: TextKind.gstin),
   ]);
 }

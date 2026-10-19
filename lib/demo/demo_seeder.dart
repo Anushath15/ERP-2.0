@@ -2,6 +2,7 @@
 /// the tests exercise the real code. Deterministic. Never used for the real shop's database.
 library;
 
+import '../data/repo/product_codes.dart';
 import 'dart:convert';
 import 'dart:math';
 import '../data/app_data.dart';
@@ -227,7 +228,6 @@ Future<void> seedDemo(AppData d, DateTime now, {DemoCounts counts = const DemoCo
     await recs('delivery', seedDelivery(now, customers));
     await recs('expenses', seedExpenses(now));
     await recs('warranty', seedWarranty(now, customers, products));
-    await recs('projects', seedProjects());
     await recs('staff', seedStaff());
     await recs('notifications', seedNotifications(now));
 
@@ -240,6 +240,7 @@ Future<void> seedDemo(AppData d, DateTime now, {DemoCounts counts = const DemoCo
         b.customStatement("INSERT INTO stock_movements(id, product_id, qty_milli, kind, note, at, created_at, device_id) VALUES (?,?,?,?,?,?,?,?)", ['demo-${r.id}', pid, r.i('qty'), 'adjustment', r.s('reason'), (r.f['date'] as DateTime).millisecondsSinceEpoch, t, cx.deviceId]);
       }
     });
+    await backfillProductCodes(db); // the sample products have their codes too
   });
 }
 

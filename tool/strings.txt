@@ -57,7 +57,6 @@ navClosing | Daily closing
 navReports | Reports
 navExport | Export
 navWarranty | Warranty
-navProjects | House projects
 navNotifications | Notifications
 navImport | Import old data
 navSettings | Settings
@@ -115,8 +114,6 @@ fieldAmount | Amount
 fieldPayMode | Paid by
 fieldRole | Role
 fieldProductName | Product name
-fieldSellPrice | Selling price
-fieldCostPrice | Cost price
 fieldUnit | Unit
 fieldGst | GST
 fieldCategory | Category
@@ -126,7 +123,6 @@ fieldCreditLimit | Credit limit
 fieldDealerInvoice | Dealer invoice no.
 fieldSerial | Serial no.
 fieldBudget | Budget
-fieldProjectName | Project name
 productNameHint | Type the name exactly as you want it
 # ---- filters, status
 filterInStock | In stock
@@ -340,8 +336,6 @@ warrantySubtitle | Items sold with a warranty
 searchWarrantyHint | Search customer, item or serial no.
 warrantyActive | Under warranty
 warrantyEnded | Warranty over
-projectsSubtitle | Big jobs for a house or building, with budget and spending
-addProject | Add project
 projRunning | Running
 projDone | Finished
 projPlanning | Planning
@@ -1108,3 +1102,223 @@ exportCapped | Only the first {n} rows are in the PDF. Use Excel or CSV for ever
 logoBad | This picture could not be used. Choose a PNG or JPG picture under 4 MB.
 logoRemove | Use the program logo
 logoSaved | Logo saved
+# ---- sales return from a bill
+retTitle | Return items from {number}
+retSubtitle | Choose what is coming back and how many.
+retSold | Sold
+retBack | Returned before
+retNow | Returning now
+retAll | Return all
+retItem | Item
+retRefund | Refund: {amount}
+retToDebt | {amount} is taken off what this customer owes on this bill.
+retHandBack | {amount} to give back to the customer.
+retMethod | Give the money back by
+retKeepCredit | Keep it as credit on the customer account instead
+retReasonHelp | Why are they coming back?
+retSave | Save return
+retNothing | Choose at least one item to return.
+retTooMany | At most {max} can be returned for {name}.
+retAllDone | Everything from this bill has already been returned.
+retCancelled | This bill was cancelled, so nothing can be returned from it.
+retDone | Return {number} saved: {amount}
+retNoBill | There is no bill with that number.
+retAskBill | Which bill are the items from?
+retNotFoundTitle | Bill not found
+retColItems | Items
+retColRefund | Refund
+retHowDone | How it was settled
+retSettledDebt | Taken off the debt
+retSettledCredit | Kept as credit
+retSettledCash | Handed back
+retBillInfo | Bill {number}, {date}, total {total}
+retOldNote | Older note (made before returns were counted)
+# ---- product form
+fieldSellPrice | Selling price
+fieldCostPrice | Buying price
+gstIncl | Includes GST
+gstExcl | Excludes GST
+fieldMinStock | Minimum stock (warn me when stock falls to this)
+fieldHsn | HSN code
+fieldBrand | Brand name
+errHsn | An HSN code has 4 to 8 digits
+productCodeNew | A product code is made for you when you save (from the category, like ELE-0001).
+productCodeIs | Product code: {code}
+colCode | Code
+stockLowHint | Low stock warning at {qty}
+# ---- customer page: what they bought
+custBought | Total bought
+custBoughtHint | After what they gave back
+custBillsCount | Bills
+custBillsCancelledHint | {n} cancelled
+custProfit | Profit from this customer
+custLastBill | Last bill
+custReturnedLabel | Gave back
+custReturnedHint | {n} returns
+custBillsTitle | Their bills
+custNoBills | No bills for this customer yet.
+custBillsCapped | Showing the newest {n} bills. Use the Sales register to search all of them.
+retReturned | Given back so far
+signOutConfirmTitle | Sign out?
+signOutConfirmText | You will need to sign in again to use the program.
+navBrands | Brands
+addBrand | Add brand
+brandsHelp | Brands you can pick when you add a product.
+brandRename | Rename brand
+brandDelete | Delete brand
+brandInUse | This brand is used by {n} products, so it cannot be deleted.
+brandExists | That brand is already in the list.
+brandPickHint | Pick a brand, or type a new one
+brandNone | No brand
+brandDeleteConfirm | Delete the brand {name}?
+brandRenamed | Brand renamed on {n} products.
+tabCategories | Categories
+tabBrands | Brands
+acctStatusButton | Account status
+acctBack | Back to the customer
+acctDebit | Owes you
+acctAdvance | Paid in advance
+acctClean | Nothing owed
+acctOpenHint | Open the account status
+tabUnits | Units
+addUnit | Add unit
+unitsHelp | Units you can pick when you add a product (pcs, kg, box ...).
+unitRename | Rename unit
+unitDelete | Delete unit
+unitInUse | This unit is used by {n} products, so it cannot be deleted.
+unitExists | That unit is already in the list.
+unitDeleteConfirm | Delete the unit {name}?
+unitRenamed | Unit renamed on {n} products.
+unitPickHint | Pick a unit, or type a new one
+# ---- purchases with items
+purFormTitle | Add purchase
+purFormHint | Choose the dealer, add what you bought and the rate you paid for each item.
+purDealer | Dealer
+purItemsTitle | Items bought
+purAddItem | Add an item
+purSearchHint | Type a product name, code or brand
+purQty | Quantity
+purRate | Rate per unit
+purRatesAre | The rates you type
+purLast | Last time: {rate} from {dealer} on {date}
+purCheaper | Cheaper at {dealer}: {rate} ({date})
+purSubtotal | Value before GST
+purGst | GST
+purTotal | Total
+purPaidFull | Paid in full
+purPaidPart | Part paid
+purPaidNone | On credit
+purPaidAmount | Amount paid now
+purUpdateCost | Use these rates as the buying price of the products
+purSave | Save purchase
+purNoItems | Add at least one item.
+purNeedDealer | Choose a dealer first. If there is none, add one on the Dealers page.
+purBadRate | Type the quantity and the rate of every item.
+purPaidTooMuch | The money paid cannot be more than the total.
+purSaved | Purchase {number} saved: {amount}
+purSelling | Selling price now: {price} (margin {pct}%)
+purNoSelling | This product has no selling price now.
+purLastBefore | Time before you paid {rate} to {dealer} ({date})
+purCheaperElse | {dealer} had it cheaper: {rate} ({date})
+purPaidLabel | Paid
+purOnAccount | On the dealer account
+purOlderNote | No item details were kept for this older purchase.
+purReceivedOn | Received on {date}
+purBuyingRate | Buying rate
+purItemsLine | {qty} x {rate} + GST
+purNote | Note (optional)
+dealerBought | Total bought from this dealer
+dealerPurchasesCount | Purchases
+dealerPendingHint | {n} not received yet
+dealerLastPurchase | Last purchase
+dealerPurchasesTitle | Their purchases
+dealerNoPurchases | No purchases from this dealer yet.
+dealerPaidHint | Paid {amount}
+dealerAddPurchase | Add purchase
+dealerAcctOwe | You owe
+dealerAcctAdvance | Paid in advance
+dealerAcctClean | Nothing owed
+acctBackDealer | Back to the dealer
+# ---- purchase return from a purchase
+pretTitle | Return items from {number}
+pretSubtitle | Choose what goes back to the dealer and how many.
+pretBought | Bought
+pretBack | Returned before
+pretInStock | In stock
+pretNow | Giving back now
+pretAll | Give back all
+pretRefund | Value: {amount}
+pretToDebt | {amount} is taken off what you owe this dealer on this purchase.
+pretGetBack | {amount} to get back from the dealer.
+pretMethod | The dealer gives the money back by
+pretKeepCredit | Keep it as credit with the dealer instead
+pretCreditKept | Kept as credit with the dealer
+pretSave | Save return
+pretTooMany | At most {max} can go back for {name}.
+pretAllDone | Everything from this purchase has already been returned.
+pretNotReceived | This purchase has not been received yet, so nothing can be returned from it.
+pretDone | Return {number} saved: {amount}
+pretNoPurchase | There is no purchase with that number.
+pretAskNumber | Which purchase are the items from?
+pretNotFoundTitle | Purchase not found
+pretHowDone | How it was settled
+pretSettledDebt | Taken off what you owe
+pretSettledCash | Money back from the dealer
+pretReturnItems | Return items
+pretReturned | Given back so far
+pretPurchaseNo | Purchase no.
+# ---- whole-bill discount and profit
+discBarTitle | Discount on the whole bill
+discAmount | Amount
+discPercent | Percent
+discClear | Remove the discount
+profitOnBill | Profit on this bill
+profitOnEstimate | Profit on this estimate
+profitPrivate | Only you can see this. It is never printed or shown on the bill.
+profitHide | Hide the profit
+profitShow | Show the profit
+rcBillDiscount | Discount
+rcBillDiscountPct | Discount ({pct}%)
+rcAmountBefore | Amount
+fieldMrp | MRP (printed price, GST included)
+mrpAboveWarn | The selling price is more than the MRP. Check it.
+colMrp | MRP
+colSold | Sold
+colSales | Sales
+colProfit | Profit
+salesFigureHint | Sales and profit of each item, all time, after returns. Profit is worked out from the buying prices.
+# ---- the A4 bill and estimate (the shop's own template)
+tplSl | Sl.No
+tplGoods | Goods
+tplMrp | MRP
+tplHsn | HSN Code
+tplQty | Qty
+tplDisc | Disc %
+tplRate | Rate
+tplGst | GST%
+tplTotal | Total
+tplRoundOff | Round off
+tplNet | Net Amount
+tplSalesAmt | Sales Amt
+tplCgst | CGST
+tplSgst | SGST
+tplIgst | IGST
+tplNetAmt | Net Amt
+tplPct | %
+tplAmount | Amount
+tplTo | To
+tplBillNo | Bill No
+tplEstNo | Estimate No
+tplDate | Date
+tplEstimate | ESTIMATE
+tplCreditBill | CREDIT BILL
+tplPartPaid | PART PAID
+tplPaid | PAID
+tplGstNo | GST
+tplPhone | Phone
+tplFor | For {shop}
+tplSignatory | Authorised signatory
+tplEstimateNote | This is an estimate, not a bill. Prices may change.
+fieldEmail | E-mail
+tplTaxInvoice | TAX INVOICE
+fieldGstinOptional | GST number (optional)

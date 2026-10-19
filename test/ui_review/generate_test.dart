@@ -88,7 +88,6 @@ final shots = <Shot>[
   const Shot('export', 'Export center', '/export'),
   const Shot('import', 'Import old data (ERP 1.0)', '/import'),
   const Shot('warranty', 'Warranty', '/warranty'),
-  const Shot('house-projects', 'House projects', '/projects'),
   const Shot('notifications', 'Notifications', '/notifications'),
   const Shot('settings', 'Settings', '/settings'),
   const Shot('database-health', 'Database health', '/health'),

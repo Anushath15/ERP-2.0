@@ -125,7 +125,16 @@ PrintLayout buildPrintLayout({required PrintDoc doc, required ShopProfile shop, 
     TotalLine('SGST', formatPaise(c.sgst)),
     TotalLine(l.rcRoundOff, signed(c.roundOff)),
   ];
+  // the whole-bill discount is always shown (the customer sees what was taken off)
+  final before = c.lines.fold<int>(0, (a, x) => a + x.total + x.extraShare);
+  final discountLines = <TotalLine>[
+    if (c.extraDiscount > 0) ...[
+      TotalLine(l.rcAmountBefore, formatPaise(before)),
+      TotalLine(doc.extraDiscountBp > 0 ? l.rcBillDiscountPct(_pct(doc.extraDiscountBp)) : l.rcBillDiscount, '-${formatPaise(c.extraDiscount)}', id: 'paperDiscount'),
+    ],
+  ];
   final totals = <TotalLine>[
+    ...discountLines,
     if (!est || show.taxLines) ...taxLines,
     TotalLine(l.rcGrandTotal, '₹ ${formatPaise(c.grandTotal)}', bold: true, big: true, id: 'paperTotal'),
   ];
@@ -167,7 +176,7 @@ double paperWidthPt(PaperSize p) => switch (p) { PaperSize.a4 => 595.0, PaperSiz
 bool isRoll(PaperSize p) => p == PaperSize.mm80 || p == PaperSize.mm58;
 
 /// Margins around the printout in points.
-double paperMarginPt(PaperSize p) => switch (p) { PaperSize.a4 => 28.0, PaperSize.a5 => 22.0, PaperSize.mm80 => 8.0, PaperSize.mm58 => 6.0 };
+double paperMarginPt(PaperSize p) => switch (p) { PaperSize.a4 => 24.0, PaperSize.a5 => 20.0, PaperSize.mm80 => 8.0, PaperSize.mm58 => 6.0 };
 
 /// Font sizes in points for each "Print text size" choice. Small is the default: item rows about 9.5 pt, title 12 pt, total 11 pt.
 class PrintMetrics {
@@ -180,3 +189,6 @@ class PrintMetrics {
 
   static PrintMetrics of(PrintTextSize s) => switch (s) { PrintTextSize.smaller => smaller, PrintTextSize.small => small, PrintTextSize.normal => normal };
 }
+
+/// 500 -> 5, 1250 -> 12.5
+String _pct(int bp) => bp % 100 == 0 ? '${bp ~/ 100}' : (bp / 100).toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');

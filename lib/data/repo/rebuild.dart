@@ -40,9 +40,24 @@ Future<int> rebuildSummaries(AppDatabase db) {
       'LEFT JOIN (SELECT day, COUNT(*) AS n, SUM(total_paise) AS total FROM bills WHERE cancelled = 1 GROUP BY day) y ON y.day = d.day '
       'LEFT JOIN (SELECT b.day AS day, SUM((l.cost_paise * l.qty_milli * 2 + 1000) / 2000) AS cost FROM bill_lines l JOIN bills b ON b.id = l.bill_id WHERE b.cancelled = 0 GROUP BY b.day) c ON c.day = d.day',
     );
+    // sales returns reduce the totals of the day they were made (a day with only returns gets its own row)
+    await run(
+      'INSERT INTO day_totals(day, bills, sales_paise, taxable_paise, cost_paise, tax_paise, cash_paise, upi_paise, card_paise, credit_paise) '
+      'SELECT day, 0, -SUM(total_paise), -SUM(taxable_paise), -SUM(cost_paise), -SUM(total_paise - round_off_paise - taxable_paise), '
+      '-SUM(CASE WHEN refund_mode IN (0, 3) THEN refunded_paise ELSE 0 END), -SUM(CASE WHEN refund_mode = 1 THEN refunded_paise ELSE 0 END), '
+      '-SUM(CASE WHEN refund_mode = 2 THEN refunded_paise ELSE 0 END), -SUM(due_reduced_paise) FROM sales_returns GROUP BY day '
+      'ON CONFLICT(day) DO UPDATE SET sales_paise = sales_paise + excluded.sales_paise, taxable_paise = taxable_paise + excluded.taxable_paise, '
+      'cost_paise = cost_paise + excluded.cost_paise, tax_paise = tax_paise + excluded.tax_paise, cash_paise = cash_paise + excluded.cash_paise, '
+      'upi_paise = upi_paise + excluded.upi_paise, card_paise = card_paise + excluded.card_paise, credit_paise = credit_paise + excluded.credit_paise',
+    );
     n += await db.scalarInt('SELECT COUNT(*) FROM day_totals');
     await run('DELETE FROM product_month');
     await run('INSERT INTO product_month(product_id, month, qty_milli, amount_paise) SELECT l.product_id, substr(b.day, 1, 7), SUM(l.qty_milli), SUM(l.total_paise) FROM bill_lines l JOIN bills b ON b.id = l.bill_id WHERE b.cancelled = 0 GROUP BY l.product_id, substr(b.day, 1, 7)');
+    await run(
+      'INSERT INTO product_month(product_id, month, qty_milli, amount_paise) SELECT l.product_id, substr(r.day, 1, 7), -SUM(l.qty_milli), -SUM(l.amount_paise) '
+      'FROM sales_return_lines l JOIN sales_returns r ON r.id = l.return_id GROUP BY l.product_id, substr(r.day, 1, 7) '
+      'ON CONFLICT(product_id, month) DO UPDATE SET qty_milli = qty_milli + excluded.qty_milli, amount_paise = amount_paise + excluded.amount_paise',
+    );
     n += await db.scalarInt('SELECT COUNT(*) FROM product_month');
 
     // an invoice counter never stays behind its newest bill

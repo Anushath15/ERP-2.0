@@ -9,7 +9,9 @@ import 'motion.dart';
 import '../strings.dart';
 import 'widgets.dart';
 
-enum FieldType { text, number, money, multiline, dropdown, date, phone, email }
+/// [choice]: two or three buttons side by side (one is always chosen); the value is the chosen option's value.
+/// [combo]: a text box that also has a list to pick from (the person may pick one or type something new).
+enum FieldType { text, number, money, multiline, dropdown, choice, combo, date, phone, email }
 
 class FieldSpec {
   const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check, this.kind});
@@ -79,7 +81,7 @@ class _FormBodyState extends State<_FormBody> {
   final _formKey = GlobalKey<FormState>();
   final _shake = GlobalKey<ShakeState>();
   late final Map<String, TextEditingController> _ctl = {for (final f in widget.fields) f.key: TextEditingController(text: f.initial)};
-  late final Map<String, String> _drop = {for (final f in widget.fields.where((f) => f.type == FieldType.dropdown)) f.key: f.initial.isNotEmpty ? f.initial : (f.options.isNotEmpty ? f.options.first.$1 : '')};
+  late final Map<String, String> _drop = {for (final f in widget.fields.where((f) => f.type == FieldType.dropdown || f.type == FieldType.choice)) f.key: f.initial.isNotEmpty ? f.initial : (f.options.isNotEmpty ? f.options.first.$1 : '')};
 
   @override
   void dispose() {
@@ -95,7 +97,7 @@ class _FormBodyState extends State<_FormBody> {
       playSoundIn(context, SoundKind.error);
       return;
     }
-    Navigator.pop(context, {for (final f in widget.fields) f.key: f.type == FieldType.dropdown ? (_drop[f.key] ?? '') : (f.type == FieldType.money || f.type == FieldType.number || f.type == FieldType.date ? _ctl[f.key]!.text.trim() : storeText(f.textKind, _ctl[f.key]!.text))});
+    Navigator.pop(context, {for (final f in widget.fields) f.key: f.type == FieldType.dropdown || f.type == FieldType.choice ? (_drop[f.key] ?? '') : (f.type == FieldType.money || f.type == FieldType.number || f.type == FieldType.date ? _ctl[f.key]!.text.trim() : storeText(f.textKind, _ctl[f.key]!.text))});
   }
 
   Widget _field(FieldSpec f) {
@@ -116,6 +118,37 @@ class _FormBodyState extends State<_FormBody> {
           decoration: InputDecoration(labelText: f.label),
           items: [for (final o in f.options) DropdownMenuItem(value: o.$1, child: Text(o.$2))],
           onChanged: (v) => setState(() => _drop[f.key] = v ?? ''),
+        );
+      case FieldType.combo:
+        return TextFormField(
+          key: ValueKey('combo-${f.key}'),
+          controller: _ctl[f.key],
+          inputFormatters: [safeInput(f.textKind)],
+          decoration: InputDecoration(
+            labelText: f.label,
+            hintText: f.hint,
+            suffixIcon: f.options.isEmpty
+                ? null
+                : PopupMenuButton<String>(
+                    key: ValueKey('combo-menu-${f.key}'),
+                    icon: const Icon(Icons.arrow_drop_down),
+                    tooltip: f.label,
+                    onSelected: (v) => setState(() => _ctl[f.key]!.text = v),
+                    itemBuilder: (_) => [for (final o in f.options) PopupMenuItem(value: o.$1, child: Text(o.$2))],
+                  ),
+          ),
+          validator: validate,
+        );
+      case FieldType.choice:
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: SegmentedButton<String>(
+            key: ValueKey('choice-${f.key}'),
+            showSelectedIcon: false,
+            segments: [for (final o in f.options) ButtonSegment(value: o.$1, label: Text(o.$2))],
+            selected: {_drop[f.key] ?? ''},
+            onSelectionChanged: (v) => setState(() => _drop[f.key] = v.first),
+          ),
         );
       case FieldType.date:
         return TextFormField(

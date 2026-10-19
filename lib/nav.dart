@@ -47,7 +47,6 @@ final navGroups = <NavGroup>[
   ]),
   NavGroup((l) => l.groupMore, [
     NavItem('/warranty', Icons.verified_user_outlined, (l) => l.navWarranty),
-    NavItem('/projects', Icons.home_work_outlined, (l) => l.navProjects),
     NavItem('/notifications', Icons.notifications_none, (l) => l.navNotifications),
     NavItem('/import', Icons.upload_file_outlined, (l) => l.navImport),
     NavItem('/shop', Icons.storefront_outlined, (l) => l.navShop),

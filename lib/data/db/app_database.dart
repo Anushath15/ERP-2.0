@@ -1,11 +1,12 @@
 import 'dart:async';
+import '../repo/product_codes.dart';
 import 'package:drift/drift.dart';
 
 part 'app_database.g.dart';
 
 /// The schema version this build of the app understands. Raise it ONLY together with a numbered migration in
 /// [AppDatabase.migrations], a new schema dump (`dart run drift_dev schema dump ...`) and a migration test.
-const currentSchemaVersion = 2;
+const currentSchemaVersion = 7;
 
 /// The database file was made by a NEWER version of the app. It is never opened (an old app could damage it).
 class DatabaseTooNewException implements Exception {
@@ -86,13 +87,159 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
+  int get schemaVersion => 7; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
 
   /// Numbered migrations: key = the version the step produces. Every step runs inside the upgrade transaction; the caller
   /// makes a backup first (see DatabaseOpener) and a failed step leaves the old file untouched.
   static final Map<int, Future<void> Function(Migrator m, AppDatabase db)> migrations = {
     // 2: the average buying cost of a product (0 = not known). Needed for the stock-value rule; ERP 1's own average is imported into it.
     2: (m, db) => db.customStatement('ALTER TABLE products ADD COLUMN avg_cost_paise INTEGER NOT NULL DEFAULT 0'),
+    3: (m, db) async {
+      await db.customStatement('''CREATE TABLE sales_returns (
+  id TEXT NOT NULL PRIMARY KEY,
+  number TEXT NOT NULL,
+  bill_id TEXT NOT NULL REFERENCES bills(id),
+  bill_no TEXT NOT NULL,
+  customer_id TEXT REFERENCES customers(id),
+  customer_name TEXT NOT NULL DEFAULT '',
+  returned_at INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  total_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL DEFAULT 0,
+  cgst_paise INTEGER NOT NULL DEFAULT 0,
+  sgst_paise INTEGER NOT NULL DEFAULT 0,
+  igst_paise INTEGER NOT NULL DEFAULT 0,
+  cost_paise INTEGER NOT NULL DEFAULT 0,
+  round_off_paise INTEGER NOT NULL DEFAULT 0,
+  due_reduced_paise INTEGER NOT NULL DEFAULT 0,
+  credit_kept_paise INTEGER NOT NULL DEFAULT 0,
+  refunded_paise INTEGER NOT NULL DEFAULT 0,
+  refund_mode INTEGER NOT NULL DEFAULT 0,
+  reason TEXT NOT NULL,
+  by_name TEXT NOT NULL DEFAULT '',
+  idem_key TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+)''');
+      await db.customStatement('''CREATE UNIQUE INDEX sales_returns_number ON sales_returns(number)''');
+      await db.customStatement('''CREATE UNIQUE INDEX sales_returns_idem ON sales_returns(idem_key)''');
+      await db.customStatement('''CREATE INDEX sales_returns_bill ON sales_returns(bill_id)''');
+      await db.customStatement('''CREATE INDEX sales_returns_at ON sales_returns(returned_at DESC, id DESC)''');
+      await db.customStatement('''CREATE INDEX sales_returns_day ON sales_returns(day)''');
+      await db.customStatement('''CREATE TABLE sales_return_lines (
+  id TEXT NOT NULL PRIMARY KEY,
+  return_id TEXT NOT NULL REFERENCES sales_returns(id),
+  bill_line_id TEXT NOT NULL REFERENCES bill_lines(id),
+  product_id TEXT NOT NULL REFERENCES products(id),
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  qty_milli INTEGER NOT NULL,
+  amount_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL,
+  tax_paise INTEGER NOT NULL,
+  cost_paise INTEGER NOT NULL DEFAULT 0
+)''');
+      await db.customStatement('''CREATE INDEX sales_return_lines_return ON sales_return_lines(return_id)''');
+      await db.customStatement('''CREATE INDEX sales_return_lines_billline ON sales_return_lines(bill_line_id)''');
+    },
+    4: (m, db) async {
+      await db.customStatement("ALTER TABLE products ADD COLUMN code TEXT NOT NULL DEFAULT ''");
+      await db.customStatement("ALTER TABLE products ADD COLUMN brand TEXT NOT NULL DEFAULT ''");
+      await db.customStatement("CREATE UNIQUE INDEX products_code ON products(code) WHERE code <> ''");
+      await backfillProductCodes(db); // every product that is already there gets its code
+    },
+    5: (m, db) async {
+      await db.customStatement('''CREATE TABLE purchases (
+  id TEXT NOT NULL PRIMARY KEY,
+  number TEXT NOT NULL,
+  dealer_id TEXT NOT NULL REFERENCES dealers(id),
+  dealer_name TEXT NOT NULL DEFAULT '',
+  invoice_no TEXT NOT NULL DEFAULT '',
+  purchased_at INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  total_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL DEFAULT 0,
+  tax_paise INTEGER NOT NULL DEFAULT 0,
+  paid_paise INTEGER NOT NULL DEFAULT 0,
+  status INTEGER NOT NULL DEFAULT 1,
+  received_at INTEGER,
+  update_cost INTEGER NOT NULL DEFAULT 1,
+  note TEXT NOT NULL DEFAULT '',
+  idem_key TEXT NOT NULL,
+  by_name TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+)''');
+      await db.customStatement('''CREATE UNIQUE INDEX purchases_number ON purchases(number)''');
+      await db.customStatement('''CREATE UNIQUE INDEX purchases_idem ON purchases(idem_key)''');
+      await db.customStatement('''CREATE INDEX purchases_dealer ON purchases(dealer_id, purchased_at DESC, id DESC)''');
+      await db.customStatement('''CREATE INDEX purchases_at ON purchases(purchased_at DESC, id DESC)''');
+      await db.customStatement('''CREATE TABLE purchase_lines (
+  id TEXT NOT NULL PRIMARY KEY,
+  purchase_id TEXT NOT NULL REFERENCES purchases(id),
+  line_no INTEGER NOT NULL,
+  product_id TEXT NOT NULL REFERENCES products(id),
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  qty_milli INTEGER NOT NULL,
+  rate_paise INTEGER NOT NULL,
+  gst_bp INTEGER NOT NULL DEFAULT 0,
+  taxable_paise INTEGER NOT NULL,
+  tax_paise INTEGER NOT NULL,
+  total_paise INTEGER NOT NULL
+)''');
+      await db.customStatement('''CREATE INDEX purchase_lines_purchase ON purchase_lines(purchase_id, line_no)''');
+      await db.customStatement('''CREATE INDEX purchase_lines_product ON purchase_lines(product_id, purchase_id)''');
+    },
+    6: (m, db) async {
+      await db.customStatement('''CREATE TABLE purchase_returns (
+  id TEXT NOT NULL PRIMARY KEY,
+  number TEXT NOT NULL,
+  purchase_id TEXT NOT NULL REFERENCES purchases(id),
+  purchase_no TEXT NOT NULL,
+  dealer_id TEXT NOT NULL REFERENCES dealers(id),
+  dealer_name TEXT NOT NULL DEFAULT '',
+  returned_at INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  total_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL DEFAULT 0,
+  tax_paise INTEGER NOT NULL DEFAULT 0,
+  due_reduced_paise INTEGER NOT NULL DEFAULT 0,
+  credit_kept_paise INTEGER NOT NULL DEFAULT 0,
+  refunded_paise INTEGER NOT NULL DEFAULT 0,
+  refund_mode INTEGER NOT NULL DEFAULT 0,
+  reason TEXT NOT NULL,
+  by_name TEXT NOT NULL DEFAULT '',
+  idem_key TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+)''');
+      await db.customStatement('''CREATE UNIQUE INDEX purchase_returns_number ON purchase_returns(number)''');
+      await db.customStatement('''CREATE UNIQUE INDEX purchase_returns_idem ON purchase_returns(idem_key)''');
+      await db.customStatement('''CREATE INDEX purchase_returns_purchase ON purchase_returns(purchase_id)''');
+      await db.customStatement('''CREATE INDEX purchase_returns_at ON purchase_returns(returned_at DESC, id DESC)''');
+      await db.customStatement('''CREATE TABLE purchase_return_lines (
+  id TEXT NOT NULL PRIMARY KEY,
+  return_id TEXT NOT NULL REFERENCES purchase_returns(id),
+  purchase_line_id TEXT NOT NULL REFERENCES purchase_lines(id),
+  product_id TEXT NOT NULL REFERENCES products(id),
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  qty_milli INTEGER NOT NULL,
+  amount_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL,
+  tax_paise INTEGER NOT NULL
+)''');
+      await db.customStatement('''CREATE INDEX purchase_return_lines_return ON purchase_return_lines(return_id)''');
+      await db.customStatement('''CREATE INDEX purchase_return_lines_line ON purchase_return_lines(purchase_line_id)''');
+    },
+    7: (m, db) async {
+      await db.customStatement('ALTER TABLE products ADD COLUMN mrp_paise INTEGER NOT NULL DEFAULT 0');
+      await db.customStatement('ALTER TABLE bills ADD COLUMN extra_discount_paise INTEGER NOT NULL DEFAULT 0');
+      await db.customStatement('ALTER TABLE bills ADD COLUMN extra_discount_bp INTEGER NOT NULL DEFAULT 0');
+      await db.customStatement('ALTER TABLE estimations ADD COLUMN extra_discount_paise INTEGER NOT NULL DEFAULT 0');
+      await db.customStatement('ALTER TABLE estimations ADD COLUMN extra_discount_bp INTEGER NOT NULL DEFAULT 0');
+    },
   };
 
   @override

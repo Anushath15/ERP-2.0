@@ -7,8 +7,11 @@ import '../../fake/models.dart';
 enum DocMode { invoice, estimation }
 
 class CartState {
-  const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise, this.touchedId, this.touchedNew = false, this.touchSeq = 0, this.touchedAtMs = 0, this.receivedPaise, this.keepAdvance = false, this.draftId});
+  const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise, this.touchedId, this.touchedNew = false, this.touchSeq = 0, this.touchedAtMs = 0, this.receivedPaise, this.keepAdvance = false, this.draftId, this.extraDiscountPaise = 0, this.extraDiscountBp = 0});
   final List<CartLine> lines;
+
+  /// A discount on the whole bill or estimate: an amount in paise, or (when [extraDiscountBp] is above zero) a percent in basis points.
+  final int extraDiscountPaise, extraDiscountBp;
 
   /// Made when the first line is added; saving twice with the same id returns the same bill (a double click or a retry after a crash never makes two).
   final String? draftId;
@@ -29,7 +32,9 @@ class CartState {
   final bool touchedNew;
   final int touchSeq, touchedAtMs;
 
-  CartState copyWith({List<CartLine>? lines, Customer? customer, bool clearCustomer = false, PayMode? pay, String? editingNumber, DateTime? editingDate, DateTime? editedOn, ({String id, bool isNew})? touch, int? received, bool clearReceived = false, bool? keepAdvance, String? draftId}) => CartState(
+  CartState copyWith({List<CartLine>? lines, Customer? customer, bool clearCustomer = false, PayMode? pay, String? editingNumber, DateTime? editingDate, DateTime? editedOn, ({String id, bool isNew})? touch, int? received, bool clearReceived = false, bool? keepAdvance, String? draftId, ({int paise, int bp})? extraDiscount}) => CartState(
+        extraDiscountPaise: extraDiscount?.paise ?? extraDiscountPaise,
+        extraDiscountBp: extraDiscount?.bp ?? extraDiscountBp,
         draftId: draftId ?? this.draftId,
         lines: lines ?? this.lines,
         customer: clearCustomer ? null : (customer ?? this.customer),
@@ -79,6 +84,12 @@ class CartNotifier extends Notifier<CartState> {
 
   void setDiscount(int index, int bp) => state = state.copyWith(lines: [for (var i = 0; i < state.lines.length; i++) i == index ? state.lines[i].copyWith(discountBp: bp.clamp(0, 10000)) : state.lines[i]]);
 
+  /// A discount on the whole bill typed as an amount (rupees in paise). Zero removes it.
+  void setExtraDiscountAmount(int paise) => state = state.copyWith(extraDiscount: (paise: paise < 0 ? 0 : paise, bp: 0));
+
+  /// A discount on the whole bill typed as a percent (in basis points: 5% = 500). Zero removes it.
+  void setExtraDiscountPercent(int bp) => state = state.copyWith(extraDiscount: (paise: 0, bp: bp.clamp(0, 10000)));
+
   void remove(int index) => state = state.copyWith(lines: [for (var i = 0; i < state.lines.length; i++) if (i != index) state.lines[i]]);
 
   void setCustomer(Customer? c) => state = c == null ? state.copyWith(clearCustomer: true) : state.copyWith(customer: c);
@@ -120,6 +131,8 @@ class CartNotifier extends Notifier<CartState> {
           ),
       ],
       customer: cust,
+      extraDiscountPaise: e.extraDiscountBp > 0 ? 0 : e.extraDiscountPaise,
+      extraDiscountBp: e.extraDiscountBp,
       editingNumber: e.number,
       editingDate: e.date,
       editedOn: e.editedOn,
@@ -130,12 +143,22 @@ class CartNotifier extends Notifier<CartState> {
 
 final cartProvider = NotifierProvider.family<CartNotifier, CartState, DocMode>(CartNotifier.new);
 
-BillCalc calcFor(CartState s, {required bool inclusive, bool roundOff = true}) => calcBill(s.lines, inclusive: inclusive, roundOff: roundOff);
+BillCalc calcFor(CartState s, {required bool inclusive, bool roundOff = true}) =>
+    calcBill(s.lines, inclusive: inclusive, roundOff: roundOff, extraDiscountPaise: s.extraDiscountPaise, extraDiscountBp: s.extraDiscountBp);
 
 /// Snapshot used by the print preview screens.
 class PrintDoc {
-  const PrintDoc({required this.mode, required this.number, required this.date, required this.customer, required this.lines, required this.calc, this.editedOn, required this.pay, this.receivedPaise, this.changePaise = 0, this.advanceKeptPaise = 0, this.newBalancePaise});
+  const PrintDoc({required this.mode, required this.number, required this.date, required this.customer, required this.lines, required this.calc, this.editedOn, required this.pay, this.receivedPaise, this.changePaise = 0, this.advanceKeptPaise = 0, this.newBalancePaise, this.backTo, this.extraDiscountBp = 0, this.customerPhone = '', this.customerGstin = ''});
   final DocMode mode;
+
+  /// The customer's phone and GST number, printed under the name (empty for a walk-in or when not saved).
+  final String customerPhone, customerGstin;
+
+  /// Where the Back button of the print page goes (a route); null = the page the person came from.
+  final String? backTo;
+
+  /// The percent the whole-bill discount was typed as (basis points), 0 when it was typed as an amount.
+  final int extraDiscountBp;
   final String number;
   final DateTime date;
   final DateTime? editedOn;

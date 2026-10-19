@@ -7,10 +7,18 @@ import '../../core/money.dart';
 import '../../core/responsive.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
+import '../../data/repo/bill_repo.dart' show BillRow;
+import '../../data/repo/report_repo.dart' show CustomerSummary;
+import '../../design/open_once.dart';
 import '../../domain/credit/dues.dart';
 import '../../domain/credit/ledger.dart';
 import '../../domain/credit/reminder.dart';
+import '../../fake/actions.dart' show returnsVersionProvider;
 import '../../fake/credit_store.dart';
+import '../../fake/data_providers.dart';
+import '../../fake/stats.dart';
+import '../purchases/purchase_screens.dart' show dealerPurchasesProvider, dealerSummaryProvider, showPurchasePopup;
+import '../sales/sales_screens.dart' show showBillPopup, statusInfo, billStatus;
 import '../../fake/models.dart';
 import '../../fake/store.dart';
 import '../../fake/shop_profile.dart';
@@ -21,10 +29,31 @@ import 'statement_pdf.dart';
 
 /// The profile of a customer (who owes us) or a dealer (whom we owe): details, key dates, bill-wise dues with ageing, the full
 /// ledger with a running balance (filter by date), and the actions. Nothing is deleted: a wrong entry is reversed by a new entry.
+/// What one customer has bought and what the shop made on it (read again whenever a bill or a return is saved).
+final customerSummaryProvider = FutureProvider.autoDispose.family<CustomerSummary, String>((ref, id) {
+  ref.watch(statsProvider);
+  ref.watch(returnsVersionProvider);
+  return ref.read(appDataProvider).reports.customerSummary(id);
+});
+
+/// The customer's newest bills.
+const customerBillsShown = 200;
+final customerBillsProvider = FutureProvider.autoDispose.family<List<BillRow>, String>((ref, id) {
+  ref.watch(statsProvider);
+  ref.watch(returnsVersionProvider);
+  return ref.read(appDataProvider).bills.page(customerId: id, limit: customerBillsShown);
+});
+
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({super.key, required this.partyId, required this.kind});
+  const ProfileScreen({super.key, required this.partyId, required this.kind, this.openBillId, this.accountView = false});
   final String partyId;
   final PartyKind kind;
+
+  /// A customer's account status page (balance, bills still to pay, ledger, reminders, statement) instead of their profile.
+  final bool accountView;
+
+  /// Opens this bill's popup at once (the Back button of the print page returns here).
+  final String? openBillId;
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
@@ -86,6 +115,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final limit = cust?.creditLimitPaise ?? 0;
     final usedPct = limit == 0 ? 0 : (bal > 0 ? (bal * 100 ~/ limit) : 0);
 
+    // a customer who never had credit or a debit has no account to show: only what they bought
+    final hasAccount = acct.ledger.isNotEmpty;
+
     Widget stat(String label, String value, IconData icon, {Color? tone, String? hint}) => StatCard(label: label, value: value, icon: icon, tone: tone, hint: hint);
 
     final stats = LayoutBuilder(builder: (ctx, bc) {
@@ -129,8 +161,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     final actions = Wrap(spacing: 8, runSpacing: 8, children: [
-      if (bal > 0) FilledButton.icon(key: const ValueKey('settleFully'), onPressed: () => showSettleFully(context, party), icon: const Icon(Icons.done_all), label: Text(l.settleFully)),
-      OutlinedButton.icon(
+      if (hasAccount && bal > 0) FilledButton.icon(key: const ValueKey('settleFully'), onPressed: () => showSettleFully(context, party), icon: const Icon(Icons.done_all), label: Text(l.settleFully)),
+      if (hasAccount)
+        OutlinedButton.icon(
         key: const ValueKey('receiveOrPay'),
         onPressed: () async {
           final rec = await showPartyPayment(context, party);
@@ -142,9 +175,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         label: Text(_customer ? l.receivePayment : l.payDealer),
       ),
       if (_customer) OutlinedButton.icon(key: const ValueKey('addCredit'), onPressed: () => showAddCredit(context, cust!), icon: const Icon(Icons.add_card_outlined), label: Text(l.addCredit)) else OutlinedButton.icon(key: const ValueKey('addAdjustment'), onPressed: () => showAddAdjustment(context, party), icon: const Icon(Icons.tune), label: Text(l.addAccountAdjustment)),
-      if (_customer) Tooltip(message: settings.sync == SyncState.offline ? canOpenWhatsapp(online: false, digits: null).reason! : l.remindersTooltip, child: OutlinedButton.icon(onPressed: bal > 0 ? () => remindCustomer(context, cust!) : null, icon: const Icon(Icons.chat_outlined), label: Text(l.actRemind))),
-      if (_customer) OutlinedButton.icon(onPressed: () => context.go('/customers/${widget.partyId}/statement'), icon: const Icon(Icons.description_outlined), label: Text(l.actStatement)),
-      OutlinedButton.icon(key: const ValueKey('downloadStatement'), onPressed: downloadStatement, icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(l.downloadStatement)),
+      if (_customer && hasAccount) Tooltip(message: settings.sync == SyncState.offline ? canOpenWhatsapp(online: false, digits: null).reason! : l.remindersTooltip, child: OutlinedButton.icon(onPressed: bal > 0 ? () => remindCustomer(context, cust!) : null, icon: const Icon(Icons.chat_outlined), label: Text(l.actRemind))),
+      if (_customer && hasAccount) OutlinedButton.icon(onPressed: () => context.go('/customers/${widget.partyId}/statement'), icon: const Icon(Icons.description_outlined), label: Text(l.actStatement)),
+      if (hasAccount) OutlinedButton.icon(key: const ValueKey('downloadStatement'), onPressed: downloadStatement, icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(l.downloadStatement)),
       if (_customer && bal > 0) OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: c.danger), onPressed: () => showWriteOff(context, ref, cust!), icon: const Icon(Icons.remove_circle_outline), label: Text(l.writeOff)),
     ]);
 
@@ -171,6 +204,139 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
       ]),
     );
+
+    final summary = _customer ? ref.watch(customerSummaryProvider(widget.partyId)).asData?.value : null;
+    final purchaseStats = summary == null
+        ? null
+        : LayoutBuilder(builder: (ctx, bc) {
+            final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
+            final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
+            final cards = <Widget>[
+              StatCard(key: const ValueKey('cust-bought'), label: l.custBought, value: '₹ ${formatPaise(summary.boughtPaise)}', icon: Icons.shopping_bag_outlined, tone: c.success, hint: l.custBoughtHint),
+              StatCard(key: const ValueKey('cust-bills'), label: l.custBillsCount, value: '${summary.bills}', icon: Icons.receipt_long_outlined, hint: summary.cancelledBills > 0 ? l.custBillsCancelledHint('${summary.cancelledBills}') : null),
+              StatCard(key: const ValueKey('cust-profit'), label: l.custProfit, value: '₹ ${formatPaise(summary.profitPaise)}', icon: Icons.savings_outlined, tone: summary.profitPaise < 0 ? c.danger : c.success, hint: l.profitEstimate),
+              StatCard(key: const ValueKey('cust-last-bill'), label: l.custLastBill, value: summary.lastBillAt == null ? l.profNone : formatDate(summary.lastBillAt!), icon: Icons.event_outlined),
+              if (summary.returns > 0) StatCard(key: const ValueKey('cust-returned'), label: l.custReturnedLabel, value: '₹ ${formatPaise(summary.returnedPaise)}', icon: Icons.assignment_return_outlined, tone: c.warning, hint: l.custReturnedHint('${summary.returns}')),
+            ];
+            return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
+          });
+
+    final bills = _customer ? ref.watch(customerBillsProvider(widget.partyId)).asData?.value : null;
+    final billsList = bills == null
+        ? null
+        : SectionCard(
+            title: l.custBillsTitle,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              if (bills.isEmpty) Text(l.custNoBills, key: const ValueKey('cust-no-bills'), style: th.bodyMedium),
+              for (final b in bills) ...[
+                InkWell(
+                  key: ValueKey('cust-bill-${b.id}'),
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => showBillPopup(context, ref, b, backTo: '/customers/${widget.partyId}?openBill=${Uri.encodeQueryComponent(b.id)}'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(b.number, style: th.titleSmall?.copyWith(decoration: b.cancelled ? TextDecoration.lineThrough : null)),
+                          Text('${formatDateTime(b.at)}  ·  ${l.itemsCount('${b.items}')}', style: th.bodySmall),
+                        ]),
+                      ),
+                      StatusBadge(statusInfo(billStatus(b), l).$1, kind: statusInfo(billStatus(b), l).$2),
+                      const SizedBox(width: 12),
+                      SizedBox(width: 110, child: Text('₹ ${formatPaise(b.totalPaise)}', textAlign: TextAlign.right, style: th.titleSmall)),
+                      const Icon(Icons.chevron_right, size: 20),
+                    ]),
+                  ),
+                ),
+                if (b != bills.last) const Divider(height: 1),
+              ],
+              if (bills.length >= customerBillsShown) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.custBillsCapped('$customerBillsShown'), style: th.bodySmall)),
+            ]),
+          );
+
+    // a dealer: what was bought from them and their purchases (a click opens the purchase)
+    final dsum = !_customer ? ref.watch(dealerSummaryProvider(widget.partyId)).asData?.value : null;
+    final dealerStats = dsum == null
+        ? null
+        : LayoutBuilder(builder: (ctx, bc) {
+            final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 3 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
+            final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
+            final cards = <Widget>[
+              StatCard(key: const ValueKey('dealer-bought'), label: l.dealerBought, value: '₹ ${formatPaise(dsum.boughtPaise)}', icon: Icons.shopping_cart_checkout, tone: c.success, hint: l.dealerPaidHint(formatPaise(dsum.paidPaise, symbol: true))),
+              StatCard(key: const ValueKey('dealer-purchases'), label: l.dealerPurchasesCount, value: '${dsum.purchases}', icon: Icons.receipt_long_outlined, hint: dsum.pending > 0 ? l.dealerPendingHint('${dsum.pending}') : null),
+              StatCard(key: const ValueKey('dealer-last'), label: l.dealerLastPurchase, value: dsum.lastAt == null ? l.profNone : formatDate(dsum.lastAt!), icon: Icons.event_outlined),
+            ];
+            return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
+          });
+    final dpurchases = !_customer ? ref.watch(dealerPurchasesProvider(widget.partyId)).asData?.value : null;
+    final purchasesList = dpurchases == null
+        ? null
+        : SectionCard(
+            title: l.dealerPurchasesTitle,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              if (dpurchases.isEmpty) Text(l.dealerNoPurchases, key: const ValueKey('dealer-no-purchases'), style: th.bodyMedium),
+              for (final p in dpurchases) ...[
+                InkWell(
+                  key: ValueKey('dealer-purchase-${p.id}'),
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => showPurchasePopup(context, ref, p),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(p.number, style: th.titleSmall),
+                          Text('${formatDate(p.at)}  ·  ${l.itemsCount('${p.items}')}${p.invoiceNo.isEmpty ? '' : '  ·  ${p.invoiceNo}'}', style: th.bodySmall),
+                        ]),
+                      ),
+                      StatusBadge(p.received ? l.statusReceived : l.statusPending, kind: p.received ? BadgeKind.success : BadgeKind.warning),
+                      const SizedBox(width: 12),
+                      SizedBox(width: 110, child: Text('₹ ${formatPaise(p.totalPaise)}', textAlign: TextAlign.right, style: th.titleSmall)),
+                      const Icon(Icons.chevron_right, size: 20),
+                    ]),
+                  ),
+                ),
+                if (p != dpurchases.last) const Divider(height: 1),
+              ],
+            ]),
+          );
+
+    // on the profile: only how much they owe (or paid ahead) and a way into the account status page
+    final accountPath = _customer ? '/customers/${widget.partyId}/account' : '/dealers/${widget.partyId}/account';
+    final accountCard = !hasAccount
+        ? null
+        : SectionCard(
+            key: const ValueKey('cust-account-card'),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => context.push(accountPath),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Row(children: [
+                  Icon(bal < 0 ? Icons.savings_outlined : Icons.south_west, color: bal < 0 ? c.success : (bal > 0 ? c.warning : c.textMuted)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(_customer ? (bal > 0 ? l.acctDebit : (bal < 0 ? l.acctAdvance : l.acctClean)) : (bal > 0 ? l.dealerAcctOwe : (bal < 0 ? l.dealerAcctAdvance : l.dealerAcctClean)), style: th.bodySmall),
+                      Text(bal == 0 ? '₹ 0.00' : '₹ ${formatPaise(bal.abs())}', key: const ValueKey('cust-account-amount'), style: th.titleLarge?.copyWith(color: bal > 0 ? c.warning : (bal < 0 ? c.success : null))),
+                    ]),
+                  ),
+                  FilledButton.icon(key: const ValueKey('cust-account-open'), onPressed: () => context.push(accountPath), icon: const Icon(Icons.account_balance_wallet_outlined), label: Text(l.acctStatusButton)),
+                ]),
+              ),
+            ),
+          );
+    final profileActions = _customer
+        ? (cust == null
+            ? null
+            : Wrap(spacing: 8, runSpacing: 8, children: [
+                OutlinedButton.icon(key: const ValueKey('addCredit'), onPressed: () => showAddCredit(context, cust), icon: const Icon(Icons.add_card_outlined), label: Text(l.addCredit)),
+              ]))
+        : Wrap(spacing: 8, runSpacing: 8, children: [
+            FilledButton.icon(key: const ValueKey('dealer-add-purchase'), onPressed: () => context.go('/purchases/new?dealer=${Uri.encodeQueryComponent(widget.partyId)}'), icon: const Icon(Icons.add_shopping_cart), label: Text(l.dealerAddPurchase)),
+            OutlinedButton.icon(key: const ValueKey('addAdjustment'), onPressed: () => showAddAdjustment(context, party), icon: const Icon(Icons.tune), label: Text(l.addAccountAdjustment)),
+          ]);
 
     final phoneLayout = context.isPhone;
     Widget rangeChips() => Wrap(spacing: 8, runSpacing: 8, children: [
@@ -255,22 +421,51 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ]),
           );
 
-    return PageFrame(
-      title: name,
-      subtitle: '${phone.isEmpty ? l.custNoNumber : phone}  ·  $city',
-      actions: [TextButton.icon(onPressed: () => context.go(_customer ? '/customers' : '/dealers'), icon: const Icon(Icons.arrow_back), label: Text(_customer ? l.navCustomers : l.navDealers))],
-      child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
+    final accountPage = widget.accountView;
+    final content = ListView(padding: const EdgeInsets.only(bottom: 24), children: [
+      if (accountPage) ...[
         stats,
         const SizedBox(height: 12),
         actions,
-        const SizedBox(height: 12),
-        details,
         const SizedBox(height: 12),
         billsCard,
         const SizedBox(height: 12),
         ledgerCard,
         if (remindersCard != null) ...[const SizedBox(height: 12), remindersCard],
-      ]),
+      ] else if (_customer) ...[
+        if (purchaseStats != null) ...[purchaseStats, const SizedBox(height: 12)],
+        if (billsList != null) ...[billsList, const SizedBox(height: 12)],
+        if (profileActions != null) ...[profileActions, const SizedBox(height: 12)],
+        details,
+        if (accountCard != null) ...[const SizedBox(height: 12), accountCard],
+      ] else ...[
+        if (dealerStats != null) ...[dealerStats, const SizedBox(height: 12)],
+        if (purchasesList != null) ...[purchasesList, const SizedBox(height: 12)],
+        if (profileActions != null) ...[profileActions, const SizedBox(height: 12)],
+        details,
+        if (accountCard != null) ...[const SizedBox(height: 12), accountCard],
+      ],
+    ]);
+
+    return PageFrame(
+      title: name,
+      subtitle: widget.accountView ? (_customer ? l.sectionLedger : l.dealerLedgerTitle) : '${phone.isEmpty ? l.custNoNumber : phone}  ·  $city',
+      actions: [
+        if (widget.accountView)
+          TextButton.icon(key: const ValueKey('account-back'), onPressed: () => context.canPop() ? context.pop() : context.go(_customer ? '/customers/${widget.partyId}' : '/dealers/${widget.partyId}'), icon: const Icon(Icons.arrow_back), label: Text(_customer ? l.acctBack : l.acctBackDealer))
+        else
+          TextButton.icon(onPressed: () => context.go(_customer ? '/customers' : '/dealers'), icon: const Icon(Icons.arrow_back), label: Text(_customer ? l.navCustomers : l.navDealers)),
+      ],
+      child: OpenOnce(
+        key: ValueKey('open-bill-${widget.openBillId ?? ''}'),
+        run: widget.openBillId == null
+            ? null
+            : () async {
+                final d = await ref.read(appDataProvider).bills.detail(widget.openBillId!);
+                if (d != null && context.mounted) await showBillPopup(context, ref, d.row, backTo: '/customers/${widget.partyId}?openBill=${Uri.encodeQueryComponent(d.row.id)}');
+              },
+        child: content,
+      ),
     );
   }
 }

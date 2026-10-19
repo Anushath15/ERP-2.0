@@ -11,7 +11,7 @@ import 'helpers.dart';
 const routes = [
   '/', '/bill', '/estimate', '/estimates', '/sales', '/sales-returns', '/delivery', '/products', '/categories', '/backups', '/restore', '/fix',
   '/inventory', '/purchases', '/purchase-returns', '/adjustments', '/customers', '/dealers', '/credit', '/staff', '/expenses', '/closing',
-  '/reports', '/export', '/import', '/warranty', '/projects', '/notifications', '/shop', '/settings', '/health', '/help', '/about', '/more',
+  '/reports', '/export', '/import', '/warranty', '/notifications', '/shop', '/settings', '/health', '/help', '/about', '/more',
   '/print', '/preview/payment',
 ];
 

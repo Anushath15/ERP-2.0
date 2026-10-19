@@ -30,6 +30,8 @@ class SaveBillInput {
     this.keepAdvance = false,
     this.pricesIncludeGst = true,
     this.roundOff = true,
+    this.extraDiscountPaise = 0,
+    this.extraDiscountBp = 0,
     this.interState = false,
     this.note = '',
     this.oldBillNo,
@@ -52,6 +54,9 @@ class SaveBillInput {
 
   /// The shop's "round the total to the nearest rupee" choice at the moment of saving.
   final bool roundOff;
+
+  /// A discount on the whole bill: an amount in paise, or (when [extraDiscountBp] is above zero) a percent in basis points.
+  final int extraDiscountPaise, extraDiscountBp;
   final String note;
   final String? oldBillNo;
 }
@@ -88,13 +93,16 @@ class BillCursor {
 }
 
 class BillDetail {
-  const BillDetail({required this.row, required this.lines, required this.received, required this.change, required this.advanceKept, required this.taxable, required this.cgst, required this.sgst, required this.igst, required this.discount, required this.roundOff, required this.pricesIncludeGst, required this.cancelReason, required this.note});
+  const BillDetail({required this.row, required this.lines, required this.received, required this.change, required this.advanceKept, required this.taxable, required this.cgst, required this.sgst, required this.igst, required this.discount, required this.roundOff, required this.pricesIncludeGst, required this.cancelReason, required this.note, this.extraDiscountPaise = 0, this.extraDiscountBp = 0});
   final BillRow row;
   final List<BillLineRow> lines;
   final int received, change, advanceKept, taxable, cgst, sgst, igst, discount, roundOff;
   final bool pricesIncludeGst;
   final String? cancelReason;
   final String note;
+
+  /// The whole-bill discount: the amount, and the percent it was typed as (0 when typed as an amount).
+  final int extraDiscountPaise, extraDiscountBp;
 }
 
 class BillLineRow {
@@ -133,7 +141,7 @@ class BillRepo {
       final dup = await _db.row('SELECT * FROM bills WHERE idem_key = ?', [input.idemKey]);
       if (dup != null) return _saved(dup, replay: true);
 
-      final calc = calcBillIn([for (final l in input.lines) CalcLineIn(rate: l.ratePaise, qtyMilli: l.qtyMilli, gstBp: l.gstBp, discountBp: l.discountBp)], inclusive: input.pricesIncludeGst, interState: input.interState, roundOff: input.roundOff);
+      final calc = calcBillIn([for (final l in input.lines) CalcLineIn(rate: l.ratePaise, qtyMilli: l.qtyMilli, gstBp: l.gstBp, discountBp: l.discountBp)], inclusive: input.pricesIncludeGst, interState: input.interState, roundOff: input.roundOff, extraDiscountPaise: input.extraDiscountPaise, extraDiscountBp: input.extraDiscountBp);
       final total = calc.grandTotal;
       final received = input.receivedPaise ?? total;
       final split = splitPayment(total: total, received: received);
@@ -147,9 +155,9 @@ class BillRepo {
       final at = input.at.millisecondsSinceEpoch;
       final day = DataContext.dayOf(input.at);
       await _db.exec(
-        'INSERT INTO bills(id, number, series, seq, billed_at, day, customer_id, customer_name, total_paise, received_paise, balance_paise, change_paise, advance_kept_paise, taxable_paise, cgst_paise, sgst_paise, igst_paise, discount_paise, round_off_paise, pay_mode, item_count, prices_include_gst, idem_key, old_bill_no, note, created_by, created_at, device_id) '
-        'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [id, number, series, seq, at, day, input.customerId, input.customerName, total, split.received, split.balance, change, advance, calc.taxable, calc.cgst, calc.sgst, calc.igst, calc.discount, calc.roundOff, input.payMode, input.lines.length, input.pricesIncludeGst ? 1 : 0, input.idemKey, input.oldBillNo, input.note, cx.actor.name, cx.nowMs(), cx.deviceId],
+        'INSERT INTO bills(id, number, series, seq, billed_at, day, customer_id, customer_name, total_paise, received_paise, balance_paise, change_paise, advance_kept_paise, taxable_paise, cgst_paise, sgst_paise, igst_paise, discount_paise, round_off_paise, pay_mode, item_count, prices_include_gst, idem_key, old_bill_no, note, created_by, created_at, device_id, extra_discount_paise, extra_discount_bp) '
+        'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        [id, number, series, seq, at, day, input.customerId, input.customerName, total, split.received, split.balance, change, advance, calc.taxable, calc.cgst, calc.sgst, calc.igst, calc.discount + calc.extraDiscount, calc.roundOff, input.payMode, input.lines.length, input.pricesIncludeGst ? 1 : 0, input.idemKey, input.oldBillNo, input.note, cx.actor.name, cx.nowMs(), cx.deviceId, calc.extraDiscount, input.extraDiscountBp],
       );
 
       final month = DataContext.monthOf(input.at);
@@ -226,6 +234,9 @@ class BillRepo {
       final b = await _db.row('SELECT * FROM bills WHERE id = ?', [billId]);
       if (b == null) throw StateError('No such bill.');
       if (b.read<int>('cancelled') == 1) return false;
+      if (await _db.scalarInt('SELECT COUNT(*) FROM sales_returns WHERE bill_id = ?', [billId]) > 0) {
+        throw StateError('Items were already returned from this bill, so it cannot be cancelled.');
+      }
       final when = at ?? cx.now();
       final number = b.read<String>('number');
       await _db.exec('INSERT INTO bill_cancellations(id, bill_id, bill_no, reason, by_name, at, created_at, device_id) VALUES (?,?,?,?,?,?,?,?)', [newId(), billId, number, reason.trim(), cx.actor.name, when.millisecondsSinceEpoch, cx.nowMs(), cx.deviceId]);
@@ -372,6 +383,8 @@ class BillRepo {
       pricesIncludeGst: b.read<int>('prices_include_gst') == 1,
       cancelReason: c?.read<String>('reason'),
       note: b.read<String>('note'),
+      extraDiscountPaise: b.read<int>('extra_discount_paise'),
+      extraDiscountBp: b.read<int>('extra_discount_bp'),
     );
   }
 

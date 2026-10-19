@@ -6,7 +6,6 @@ import 'package:erp2/app.dart';
 import 'package:erp2/core/file_saver.dart';
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/features/print/print_preview.dart' show Paper;
-import 'package:erp2/fake/shop_profile.dart';
 import 'package:erp2/fake/store.dart';
 import 'helpers.dart';
 
@@ -24,23 +23,28 @@ void main() {
     expect(find.text('Print preview'), findsNothing);
   });
 
-  testWidgets('estimate on screen: only ESTIMATE, customer, date, items, TOTAL and the note; switches bring the rest back', (tester) async {
-    final c = await app(tester, '/preview/estimate');
+  testWidgets('estimate on screen (the shop template): ESTIMATE, customer, date, items, GST summary, net amount and the note; NO shop details', (tester) async {
+    await app(tester, '/preview/estimate');
     expect(find.text('ESTIMATE'), findsOneWidget);
     expect(find.byKey(const ValueKey('paperTotal')), findsOneWidget);
-    for (final gone in ['SENTHIL ENTERPRISES', 'Estimate no', 'Before tax', 'CGST', 'SGST', 'Round off']) {
-      expect(find.textContaining(gone), findsNothing, reason: gone);
+    for (final here in ['Goods', 'HSN Code', 'Net Amount', 'Rupees']) {
+      expect(find.textContaining(here), findsWidgets, reason: here);
     }
-    c.read(shopProvider.notifier).set((s) => s.copyWith(estimate: const EstimateShows(shopName: true, number: true, taxLines: true)));
-    await tester.pump();
-    for (final back in ['SENTHIL ENTERPRISES', 'Estimate no', 'Before tax', 'CGST', 'SGST', 'Round off']) {
-      expect(find.textContaining(back), findsWidgets, reason: back);
+    expect(find.byKey(const ValueKey('paperTitle')), findsOneWidget, reason: 'the heading in the middle of the first row');
+    expect(find.text('GST%'), findsNothing, reason: 'an estimate has no GST column');
+    for (final gone in ['SENTHIL ENTERPRISES', 'Sample Bank', 'TAX INVOICE', 'A/c 0000000000', 'Authorised signatory', 'GST  33', 'Phone  ', 'Sales Amt', 'CGST', 'SGST', 'IGST']) {
+      expect(find.textContaining(gone), findsNothing, reason: '$gone is a shop detail or the GST summary: not on an estimate');
     }
   });
 
-  testWidgets('a tax invoice still shows the shop block and tax lines', (tester) async {
+  testWidgets('a tax invoice shows the shop block, the GST summary, the amount in words, the bank details and the signature', (tester) async {
     await app(tester, '/preview/a4');
-    for (final t in ['SENTHIL ENTERPRISES', 'TAX INVOICE', 'Before tax', 'CGST', 'SGST', 'Round off']) {
+    expect(find.byKey(const ValueKey('paperHeading')), findsOneWidget, reason: 'TAX INVOICE, underlined, at the top');
+    expect(find.text('TAX INVOICE'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paperTo0')), findsOneWidget, reason: 'the customer phone under the name');
+    expect(find.text('Phone  94430 12345'), findsOneWidget);
+    expect(find.text('GST  33ABCDE1234F1Z5'), findsOneWidget, reason: 'the customer GST number under the phone, when there is one');
+    for (final t in ['SENTHIL ENTERPRISES', 'Goods', 'HSN Code', 'Disc %', 'Round off', 'Net Amount', 'Sales Amt', 'CGST', 'SGST', 'Rupees', 'A/c 0000000000', 'IFSC SAMP0000000', 'Phone', 'For SENTHIL ENTERPRISES', 'Authorised signatory']) {
       expect(find.textContaining(t), findsWidgets, reason: t);
     }
   });

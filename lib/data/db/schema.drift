@@ -41,8 +41,12 @@ CREATE TABLE products (
   device_id TEXT NOT NULL,
   version INTEGER NOT NULL DEFAULT 1,
   hlc TEXT NOT NULL DEFAULT '',
-  avg_cost_paise INTEGER NOT NULL DEFAULT 0
+  avg_cost_paise INTEGER NOT NULL DEFAULT 0,
+  code TEXT NOT NULL DEFAULT '',
+  brand TEXT NOT NULL DEFAULT '',
+  mrp_paise INTEGER NOT NULL DEFAULT 0
 ) AS DbProduct;
+CREATE UNIQUE INDEX products_code ON products(code) WHERE code <> '';
 CREATE INDEX products_name ON products(name COLLATE NOCASE);
 CREATE INDEX products_barcode ON products(barcode) WHERE barcode <> '';
 CREATE INDEX products_category ON products(category);
@@ -152,7 +156,9 @@ CREATE TABLE bills (
   note TEXT NOT NULL DEFAULT '',
   created_by TEXT NOT NULL DEFAULT '',
   created_at INTEGER NOT NULL,
-  device_id TEXT NOT NULL
+  device_id TEXT NOT NULL,
+  extra_discount_paise INTEGER NOT NULL DEFAULT 0,
+  extra_discount_bp INTEGER NOT NULL DEFAULT 0
 ) AS DbBill;
 CREATE UNIQUE INDEX bills_number ON bills(number);
 CREATE UNIQUE INDEX bills_idem ON bills(idem_key);
@@ -199,6 +205,146 @@ CREATE TABLE bill_cancellations (
 ) AS DbBillCancellation;
 CREATE UNIQUE INDEX bill_cancellations_bill ON bill_cancellations(bill_id);
 
+-- Sales returns: goods a customer gave back from one saved bill. Append-only, like the bill. One row per return, one row per
+-- returned bill line. The stock goes back (a stock movement of kind 'return'), the customer's dues or a cash refund follow, and
+-- the day totals of the RETURN day are reduced (a credit note on the day it happens, the bill's own day is never changed).
+CREATE TABLE sales_returns (
+  id TEXT NOT NULL PRIMARY KEY,
+  number TEXT NOT NULL,
+  bill_id TEXT NOT NULL REFERENCES bills(id),
+  bill_no TEXT NOT NULL,
+  customer_id TEXT REFERENCES customers(id),
+  customer_name TEXT NOT NULL DEFAULT '',
+  returned_at INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  total_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL DEFAULT 0,
+  cgst_paise INTEGER NOT NULL DEFAULT 0,
+  sgst_paise INTEGER NOT NULL DEFAULT 0,
+  igst_paise INTEGER NOT NULL DEFAULT 0,
+  cost_paise INTEGER NOT NULL DEFAULT 0,
+  round_off_paise INTEGER NOT NULL DEFAULT 0,
+  due_reduced_paise INTEGER NOT NULL DEFAULT 0,
+  credit_kept_paise INTEGER NOT NULL DEFAULT 0,
+  refunded_paise INTEGER NOT NULL DEFAULT 0,
+  refund_mode INTEGER NOT NULL DEFAULT 0,
+  reason TEXT NOT NULL,
+  by_name TEXT NOT NULL DEFAULT '',
+  idem_key TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbSalesReturn;
+CREATE UNIQUE INDEX sales_returns_number ON sales_returns(number);
+CREATE UNIQUE INDEX sales_returns_idem ON sales_returns(idem_key);
+CREATE INDEX sales_returns_bill ON sales_returns(bill_id);
+CREATE INDEX sales_returns_at ON sales_returns(returned_at DESC, id DESC);
+CREATE INDEX sales_returns_day ON sales_returns(day);
+
+CREATE TABLE sales_return_lines (
+  id TEXT NOT NULL PRIMARY KEY,
+  return_id TEXT NOT NULL REFERENCES sales_returns(id),
+  bill_line_id TEXT NOT NULL REFERENCES bill_lines(id),
+  product_id TEXT NOT NULL REFERENCES products(id),
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  qty_milli INTEGER NOT NULL,
+  amount_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL,
+  tax_paise INTEGER NOT NULL,
+  cost_paise INTEGER NOT NULL DEFAULT 0
+) AS DbSalesReturnLine;
+CREATE INDEX sales_return_lines_return ON sales_return_lines(return_id);
+CREATE INDEX sales_return_lines_billline ON sales_return_lines(bill_line_id);
+
+-- Purchases from dealers: one row per purchase, one row per item. The rate is per unit WITHOUT GST. A received purchase puts the
+-- stock in (a movement of kind 'purchase') and the unpaid part on the dealer's account; a pending one does neither until received.
+CREATE TABLE purchases (
+  id TEXT NOT NULL PRIMARY KEY,
+  number TEXT NOT NULL,
+  dealer_id TEXT NOT NULL REFERENCES dealers(id),
+  dealer_name TEXT NOT NULL DEFAULT '',
+  invoice_no TEXT NOT NULL DEFAULT '',
+  purchased_at INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  total_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL DEFAULT 0,
+  tax_paise INTEGER NOT NULL DEFAULT 0,
+  paid_paise INTEGER NOT NULL DEFAULT 0,
+  status INTEGER NOT NULL DEFAULT 1,
+  received_at INTEGER,
+  update_cost INTEGER NOT NULL DEFAULT 1,
+  note TEXT NOT NULL DEFAULT '',
+  idem_key TEXT NOT NULL,
+  by_name TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbPurchase;
+CREATE UNIQUE INDEX purchases_number ON purchases(number);
+CREATE UNIQUE INDEX purchases_idem ON purchases(idem_key);
+CREATE INDEX purchases_dealer ON purchases(dealer_id, purchased_at DESC, id DESC);
+CREATE INDEX purchases_at ON purchases(purchased_at DESC, id DESC);
+
+CREATE TABLE purchase_lines (
+  id TEXT NOT NULL PRIMARY KEY,
+  purchase_id TEXT NOT NULL REFERENCES purchases(id),
+  line_no INTEGER NOT NULL,
+  product_id TEXT NOT NULL REFERENCES products(id),
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  qty_milli INTEGER NOT NULL,
+  rate_paise INTEGER NOT NULL,
+  gst_bp INTEGER NOT NULL DEFAULT 0,
+  taxable_paise INTEGER NOT NULL,
+  tax_paise INTEGER NOT NULL,
+  total_paise INTEGER NOT NULL
+) AS DbPurchaseLine;
+CREATE INDEX purchase_lines_purchase ON purchase_lines(purchase_id, line_no);
+CREATE INDEX purchase_lines_product ON purchase_lines(product_id, purchase_id);
+
+-- Purchase returns: goods given back to a dealer from one received purchase. Append-only. The stock goes out (a movement of
+-- kind 'purchase_return'); what the shop owed the dealer on that purchase is reduced first, the rest is paid back or kept as credit.
+CREATE TABLE purchase_returns (
+  id TEXT NOT NULL PRIMARY KEY,
+  number TEXT NOT NULL,
+  purchase_id TEXT NOT NULL REFERENCES purchases(id),
+  purchase_no TEXT NOT NULL,
+  dealer_id TEXT NOT NULL REFERENCES dealers(id),
+  dealer_name TEXT NOT NULL DEFAULT '',
+  returned_at INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  total_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL DEFAULT 0,
+  tax_paise INTEGER NOT NULL DEFAULT 0,
+  due_reduced_paise INTEGER NOT NULL DEFAULT 0,
+  credit_kept_paise INTEGER NOT NULL DEFAULT 0,
+  refunded_paise INTEGER NOT NULL DEFAULT 0,
+  refund_mode INTEGER NOT NULL DEFAULT 0,
+  reason TEXT NOT NULL,
+  by_name TEXT NOT NULL DEFAULT '',
+  idem_key TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  device_id TEXT NOT NULL
+) AS DbPurchaseReturn;
+CREATE UNIQUE INDEX purchase_returns_number ON purchase_returns(number);
+CREATE UNIQUE INDEX purchase_returns_idem ON purchase_returns(idem_key);
+CREATE INDEX purchase_returns_purchase ON purchase_returns(purchase_id);
+CREATE INDEX purchase_returns_at ON purchase_returns(returned_at DESC, id DESC);
+
+CREATE TABLE purchase_return_lines (
+  id TEXT NOT NULL PRIMARY KEY,
+  return_id TEXT NOT NULL REFERENCES purchase_returns(id),
+  purchase_line_id TEXT NOT NULL REFERENCES purchase_lines(id),
+  product_id TEXT NOT NULL REFERENCES products(id),
+  name TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'pcs',
+  qty_milli INTEGER NOT NULL,
+  amount_paise INTEGER NOT NULL,
+  taxable_paise INTEGER NOT NULL,
+  tax_paise INTEGER NOT NULL
+) AS DbPurchaseReturnLine;
+CREATE INDEX purchase_return_lines_return ON purchase_return_lines(return_id);
+CREATE INDEX purchase_return_lines_line ON purchase_return_lines(purchase_line_id);
+
 -- Estimations: editable, own number series, lines kept so an estimate can be edited and converted.
 CREATE TABLE estimations (
   id TEXT NOT NULL PRIMARY KEY,
@@ -215,7 +361,9 @@ CREATE TABLE estimations (
   deleted_at INTEGER,
   device_id TEXT NOT NULL,
   version INTEGER NOT NULL DEFAULT 1,
-  hlc TEXT NOT NULL DEFAULT ''
+  hlc TEXT NOT NULL DEFAULT '',
+  extra_discount_paise INTEGER NOT NULL DEFAULT 0,
+  extra_discount_bp INTEGER NOT NULL DEFAULT 0
 ) AS DbEstimation;
 CREATE UNIQUE INDEX estimations_number ON estimations(number);
 CREATE INDEX estimations_at ON estimations(at DESC, id DESC);

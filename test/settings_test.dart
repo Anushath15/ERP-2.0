@@ -116,7 +116,8 @@ void main() {
 
   testWidgets('the rupee sign shows on the printed bill in both fonts', (tester) async {
     for (final font in FontChoice.values) {
-      final c = await pumpApp(tester, size: desktop1366, location: '/preview/a4');
+      // the A4 bill follows the shop's template (no rupee sign); the roll receipt prints it
+      final c = await pumpApp(tester, size: desktop1366, location: '/preview/80');
       c.read(settingsProvider.notifier).set((s) => s.copyWith(font: font));
       await tester.pumpAndSettle();
       expect(find.textContaining('₹'), findsWidgets);

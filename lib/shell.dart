@@ -193,7 +193,7 @@ class TopBar extends ConsumerWidget {
           icon: const Icon(Icons.menu),
         ),
         Expanded(child: Text(ref.watch(shopProvider).name.isEmpty ? l.appName : ref.watch(shopProvider).name, style: th.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
-        const Flexible(child: SyncChip()),
+        SyncChip(compact: context.isPhone),
         const SizedBox(width: 8),
         IconButton(tooltip: l.textSmaller, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.down(x.textScale))), icon: const Icon(Icons.text_decrease)),
         IconButton(tooltip: l.textLarger, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.up(x.textScale))), icon: const Icon(Icons.text_increase)),
@@ -202,18 +202,13 @@ class TopBar extends ConsumerWidget {
           onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(theme: dark ? ThemeMode.light : ThemeMode.dark)),
           icon: Icon(dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
         ),
-        PopupMenuButton<String>(
-          tooltip: l.account,
+        IconButton(
+          key: const ValueKey('topbar-profile'),
+          tooltip: l.navShop,
+          onPressed: () => context.go('/shop'),
           icon: const Icon(Icons.account_circle_outlined),
-          onSelected: (v) {
-            if (v == 'out') context.go('/signin');
-            if (v == 'settings') context.go('/settings');
-          },
-          itemBuilder: (_) => [
-            PopupMenuItem(value: 'settings', child: Text(l.navSettings)),
-            PopupMenuItem(value: 'out', child: Text(l.signOut)),
-          ],
         ),
+
       ]),
     );
   }

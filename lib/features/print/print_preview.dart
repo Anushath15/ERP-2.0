@@ -11,6 +11,8 @@ import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 import '../billing/cart.dart';
+import 'bill_template.dart';
+import 'bill_template_paper.dart';
 import 'doc_pdf.dart';
 import 'print_layout.dart';
 
@@ -25,6 +27,8 @@ PrintDoc samplePrintDoc(List<Product> products, DateTime now, {DocMode mode = Do
     date: mode == DocMode.invoice ? now : now.subtract(const Duration(days: 3)),
     editedOn: edited ? now : null,
     customer: 'Murugan Electricals',
+    customerPhone: mode == DocMode.invoice ? '94430 12345' : '',
+    customerGstin: mode == DocMode.invoice ? '33ABCDE1234F1Z5' : '',
     lines: lines,
     calc: calcBill(lines),
     pay: PayMode.cash,
@@ -81,7 +85,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
         icon: const Icon(Icons.picture_as_pdf_outlined),
         label: Text(l.saveAsPdf),
       ),
-      if (context.canPop()) TextButton(onPressed: () => context.pop(), child: Text(l.back)),
+      if (doc.backTo != null || context.canPop()) TextButton(key: const ValueKey('printBack'), onPressed: () => doc?.backTo != null ? context.go(doc!.backTo!) : context.pop(), child: Text(l.back)),
     ];
 
     return PageFrame(
@@ -133,6 +137,10 @@ class Paper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    if (!isRoll(paper)) {
+      // A4 and A5 follow the shop's own bill template (the same for a bill and an estimate; an estimate has no shop details)
+      return TemplatePaper(t: buildBillTemplate(doc: doc, shop: shop, l: l), paper: paper, shop: shop, size: size);
+    }
     final lay = buildPrintLayout(doc: doc, shop: shop, l: l);
     final m = PrintMetrics.of(size);
     final roll = isRoll(paper);

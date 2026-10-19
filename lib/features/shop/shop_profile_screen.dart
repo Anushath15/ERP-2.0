@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/logo_image.dart';
 import '../../core/responsive.dart';
 import '../../core/validators.dart';
@@ -74,6 +75,7 @@ class ShopProfileScreen extends ConsumerWidget {
           field('owner', l.shopOwner, s.ownerName, (v) => set((x) => x.copyWith(ownerName: v))),
           field('address', l.fieldAddress, s.address, (v) => set((x) => x.copyWith(address: v)), lines: 2, kind: TextKind.address),
           field('phone', l.fieldPhone, s.phone, (v) => set((x) => x.copyWith(phone: v)), type: TextInputType.phone, kind: TextKind.phone),
+          field('email', l.fieldEmail, s.email, (v) => set((x) => x.copyWith(email: v)), type: TextInputType.emailAddress, kind: TextKind.email),
           field('gstin', 'GSTIN', s.gstin, (v) => set((x) => x.copyWith(gstin: v)), kind: TextKind.gstin),
           field('upi', l.setUpi, s.upiId, (v) => set((x) => x.copyWith(upiId: v)), kind: TextKind.upi),
           field('bank', l.shopBank, s.bankDetails, (v) => set((x) => x.copyWith(bankDetails: v)), lines: 2, kind: TextKind.address),
@@ -113,6 +115,13 @@ class ShopProfileScreen extends ConsumerWidget {
     return PageFrame(
       title: l.navShop,
       subtitle: l.shopProfileSubtitle,
+      actions: [
+        OutlinedButton.icon(key: const ValueKey('shop-settings'), onPressed: () => context.push('/settings'), icon: const Icon(Icons.settings_outlined), label: Text(l.navSettings)),
+        OutlinedButton.icon(key: const ValueKey('shop-signout'), onPressed: () async {
+          final ok = await confirmDialog(context, title: l.signOutConfirmTitle, message: l.signOutConfirmText, confirmLabel: l.signOut, danger: true);
+          if (ok && context.mounted) context.go('/signin');
+        }, icon: const Icon(Icons.logout), label: Text(l.signOut)),
+      ],
       child: context.isDesktop
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),

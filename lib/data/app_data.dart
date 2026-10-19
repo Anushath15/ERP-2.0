@@ -5,7 +5,10 @@ import 'repo/catalog_repo.dart';
 import 'repo/ledger_repo.dart';
 import 'repo/outbox_repo.dart';
 import 'repo/records_repo.dart';
+import 'repo/purchase_repo.dart';
+import 'repo/purchase_return_repo.dart';
 import 'repo/report_repo.dart';
+import 'repo/return_repo.dart';
 
 /// The repositories of one open shop database, bundled. The app makes one of these at start-up (providers read it); tests make one
 /// over an in-memory database.
@@ -21,6 +24,9 @@ class AppData {
         reports = ReportRepo(cx),
         outbox = OutboxRepo(cx) {
     bills = BillRepo(cx, ledger);
+    returns = ReturnRepo(cx, ledger);
+    purchases = PurchaseRepo(cx, ledger);
+    purchaseReturns = PurchaseReturnRepo(cx, ledger);
   }
 
   final DataContext cx;
@@ -34,6 +40,9 @@ class AppData {
   final ReportRepo reports;
   final OutboxRepo outbox;
   late final BillRepo bills;
+  late final ReturnRepo returns;
+  late final PurchaseRepo purchases;
+  late final PurchaseReturnRepo purchaseReturns;
 
   AppDatabase get db => cx.db;
 

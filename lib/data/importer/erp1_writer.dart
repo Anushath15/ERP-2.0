@@ -3,6 +3,7 @@
 /// when, is the owner's decision at the sync step.
 library;
 
+import '../repo/product_codes.dart';
 import 'dart:convert';
 import '../../import/erp1/plan.dart';
 import '../../import/erp1/report.dart';
@@ -109,6 +110,7 @@ Future<WriteResult> writePlan(AppData d, Erp1Plan p, {required int nowMs}) async
     }
     await db.exec("INSERT INTO counters(name, value) VALUES ('inv.ERP1', ?) ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)", [p.bills.length]);
     await _profile(d, p, now);
+    await backfillProductCodes(db); // every imported product gets its program code (by category)
     await rebuildSummaries(db);
     await d.settings.put(_importKey, jsonEncode({'at': now, 'backup': p.backupStamp ?? '', 'bills': p.bills.length, 'products': p.products.length}));
   });

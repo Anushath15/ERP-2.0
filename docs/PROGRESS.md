@@ -106,3 +106,11 @@ Environment, ERP 1 archive (verified identical copy `ERP-1.0.1`), plan documents
 - **Logo**: Choose a file works in the Shop profile and in the set-up wizard (PNG or JPG up to 4 MB, shrunk to 256 px) and is printed on the A4 invoice.
 - **Click-through robot** (`CLICK=1 flutter test test/click_through_test.dart`): presses every button on 36 screens. It found one real bug (PDF export refused tables over 20 pages, fixed). Still not working: **Print** (no printer connected yet, Owner Feature Batch 2) and **Change password** (Gate 2D sign-in).
 - **Cloud database is now Supabase** (see supabase-sync-design.md): migration tested on a local PostgreSQL and run on the real project; Google sign-in once per computer is Gate 2D.
+
+## Sales returns done properly (2026-10-17)
+Return items on a sales-register bill now opens a page that lists every item of that bill with how many are left; the person types how many come back (or presses Return all), writes a reason and saves. Stock goes back, a customer's debt on that bill is cleared first, the rest is handed back (cash/UPI/card) or kept as credit, and the return day's totals go down; all in one transaction. Schema version 3 (migration tested from versions 1 and 2). Details: docs/data-model.md "Schema version 3". Not built: printed return receipt, dealer returns.
+
+## Owner requests built 2026-10-17 (build only, full tests still to do)
+Sales returns from a bill; popup fixes; top bar; product form (GST toggles, minimum stock, HSN, brand dropdown, product codes); brands and units on the Categories page; customer page (bought, profit, bills, account on its own page); real purchases with items and rate hints; dealer page like the customer page. Details in docs/data-model.md. **The full test suite and the golden screenshots have NOT been re-run since these changes: expect old tests for the customer page, the products list, the top bar and the screenshots to need updating.**
+
+Also built 2026-10-17 (evening): purchase returns to dealers (schema 6), MRP, a discount on the whole bill with the owner-only profit line, sold/sales/profit per product on Stock left (schema 7). All the database tests (110) pass; the screen tests of the older pages and the screenshots are still to be updated.

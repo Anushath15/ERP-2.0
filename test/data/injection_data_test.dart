@@ -41,6 +41,17 @@ void main() {
     await d.close();
   });
 
+  test('a customer GST number is optional and is saved, changed and read back', () async {
+    final d = memoryShop();
+    await d.catalog.saveCustomer(const Customer(id: 'c1', name: 'No GST', phone: '9876543210', city: '', balancePaise: 0), create: true);
+    await d.catalog.saveCustomer(const Customer(id: 'c2', name: 'With GST', phone: '', city: '', gstin: '33ABCDE1234F1Z5', balancePaise: 0), create: true);
+    expect((await d.catalog.customer('c1'))!.gstin, '');
+    expect((await d.catalog.customer('c2'))!.gstin, '33ABCDE1234F1Z5');
+    await d.catalog.saveCustomer((await d.catalog.customer('c1'))!.copyWith(gstin: '29ABCDE1234F1Z5'), create: false);
+    expect((await d.catalog.customer('c1'))!.gstin, '29ABCDE1234F1Z5');
+    await d.close();
+  });
+
   test('names, notes and reasons with quotes and SQL words are stored and read back exactly as typed', () async {
     final d = memoryShop();
     const name = r'''Robert'); DROP TABLE products;-- "x" 100% _ \ ₹''';

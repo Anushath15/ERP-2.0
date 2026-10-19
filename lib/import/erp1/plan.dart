@@ -864,7 +864,7 @@ class _Builder {
           continue;
         }
         final at = moment(r['date'] ?? r['createdAt']);
-        if (at == null && kind != 'staff' && kind != 'projects') {
+        if (at == null && kind != 'staff') {
           log.add(entity, id, IssueKind.rejected, 'the date is missing or not a real date');
           continue;
         }
@@ -921,10 +921,9 @@ class _Builder {
 
     simple('erp_deliveries', 'delivery', 'deliveries', generic);
     simple('erp_warranties', 'warranty', 'warranties', generic);
-    simple('erp_house_projects', 'projects', 'projects', generic);
     simple('erp_staff', 'staff', 'staff', generic);
     simple('erp_notifications', 'notifications', 'notifications', generic);
-    for (final k in ['erp_daily_closings', 'erp_opening_cash', 'erp_product_price_history', 'erp_users', 'erp_drafts', 'erp_projects', 'erp_expense_categories']) {
+    for (final k in ['erp_daily_closings', 'erp_opening_cash', 'erp_product_price_history', 'erp_users', 'erp_drafts', 'erp_projects', 'erp_expense_categories', 'erp_house_projects']) {
       final v = data[k];
       if (v is List) {
         p.unmappedKeys[k] = v.length;

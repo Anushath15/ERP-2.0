@@ -75,20 +75,23 @@ Future<ExportTable> buildExport(AppData d, ExportKind kind) async {
       );
     case ExportKind.products:
       final r = await db.rows(
-          'SELECT p.name, p.category, p.unit, p.hsn, p.gst_bp, p.price_paise, p.cost_paise, COALESCE(s.qty_milli, 0) AS qty, p.min_stock_milli, p.barcode, p.active '
+          'SELECT p.mrp_paise, p.code, p.brand, p.name, p.category, p.unit, p.hsn, p.gst_bp, p.price_paise, p.cost_paise, COALESCE(s.qty_milli, 0) AS qty, p.min_stock_milli, p.barcode, p.active '
           'FROM products p LEFT JOIN stock_cache s ON s.product_id = p.id WHERE p.deleted_at IS NULL ORDER BY p.name COLLATE NOCASE LIMIT ?',
           [maxExportRows]);
       return ExportTable(
         name: 'Products',
-        headers: ['Name', 'Category', 'Unit', 'HSN', 'GST %', 'Selling price', 'Buying price', 'Stock', 'Low stock at', 'Barcode', 'Active'],
+        headers: ['Code', 'Name', 'Brand', 'Category', 'Unit', 'HSN', 'GST %', 'MRP', 'Selling price', 'Buying price', 'Stock', 'Low stock at', 'Barcode', 'Active'],
         rows: [
           for (final x in r)
             [
+              x.read<String>('code'),
               x.read<String>('name'),
+              x.read<String>('brand'),
               x.read<String>('category'),
               x.read<String>('unit'),
               x.read<String>('hsn'),
               x.read<int>('gst_bp') / 100,
+              Rupees(x.read<int>('mrp_paise')),
               Rupees(x.read<int>('price_paise')),
               Rupees(x.read<int>('cost_paise')),
               Qty(x.read<int>('qty')),

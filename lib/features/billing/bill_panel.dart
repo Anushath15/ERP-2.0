@@ -66,7 +66,7 @@ class BillHeader extends StatelessWidget {
 
 /// The bill lines. This list scrolls INSIDE itself; the footer is never part of it.
 class BillLines extends StatefulWidget {
-  const BillLines({super.key, required this.mode, required this.cart, required this.calc, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount});
+  const BillLines({super.key, required this.mode, required this.cart, required this.calc, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount, this.trailing});
   final DocMode mode;
   final CartState cart;
   final BillCalc calc;
@@ -74,6 +74,9 @@ class BillLines extends StatefulWidget {
   final void Function(int index) onRemove;
   final void Function(int index, int ratePaise) onRate;
   final void Function(int index, int bp) onDiscount;
+
+  /// Shown after the last item, inside the scrolling list (the discount on the whole bill and the profit).
+  final Widget? trailing;
   @override
   State<BillLines> createState() => _BillLinesState();
 }
@@ -130,9 +133,9 @@ class _BillLinesState extends State<BillLines> {
           controller: _scroll,
           child: RepaintBoundary(child: ListView.separated(
             controller: _scroll,
-            itemCount: lines.length,
+            itemCount: lines.length + (widget.trailing == null ? 0 : 1),
             separatorBuilder: (_, _) => Divider(height: 1, color: c.border.withValues(alpha: 0.5)),
-            itemBuilder: (ctx, i) => _LineRow(
+            itemBuilder: (ctx, i) => i >= lines.length ? widget.trailing! : _LineRow(
               key: ValueKey(lines[i].product.id),
               fresh: widget.cart.touchedNew && widget.cart.touchedId == lines[i].product.id && DateTime.now().millisecondsSinceEpoch - widget.cart.touchedAtMs < 600,
               touchSeq: widget.cart.touchedId == lines[i].product.id ? widget.cart.touchSeq : 0,

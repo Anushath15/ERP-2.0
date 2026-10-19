@@ -37,14 +37,14 @@ void main() {
       expect(() => LedgerEntry.reversal(id: 'r', customerId: 'c', original: pay, at: d(2026, 9, 6), reason: '', by: 'x'), throwsArgumentError);
     });
 
-    test('what can be reversed: payments, advances, manual credit, write-offs, opening; NOT bills, bill cancellations or reversals themselves', () {
+    test('what can be reversed: payments, advances, manual credit, write-offs, opening; NOT bills, bill cancellations, sales returns or reversals themselves', () {
       final all = {
         LedgerKind.payment: true,
         LedgerKind.advance: true,
         LedgerKind.manualCredit: true,
         LedgerKind.writeOff: true,
         LedgerKind.opening: true,
-        LedgerKind.returnCredit: true,
+        LedgerKind.returnCredit: false, // a sales return is final: its stock and totals moved with it
         LedgerKind.billCredit: false,
         LedgerKind.billCancel: false,
       };

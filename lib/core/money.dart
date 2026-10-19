@@ -41,3 +41,12 @@ int divRound(int numerator, int denominator) => (numerator * 2 + denominator) ~/
 
 /// A value in paise from price (paise) x quantity (milli), rounded half-up to a paisa.
 int lineAmount(int pricePaise, int qtyMilli) => divRound(pricePaise * qtyMilli, 1000);
+
+/// A quantity typed by a person ("2", "1.5", "0.125") in thousandths; null when it is not a plain number with at most three decimals.
+int? parseQtyMilli(String text) {
+  final t = text.trim();
+  if (!RegExp(r'^\d{1,9}(\.\d{1,3})?$').hasMatch(t)) return null;
+  final parts = t.split('.');
+  final frac = parts.length == 2 ? parts[1].padRight(3, '0') : '000';
+  return int.parse(parts[0]) * 1000 + int.parse(frac);
+}

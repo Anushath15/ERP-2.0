@@ -45,7 +45,7 @@ void main() {
 
     testWidgets('Settle fully: choose how it was paid, confirm, the balance becomes zero; Undo (8 seconds) takes it back', (tester) async {
       final s = sample();
-      final c = await app(tester, '/customers/${s.c.id}');
+      final c = await app(tester, '/customers/${s.c.id}/account');
       final before = c.read(creditProvider)[s.c.id]!.balance;
       await tester.tap(find.byKey(const ValueKey('settleFully')));
       await tester.pumpAndSettle();
@@ -79,7 +79,7 @@ void main() {
 
     testWidgets('Add credit (by hand): amount and a reason are required; it adds to what they owe', (tester) async {
       final s = sample();
-      final c = await app(tester, '/customers/${s.c.id}');
+      final c = await app(tester, '/customers/${s.c.id}/account');
       final before = c.read(creditProvider)[s.c.id]!.balance;
       await tester.tap(find.byKey(const ValueKey('addCredit')));
       await tester.pumpAndSettle();
@@ -98,8 +98,14 @@ void main() {
   group('customer profile', () {
     testWidgets('shows the details, the key dates and amounts, ageing, the ledger and reminders; no sharing of any kind', (tester) async {
       final s = sample();
+      // the profile: the details and a way into the account
       await app(tester, '/customers/${s.c.id}');
-      for (final t in ['Details', 'Credit started', 'Next due', 'Last payment', 'Last credit added', 'Credit limit', 'Address', 'Credit account', 'Reminders opened in WhatsApp', 'Edit details', 'Download statement']) {
+      for (final t in ['Details', 'Credit limit', 'Address', 'Edit details', 'Account status']) {
+        expect(find.textContaining(t), findsWidgets, reason: t);
+      }
+      // the account status page: the key dates and amounts, ageing, the ledger and reminders
+      await app(tester, '/customers/${s.c.id}/account');
+      for (final t in ['Credit started', 'Next due', 'Last payment', 'Last credit added', 'Credit limit', 'Credit account', 'Reminders opened in WhatsApp', 'Download statement']) {
         expect(find.textContaining(t), findsWidgets, reason: t);
       }
       expect(find.textContaining('Over 90 days'), findsOneWidget);
@@ -110,7 +116,7 @@ void main() {
 
     testWidgets('a wrong payment is reversed by a new entry: both stay in the ledger, the bills are unpaid again, "Reversed" is shown', (tester) async {
       final s = sample();
-      final c = await app(tester, '/customers/${s.c.id}', size: const ScreenSpec('tall', 1280, 3600));
+      final c = await app(tester, '/customers/${s.c.id}/account', size: const ScreenSpec('tall', 1280, 3600));
       final n = c.read(creditProvider.notifier);
       final rec = await n.receivePayment(customerId: s.c.id, customerName: s.c.name, amount: 1000, mode: 'cash', at: fixedNow);
       await tester.pumpAndSettle();
@@ -132,7 +138,7 @@ void main() {
 
     testWidgets('the ledger can be filtered by date: this month shows fewer lines than the whole history', (tester) async {
       final s = sample();
-      await app(tester, '/customers/${s.c.id}', size: const ScreenSpec('tall', 1280, 3000));
+      await app(tester, '/customers/${s.c.id}/account', size: const ScreenSpec('tall', 1280, 3000));
       int rows() => find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ledgerRow-')).evaluate().length;
       final all = rows();
       expect(all, greaterThan(0));
@@ -162,7 +168,7 @@ void main() {
     testWidgets('Download statement saves a PDF on this computer only (stand-in saver here); nothing is sent', (tester) async {
       final s = sample();
       final saver = FakeSaver();
-      await app(tester, '/customers/${s.c.id}', extra: [fileSaverProvider.overrideWithValue(saver)]);
+      await app(tester, '/customers/${s.c.id}/account', extra: [fileSaverProvider.overrideWithValue(saver)]);
       await tester.runAsync(() async {
         await tester.tap(find.byKey(const ValueKey('downloadStatement')));
         for (var i = 0; i < 100 && saver.saved.isEmpty; i++) {
@@ -185,14 +191,18 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(d.s('name')).last);
       await tester.pumpAndSettle();
-      expect(find.text('Pay dealer'), findsOneWidget);
-      expect(find.text('Settle fully'), findsOneWidget);
+      expect(find.byKey(const ValueKey('dealer-add-purchase')), findsOneWidget, reason: 'the profile: purchases first');
+      expect(find.byKey(const ValueKey('cust-account-card')), findsOneWidget, reason: 'and one card for what we owe');
       expect(find.text('Add adjustment'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('cust-account-open')));
+      await tester.pumpAndSettle();
+      expect(find.text('Pay dealer'), findsOneWidget, reason: 'the account status page');
+      expect(find.text('Settle fully'), findsOneWidget);
     });
 
     testWidgets('profile: balance we owe, started, last payment, last purchase, next payment due, ledger; no reminder or sharing buttons', (tester) async {
       final d = dealerWithBalance();
-      await app(tester, '/dealers/${d.id}');
+      await app(tester, '/dealers/${d.id}/account');
       for (final t in ['We owe', 'Account started', 'Last payment', 'Last purchase', 'Next payment due', 'Account: purchases and payments', 'Download statement']) {
         expect(find.textContaining(t), findsWidgets, reason: t);
       }
@@ -204,7 +214,7 @@ void main() {
 
     testWidgets('Pay dealer reduces what we owe (oldest purchase first); Settle fully clears it; Add adjustment works both ways', (tester) async {
       final d = dealerWithBalance();
-      final c = await app(tester, '/dealers/${d.id}');
+      final c = await app(tester, '/dealers/${d.id}/account');
       final n = c.read(dealerLedgerProvider.notifier);
       final start = n.balanceOf(d.id);
       await tester.tap(find.byKey(const ValueKey('receiveOrPay')));

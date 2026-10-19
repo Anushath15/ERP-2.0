@@ -63,11 +63,11 @@ void main() {
   }
 
   group('page sizes and no blank space at the bottom', () {
-    test('an estimate is as long as its content: A4 wide, one page, nowhere near a full A4 height', () async {
+    test('an estimate is a normal A4 page in the shop template, one page for a short one', () async {
       final b = await make(estimate(), PaperSize.a4, PrintTextSize.small, 'estimate_a4_small');
       final box = mediaBox(b);
-      expect(box[2], closeTo(595, 1), reason: 'A4 width');
-      expect(box[3], lessThan(500), reason: 'fits the content, not a full 842 pt page (box $box)');
+      expect(box[2], closeTo(595.28, 1), reason: 'A4 width');
+      expect(box[3], closeTo(841.89, 1), reason: 'A4 height');
       expect(pages(b), 1);
     });
 
@@ -99,6 +99,11 @@ void main() {
       }
     });
 
+    test('many products on one paper: 30 items fit one A4 page at the default size, 45 on two at most', () async {
+      expect(pages(await make(bigInvoice(30), PaperSize.a4, PrintTextSize.small, 'thirty_a4_small')), 1);
+      expect(pages(await make(bigInvoice(45), PaperSize.a4, PrintTextSize.small, 'fortyfive_a4_small')), lessThanOrEqualTo(2));
+    });
+
     test('a long bill (60 lines) flows onto more pages on A4 and A5 instead of being cut off', () async {
       final b4 = await make(bigInvoice(60), PaperSize.a4, PrintTextSize.normal, 'long_a4_normal');
       expect(pages(b4), greaterThan(1));
@@ -108,10 +113,10 @@ void main() {
   });
 
   group('print text size', () {
-    test('Small is the default and uses about 9.5 pt rows, 12 pt title, 11 pt total (A4 invoice)', () async {
+    test('Small is the default: 8 pt text and the 13 pt shop name on an A4 bill (the shop template, small so that many items fit)', () async {
       final sizes = fontSizes(await make(invoice(), PaperSize.a4, PrintTextSize.small, 'invoice_a4_small'));
-      expect(sizes, containsAll([9.5, 12.0, 11.0]));
-      expect(sizes.reduce((a, b) => a > b ? a : b), lessThanOrEqualTo(12.0), reason: 'nothing bigger than the title');
+      expect(sizes, containsAll([8.0, 13.0]));
+      expect(sizes.reduce((a, b) => a > b ? a : b), lessThanOrEqualTo(13.0), reason: 'nothing bigger than the shop name');
     });
 
     test('Smaller < Small < Normal: the row text grows with the choice', () async {
@@ -121,8 +126,8 @@ void main() {
       for (final size in PrintTextSize.values) {
         final used = fontSizes(await make(invoice(), PaperSize.a4, size, 'invoice_a4_${size.name}'));
         final m = PrintMetrics.of(size);
-        expect(used, containsAll([m.row, m.title, m.total]), reason: size.name);
-        expect(used.every((x) => x <= m.title + 0.01), isTrue, reason: '${size.name}: sizes $used');
+        expect(used, containsAll([(m.row - 1.5).clamp(6.0, 12.0), m.shop + 1]), reason: size.name);
+        expect(used.every((x) => x <= m.shop + 1.01), isTrue, reason: '${size.name}: sizes $used');
       }
     });
 

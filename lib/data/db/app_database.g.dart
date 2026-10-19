@@ -982,6 +982,38 @@ class Products extends Table with TableInfo<Products, DbProduct> {
     $customConstraints: 'NOT NULL DEFAULT 0',
     defaultValue: const CustomExpression('0'),
   );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _mrpPaiseMeta = const VerificationMeta(
+    'mrpPaise',
+  );
+  late final GeneratedColumn<int> mrpPaise = GeneratedColumn<int>(
+    'mrp_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1003,6 +1035,9 @@ class Products extends Table with TableInfo<Products, DbProduct> {
     version,
     hlc,
     avgCostPaise,
+    code,
+    brand,
+    mrpPaise,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1145,6 +1180,24 @@ class Products extends Table with TableInfo<Products, DbProduct> {
         ),
       );
     }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
+    }
+    if (data.containsKey('mrp_paise')) {
+      context.handle(
+        _mrpPaiseMeta,
+        mrpPaise.isAcceptableOrUnknown(data['mrp_paise']!, _mrpPaiseMeta),
+      );
+    }
     return context;
   }
 
@@ -1230,6 +1283,18 @@ class Products extends Table with TableInfo<Products, DbProduct> {
         DriftSqlType.int,
         data['${effectivePrefix}avg_cost_paise'],
       )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      )!,
+      mrpPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}mrp_paise'],
+      )!,
     );
   }
 
@@ -1262,6 +1327,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
   final int version;
   final String hlc;
   final int avgCostPaise;
+  final String code;
+  final String brand;
+  final int mrpPaise;
   const DbProduct({
     required this.id,
     required this.name,
@@ -1282,6 +1350,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     required this.version,
     required this.hlc,
     required this.avgCostPaise,
+    required this.code,
+    required this.brand,
+    required this.mrpPaise,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1309,6 +1380,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     map['version'] = Variable<int>(version);
     map['hlc'] = Variable<String>(hlc);
     map['avg_cost_paise'] = Variable<int>(avgCostPaise);
+    map['code'] = Variable<String>(code);
+    map['brand'] = Variable<String>(brand);
+    map['mrp_paise'] = Variable<int>(mrpPaise);
     return map;
   }
 
@@ -1337,6 +1411,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
       version: Value(version),
       hlc: Value(hlc),
       avgCostPaise: Value(avgCostPaise),
+      code: Value(code),
+      brand: Value(brand),
+      mrpPaise: Value(mrpPaise),
     );
   }
 
@@ -1365,6 +1442,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
       version: serializer.fromJson<int>(json['version']),
       hlc: serializer.fromJson<String>(json['hlc']),
       avgCostPaise: serializer.fromJson<int>(json['avg_cost_paise']),
+      code: serializer.fromJson<String>(json['code']),
+      brand: serializer.fromJson<String>(json['brand']),
+      mrpPaise: serializer.fromJson<int>(json['mrp_paise']),
     );
   }
   @override
@@ -1390,6 +1470,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
       'version': serializer.toJson<int>(version),
       'hlc': serializer.toJson<String>(hlc),
       'avg_cost_paise': serializer.toJson<int>(avgCostPaise),
+      'code': serializer.toJson<String>(code),
+      'brand': serializer.toJson<String>(brand),
+      'mrp_paise': serializer.toJson<int>(mrpPaise),
     };
   }
 
@@ -1413,6 +1496,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     int? version,
     String? hlc,
     int? avgCostPaise,
+    String? code,
+    String? brand,
+    int? mrpPaise,
   }) => DbProduct(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -1433,6 +1519,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     version: version ?? this.version,
     hlc: hlc ?? this.hlc,
     avgCostPaise: avgCostPaise ?? this.avgCostPaise,
+    code: code ?? this.code,
+    brand: brand ?? this.brand,
+    mrpPaise: mrpPaise ?? this.mrpPaise,
   );
   DbProduct copyWithCompanion(ProductsCompanion data) {
     return DbProduct(
@@ -1461,6 +1550,9 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
       avgCostPaise: data.avgCostPaise.present
           ? data.avgCostPaise.value
           : this.avgCostPaise,
+      code: data.code.present ? data.code.value : this.code,
+      brand: data.brand.present ? data.brand.value : this.brand,
+      mrpPaise: data.mrpPaise.present ? data.mrpPaise.value : this.mrpPaise,
     );
   }
 
@@ -1485,13 +1577,16 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
           ..write('deviceId: $deviceId, ')
           ..write('version: $version, ')
           ..write('hlc: $hlc, ')
-          ..write('avgCostPaise: $avgCostPaise')
+          ..write('avgCostPaise: $avgCostPaise, ')
+          ..write('code: $code, ')
+          ..write('brand: $brand, ')
+          ..write('mrpPaise: $mrpPaise')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     category,
@@ -1511,7 +1606,10 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
     version,
     hlc,
     avgCostPaise,
-  );
+    code,
+    brand,
+    mrpPaise,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1534,7 +1632,10 @@ class DbProduct extends DataClass implements Insertable<DbProduct> {
           other.deviceId == this.deviceId &&
           other.version == this.version &&
           other.hlc == this.hlc &&
-          other.avgCostPaise == this.avgCostPaise);
+          other.avgCostPaise == this.avgCostPaise &&
+          other.code == this.code &&
+          other.brand == this.brand &&
+          other.mrpPaise == this.mrpPaise);
 }
 
 class ProductsCompanion extends UpdateCompanion<DbProduct> {
@@ -1557,6 +1658,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
   final Value<int> version;
   final Value<String> hlc;
   final Value<int> avgCostPaise;
+  final Value<String> code;
+  final Value<String> brand;
+  final Value<int> mrpPaise;
   final Value<int> rowid;
   const ProductsCompanion({
     this.id = const Value.absent(),
@@ -1578,6 +1682,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     this.version = const Value.absent(),
     this.hlc = const Value.absent(),
     this.avgCostPaise = const Value.absent(),
+    this.code = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.mrpPaise = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProductsCompanion.insert({
@@ -1600,6 +1707,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     this.version = const Value.absent(),
     this.hlc = const Value.absent(),
     this.avgCostPaise = const Value.absent(),
+    this.code = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.mrpPaise = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -1627,6 +1737,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     Expression<int>? version,
     Expression<String>? hlc,
     Expression<int>? avgCostPaise,
+    Expression<String>? code,
+    Expression<String>? brand,
+    Expression<int>? mrpPaise,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1649,6 +1762,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
       if (version != null) 'version': version,
       if (hlc != null) 'hlc': hlc,
       if (avgCostPaise != null) 'avg_cost_paise': avgCostPaise,
+      if (code != null) 'code': code,
+      if (brand != null) 'brand': brand,
+      if (mrpPaise != null) 'mrp_paise': mrpPaise,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1673,6 +1789,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     Value<int>? version,
     Value<String>? hlc,
     Value<int>? avgCostPaise,
+    Value<String>? code,
+    Value<String>? brand,
+    Value<int>? mrpPaise,
     Value<int>? rowid,
   }) {
     return ProductsCompanion(
@@ -1695,6 +1814,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
       version: version ?? this.version,
       hlc: hlc ?? this.hlc,
       avgCostPaise: avgCostPaise ?? this.avgCostPaise,
+      code: code ?? this.code,
+      brand: brand ?? this.brand,
+      mrpPaise: mrpPaise ?? this.mrpPaise,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1759,6 +1881,15 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
     if (avgCostPaise.present) {
       map['avg_cost_paise'] = Variable<int>(avgCostPaise.value);
     }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
+    if (mrpPaise.present) {
+      map['mrp_paise'] = Variable<int>(mrpPaise.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1787,6 +1918,9 @@ class ProductsCompanion extends UpdateCompanion<DbProduct> {
           ..write('version: $version, ')
           ..write('hlc: $hlc, ')
           ..write('avgCostPaise: $avgCostPaise, ')
+          ..write('code: $code, ')
+          ..write('brand: $brand, ')
+          ..write('mrpPaise: $mrpPaise, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4683,6 +4817,29 @@ class Bills extends Table with TableInfo<Bills, DbBill> {
     requiredDuringInsert: true,
     $customConstraints: 'NOT NULL',
   );
+  static const VerificationMeta _extraDiscountPaiseMeta =
+      const VerificationMeta('extraDiscountPaise');
+  late final GeneratedColumn<int> extraDiscountPaise = GeneratedColumn<int>(
+    'extra_discount_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _extraDiscountBpMeta = const VerificationMeta(
+    'extraDiscountBp',
+  );
+  late final GeneratedColumn<int> extraDiscountBp = GeneratedColumn<int>(
+    'extra_discount_bp',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4715,6 +4872,8 @@ class Bills extends Table with TableInfo<Bills, DbBill> {
     createdBy,
     createdAt,
     deviceId,
+    extraDiscountPaise,
+    extraDiscountBp,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4954,6 +5113,24 @@ class Bills extends Table with TableInfo<Bills, DbBill> {
     } else if (isInserting) {
       context.missing(_deviceIdMeta);
     }
+    if (data.containsKey('extra_discount_paise')) {
+      context.handle(
+        _extraDiscountPaiseMeta,
+        extraDiscountPaise.isAcceptableOrUnknown(
+          data['extra_discount_paise']!,
+          _extraDiscountPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('extra_discount_bp')) {
+      context.handle(
+        _extraDiscountBpMeta,
+        extraDiscountBp.isAcceptableOrUnknown(
+          data['extra_discount_bp']!,
+          _extraDiscountBpMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5083,6 +5260,14 @@ class Bills extends Table with TableInfo<Bills, DbBill> {
         DriftSqlType.string,
         data['${effectivePrefix}device_id'],
       )!,
+      extraDiscountPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}extra_discount_paise'],
+      )!,
+      extraDiscountBp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}extra_discount_bp'],
+      )!,
     );
   }
 
@@ -5126,6 +5311,8 @@ class DbBill extends DataClass implements Insertable<DbBill> {
   final String createdBy;
   final int createdAt;
   final String deviceId;
+  final int extraDiscountPaise;
+  final int extraDiscountBp;
   const DbBill({
     required this.id,
     required this.number,
@@ -5157,6 +5344,8 @@ class DbBill extends DataClass implements Insertable<DbBill> {
     required this.createdBy,
     required this.createdAt,
     required this.deviceId,
+    required this.extraDiscountPaise,
+    required this.extraDiscountBp,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5195,6 +5384,8 @@ class DbBill extends DataClass implements Insertable<DbBill> {
     map['created_by'] = Variable<String>(createdBy);
     map['created_at'] = Variable<int>(createdAt);
     map['device_id'] = Variable<String>(deviceId);
+    map['extra_discount_paise'] = Variable<int>(extraDiscountPaise);
+    map['extra_discount_bp'] = Variable<int>(extraDiscountBp);
     return map;
   }
 
@@ -5234,6 +5425,8 @@ class DbBill extends DataClass implements Insertable<DbBill> {
       createdBy: Value(createdBy),
       createdAt: Value(createdAt),
       deviceId: Value(deviceId),
+      extraDiscountPaise: Value(extraDiscountPaise),
+      extraDiscountBp: Value(extraDiscountBp),
     );
   }
 
@@ -5273,6 +5466,10 @@ class DbBill extends DataClass implements Insertable<DbBill> {
       createdBy: serializer.fromJson<String>(json['created_by']),
       createdAt: serializer.fromJson<int>(json['created_at']),
       deviceId: serializer.fromJson<String>(json['device_id']),
+      extraDiscountPaise: serializer.fromJson<int>(
+        json['extra_discount_paise'],
+      ),
+      extraDiscountBp: serializer.fromJson<int>(json['extra_discount_bp']),
     );
   }
   @override
@@ -5309,6 +5506,8 @@ class DbBill extends DataClass implements Insertable<DbBill> {
       'created_by': serializer.toJson<String>(createdBy),
       'created_at': serializer.toJson<int>(createdAt),
       'device_id': serializer.toJson<String>(deviceId),
+      'extra_discount_paise': serializer.toJson<int>(extraDiscountPaise),
+      'extra_discount_bp': serializer.toJson<int>(extraDiscountBp),
     };
   }
 
@@ -5343,6 +5542,8 @@ class DbBill extends DataClass implements Insertable<DbBill> {
     String? createdBy,
     int? createdAt,
     String? deviceId,
+    int? extraDiscountPaise,
+    int? extraDiscountBp,
   }) => DbBill(
     id: id ?? this.id,
     number: number ?? this.number,
@@ -5374,6 +5575,8 @@ class DbBill extends DataClass implements Insertable<DbBill> {
     createdBy: createdBy ?? this.createdBy,
     createdAt: createdAt ?? this.createdAt,
     deviceId: deviceId ?? this.deviceId,
+    extraDiscountPaise: extraDiscountPaise ?? this.extraDiscountPaise,
+    extraDiscountBp: extraDiscountBp ?? this.extraDiscountBp,
   );
   DbBill copyWithCompanion(BillsCompanion data) {
     return DbBill(
@@ -5429,6 +5632,12 @@ class DbBill extends DataClass implements Insertable<DbBill> {
       createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      extraDiscountPaise: data.extraDiscountPaise.present
+          ? data.extraDiscountPaise.value
+          : this.extraDiscountPaise,
+      extraDiscountBp: data.extraDiscountBp.present
+          ? data.extraDiscountBp.value
+          : this.extraDiscountBp,
     );
   }
 
@@ -5464,7 +5673,9 @@ class DbBill extends DataClass implements Insertable<DbBill> {
           ..write('note: $note, ')
           ..write('createdBy: $createdBy, ')
           ..write('createdAt: $createdAt, ')
-          ..write('deviceId: $deviceId')
+          ..write('deviceId: $deviceId, ')
+          ..write('extraDiscountPaise: $extraDiscountPaise, ')
+          ..write('extraDiscountBp: $extraDiscountBp')
           ..write(')'))
         .toString();
   }
@@ -5501,6 +5712,8 @@ class DbBill extends DataClass implements Insertable<DbBill> {
     createdBy,
     createdAt,
     deviceId,
+    extraDiscountPaise,
+    extraDiscountBp,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -5535,7 +5748,9 @@ class DbBill extends DataClass implements Insertable<DbBill> {
           other.note == this.note &&
           other.createdBy == this.createdBy &&
           other.createdAt == this.createdAt &&
-          other.deviceId == this.deviceId);
+          other.deviceId == this.deviceId &&
+          other.extraDiscountPaise == this.extraDiscountPaise &&
+          other.extraDiscountBp == this.extraDiscountBp);
 }
 
 class BillsCompanion extends UpdateCompanion<DbBill> {
@@ -5569,6 +5784,8 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
   final Value<String> createdBy;
   final Value<int> createdAt;
   final Value<String> deviceId;
+  final Value<int> extraDiscountPaise;
+  final Value<int> extraDiscountBp;
   final Value<int> rowid;
   const BillsCompanion({
     this.id = const Value.absent(),
@@ -5601,6 +5818,8 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
     this.createdBy = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.deviceId = const Value.absent(),
+    this.extraDiscountPaise = const Value.absent(),
+    this.extraDiscountBp = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BillsCompanion.insert({
@@ -5634,6 +5853,8 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
     this.createdBy = const Value.absent(),
     required int createdAt,
     required String deviceId,
+    this.extraDiscountPaise = const Value.absent(),
+    this.extraDiscountBp = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        number = Value(number),
@@ -5677,6 +5898,8 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
     Expression<String>? createdBy,
     Expression<int>? createdAt,
     Expression<String>? deviceId,
+    Expression<int>? extraDiscountPaise,
+    Expression<int>? extraDiscountBp,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5710,6 +5933,9 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
       if (createdBy != null) 'created_by': createdBy,
       if (createdAt != null) 'created_at': createdAt,
       if (deviceId != null) 'device_id': deviceId,
+      if (extraDiscountPaise != null)
+        'extra_discount_paise': extraDiscountPaise,
+      if (extraDiscountBp != null) 'extra_discount_bp': extraDiscountBp,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5745,6 +5971,8 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
     Value<String>? createdBy,
     Value<int>? createdAt,
     Value<String>? deviceId,
+    Value<int>? extraDiscountPaise,
+    Value<int>? extraDiscountBp,
     Value<int>? rowid,
   }) {
     return BillsCompanion(
@@ -5778,6 +6006,8 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
       deviceId: deviceId ?? this.deviceId,
+      extraDiscountPaise: extraDiscountPaise ?? this.extraDiscountPaise,
+      extraDiscountBp: extraDiscountBp ?? this.extraDiscountBp,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5875,6 +6105,12 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
     if (deviceId.present) {
       map['device_id'] = Variable<String>(deviceId.value);
     }
+    if (extraDiscountPaise.present) {
+      map['extra_discount_paise'] = Variable<int>(extraDiscountPaise.value);
+    }
+    if (extraDiscountBp.present) {
+      map['extra_discount_bp'] = Variable<int>(extraDiscountBp.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5914,6 +6150,8 @@ class BillsCompanion extends UpdateCompanion<DbBill> {
           ..write('createdBy: $createdBy, ')
           ..write('createdAt: $createdAt, ')
           ..write('deviceId: $deviceId, ')
+          ..write('extraDiscountPaise: $extraDiscountPaise, ')
+          ..write('extraDiscountBp: $extraDiscountBp, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7307,6 +7545,5417 @@ class BillCancellationsCompanion extends UpdateCompanion<DbBillCancellation> {
   }
 }
 
+class SalesReturns extends Table with TableInfo<SalesReturns, DbSalesReturn> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  SalesReturns(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+    'number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _billIdMeta = const VerificationMeta('billId');
+  late final GeneratedColumn<String> billId = GeneratedColumn<String>(
+    'bill_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES bills(id)',
+  );
+  static const VerificationMeta _billNoMeta = const VerificationMeta('billNo');
+  late final GeneratedColumn<String> billNo = GeneratedColumn<String>(
+    'bill_no',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _customerIdMeta = const VerificationMeta(
+    'customerId',
+  );
+  late final GeneratedColumn<String> customerId = GeneratedColumn<String>(
+    'customer_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'REFERENCES customers(id)',
+  );
+  static const VerificationMeta _customerNameMeta = const VerificationMeta(
+    'customerName',
+  );
+  late final GeneratedColumn<String> customerName = GeneratedColumn<String>(
+    'customer_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _returnedAtMeta = const VerificationMeta(
+    'returnedAt',
+  );
+  late final GeneratedColumn<int> returnedAt = GeneratedColumn<int>(
+    'returned_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _totalPaiseMeta = const VerificationMeta(
+    'totalPaise',
+  );
+  late final GeneratedColumn<int> totalPaise = GeneratedColumn<int>(
+    'total_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _taxablePaiseMeta = const VerificationMeta(
+    'taxablePaise',
+  );
+  late final GeneratedColumn<int> taxablePaise = GeneratedColumn<int>(
+    'taxable_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _cgstPaiseMeta = const VerificationMeta(
+    'cgstPaise',
+  );
+  late final GeneratedColumn<int> cgstPaise = GeneratedColumn<int>(
+    'cgst_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _sgstPaiseMeta = const VerificationMeta(
+    'sgstPaise',
+  );
+  late final GeneratedColumn<int> sgstPaise = GeneratedColumn<int>(
+    'sgst_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _igstPaiseMeta = const VerificationMeta(
+    'igstPaise',
+  );
+  late final GeneratedColumn<int> igstPaise = GeneratedColumn<int>(
+    'igst_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _costPaiseMeta = const VerificationMeta(
+    'costPaise',
+  );
+  late final GeneratedColumn<int> costPaise = GeneratedColumn<int>(
+    'cost_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _roundOffPaiseMeta = const VerificationMeta(
+    'roundOffPaise',
+  );
+  late final GeneratedColumn<int> roundOffPaise = GeneratedColumn<int>(
+    'round_off_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _dueReducedPaiseMeta = const VerificationMeta(
+    'dueReducedPaise',
+  );
+  late final GeneratedColumn<int> dueReducedPaise = GeneratedColumn<int>(
+    'due_reduced_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _creditKeptPaiseMeta = const VerificationMeta(
+    'creditKeptPaise',
+  );
+  late final GeneratedColumn<int> creditKeptPaise = GeneratedColumn<int>(
+    'credit_kept_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _refundedPaiseMeta = const VerificationMeta(
+    'refundedPaise',
+  );
+  late final GeneratedColumn<int> refundedPaise = GeneratedColumn<int>(
+    'refunded_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _refundModeMeta = const VerificationMeta(
+    'refundMode',
+  );
+  late final GeneratedColumn<int> refundMode = GeneratedColumn<int>(
+    'refund_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _byNameMeta = const VerificationMeta('byName');
+  late final GeneratedColumn<String> byName = GeneratedColumn<String>(
+    'by_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _idemKeyMeta = const VerificationMeta(
+    'idemKey',
+  );
+  late final GeneratedColumn<String> idemKey = GeneratedColumn<String>(
+    'idem_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    number,
+    billId,
+    billNo,
+    customerId,
+    customerName,
+    returnedAt,
+    day,
+    totalPaise,
+    taxablePaise,
+    cgstPaise,
+    sgstPaise,
+    igstPaise,
+    costPaise,
+    roundOffPaise,
+    dueReducedPaise,
+    creditKeptPaise,
+    refundedPaise,
+    refundMode,
+    reason,
+    byName,
+    idemKey,
+    createdAt,
+    deviceId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sales_returns';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DbSalesReturn> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(
+        _numberMeta,
+        number.isAcceptableOrUnknown(data['number']!, _numberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numberMeta);
+    }
+    if (data.containsKey('bill_id')) {
+      context.handle(
+        _billIdMeta,
+        billId.isAcceptableOrUnknown(data['bill_id']!, _billIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_billIdMeta);
+    }
+    if (data.containsKey('bill_no')) {
+      context.handle(
+        _billNoMeta,
+        billNo.isAcceptableOrUnknown(data['bill_no']!, _billNoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_billNoMeta);
+    }
+    if (data.containsKey('customer_id')) {
+      context.handle(
+        _customerIdMeta,
+        customerId.isAcceptableOrUnknown(data['customer_id']!, _customerIdMeta),
+      );
+    }
+    if (data.containsKey('customer_name')) {
+      context.handle(
+        _customerNameMeta,
+        customerName.isAcceptableOrUnknown(
+          data['customer_name']!,
+          _customerNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('returned_at')) {
+      context.handle(
+        _returnedAtMeta,
+        returnedAt.isAcceptableOrUnknown(data['returned_at']!, _returnedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_returnedAtMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('total_paise')) {
+      context.handle(
+        _totalPaiseMeta,
+        totalPaise.isAcceptableOrUnknown(data['total_paise']!, _totalPaiseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalPaiseMeta);
+    }
+    if (data.containsKey('taxable_paise')) {
+      context.handle(
+        _taxablePaiseMeta,
+        taxablePaise.isAcceptableOrUnknown(
+          data['taxable_paise']!,
+          _taxablePaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cgst_paise')) {
+      context.handle(
+        _cgstPaiseMeta,
+        cgstPaise.isAcceptableOrUnknown(data['cgst_paise']!, _cgstPaiseMeta),
+      );
+    }
+    if (data.containsKey('sgst_paise')) {
+      context.handle(
+        _sgstPaiseMeta,
+        sgstPaise.isAcceptableOrUnknown(data['sgst_paise']!, _sgstPaiseMeta),
+      );
+    }
+    if (data.containsKey('igst_paise')) {
+      context.handle(
+        _igstPaiseMeta,
+        igstPaise.isAcceptableOrUnknown(data['igst_paise']!, _igstPaiseMeta),
+      );
+    }
+    if (data.containsKey('cost_paise')) {
+      context.handle(
+        _costPaiseMeta,
+        costPaise.isAcceptableOrUnknown(data['cost_paise']!, _costPaiseMeta),
+      );
+    }
+    if (data.containsKey('round_off_paise')) {
+      context.handle(
+        _roundOffPaiseMeta,
+        roundOffPaise.isAcceptableOrUnknown(
+          data['round_off_paise']!,
+          _roundOffPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('due_reduced_paise')) {
+      context.handle(
+        _dueReducedPaiseMeta,
+        dueReducedPaise.isAcceptableOrUnknown(
+          data['due_reduced_paise']!,
+          _dueReducedPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('credit_kept_paise')) {
+      context.handle(
+        _creditKeptPaiseMeta,
+        creditKeptPaise.isAcceptableOrUnknown(
+          data['credit_kept_paise']!,
+          _creditKeptPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('refunded_paise')) {
+      context.handle(
+        _refundedPaiseMeta,
+        refundedPaise.isAcceptableOrUnknown(
+          data['refunded_paise']!,
+          _refundedPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('refund_mode')) {
+      context.handle(
+        _refundModeMeta,
+        refundMode.isAcceptableOrUnknown(data['refund_mode']!, _refundModeMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('by_name')) {
+      context.handle(
+        _byNameMeta,
+        byName.isAcceptableOrUnknown(data['by_name']!, _byNameMeta),
+      );
+    }
+    if (data.containsKey('idem_key')) {
+      context.handle(
+        _idemKeyMeta,
+        idemKey.isAcceptableOrUnknown(data['idem_key']!, _idemKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_idemKeyMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbSalesReturn map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbSalesReturn(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      number: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}number'],
+      )!,
+      billId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bill_id'],
+      )!,
+      billNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bill_no'],
+      )!,
+      customerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}customer_id'],
+      ),
+      customerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}customer_name'],
+      )!,
+      returnedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}returned_at'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day'],
+      )!,
+      totalPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_paise'],
+      )!,
+      taxablePaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taxable_paise'],
+      )!,
+      cgstPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cgst_paise'],
+      )!,
+      sgstPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sgst_paise'],
+      )!,
+      igstPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}igst_paise'],
+      )!,
+      costPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cost_paise'],
+      )!,
+      roundOffPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}round_off_paise'],
+      )!,
+      dueReducedPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}due_reduced_paise'],
+      )!,
+      creditKeptPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}credit_kept_paise'],
+      )!,
+      refundedPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}refunded_paise'],
+      )!,
+      refundMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}refund_mode'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      byName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}by_name'],
+      )!,
+      idemKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}idem_key'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+    );
+  }
+
+  @override
+  SalesReturns createAlias(String alias) {
+    return SalesReturns(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class DbSalesReturn extends DataClass implements Insertable<DbSalesReturn> {
+  final String id;
+  final String number;
+  final String billId;
+  final String billNo;
+  final String? customerId;
+  final String customerName;
+  final int returnedAt;
+  final String day;
+  final int totalPaise;
+  final int taxablePaise;
+  final int cgstPaise;
+  final int sgstPaise;
+  final int igstPaise;
+  final int costPaise;
+  final int roundOffPaise;
+  final int dueReducedPaise;
+  final int creditKeptPaise;
+  final int refundedPaise;
+  final int refundMode;
+  final String reason;
+  final String byName;
+  final String idemKey;
+  final int createdAt;
+  final String deviceId;
+  const DbSalesReturn({
+    required this.id,
+    required this.number,
+    required this.billId,
+    required this.billNo,
+    this.customerId,
+    required this.customerName,
+    required this.returnedAt,
+    required this.day,
+    required this.totalPaise,
+    required this.taxablePaise,
+    required this.cgstPaise,
+    required this.sgstPaise,
+    required this.igstPaise,
+    required this.costPaise,
+    required this.roundOffPaise,
+    required this.dueReducedPaise,
+    required this.creditKeptPaise,
+    required this.refundedPaise,
+    required this.refundMode,
+    required this.reason,
+    required this.byName,
+    required this.idemKey,
+    required this.createdAt,
+    required this.deviceId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['number'] = Variable<String>(number);
+    map['bill_id'] = Variable<String>(billId);
+    map['bill_no'] = Variable<String>(billNo);
+    if (!nullToAbsent || customerId != null) {
+      map['customer_id'] = Variable<String>(customerId);
+    }
+    map['customer_name'] = Variable<String>(customerName);
+    map['returned_at'] = Variable<int>(returnedAt);
+    map['day'] = Variable<String>(day);
+    map['total_paise'] = Variable<int>(totalPaise);
+    map['taxable_paise'] = Variable<int>(taxablePaise);
+    map['cgst_paise'] = Variable<int>(cgstPaise);
+    map['sgst_paise'] = Variable<int>(sgstPaise);
+    map['igst_paise'] = Variable<int>(igstPaise);
+    map['cost_paise'] = Variable<int>(costPaise);
+    map['round_off_paise'] = Variable<int>(roundOffPaise);
+    map['due_reduced_paise'] = Variable<int>(dueReducedPaise);
+    map['credit_kept_paise'] = Variable<int>(creditKeptPaise);
+    map['refunded_paise'] = Variable<int>(refundedPaise);
+    map['refund_mode'] = Variable<int>(refundMode);
+    map['reason'] = Variable<String>(reason);
+    map['by_name'] = Variable<String>(byName);
+    map['idem_key'] = Variable<String>(idemKey);
+    map['created_at'] = Variable<int>(createdAt);
+    map['device_id'] = Variable<String>(deviceId);
+    return map;
+  }
+
+  SalesReturnsCompanion toCompanion(bool nullToAbsent) {
+    return SalesReturnsCompanion(
+      id: Value(id),
+      number: Value(number),
+      billId: Value(billId),
+      billNo: Value(billNo),
+      customerId: customerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customerId),
+      customerName: Value(customerName),
+      returnedAt: Value(returnedAt),
+      day: Value(day),
+      totalPaise: Value(totalPaise),
+      taxablePaise: Value(taxablePaise),
+      cgstPaise: Value(cgstPaise),
+      sgstPaise: Value(sgstPaise),
+      igstPaise: Value(igstPaise),
+      costPaise: Value(costPaise),
+      roundOffPaise: Value(roundOffPaise),
+      dueReducedPaise: Value(dueReducedPaise),
+      creditKeptPaise: Value(creditKeptPaise),
+      refundedPaise: Value(refundedPaise),
+      refundMode: Value(refundMode),
+      reason: Value(reason),
+      byName: Value(byName),
+      idemKey: Value(idemKey),
+      createdAt: Value(createdAt),
+      deviceId: Value(deviceId),
+    );
+  }
+
+  factory DbSalesReturn.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbSalesReturn(
+      id: serializer.fromJson<String>(json['id']),
+      number: serializer.fromJson<String>(json['number']),
+      billId: serializer.fromJson<String>(json['bill_id']),
+      billNo: serializer.fromJson<String>(json['bill_no']),
+      customerId: serializer.fromJson<String?>(json['customer_id']),
+      customerName: serializer.fromJson<String>(json['customer_name']),
+      returnedAt: serializer.fromJson<int>(json['returned_at']),
+      day: serializer.fromJson<String>(json['day']),
+      totalPaise: serializer.fromJson<int>(json['total_paise']),
+      taxablePaise: serializer.fromJson<int>(json['taxable_paise']),
+      cgstPaise: serializer.fromJson<int>(json['cgst_paise']),
+      sgstPaise: serializer.fromJson<int>(json['sgst_paise']),
+      igstPaise: serializer.fromJson<int>(json['igst_paise']),
+      costPaise: serializer.fromJson<int>(json['cost_paise']),
+      roundOffPaise: serializer.fromJson<int>(json['round_off_paise']),
+      dueReducedPaise: serializer.fromJson<int>(json['due_reduced_paise']),
+      creditKeptPaise: serializer.fromJson<int>(json['credit_kept_paise']),
+      refundedPaise: serializer.fromJson<int>(json['refunded_paise']),
+      refundMode: serializer.fromJson<int>(json['refund_mode']),
+      reason: serializer.fromJson<String>(json['reason']),
+      byName: serializer.fromJson<String>(json['by_name']),
+      idemKey: serializer.fromJson<String>(json['idem_key']),
+      createdAt: serializer.fromJson<int>(json['created_at']),
+      deviceId: serializer.fromJson<String>(json['device_id']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'number': serializer.toJson<String>(number),
+      'bill_id': serializer.toJson<String>(billId),
+      'bill_no': serializer.toJson<String>(billNo),
+      'customer_id': serializer.toJson<String?>(customerId),
+      'customer_name': serializer.toJson<String>(customerName),
+      'returned_at': serializer.toJson<int>(returnedAt),
+      'day': serializer.toJson<String>(day),
+      'total_paise': serializer.toJson<int>(totalPaise),
+      'taxable_paise': serializer.toJson<int>(taxablePaise),
+      'cgst_paise': serializer.toJson<int>(cgstPaise),
+      'sgst_paise': serializer.toJson<int>(sgstPaise),
+      'igst_paise': serializer.toJson<int>(igstPaise),
+      'cost_paise': serializer.toJson<int>(costPaise),
+      'round_off_paise': serializer.toJson<int>(roundOffPaise),
+      'due_reduced_paise': serializer.toJson<int>(dueReducedPaise),
+      'credit_kept_paise': serializer.toJson<int>(creditKeptPaise),
+      'refunded_paise': serializer.toJson<int>(refundedPaise),
+      'refund_mode': serializer.toJson<int>(refundMode),
+      'reason': serializer.toJson<String>(reason),
+      'by_name': serializer.toJson<String>(byName),
+      'idem_key': serializer.toJson<String>(idemKey),
+      'created_at': serializer.toJson<int>(createdAt),
+      'device_id': serializer.toJson<String>(deviceId),
+    };
+  }
+
+  DbSalesReturn copyWith({
+    String? id,
+    String? number,
+    String? billId,
+    String? billNo,
+    Value<String?> customerId = const Value.absent(),
+    String? customerName,
+    int? returnedAt,
+    String? day,
+    int? totalPaise,
+    int? taxablePaise,
+    int? cgstPaise,
+    int? sgstPaise,
+    int? igstPaise,
+    int? costPaise,
+    int? roundOffPaise,
+    int? dueReducedPaise,
+    int? creditKeptPaise,
+    int? refundedPaise,
+    int? refundMode,
+    String? reason,
+    String? byName,
+    String? idemKey,
+    int? createdAt,
+    String? deviceId,
+  }) => DbSalesReturn(
+    id: id ?? this.id,
+    number: number ?? this.number,
+    billId: billId ?? this.billId,
+    billNo: billNo ?? this.billNo,
+    customerId: customerId.present ? customerId.value : this.customerId,
+    customerName: customerName ?? this.customerName,
+    returnedAt: returnedAt ?? this.returnedAt,
+    day: day ?? this.day,
+    totalPaise: totalPaise ?? this.totalPaise,
+    taxablePaise: taxablePaise ?? this.taxablePaise,
+    cgstPaise: cgstPaise ?? this.cgstPaise,
+    sgstPaise: sgstPaise ?? this.sgstPaise,
+    igstPaise: igstPaise ?? this.igstPaise,
+    costPaise: costPaise ?? this.costPaise,
+    roundOffPaise: roundOffPaise ?? this.roundOffPaise,
+    dueReducedPaise: dueReducedPaise ?? this.dueReducedPaise,
+    creditKeptPaise: creditKeptPaise ?? this.creditKeptPaise,
+    refundedPaise: refundedPaise ?? this.refundedPaise,
+    refundMode: refundMode ?? this.refundMode,
+    reason: reason ?? this.reason,
+    byName: byName ?? this.byName,
+    idemKey: idemKey ?? this.idemKey,
+    createdAt: createdAt ?? this.createdAt,
+    deviceId: deviceId ?? this.deviceId,
+  );
+  DbSalesReturn copyWithCompanion(SalesReturnsCompanion data) {
+    return DbSalesReturn(
+      id: data.id.present ? data.id.value : this.id,
+      number: data.number.present ? data.number.value : this.number,
+      billId: data.billId.present ? data.billId.value : this.billId,
+      billNo: data.billNo.present ? data.billNo.value : this.billNo,
+      customerId: data.customerId.present
+          ? data.customerId.value
+          : this.customerId,
+      customerName: data.customerName.present
+          ? data.customerName.value
+          : this.customerName,
+      returnedAt: data.returnedAt.present
+          ? data.returnedAt.value
+          : this.returnedAt,
+      day: data.day.present ? data.day.value : this.day,
+      totalPaise: data.totalPaise.present
+          ? data.totalPaise.value
+          : this.totalPaise,
+      taxablePaise: data.taxablePaise.present
+          ? data.taxablePaise.value
+          : this.taxablePaise,
+      cgstPaise: data.cgstPaise.present ? data.cgstPaise.value : this.cgstPaise,
+      sgstPaise: data.sgstPaise.present ? data.sgstPaise.value : this.sgstPaise,
+      igstPaise: data.igstPaise.present ? data.igstPaise.value : this.igstPaise,
+      costPaise: data.costPaise.present ? data.costPaise.value : this.costPaise,
+      roundOffPaise: data.roundOffPaise.present
+          ? data.roundOffPaise.value
+          : this.roundOffPaise,
+      dueReducedPaise: data.dueReducedPaise.present
+          ? data.dueReducedPaise.value
+          : this.dueReducedPaise,
+      creditKeptPaise: data.creditKeptPaise.present
+          ? data.creditKeptPaise.value
+          : this.creditKeptPaise,
+      refundedPaise: data.refundedPaise.present
+          ? data.refundedPaise.value
+          : this.refundedPaise,
+      refundMode: data.refundMode.present
+          ? data.refundMode.value
+          : this.refundMode,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      byName: data.byName.present ? data.byName.value : this.byName,
+      idemKey: data.idemKey.present ? data.idemKey.value : this.idemKey,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbSalesReturn(')
+          ..write('id: $id, ')
+          ..write('number: $number, ')
+          ..write('billId: $billId, ')
+          ..write('billNo: $billNo, ')
+          ..write('customerId: $customerId, ')
+          ..write('customerName: $customerName, ')
+          ..write('returnedAt: $returnedAt, ')
+          ..write('day: $day, ')
+          ..write('totalPaise: $totalPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('cgstPaise: $cgstPaise, ')
+          ..write('sgstPaise: $sgstPaise, ')
+          ..write('igstPaise: $igstPaise, ')
+          ..write('costPaise: $costPaise, ')
+          ..write('roundOffPaise: $roundOffPaise, ')
+          ..write('dueReducedPaise: $dueReducedPaise, ')
+          ..write('creditKeptPaise: $creditKeptPaise, ')
+          ..write('refundedPaise: $refundedPaise, ')
+          ..write('refundMode: $refundMode, ')
+          ..write('reason: $reason, ')
+          ..write('byName: $byName, ')
+          ..write('idemKey: $idemKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deviceId: $deviceId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    number,
+    billId,
+    billNo,
+    customerId,
+    customerName,
+    returnedAt,
+    day,
+    totalPaise,
+    taxablePaise,
+    cgstPaise,
+    sgstPaise,
+    igstPaise,
+    costPaise,
+    roundOffPaise,
+    dueReducedPaise,
+    creditKeptPaise,
+    refundedPaise,
+    refundMode,
+    reason,
+    byName,
+    idemKey,
+    createdAt,
+    deviceId,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbSalesReturn &&
+          other.id == this.id &&
+          other.number == this.number &&
+          other.billId == this.billId &&
+          other.billNo == this.billNo &&
+          other.customerId == this.customerId &&
+          other.customerName == this.customerName &&
+          other.returnedAt == this.returnedAt &&
+          other.day == this.day &&
+          other.totalPaise == this.totalPaise &&
+          other.taxablePaise == this.taxablePaise &&
+          other.cgstPaise == this.cgstPaise &&
+          other.sgstPaise == this.sgstPaise &&
+          other.igstPaise == this.igstPaise &&
+          other.costPaise == this.costPaise &&
+          other.roundOffPaise == this.roundOffPaise &&
+          other.dueReducedPaise == this.dueReducedPaise &&
+          other.creditKeptPaise == this.creditKeptPaise &&
+          other.refundedPaise == this.refundedPaise &&
+          other.refundMode == this.refundMode &&
+          other.reason == this.reason &&
+          other.byName == this.byName &&
+          other.idemKey == this.idemKey &&
+          other.createdAt == this.createdAt &&
+          other.deviceId == this.deviceId);
+}
+
+class SalesReturnsCompanion extends UpdateCompanion<DbSalesReturn> {
+  final Value<String> id;
+  final Value<String> number;
+  final Value<String> billId;
+  final Value<String> billNo;
+  final Value<String?> customerId;
+  final Value<String> customerName;
+  final Value<int> returnedAt;
+  final Value<String> day;
+  final Value<int> totalPaise;
+  final Value<int> taxablePaise;
+  final Value<int> cgstPaise;
+  final Value<int> sgstPaise;
+  final Value<int> igstPaise;
+  final Value<int> costPaise;
+  final Value<int> roundOffPaise;
+  final Value<int> dueReducedPaise;
+  final Value<int> creditKeptPaise;
+  final Value<int> refundedPaise;
+  final Value<int> refundMode;
+  final Value<String> reason;
+  final Value<String> byName;
+  final Value<String> idemKey;
+  final Value<int> createdAt;
+  final Value<String> deviceId;
+  final Value<int> rowid;
+  const SalesReturnsCompanion({
+    this.id = const Value.absent(),
+    this.number = const Value.absent(),
+    this.billId = const Value.absent(),
+    this.billNo = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.customerName = const Value.absent(),
+    this.returnedAt = const Value.absent(),
+    this.day = const Value.absent(),
+    this.totalPaise = const Value.absent(),
+    this.taxablePaise = const Value.absent(),
+    this.cgstPaise = const Value.absent(),
+    this.sgstPaise = const Value.absent(),
+    this.igstPaise = const Value.absent(),
+    this.costPaise = const Value.absent(),
+    this.roundOffPaise = const Value.absent(),
+    this.dueReducedPaise = const Value.absent(),
+    this.creditKeptPaise = const Value.absent(),
+    this.refundedPaise = const Value.absent(),
+    this.refundMode = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.byName = const Value.absent(),
+    this.idemKey = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SalesReturnsCompanion.insert({
+    required String id,
+    required String number,
+    required String billId,
+    required String billNo,
+    this.customerId = const Value.absent(),
+    this.customerName = const Value.absent(),
+    required int returnedAt,
+    required String day,
+    required int totalPaise,
+    this.taxablePaise = const Value.absent(),
+    this.cgstPaise = const Value.absent(),
+    this.sgstPaise = const Value.absent(),
+    this.igstPaise = const Value.absent(),
+    this.costPaise = const Value.absent(),
+    this.roundOffPaise = const Value.absent(),
+    this.dueReducedPaise = const Value.absent(),
+    this.creditKeptPaise = const Value.absent(),
+    this.refundedPaise = const Value.absent(),
+    this.refundMode = const Value.absent(),
+    required String reason,
+    this.byName = const Value.absent(),
+    required String idemKey,
+    required int createdAt,
+    required String deviceId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       number = Value(number),
+       billId = Value(billId),
+       billNo = Value(billNo),
+       returnedAt = Value(returnedAt),
+       day = Value(day),
+       totalPaise = Value(totalPaise),
+       reason = Value(reason),
+       idemKey = Value(idemKey),
+       createdAt = Value(createdAt),
+       deviceId = Value(deviceId);
+  static Insertable<DbSalesReturn> custom({
+    Expression<String>? id,
+    Expression<String>? number,
+    Expression<String>? billId,
+    Expression<String>? billNo,
+    Expression<String>? customerId,
+    Expression<String>? customerName,
+    Expression<int>? returnedAt,
+    Expression<String>? day,
+    Expression<int>? totalPaise,
+    Expression<int>? taxablePaise,
+    Expression<int>? cgstPaise,
+    Expression<int>? sgstPaise,
+    Expression<int>? igstPaise,
+    Expression<int>? costPaise,
+    Expression<int>? roundOffPaise,
+    Expression<int>? dueReducedPaise,
+    Expression<int>? creditKeptPaise,
+    Expression<int>? refundedPaise,
+    Expression<int>? refundMode,
+    Expression<String>? reason,
+    Expression<String>? byName,
+    Expression<String>? idemKey,
+    Expression<int>? createdAt,
+    Expression<String>? deviceId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (number != null) 'number': number,
+      if (billId != null) 'bill_id': billId,
+      if (billNo != null) 'bill_no': billNo,
+      if (customerId != null) 'customer_id': customerId,
+      if (customerName != null) 'customer_name': customerName,
+      if (returnedAt != null) 'returned_at': returnedAt,
+      if (day != null) 'day': day,
+      if (totalPaise != null) 'total_paise': totalPaise,
+      if (taxablePaise != null) 'taxable_paise': taxablePaise,
+      if (cgstPaise != null) 'cgst_paise': cgstPaise,
+      if (sgstPaise != null) 'sgst_paise': sgstPaise,
+      if (igstPaise != null) 'igst_paise': igstPaise,
+      if (costPaise != null) 'cost_paise': costPaise,
+      if (roundOffPaise != null) 'round_off_paise': roundOffPaise,
+      if (dueReducedPaise != null) 'due_reduced_paise': dueReducedPaise,
+      if (creditKeptPaise != null) 'credit_kept_paise': creditKeptPaise,
+      if (refundedPaise != null) 'refunded_paise': refundedPaise,
+      if (refundMode != null) 'refund_mode': refundMode,
+      if (reason != null) 'reason': reason,
+      if (byName != null) 'by_name': byName,
+      if (idemKey != null) 'idem_key': idemKey,
+      if (createdAt != null) 'created_at': createdAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SalesReturnsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? number,
+    Value<String>? billId,
+    Value<String>? billNo,
+    Value<String?>? customerId,
+    Value<String>? customerName,
+    Value<int>? returnedAt,
+    Value<String>? day,
+    Value<int>? totalPaise,
+    Value<int>? taxablePaise,
+    Value<int>? cgstPaise,
+    Value<int>? sgstPaise,
+    Value<int>? igstPaise,
+    Value<int>? costPaise,
+    Value<int>? roundOffPaise,
+    Value<int>? dueReducedPaise,
+    Value<int>? creditKeptPaise,
+    Value<int>? refundedPaise,
+    Value<int>? refundMode,
+    Value<String>? reason,
+    Value<String>? byName,
+    Value<String>? idemKey,
+    Value<int>? createdAt,
+    Value<String>? deviceId,
+    Value<int>? rowid,
+  }) {
+    return SalesReturnsCompanion(
+      id: id ?? this.id,
+      number: number ?? this.number,
+      billId: billId ?? this.billId,
+      billNo: billNo ?? this.billNo,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      returnedAt: returnedAt ?? this.returnedAt,
+      day: day ?? this.day,
+      totalPaise: totalPaise ?? this.totalPaise,
+      taxablePaise: taxablePaise ?? this.taxablePaise,
+      cgstPaise: cgstPaise ?? this.cgstPaise,
+      sgstPaise: sgstPaise ?? this.sgstPaise,
+      igstPaise: igstPaise ?? this.igstPaise,
+      costPaise: costPaise ?? this.costPaise,
+      roundOffPaise: roundOffPaise ?? this.roundOffPaise,
+      dueReducedPaise: dueReducedPaise ?? this.dueReducedPaise,
+      creditKeptPaise: creditKeptPaise ?? this.creditKeptPaise,
+      refundedPaise: refundedPaise ?? this.refundedPaise,
+      refundMode: refundMode ?? this.refundMode,
+      reason: reason ?? this.reason,
+      byName: byName ?? this.byName,
+      idemKey: idemKey ?? this.idemKey,
+      createdAt: createdAt ?? this.createdAt,
+      deviceId: deviceId ?? this.deviceId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (billId.present) {
+      map['bill_id'] = Variable<String>(billId.value);
+    }
+    if (billNo.present) {
+      map['bill_no'] = Variable<String>(billNo.value);
+    }
+    if (customerId.present) {
+      map['customer_id'] = Variable<String>(customerId.value);
+    }
+    if (customerName.present) {
+      map['customer_name'] = Variable<String>(customerName.value);
+    }
+    if (returnedAt.present) {
+      map['returned_at'] = Variable<int>(returnedAt.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (totalPaise.present) {
+      map['total_paise'] = Variable<int>(totalPaise.value);
+    }
+    if (taxablePaise.present) {
+      map['taxable_paise'] = Variable<int>(taxablePaise.value);
+    }
+    if (cgstPaise.present) {
+      map['cgst_paise'] = Variable<int>(cgstPaise.value);
+    }
+    if (sgstPaise.present) {
+      map['sgst_paise'] = Variable<int>(sgstPaise.value);
+    }
+    if (igstPaise.present) {
+      map['igst_paise'] = Variable<int>(igstPaise.value);
+    }
+    if (costPaise.present) {
+      map['cost_paise'] = Variable<int>(costPaise.value);
+    }
+    if (roundOffPaise.present) {
+      map['round_off_paise'] = Variable<int>(roundOffPaise.value);
+    }
+    if (dueReducedPaise.present) {
+      map['due_reduced_paise'] = Variable<int>(dueReducedPaise.value);
+    }
+    if (creditKeptPaise.present) {
+      map['credit_kept_paise'] = Variable<int>(creditKeptPaise.value);
+    }
+    if (refundedPaise.present) {
+      map['refunded_paise'] = Variable<int>(refundedPaise.value);
+    }
+    if (refundMode.present) {
+      map['refund_mode'] = Variable<int>(refundMode.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (byName.present) {
+      map['by_name'] = Variable<String>(byName.value);
+    }
+    if (idemKey.present) {
+      map['idem_key'] = Variable<String>(idemKey.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SalesReturnsCompanion(')
+          ..write('id: $id, ')
+          ..write('number: $number, ')
+          ..write('billId: $billId, ')
+          ..write('billNo: $billNo, ')
+          ..write('customerId: $customerId, ')
+          ..write('customerName: $customerName, ')
+          ..write('returnedAt: $returnedAt, ')
+          ..write('day: $day, ')
+          ..write('totalPaise: $totalPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('cgstPaise: $cgstPaise, ')
+          ..write('sgstPaise: $sgstPaise, ')
+          ..write('igstPaise: $igstPaise, ')
+          ..write('costPaise: $costPaise, ')
+          ..write('roundOffPaise: $roundOffPaise, ')
+          ..write('dueReducedPaise: $dueReducedPaise, ')
+          ..write('creditKeptPaise: $creditKeptPaise, ')
+          ..write('refundedPaise: $refundedPaise, ')
+          ..write('refundMode: $refundMode, ')
+          ..write('reason: $reason, ')
+          ..write('byName: $byName, ')
+          ..write('idemKey: $idemKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class SalesReturnLines extends Table
+    with TableInfo<SalesReturnLines, DbSalesReturnLine> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  SalesReturnLines(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _returnIdMeta = const VerificationMeta(
+    'returnId',
+  );
+  late final GeneratedColumn<String> returnId = GeneratedColumn<String>(
+    'return_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES sales_returns(id)',
+  );
+  static const VerificationMeta _billLineIdMeta = const VerificationMeta(
+    'billLineId',
+  );
+  late final GeneratedColumn<String> billLineId = GeneratedColumn<String>(
+    'bill_line_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES bill_lines(id)',
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES products(id)',
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'pcs\'',
+    defaultValue: const CustomExpression('\'pcs\''),
+  );
+  static const VerificationMeta _qtyMilliMeta = const VerificationMeta(
+    'qtyMilli',
+  );
+  late final GeneratedColumn<int> qtyMilli = GeneratedColumn<int>(
+    'qty_milli',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _amountPaiseMeta = const VerificationMeta(
+    'amountPaise',
+  );
+  late final GeneratedColumn<int> amountPaise = GeneratedColumn<int>(
+    'amount_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _taxablePaiseMeta = const VerificationMeta(
+    'taxablePaise',
+  );
+  late final GeneratedColumn<int> taxablePaise = GeneratedColumn<int>(
+    'taxable_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _taxPaiseMeta = const VerificationMeta(
+    'taxPaise',
+  );
+  late final GeneratedColumn<int> taxPaise = GeneratedColumn<int>(
+    'tax_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _costPaiseMeta = const VerificationMeta(
+    'costPaise',
+  );
+  late final GeneratedColumn<int> costPaise = GeneratedColumn<int>(
+    'cost_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    returnId,
+    billLineId,
+    productId,
+    name,
+    unit,
+    qtyMilli,
+    amountPaise,
+    taxablePaise,
+    taxPaise,
+    costPaise,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sales_return_lines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DbSalesReturnLine> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('return_id')) {
+      context.handle(
+        _returnIdMeta,
+        returnId.isAcceptableOrUnknown(data['return_id']!, _returnIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_returnIdMeta);
+    }
+    if (data.containsKey('bill_line_id')) {
+      context.handle(
+        _billLineIdMeta,
+        billLineId.isAcceptableOrUnknown(
+          data['bill_line_id']!,
+          _billLineIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_billLineIdMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    }
+    if (data.containsKey('qty_milli')) {
+      context.handle(
+        _qtyMilliMeta,
+        qtyMilli.isAcceptableOrUnknown(data['qty_milli']!, _qtyMilliMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_qtyMilliMeta);
+    }
+    if (data.containsKey('amount_paise')) {
+      context.handle(
+        _amountPaiseMeta,
+        amountPaise.isAcceptableOrUnknown(
+          data['amount_paise']!,
+          _amountPaiseMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountPaiseMeta);
+    }
+    if (data.containsKey('taxable_paise')) {
+      context.handle(
+        _taxablePaiseMeta,
+        taxablePaise.isAcceptableOrUnknown(
+          data['taxable_paise']!,
+          _taxablePaiseMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_taxablePaiseMeta);
+    }
+    if (data.containsKey('tax_paise')) {
+      context.handle(
+        _taxPaiseMeta,
+        taxPaise.isAcceptableOrUnknown(data['tax_paise']!, _taxPaiseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taxPaiseMeta);
+    }
+    if (data.containsKey('cost_paise')) {
+      context.handle(
+        _costPaiseMeta,
+        costPaise.isAcceptableOrUnknown(data['cost_paise']!, _costPaiseMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbSalesReturnLine map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbSalesReturnLine(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      returnId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}return_id'],
+      )!,
+      billLineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bill_line_id'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      )!,
+      qtyMilli: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}qty_milli'],
+      )!,
+      amountPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_paise'],
+      )!,
+      taxablePaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taxable_paise'],
+      )!,
+      taxPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tax_paise'],
+      )!,
+      costPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cost_paise'],
+      )!,
+    );
+  }
+
+  @override
+  SalesReturnLines createAlias(String alias) {
+    return SalesReturnLines(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class DbSalesReturnLine extends DataClass
+    implements Insertable<DbSalesReturnLine> {
+  final String id;
+  final String returnId;
+  final String billLineId;
+  final String productId;
+  final String name;
+  final String unit;
+  final int qtyMilli;
+  final int amountPaise;
+  final int taxablePaise;
+  final int taxPaise;
+  final int costPaise;
+  const DbSalesReturnLine({
+    required this.id,
+    required this.returnId,
+    required this.billLineId,
+    required this.productId,
+    required this.name,
+    required this.unit,
+    required this.qtyMilli,
+    required this.amountPaise,
+    required this.taxablePaise,
+    required this.taxPaise,
+    required this.costPaise,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['return_id'] = Variable<String>(returnId);
+    map['bill_line_id'] = Variable<String>(billLineId);
+    map['product_id'] = Variable<String>(productId);
+    map['name'] = Variable<String>(name);
+    map['unit'] = Variable<String>(unit);
+    map['qty_milli'] = Variable<int>(qtyMilli);
+    map['amount_paise'] = Variable<int>(amountPaise);
+    map['taxable_paise'] = Variable<int>(taxablePaise);
+    map['tax_paise'] = Variable<int>(taxPaise);
+    map['cost_paise'] = Variable<int>(costPaise);
+    return map;
+  }
+
+  SalesReturnLinesCompanion toCompanion(bool nullToAbsent) {
+    return SalesReturnLinesCompanion(
+      id: Value(id),
+      returnId: Value(returnId),
+      billLineId: Value(billLineId),
+      productId: Value(productId),
+      name: Value(name),
+      unit: Value(unit),
+      qtyMilli: Value(qtyMilli),
+      amountPaise: Value(amountPaise),
+      taxablePaise: Value(taxablePaise),
+      taxPaise: Value(taxPaise),
+      costPaise: Value(costPaise),
+    );
+  }
+
+  factory DbSalesReturnLine.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbSalesReturnLine(
+      id: serializer.fromJson<String>(json['id']),
+      returnId: serializer.fromJson<String>(json['return_id']),
+      billLineId: serializer.fromJson<String>(json['bill_line_id']),
+      productId: serializer.fromJson<String>(json['product_id']),
+      name: serializer.fromJson<String>(json['name']),
+      unit: serializer.fromJson<String>(json['unit']),
+      qtyMilli: serializer.fromJson<int>(json['qty_milli']),
+      amountPaise: serializer.fromJson<int>(json['amount_paise']),
+      taxablePaise: serializer.fromJson<int>(json['taxable_paise']),
+      taxPaise: serializer.fromJson<int>(json['tax_paise']),
+      costPaise: serializer.fromJson<int>(json['cost_paise']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'return_id': serializer.toJson<String>(returnId),
+      'bill_line_id': serializer.toJson<String>(billLineId),
+      'product_id': serializer.toJson<String>(productId),
+      'name': serializer.toJson<String>(name),
+      'unit': serializer.toJson<String>(unit),
+      'qty_milli': serializer.toJson<int>(qtyMilli),
+      'amount_paise': serializer.toJson<int>(amountPaise),
+      'taxable_paise': serializer.toJson<int>(taxablePaise),
+      'tax_paise': serializer.toJson<int>(taxPaise),
+      'cost_paise': serializer.toJson<int>(costPaise),
+    };
+  }
+
+  DbSalesReturnLine copyWith({
+    String? id,
+    String? returnId,
+    String? billLineId,
+    String? productId,
+    String? name,
+    String? unit,
+    int? qtyMilli,
+    int? amountPaise,
+    int? taxablePaise,
+    int? taxPaise,
+    int? costPaise,
+  }) => DbSalesReturnLine(
+    id: id ?? this.id,
+    returnId: returnId ?? this.returnId,
+    billLineId: billLineId ?? this.billLineId,
+    productId: productId ?? this.productId,
+    name: name ?? this.name,
+    unit: unit ?? this.unit,
+    qtyMilli: qtyMilli ?? this.qtyMilli,
+    amountPaise: amountPaise ?? this.amountPaise,
+    taxablePaise: taxablePaise ?? this.taxablePaise,
+    taxPaise: taxPaise ?? this.taxPaise,
+    costPaise: costPaise ?? this.costPaise,
+  );
+  DbSalesReturnLine copyWithCompanion(SalesReturnLinesCompanion data) {
+    return DbSalesReturnLine(
+      id: data.id.present ? data.id.value : this.id,
+      returnId: data.returnId.present ? data.returnId.value : this.returnId,
+      billLineId: data.billLineId.present
+          ? data.billLineId.value
+          : this.billLineId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      name: data.name.present ? data.name.value : this.name,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      qtyMilli: data.qtyMilli.present ? data.qtyMilli.value : this.qtyMilli,
+      amountPaise: data.amountPaise.present
+          ? data.amountPaise.value
+          : this.amountPaise,
+      taxablePaise: data.taxablePaise.present
+          ? data.taxablePaise.value
+          : this.taxablePaise,
+      taxPaise: data.taxPaise.present ? data.taxPaise.value : this.taxPaise,
+      costPaise: data.costPaise.present ? data.costPaise.value : this.costPaise,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbSalesReturnLine(')
+          ..write('id: $id, ')
+          ..write('returnId: $returnId, ')
+          ..write('billLineId: $billLineId, ')
+          ..write('productId: $productId, ')
+          ..write('name: $name, ')
+          ..write('unit: $unit, ')
+          ..write('qtyMilli: $qtyMilli, ')
+          ..write('amountPaise: $amountPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('costPaise: $costPaise')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    returnId,
+    billLineId,
+    productId,
+    name,
+    unit,
+    qtyMilli,
+    amountPaise,
+    taxablePaise,
+    taxPaise,
+    costPaise,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbSalesReturnLine &&
+          other.id == this.id &&
+          other.returnId == this.returnId &&
+          other.billLineId == this.billLineId &&
+          other.productId == this.productId &&
+          other.name == this.name &&
+          other.unit == this.unit &&
+          other.qtyMilli == this.qtyMilli &&
+          other.amountPaise == this.amountPaise &&
+          other.taxablePaise == this.taxablePaise &&
+          other.taxPaise == this.taxPaise &&
+          other.costPaise == this.costPaise);
+}
+
+class SalesReturnLinesCompanion extends UpdateCompanion<DbSalesReturnLine> {
+  final Value<String> id;
+  final Value<String> returnId;
+  final Value<String> billLineId;
+  final Value<String> productId;
+  final Value<String> name;
+  final Value<String> unit;
+  final Value<int> qtyMilli;
+  final Value<int> amountPaise;
+  final Value<int> taxablePaise;
+  final Value<int> taxPaise;
+  final Value<int> costPaise;
+  final Value<int> rowid;
+  const SalesReturnLinesCompanion({
+    this.id = const Value.absent(),
+    this.returnId = const Value.absent(),
+    this.billLineId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.qtyMilli = const Value.absent(),
+    this.amountPaise = const Value.absent(),
+    this.taxablePaise = const Value.absent(),
+    this.taxPaise = const Value.absent(),
+    this.costPaise = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SalesReturnLinesCompanion.insert({
+    required String id,
+    required String returnId,
+    required String billLineId,
+    required String productId,
+    required String name,
+    this.unit = const Value.absent(),
+    required int qtyMilli,
+    required int amountPaise,
+    required int taxablePaise,
+    required int taxPaise,
+    this.costPaise = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       returnId = Value(returnId),
+       billLineId = Value(billLineId),
+       productId = Value(productId),
+       name = Value(name),
+       qtyMilli = Value(qtyMilli),
+       amountPaise = Value(amountPaise),
+       taxablePaise = Value(taxablePaise),
+       taxPaise = Value(taxPaise);
+  static Insertable<DbSalesReturnLine> custom({
+    Expression<String>? id,
+    Expression<String>? returnId,
+    Expression<String>? billLineId,
+    Expression<String>? productId,
+    Expression<String>? name,
+    Expression<String>? unit,
+    Expression<int>? qtyMilli,
+    Expression<int>? amountPaise,
+    Expression<int>? taxablePaise,
+    Expression<int>? taxPaise,
+    Expression<int>? costPaise,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (returnId != null) 'return_id': returnId,
+      if (billLineId != null) 'bill_line_id': billLineId,
+      if (productId != null) 'product_id': productId,
+      if (name != null) 'name': name,
+      if (unit != null) 'unit': unit,
+      if (qtyMilli != null) 'qty_milli': qtyMilli,
+      if (amountPaise != null) 'amount_paise': amountPaise,
+      if (taxablePaise != null) 'taxable_paise': taxablePaise,
+      if (taxPaise != null) 'tax_paise': taxPaise,
+      if (costPaise != null) 'cost_paise': costPaise,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SalesReturnLinesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? returnId,
+    Value<String>? billLineId,
+    Value<String>? productId,
+    Value<String>? name,
+    Value<String>? unit,
+    Value<int>? qtyMilli,
+    Value<int>? amountPaise,
+    Value<int>? taxablePaise,
+    Value<int>? taxPaise,
+    Value<int>? costPaise,
+    Value<int>? rowid,
+  }) {
+    return SalesReturnLinesCompanion(
+      id: id ?? this.id,
+      returnId: returnId ?? this.returnId,
+      billLineId: billLineId ?? this.billLineId,
+      productId: productId ?? this.productId,
+      name: name ?? this.name,
+      unit: unit ?? this.unit,
+      qtyMilli: qtyMilli ?? this.qtyMilli,
+      amountPaise: amountPaise ?? this.amountPaise,
+      taxablePaise: taxablePaise ?? this.taxablePaise,
+      taxPaise: taxPaise ?? this.taxPaise,
+      costPaise: costPaise ?? this.costPaise,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (returnId.present) {
+      map['return_id'] = Variable<String>(returnId.value);
+    }
+    if (billLineId.present) {
+      map['bill_line_id'] = Variable<String>(billLineId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (qtyMilli.present) {
+      map['qty_milli'] = Variable<int>(qtyMilli.value);
+    }
+    if (amountPaise.present) {
+      map['amount_paise'] = Variable<int>(amountPaise.value);
+    }
+    if (taxablePaise.present) {
+      map['taxable_paise'] = Variable<int>(taxablePaise.value);
+    }
+    if (taxPaise.present) {
+      map['tax_paise'] = Variable<int>(taxPaise.value);
+    }
+    if (costPaise.present) {
+      map['cost_paise'] = Variable<int>(costPaise.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SalesReturnLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('returnId: $returnId, ')
+          ..write('billLineId: $billLineId, ')
+          ..write('productId: $productId, ')
+          ..write('name: $name, ')
+          ..write('unit: $unit, ')
+          ..write('qtyMilli: $qtyMilli, ')
+          ..write('amountPaise: $amountPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('costPaise: $costPaise, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class Purchases extends Table with TableInfo<Purchases, DbPurchase> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  Purchases(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+    'number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _dealerIdMeta = const VerificationMeta(
+    'dealerId',
+  );
+  late final GeneratedColumn<String> dealerId = GeneratedColumn<String>(
+    'dealer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES dealers(id)',
+  );
+  static const VerificationMeta _dealerNameMeta = const VerificationMeta(
+    'dealerName',
+  );
+  late final GeneratedColumn<String> dealerName = GeneratedColumn<String>(
+    'dealer_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _invoiceNoMeta = const VerificationMeta(
+    'invoiceNo',
+  );
+  late final GeneratedColumn<String> invoiceNo = GeneratedColumn<String>(
+    'invoice_no',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _purchasedAtMeta = const VerificationMeta(
+    'purchasedAt',
+  );
+  late final GeneratedColumn<int> purchasedAt = GeneratedColumn<int>(
+    'purchased_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _totalPaiseMeta = const VerificationMeta(
+    'totalPaise',
+  );
+  late final GeneratedColumn<int> totalPaise = GeneratedColumn<int>(
+    'total_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _taxablePaiseMeta = const VerificationMeta(
+    'taxablePaise',
+  );
+  late final GeneratedColumn<int> taxablePaise = GeneratedColumn<int>(
+    'taxable_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _taxPaiseMeta = const VerificationMeta(
+    'taxPaise',
+  );
+  late final GeneratedColumn<int> taxPaise = GeneratedColumn<int>(
+    'tax_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _paidPaiseMeta = const VerificationMeta(
+    'paidPaise',
+  );
+  late final GeneratedColumn<int> paidPaise = GeneratedColumn<int>(
+    'paid_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  late final GeneratedColumn<int> status = GeneratedColumn<int>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 1',
+    defaultValue: const CustomExpression('1'),
+  );
+  static const VerificationMeta _receivedAtMeta = const VerificationMeta(
+    'receivedAt',
+  );
+  late final GeneratedColumn<int> receivedAt = GeneratedColumn<int>(
+    'received_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _updateCostMeta = const VerificationMeta(
+    'updateCost',
+  );
+  late final GeneratedColumn<int> updateCost = GeneratedColumn<int>(
+    'update_cost',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 1',
+    defaultValue: const CustomExpression('1'),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _idemKeyMeta = const VerificationMeta(
+    'idemKey',
+  );
+  late final GeneratedColumn<String> idemKey = GeneratedColumn<String>(
+    'idem_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _byNameMeta = const VerificationMeta('byName');
+  late final GeneratedColumn<String> byName = GeneratedColumn<String>(
+    'by_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    number,
+    dealerId,
+    dealerName,
+    invoiceNo,
+    purchasedAt,
+    day,
+    totalPaise,
+    taxablePaise,
+    taxPaise,
+    paidPaise,
+    status,
+    receivedAt,
+    updateCost,
+    note,
+    idemKey,
+    byName,
+    createdAt,
+    deviceId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'purchases';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DbPurchase> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(
+        _numberMeta,
+        number.isAcceptableOrUnknown(data['number']!, _numberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numberMeta);
+    }
+    if (data.containsKey('dealer_id')) {
+      context.handle(
+        _dealerIdMeta,
+        dealerId.isAcceptableOrUnknown(data['dealer_id']!, _dealerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dealerIdMeta);
+    }
+    if (data.containsKey('dealer_name')) {
+      context.handle(
+        _dealerNameMeta,
+        dealerName.isAcceptableOrUnknown(data['dealer_name']!, _dealerNameMeta),
+      );
+    }
+    if (data.containsKey('invoice_no')) {
+      context.handle(
+        _invoiceNoMeta,
+        invoiceNo.isAcceptableOrUnknown(data['invoice_no']!, _invoiceNoMeta),
+      );
+    }
+    if (data.containsKey('purchased_at')) {
+      context.handle(
+        _purchasedAtMeta,
+        purchasedAt.isAcceptableOrUnknown(
+          data['purchased_at']!,
+          _purchasedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_purchasedAtMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('total_paise')) {
+      context.handle(
+        _totalPaiseMeta,
+        totalPaise.isAcceptableOrUnknown(data['total_paise']!, _totalPaiseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalPaiseMeta);
+    }
+    if (data.containsKey('taxable_paise')) {
+      context.handle(
+        _taxablePaiseMeta,
+        taxablePaise.isAcceptableOrUnknown(
+          data['taxable_paise']!,
+          _taxablePaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tax_paise')) {
+      context.handle(
+        _taxPaiseMeta,
+        taxPaise.isAcceptableOrUnknown(data['tax_paise']!, _taxPaiseMeta),
+      );
+    }
+    if (data.containsKey('paid_paise')) {
+      context.handle(
+        _paidPaiseMeta,
+        paidPaise.isAcceptableOrUnknown(data['paid_paise']!, _paidPaiseMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('received_at')) {
+      context.handle(
+        _receivedAtMeta,
+        receivedAt.isAcceptableOrUnknown(data['received_at']!, _receivedAtMeta),
+      );
+    }
+    if (data.containsKey('update_cost')) {
+      context.handle(
+        _updateCostMeta,
+        updateCost.isAcceptableOrUnknown(data['update_cost']!, _updateCostMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('idem_key')) {
+      context.handle(
+        _idemKeyMeta,
+        idemKey.isAcceptableOrUnknown(data['idem_key']!, _idemKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_idemKeyMeta);
+    }
+    if (data.containsKey('by_name')) {
+      context.handle(
+        _byNameMeta,
+        byName.isAcceptableOrUnknown(data['by_name']!, _byNameMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbPurchase map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbPurchase(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      number: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}number'],
+      )!,
+      dealerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dealer_id'],
+      )!,
+      dealerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dealer_name'],
+      )!,
+      invoiceNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}invoice_no'],
+      )!,
+      purchasedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}purchased_at'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day'],
+      )!,
+      totalPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_paise'],
+      )!,
+      taxablePaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taxable_paise'],
+      )!,
+      taxPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tax_paise'],
+      )!,
+      paidPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}paid_paise'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}status'],
+      )!,
+      receivedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}received_at'],
+      ),
+      updateCost: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}update_cost'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      idemKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}idem_key'],
+      )!,
+      byName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}by_name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+    );
+  }
+
+  @override
+  Purchases createAlias(String alias) {
+    return Purchases(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class DbPurchase extends DataClass implements Insertable<DbPurchase> {
+  final String id;
+  final String number;
+  final String dealerId;
+  final String dealerName;
+  final String invoiceNo;
+  final int purchasedAt;
+  final String day;
+  final int totalPaise;
+  final int taxablePaise;
+  final int taxPaise;
+  final int paidPaise;
+  final int status;
+  final int? receivedAt;
+  final int updateCost;
+  final String note;
+  final String idemKey;
+  final String byName;
+  final int createdAt;
+  final String deviceId;
+  const DbPurchase({
+    required this.id,
+    required this.number,
+    required this.dealerId,
+    required this.dealerName,
+    required this.invoiceNo,
+    required this.purchasedAt,
+    required this.day,
+    required this.totalPaise,
+    required this.taxablePaise,
+    required this.taxPaise,
+    required this.paidPaise,
+    required this.status,
+    this.receivedAt,
+    required this.updateCost,
+    required this.note,
+    required this.idemKey,
+    required this.byName,
+    required this.createdAt,
+    required this.deviceId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['number'] = Variable<String>(number);
+    map['dealer_id'] = Variable<String>(dealerId);
+    map['dealer_name'] = Variable<String>(dealerName);
+    map['invoice_no'] = Variable<String>(invoiceNo);
+    map['purchased_at'] = Variable<int>(purchasedAt);
+    map['day'] = Variable<String>(day);
+    map['total_paise'] = Variable<int>(totalPaise);
+    map['taxable_paise'] = Variable<int>(taxablePaise);
+    map['tax_paise'] = Variable<int>(taxPaise);
+    map['paid_paise'] = Variable<int>(paidPaise);
+    map['status'] = Variable<int>(status);
+    if (!nullToAbsent || receivedAt != null) {
+      map['received_at'] = Variable<int>(receivedAt);
+    }
+    map['update_cost'] = Variable<int>(updateCost);
+    map['note'] = Variable<String>(note);
+    map['idem_key'] = Variable<String>(idemKey);
+    map['by_name'] = Variable<String>(byName);
+    map['created_at'] = Variable<int>(createdAt);
+    map['device_id'] = Variable<String>(deviceId);
+    return map;
+  }
+
+  PurchasesCompanion toCompanion(bool nullToAbsent) {
+    return PurchasesCompanion(
+      id: Value(id),
+      number: Value(number),
+      dealerId: Value(dealerId),
+      dealerName: Value(dealerName),
+      invoiceNo: Value(invoiceNo),
+      purchasedAt: Value(purchasedAt),
+      day: Value(day),
+      totalPaise: Value(totalPaise),
+      taxablePaise: Value(taxablePaise),
+      taxPaise: Value(taxPaise),
+      paidPaise: Value(paidPaise),
+      status: Value(status),
+      receivedAt: receivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(receivedAt),
+      updateCost: Value(updateCost),
+      note: Value(note),
+      idemKey: Value(idemKey),
+      byName: Value(byName),
+      createdAt: Value(createdAt),
+      deviceId: Value(deviceId),
+    );
+  }
+
+  factory DbPurchase.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbPurchase(
+      id: serializer.fromJson<String>(json['id']),
+      number: serializer.fromJson<String>(json['number']),
+      dealerId: serializer.fromJson<String>(json['dealer_id']),
+      dealerName: serializer.fromJson<String>(json['dealer_name']),
+      invoiceNo: serializer.fromJson<String>(json['invoice_no']),
+      purchasedAt: serializer.fromJson<int>(json['purchased_at']),
+      day: serializer.fromJson<String>(json['day']),
+      totalPaise: serializer.fromJson<int>(json['total_paise']),
+      taxablePaise: serializer.fromJson<int>(json['taxable_paise']),
+      taxPaise: serializer.fromJson<int>(json['tax_paise']),
+      paidPaise: serializer.fromJson<int>(json['paid_paise']),
+      status: serializer.fromJson<int>(json['status']),
+      receivedAt: serializer.fromJson<int?>(json['received_at']),
+      updateCost: serializer.fromJson<int>(json['update_cost']),
+      note: serializer.fromJson<String>(json['note']),
+      idemKey: serializer.fromJson<String>(json['idem_key']),
+      byName: serializer.fromJson<String>(json['by_name']),
+      createdAt: serializer.fromJson<int>(json['created_at']),
+      deviceId: serializer.fromJson<String>(json['device_id']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'number': serializer.toJson<String>(number),
+      'dealer_id': serializer.toJson<String>(dealerId),
+      'dealer_name': serializer.toJson<String>(dealerName),
+      'invoice_no': serializer.toJson<String>(invoiceNo),
+      'purchased_at': serializer.toJson<int>(purchasedAt),
+      'day': serializer.toJson<String>(day),
+      'total_paise': serializer.toJson<int>(totalPaise),
+      'taxable_paise': serializer.toJson<int>(taxablePaise),
+      'tax_paise': serializer.toJson<int>(taxPaise),
+      'paid_paise': serializer.toJson<int>(paidPaise),
+      'status': serializer.toJson<int>(status),
+      'received_at': serializer.toJson<int?>(receivedAt),
+      'update_cost': serializer.toJson<int>(updateCost),
+      'note': serializer.toJson<String>(note),
+      'idem_key': serializer.toJson<String>(idemKey),
+      'by_name': serializer.toJson<String>(byName),
+      'created_at': serializer.toJson<int>(createdAt),
+      'device_id': serializer.toJson<String>(deviceId),
+    };
+  }
+
+  DbPurchase copyWith({
+    String? id,
+    String? number,
+    String? dealerId,
+    String? dealerName,
+    String? invoiceNo,
+    int? purchasedAt,
+    String? day,
+    int? totalPaise,
+    int? taxablePaise,
+    int? taxPaise,
+    int? paidPaise,
+    int? status,
+    Value<int?> receivedAt = const Value.absent(),
+    int? updateCost,
+    String? note,
+    String? idemKey,
+    String? byName,
+    int? createdAt,
+    String? deviceId,
+  }) => DbPurchase(
+    id: id ?? this.id,
+    number: number ?? this.number,
+    dealerId: dealerId ?? this.dealerId,
+    dealerName: dealerName ?? this.dealerName,
+    invoiceNo: invoiceNo ?? this.invoiceNo,
+    purchasedAt: purchasedAt ?? this.purchasedAt,
+    day: day ?? this.day,
+    totalPaise: totalPaise ?? this.totalPaise,
+    taxablePaise: taxablePaise ?? this.taxablePaise,
+    taxPaise: taxPaise ?? this.taxPaise,
+    paidPaise: paidPaise ?? this.paidPaise,
+    status: status ?? this.status,
+    receivedAt: receivedAt.present ? receivedAt.value : this.receivedAt,
+    updateCost: updateCost ?? this.updateCost,
+    note: note ?? this.note,
+    idemKey: idemKey ?? this.idemKey,
+    byName: byName ?? this.byName,
+    createdAt: createdAt ?? this.createdAt,
+    deviceId: deviceId ?? this.deviceId,
+  );
+  DbPurchase copyWithCompanion(PurchasesCompanion data) {
+    return DbPurchase(
+      id: data.id.present ? data.id.value : this.id,
+      number: data.number.present ? data.number.value : this.number,
+      dealerId: data.dealerId.present ? data.dealerId.value : this.dealerId,
+      dealerName: data.dealerName.present
+          ? data.dealerName.value
+          : this.dealerName,
+      invoiceNo: data.invoiceNo.present ? data.invoiceNo.value : this.invoiceNo,
+      purchasedAt: data.purchasedAt.present
+          ? data.purchasedAt.value
+          : this.purchasedAt,
+      day: data.day.present ? data.day.value : this.day,
+      totalPaise: data.totalPaise.present
+          ? data.totalPaise.value
+          : this.totalPaise,
+      taxablePaise: data.taxablePaise.present
+          ? data.taxablePaise.value
+          : this.taxablePaise,
+      taxPaise: data.taxPaise.present ? data.taxPaise.value : this.taxPaise,
+      paidPaise: data.paidPaise.present ? data.paidPaise.value : this.paidPaise,
+      status: data.status.present ? data.status.value : this.status,
+      receivedAt: data.receivedAt.present
+          ? data.receivedAt.value
+          : this.receivedAt,
+      updateCost: data.updateCost.present
+          ? data.updateCost.value
+          : this.updateCost,
+      note: data.note.present ? data.note.value : this.note,
+      idemKey: data.idemKey.present ? data.idemKey.value : this.idemKey,
+      byName: data.byName.present ? data.byName.value : this.byName,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbPurchase(')
+          ..write('id: $id, ')
+          ..write('number: $number, ')
+          ..write('dealerId: $dealerId, ')
+          ..write('dealerName: $dealerName, ')
+          ..write('invoiceNo: $invoiceNo, ')
+          ..write('purchasedAt: $purchasedAt, ')
+          ..write('day: $day, ')
+          ..write('totalPaise: $totalPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('paidPaise: $paidPaise, ')
+          ..write('status: $status, ')
+          ..write('receivedAt: $receivedAt, ')
+          ..write('updateCost: $updateCost, ')
+          ..write('note: $note, ')
+          ..write('idemKey: $idemKey, ')
+          ..write('byName: $byName, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deviceId: $deviceId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    number,
+    dealerId,
+    dealerName,
+    invoiceNo,
+    purchasedAt,
+    day,
+    totalPaise,
+    taxablePaise,
+    taxPaise,
+    paidPaise,
+    status,
+    receivedAt,
+    updateCost,
+    note,
+    idemKey,
+    byName,
+    createdAt,
+    deviceId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbPurchase &&
+          other.id == this.id &&
+          other.number == this.number &&
+          other.dealerId == this.dealerId &&
+          other.dealerName == this.dealerName &&
+          other.invoiceNo == this.invoiceNo &&
+          other.purchasedAt == this.purchasedAt &&
+          other.day == this.day &&
+          other.totalPaise == this.totalPaise &&
+          other.taxablePaise == this.taxablePaise &&
+          other.taxPaise == this.taxPaise &&
+          other.paidPaise == this.paidPaise &&
+          other.status == this.status &&
+          other.receivedAt == this.receivedAt &&
+          other.updateCost == this.updateCost &&
+          other.note == this.note &&
+          other.idemKey == this.idemKey &&
+          other.byName == this.byName &&
+          other.createdAt == this.createdAt &&
+          other.deviceId == this.deviceId);
+}
+
+class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
+  final Value<String> id;
+  final Value<String> number;
+  final Value<String> dealerId;
+  final Value<String> dealerName;
+  final Value<String> invoiceNo;
+  final Value<int> purchasedAt;
+  final Value<String> day;
+  final Value<int> totalPaise;
+  final Value<int> taxablePaise;
+  final Value<int> taxPaise;
+  final Value<int> paidPaise;
+  final Value<int> status;
+  final Value<int?> receivedAt;
+  final Value<int> updateCost;
+  final Value<String> note;
+  final Value<String> idemKey;
+  final Value<String> byName;
+  final Value<int> createdAt;
+  final Value<String> deviceId;
+  final Value<int> rowid;
+  const PurchasesCompanion({
+    this.id = const Value.absent(),
+    this.number = const Value.absent(),
+    this.dealerId = const Value.absent(),
+    this.dealerName = const Value.absent(),
+    this.invoiceNo = const Value.absent(),
+    this.purchasedAt = const Value.absent(),
+    this.day = const Value.absent(),
+    this.totalPaise = const Value.absent(),
+    this.taxablePaise = const Value.absent(),
+    this.taxPaise = const Value.absent(),
+    this.paidPaise = const Value.absent(),
+    this.status = const Value.absent(),
+    this.receivedAt = const Value.absent(),
+    this.updateCost = const Value.absent(),
+    this.note = const Value.absent(),
+    this.idemKey = const Value.absent(),
+    this.byName = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PurchasesCompanion.insert({
+    required String id,
+    required String number,
+    required String dealerId,
+    this.dealerName = const Value.absent(),
+    this.invoiceNo = const Value.absent(),
+    required int purchasedAt,
+    required String day,
+    required int totalPaise,
+    this.taxablePaise = const Value.absent(),
+    this.taxPaise = const Value.absent(),
+    this.paidPaise = const Value.absent(),
+    this.status = const Value.absent(),
+    this.receivedAt = const Value.absent(),
+    this.updateCost = const Value.absent(),
+    this.note = const Value.absent(),
+    required String idemKey,
+    this.byName = const Value.absent(),
+    required int createdAt,
+    required String deviceId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       number = Value(number),
+       dealerId = Value(dealerId),
+       purchasedAt = Value(purchasedAt),
+       day = Value(day),
+       totalPaise = Value(totalPaise),
+       idemKey = Value(idemKey),
+       createdAt = Value(createdAt),
+       deviceId = Value(deviceId);
+  static Insertable<DbPurchase> custom({
+    Expression<String>? id,
+    Expression<String>? number,
+    Expression<String>? dealerId,
+    Expression<String>? dealerName,
+    Expression<String>? invoiceNo,
+    Expression<int>? purchasedAt,
+    Expression<String>? day,
+    Expression<int>? totalPaise,
+    Expression<int>? taxablePaise,
+    Expression<int>? taxPaise,
+    Expression<int>? paidPaise,
+    Expression<int>? status,
+    Expression<int>? receivedAt,
+    Expression<int>? updateCost,
+    Expression<String>? note,
+    Expression<String>? idemKey,
+    Expression<String>? byName,
+    Expression<int>? createdAt,
+    Expression<String>? deviceId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (number != null) 'number': number,
+      if (dealerId != null) 'dealer_id': dealerId,
+      if (dealerName != null) 'dealer_name': dealerName,
+      if (invoiceNo != null) 'invoice_no': invoiceNo,
+      if (purchasedAt != null) 'purchased_at': purchasedAt,
+      if (day != null) 'day': day,
+      if (totalPaise != null) 'total_paise': totalPaise,
+      if (taxablePaise != null) 'taxable_paise': taxablePaise,
+      if (taxPaise != null) 'tax_paise': taxPaise,
+      if (paidPaise != null) 'paid_paise': paidPaise,
+      if (status != null) 'status': status,
+      if (receivedAt != null) 'received_at': receivedAt,
+      if (updateCost != null) 'update_cost': updateCost,
+      if (note != null) 'note': note,
+      if (idemKey != null) 'idem_key': idemKey,
+      if (byName != null) 'by_name': byName,
+      if (createdAt != null) 'created_at': createdAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PurchasesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? number,
+    Value<String>? dealerId,
+    Value<String>? dealerName,
+    Value<String>? invoiceNo,
+    Value<int>? purchasedAt,
+    Value<String>? day,
+    Value<int>? totalPaise,
+    Value<int>? taxablePaise,
+    Value<int>? taxPaise,
+    Value<int>? paidPaise,
+    Value<int>? status,
+    Value<int?>? receivedAt,
+    Value<int>? updateCost,
+    Value<String>? note,
+    Value<String>? idemKey,
+    Value<String>? byName,
+    Value<int>? createdAt,
+    Value<String>? deviceId,
+    Value<int>? rowid,
+  }) {
+    return PurchasesCompanion(
+      id: id ?? this.id,
+      number: number ?? this.number,
+      dealerId: dealerId ?? this.dealerId,
+      dealerName: dealerName ?? this.dealerName,
+      invoiceNo: invoiceNo ?? this.invoiceNo,
+      purchasedAt: purchasedAt ?? this.purchasedAt,
+      day: day ?? this.day,
+      totalPaise: totalPaise ?? this.totalPaise,
+      taxablePaise: taxablePaise ?? this.taxablePaise,
+      taxPaise: taxPaise ?? this.taxPaise,
+      paidPaise: paidPaise ?? this.paidPaise,
+      status: status ?? this.status,
+      receivedAt: receivedAt ?? this.receivedAt,
+      updateCost: updateCost ?? this.updateCost,
+      note: note ?? this.note,
+      idemKey: idemKey ?? this.idemKey,
+      byName: byName ?? this.byName,
+      createdAt: createdAt ?? this.createdAt,
+      deviceId: deviceId ?? this.deviceId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (dealerId.present) {
+      map['dealer_id'] = Variable<String>(dealerId.value);
+    }
+    if (dealerName.present) {
+      map['dealer_name'] = Variable<String>(dealerName.value);
+    }
+    if (invoiceNo.present) {
+      map['invoice_no'] = Variable<String>(invoiceNo.value);
+    }
+    if (purchasedAt.present) {
+      map['purchased_at'] = Variable<int>(purchasedAt.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (totalPaise.present) {
+      map['total_paise'] = Variable<int>(totalPaise.value);
+    }
+    if (taxablePaise.present) {
+      map['taxable_paise'] = Variable<int>(taxablePaise.value);
+    }
+    if (taxPaise.present) {
+      map['tax_paise'] = Variable<int>(taxPaise.value);
+    }
+    if (paidPaise.present) {
+      map['paid_paise'] = Variable<int>(paidPaise.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<int>(status.value);
+    }
+    if (receivedAt.present) {
+      map['received_at'] = Variable<int>(receivedAt.value);
+    }
+    if (updateCost.present) {
+      map['update_cost'] = Variable<int>(updateCost.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (idemKey.present) {
+      map['idem_key'] = Variable<String>(idemKey.value);
+    }
+    if (byName.present) {
+      map['by_name'] = Variable<String>(byName.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PurchasesCompanion(')
+          ..write('id: $id, ')
+          ..write('number: $number, ')
+          ..write('dealerId: $dealerId, ')
+          ..write('dealerName: $dealerName, ')
+          ..write('invoiceNo: $invoiceNo, ')
+          ..write('purchasedAt: $purchasedAt, ')
+          ..write('day: $day, ')
+          ..write('totalPaise: $totalPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('paidPaise: $paidPaise, ')
+          ..write('status: $status, ')
+          ..write('receivedAt: $receivedAt, ')
+          ..write('updateCost: $updateCost, ')
+          ..write('note: $note, ')
+          ..write('idemKey: $idemKey, ')
+          ..write('byName: $byName, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class PurchaseLines extends Table
+    with TableInfo<PurchaseLines, DbPurchaseLine> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  PurchaseLines(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _purchaseIdMeta = const VerificationMeta(
+    'purchaseId',
+  );
+  late final GeneratedColumn<String> purchaseId = GeneratedColumn<String>(
+    'purchase_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES purchases(id)',
+  );
+  static const VerificationMeta _lineNoMeta = const VerificationMeta('lineNo');
+  late final GeneratedColumn<int> lineNo = GeneratedColumn<int>(
+    'line_no',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES products(id)',
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'pcs\'',
+    defaultValue: const CustomExpression('\'pcs\''),
+  );
+  static const VerificationMeta _qtyMilliMeta = const VerificationMeta(
+    'qtyMilli',
+  );
+  late final GeneratedColumn<int> qtyMilli = GeneratedColumn<int>(
+    'qty_milli',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _ratePaiseMeta = const VerificationMeta(
+    'ratePaise',
+  );
+  late final GeneratedColumn<int> ratePaise = GeneratedColumn<int>(
+    'rate_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _gstBpMeta = const VerificationMeta('gstBp');
+  late final GeneratedColumn<int> gstBp = GeneratedColumn<int>(
+    'gst_bp',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _taxablePaiseMeta = const VerificationMeta(
+    'taxablePaise',
+  );
+  late final GeneratedColumn<int> taxablePaise = GeneratedColumn<int>(
+    'taxable_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _taxPaiseMeta = const VerificationMeta(
+    'taxPaise',
+  );
+  late final GeneratedColumn<int> taxPaise = GeneratedColumn<int>(
+    'tax_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _totalPaiseMeta = const VerificationMeta(
+    'totalPaise',
+  );
+  late final GeneratedColumn<int> totalPaise = GeneratedColumn<int>(
+    'total_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    purchaseId,
+    lineNo,
+    productId,
+    name,
+    unit,
+    qtyMilli,
+    ratePaise,
+    gstBp,
+    taxablePaise,
+    taxPaise,
+    totalPaise,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'purchase_lines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DbPurchaseLine> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('purchase_id')) {
+      context.handle(
+        _purchaseIdMeta,
+        purchaseId.isAcceptableOrUnknown(data['purchase_id']!, _purchaseIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_purchaseIdMeta);
+    }
+    if (data.containsKey('line_no')) {
+      context.handle(
+        _lineNoMeta,
+        lineNo.isAcceptableOrUnknown(data['line_no']!, _lineNoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lineNoMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    }
+    if (data.containsKey('qty_milli')) {
+      context.handle(
+        _qtyMilliMeta,
+        qtyMilli.isAcceptableOrUnknown(data['qty_milli']!, _qtyMilliMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_qtyMilliMeta);
+    }
+    if (data.containsKey('rate_paise')) {
+      context.handle(
+        _ratePaiseMeta,
+        ratePaise.isAcceptableOrUnknown(data['rate_paise']!, _ratePaiseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ratePaiseMeta);
+    }
+    if (data.containsKey('gst_bp')) {
+      context.handle(
+        _gstBpMeta,
+        gstBp.isAcceptableOrUnknown(data['gst_bp']!, _gstBpMeta),
+      );
+    }
+    if (data.containsKey('taxable_paise')) {
+      context.handle(
+        _taxablePaiseMeta,
+        taxablePaise.isAcceptableOrUnknown(
+          data['taxable_paise']!,
+          _taxablePaiseMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_taxablePaiseMeta);
+    }
+    if (data.containsKey('tax_paise')) {
+      context.handle(
+        _taxPaiseMeta,
+        taxPaise.isAcceptableOrUnknown(data['tax_paise']!, _taxPaiseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taxPaiseMeta);
+    }
+    if (data.containsKey('total_paise')) {
+      context.handle(
+        _totalPaiseMeta,
+        totalPaise.isAcceptableOrUnknown(data['total_paise']!, _totalPaiseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalPaiseMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbPurchaseLine map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbPurchaseLine(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      purchaseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}purchase_id'],
+      )!,
+      lineNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}line_no'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      )!,
+      qtyMilli: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}qty_milli'],
+      )!,
+      ratePaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rate_paise'],
+      )!,
+      gstBp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}gst_bp'],
+      )!,
+      taxablePaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taxable_paise'],
+      )!,
+      taxPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tax_paise'],
+      )!,
+      totalPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_paise'],
+      )!,
+    );
+  }
+
+  @override
+  PurchaseLines createAlias(String alias) {
+    return PurchaseLines(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class DbPurchaseLine extends DataClass implements Insertable<DbPurchaseLine> {
+  final String id;
+  final String purchaseId;
+  final int lineNo;
+  final String productId;
+  final String name;
+  final String unit;
+  final int qtyMilli;
+  final int ratePaise;
+  final int gstBp;
+  final int taxablePaise;
+  final int taxPaise;
+  final int totalPaise;
+  const DbPurchaseLine({
+    required this.id,
+    required this.purchaseId,
+    required this.lineNo,
+    required this.productId,
+    required this.name,
+    required this.unit,
+    required this.qtyMilli,
+    required this.ratePaise,
+    required this.gstBp,
+    required this.taxablePaise,
+    required this.taxPaise,
+    required this.totalPaise,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['purchase_id'] = Variable<String>(purchaseId);
+    map['line_no'] = Variable<int>(lineNo);
+    map['product_id'] = Variable<String>(productId);
+    map['name'] = Variable<String>(name);
+    map['unit'] = Variable<String>(unit);
+    map['qty_milli'] = Variable<int>(qtyMilli);
+    map['rate_paise'] = Variable<int>(ratePaise);
+    map['gst_bp'] = Variable<int>(gstBp);
+    map['taxable_paise'] = Variable<int>(taxablePaise);
+    map['tax_paise'] = Variable<int>(taxPaise);
+    map['total_paise'] = Variable<int>(totalPaise);
+    return map;
+  }
+
+  PurchaseLinesCompanion toCompanion(bool nullToAbsent) {
+    return PurchaseLinesCompanion(
+      id: Value(id),
+      purchaseId: Value(purchaseId),
+      lineNo: Value(lineNo),
+      productId: Value(productId),
+      name: Value(name),
+      unit: Value(unit),
+      qtyMilli: Value(qtyMilli),
+      ratePaise: Value(ratePaise),
+      gstBp: Value(gstBp),
+      taxablePaise: Value(taxablePaise),
+      taxPaise: Value(taxPaise),
+      totalPaise: Value(totalPaise),
+    );
+  }
+
+  factory DbPurchaseLine.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbPurchaseLine(
+      id: serializer.fromJson<String>(json['id']),
+      purchaseId: serializer.fromJson<String>(json['purchase_id']),
+      lineNo: serializer.fromJson<int>(json['line_no']),
+      productId: serializer.fromJson<String>(json['product_id']),
+      name: serializer.fromJson<String>(json['name']),
+      unit: serializer.fromJson<String>(json['unit']),
+      qtyMilli: serializer.fromJson<int>(json['qty_milli']),
+      ratePaise: serializer.fromJson<int>(json['rate_paise']),
+      gstBp: serializer.fromJson<int>(json['gst_bp']),
+      taxablePaise: serializer.fromJson<int>(json['taxable_paise']),
+      taxPaise: serializer.fromJson<int>(json['tax_paise']),
+      totalPaise: serializer.fromJson<int>(json['total_paise']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'purchase_id': serializer.toJson<String>(purchaseId),
+      'line_no': serializer.toJson<int>(lineNo),
+      'product_id': serializer.toJson<String>(productId),
+      'name': serializer.toJson<String>(name),
+      'unit': serializer.toJson<String>(unit),
+      'qty_milli': serializer.toJson<int>(qtyMilli),
+      'rate_paise': serializer.toJson<int>(ratePaise),
+      'gst_bp': serializer.toJson<int>(gstBp),
+      'taxable_paise': serializer.toJson<int>(taxablePaise),
+      'tax_paise': serializer.toJson<int>(taxPaise),
+      'total_paise': serializer.toJson<int>(totalPaise),
+    };
+  }
+
+  DbPurchaseLine copyWith({
+    String? id,
+    String? purchaseId,
+    int? lineNo,
+    String? productId,
+    String? name,
+    String? unit,
+    int? qtyMilli,
+    int? ratePaise,
+    int? gstBp,
+    int? taxablePaise,
+    int? taxPaise,
+    int? totalPaise,
+  }) => DbPurchaseLine(
+    id: id ?? this.id,
+    purchaseId: purchaseId ?? this.purchaseId,
+    lineNo: lineNo ?? this.lineNo,
+    productId: productId ?? this.productId,
+    name: name ?? this.name,
+    unit: unit ?? this.unit,
+    qtyMilli: qtyMilli ?? this.qtyMilli,
+    ratePaise: ratePaise ?? this.ratePaise,
+    gstBp: gstBp ?? this.gstBp,
+    taxablePaise: taxablePaise ?? this.taxablePaise,
+    taxPaise: taxPaise ?? this.taxPaise,
+    totalPaise: totalPaise ?? this.totalPaise,
+  );
+  DbPurchaseLine copyWithCompanion(PurchaseLinesCompanion data) {
+    return DbPurchaseLine(
+      id: data.id.present ? data.id.value : this.id,
+      purchaseId: data.purchaseId.present
+          ? data.purchaseId.value
+          : this.purchaseId,
+      lineNo: data.lineNo.present ? data.lineNo.value : this.lineNo,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      name: data.name.present ? data.name.value : this.name,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      qtyMilli: data.qtyMilli.present ? data.qtyMilli.value : this.qtyMilli,
+      ratePaise: data.ratePaise.present ? data.ratePaise.value : this.ratePaise,
+      gstBp: data.gstBp.present ? data.gstBp.value : this.gstBp,
+      taxablePaise: data.taxablePaise.present
+          ? data.taxablePaise.value
+          : this.taxablePaise,
+      taxPaise: data.taxPaise.present ? data.taxPaise.value : this.taxPaise,
+      totalPaise: data.totalPaise.present
+          ? data.totalPaise.value
+          : this.totalPaise,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbPurchaseLine(')
+          ..write('id: $id, ')
+          ..write('purchaseId: $purchaseId, ')
+          ..write('lineNo: $lineNo, ')
+          ..write('productId: $productId, ')
+          ..write('name: $name, ')
+          ..write('unit: $unit, ')
+          ..write('qtyMilli: $qtyMilli, ')
+          ..write('ratePaise: $ratePaise, ')
+          ..write('gstBp: $gstBp, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('totalPaise: $totalPaise')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    purchaseId,
+    lineNo,
+    productId,
+    name,
+    unit,
+    qtyMilli,
+    ratePaise,
+    gstBp,
+    taxablePaise,
+    taxPaise,
+    totalPaise,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbPurchaseLine &&
+          other.id == this.id &&
+          other.purchaseId == this.purchaseId &&
+          other.lineNo == this.lineNo &&
+          other.productId == this.productId &&
+          other.name == this.name &&
+          other.unit == this.unit &&
+          other.qtyMilli == this.qtyMilli &&
+          other.ratePaise == this.ratePaise &&
+          other.gstBp == this.gstBp &&
+          other.taxablePaise == this.taxablePaise &&
+          other.taxPaise == this.taxPaise &&
+          other.totalPaise == this.totalPaise);
+}
+
+class PurchaseLinesCompanion extends UpdateCompanion<DbPurchaseLine> {
+  final Value<String> id;
+  final Value<String> purchaseId;
+  final Value<int> lineNo;
+  final Value<String> productId;
+  final Value<String> name;
+  final Value<String> unit;
+  final Value<int> qtyMilli;
+  final Value<int> ratePaise;
+  final Value<int> gstBp;
+  final Value<int> taxablePaise;
+  final Value<int> taxPaise;
+  final Value<int> totalPaise;
+  final Value<int> rowid;
+  const PurchaseLinesCompanion({
+    this.id = const Value.absent(),
+    this.purchaseId = const Value.absent(),
+    this.lineNo = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.qtyMilli = const Value.absent(),
+    this.ratePaise = const Value.absent(),
+    this.gstBp = const Value.absent(),
+    this.taxablePaise = const Value.absent(),
+    this.taxPaise = const Value.absent(),
+    this.totalPaise = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PurchaseLinesCompanion.insert({
+    required String id,
+    required String purchaseId,
+    required int lineNo,
+    required String productId,
+    required String name,
+    this.unit = const Value.absent(),
+    required int qtyMilli,
+    required int ratePaise,
+    this.gstBp = const Value.absent(),
+    required int taxablePaise,
+    required int taxPaise,
+    required int totalPaise,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       purchaseId = Value(purchaseId),
+       lineNo = Value(lineNo),
+       productId = Value(productId),
+       name = Value(name),
+       qtyMilli = Value(qtyMilli),
+       ratePaise = Value(ratePaise),
+       taxablePaise = Value(taxablePaise),
+       taxPaise = Value(taxPaise),
+       totalPaise = Value(totalPaise);
+  static Insertable<DbPurchaseLine> custom({
+    Expression<String>? id,
+    Expression<String>? purchaseId,
+    Expression<int>? lineNo,
+    Expression<String>? productId,
+    Expression<String>? name,
+    Expression<String>? unit,
+    Expression<int>? qtyMilli,
+    Expression<int>? ratePaise,
+    Expression<int>? gstBp,
+    Expression<int>? taxablePaise,
+    Expression<int>? taxPaise,
+    Expression<int>? totalPaise,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (purchaseId != null) 'purchase_id': purchaseId,
+      if (lineNo != null) 'line_no': lineNo,
+      if (productId != null) 'product_id': productId,
+      if (name != null) 'name': name,
+      if (unit != null) 'unit': unit,
+      if (qtyMilli != null) 'qty_milli': qtyMilli,
+      if (ratePaise != null) 'rate_paise': ratePaise,
+      if (gstBp != null) 'gst_bp': gstBp,
+      if (taxablePaise != null) 'taxable_paise': taxablePaise,
+      if (taxPaise != null) 'tax_paise': taxPaise,
+      if (totalPaise != null) 'total_paise': totalPaise,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PurchaseLinesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? purchaseId,
+    Value<int>? lineNo,
+    Value<String>? productId,
+    Value<String>? name,
+    Value<String>? unit,
+    Value<int>? qtyMilli,
+    Value<int>? ratePaise,
+    Value<int>? gstBp,
+    Value<int>? taxablePaise,
+    Value<int>? taxPaise,
+    Value<int>? totalPaise,
+    Value<int>? rowid,
+  }) {
+    return PurchaseLinesCompanion(
+      id: id ?? this.id,
+      purchaseId: purchaseId ?? this.purchaseId,
+      lineNo: lineNo ?? this.lineNo,
+      productId: productId ?? this.productId,
+      name: name ?? this.name,
+      unit: unit ?? this.unit,
+      qtyMilli: qtyMilli ?? this.qtyMilli,
+      ratePaise: ratePaise ?? this.ratePaise,
+      gstBp: gstBp ?? this.gstBp,
+      taxablePaise: taxablePaise ?? this.taxablePaise,
+      taxPaise: taxPaise ?? this.taxPaise,
+      totalPaise: totalPaise ?? this.totalPaise,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (purchaseId.present) {
+      map['purchase_id'] = Variable<String>(purchaseId.value);
+    }
+    if (lineNo.present) {
+      map['line_no'] = Variable<int>(lineNo.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (qtyMilli.present) {
+      map['qty_milli'] = Variable<int>(qtyMilli.value);
+    }
+    if (ratePaise.present) {
+      map['rate_paise'] = Variable<int>(ratePaise.value);
+    }
+    if (gstBp.present) {
+      map['gst_bp'] = Variable<int>(gstBp.value);
+    }
+    if (taxablePaise.present) {
+      map['taxable_paise'] = Variable<int>(taxablePaise.value);
+    }
+    if (taxPaise.present) {
+      map['tax_paise'] = Variable<int>(taxPaise.value);
+    }
+    if (totalPaise.present) {
+      map['total_paise'] = Variable<int>(totalPaise.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PurchaseLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('purchaseId: $purchaseId, ')
+          ..write('lineNo: $lineNo, ')
+          ..write('productId: $productId, ')
+          ..write('name: $name, ')
+          ..write('unit: $unit, ')
+          ..write('qtyMilli: $qtyMilli, ')
+          ..write('ratePaise: $ratePaise, ')
+          ..write('gstBp: $gstBp, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('totalPaise: $totalPaise, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class PurchaseReturns extends Table
+    with TableInfo<PurchaseReturns, DbPurchaseReturn> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  PurchaseReturns(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+    'number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _purchaseIdMeta = const VerificationMeta(
+    'purchaseId',
+  );
+  late final GeneratedColumn<String> purchaseId = GeneratedColumn<String>(
+    'purchase_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES purchases(id)',
+  );
+  static const VerificationMeta _purchaseNoMeta = const VerificationMeta(
+    'purchaseNo',
+  );
+  late final GeneratedColumn<String> purchaseNo = GeneratedColumn<String>(
+    'purchase_no',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _dealerIdMeta = const VerificationMeta(
+    'dealerId',
+  );
+  late final GeneratedColumn<String> dealerId = GeneratedColumn<String>(
+    'dealer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES dealers(id)',
+  );
+  static const VerificationMeta _dealerNameMeta = const VerificationMeta(
+    'dealerName',
+  );
+  late final GeneratedColumn<String> dealerName = GeneratedColumn<String>(
+    'dealer_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _returnedAtMeta = const VerificationMeta(
+    'returnedAt',
+  );
+  late final GeneratedColumn<int> returnedAt = GeneratedColumn<int>(
+    'returned_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _totalPaiseMeta = const VerificationMeta(
+    'totalPaise',
+  );
+  late final GeneratedColumn<int> totalPaise = GeneratedColumn<int>(
+    'total_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _taxablePaiseMeta = const VerificationMeta(
+    'taxablePaise',
+  );
+  late final GeneratedColumn<int> taxablePaise = GeneratedColumn<int>(
+    'taxable_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _taxPaiseMeta = const VerificationMeta(
+    'taxPaise',
+  );
+  late final GeneratedColumn<int> taxPaise = GeneratedColumn<int>(
+    'tax_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _dueReducedPaiseMeta = const VerificationMeta(
+    'dueReducedPaise',
+  );
+  late final GeneratedColumn<int> dueReducedPaise = GeneratedColumn<int>(
+    'due_reduced_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _creditKeptPaiseMeta = const VerificationMeta(
+    'creditKeptPaise',
+  );
+  late final GeneratedColumn<int> creditKeptPaise = GeneratedColumn<int>(
+    'credit_kept_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _refundedPaiseMeta = const VerificationMeta(
+    'refundedPaise',
+  );
+  late final GeneratedColumn<int> refundedPaise = GeneratedColumn<int>(
+    'refunded_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _refundModeMeta = const VerificationMeta(
+    'refundMode',
+  );
+  late final GeneratedColumn<int> refundMode = GeneratedColumn<int>(
+    'refund_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _byNameMeta = const VerificationMeta('byName');
+  late final GeneratedColumn<String> byName = GeneratedColumn<String>(
+    'by_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _idemKeyMeta = const VerificationMeta(
+    'idemKey',
+  );
+  late final GeneratedColumn<String> idemKey = GeneratedColumn<String>(
+    'idem_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    number,
+    purchaseId,
+    purchaseNo,
+    dealerId,
+    dealerName,
+    returnedAt,
+    day,
+    totalPaise,
+    taxablePaise,
+    taxPaise,
+    dueReducedPaise,
+    creditKeptPaise,
+    refundedPaise,
+    refundMode,
+    reason,
+    byName,
+    idemKey,
+    createdAt,
+    deviceId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'purchase_returns';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DbPurchaseReturn> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(
+        _numberMeta,
+        number.isAcceptableOrUnknown(data['number']!, _numberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numberMeta);
+    }
+    if (data.containsKey('purchase_id')) {
+      context.handle(
+        _purchaseIdMeta,
+        purchaseId.isAcceptableOrUnknown(data['purchase_id']!, _purchaseIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_purchaseIdMeta);
+    }
+    if (data.containsKey('purchase_no')) {
+      context.handle(
+        _purchaseNoMeta,
+        purchaseNo.isAcceptableOrUnknown(data['purchase_no']!, _purchaseNoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_purchaseNoMeta);
+    }
+    if (data.containsKey('dealer_id')) {
+      context.handle(
+        _dealerIdMeta,
+        dealerId.isAcceptableOrUnknown(data['dealer_id']!, _dealerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dealerIdMeta);
+    }
+    if (data.containsKey('dealer_name')) {
+      context.handle(
+        _dealerNameMeta,
+        dealerName.isAcceptableOrUnknown(data['dealer_name']!, _dealerNameMeta),
+      );
+    }
+    if (data.containsKey('returned_at')) {
+      context.handle(
+        _returnedAtMeta,
+        returnedAt.isAcceptableOrUnknown(data['returned_at']!, _returnedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_returnedAtMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('total_paise')) {
+      context.handle(
+        _totalPaiseMeta,
+        totalPaise.isAcceptableOrUnknown(data['total_paise']!, _totalPaiseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalPaiseMeta);
+    }
+    if (data.containsKey('taxable_paise')) {
+      context.handle(
+        _taxablePaiseMeta,
+        taxablePaise.isAcceptableOrUnknown(
+          data['taxable_paise']!,
+          _taxablePaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tax_paise')) {
+      context.handle(
+        _taxPaiseMeta,
+        taxPaise.isAcceptableOrUnknown(data['tax_paise']!, _taxPaiseMeta),
+      );
+    }
+    if (data.containsKey('due_reduced_paise')) {
+      context.handle(
+        _dueReducedPaiseMeta,
+        dueReducedPaise.isAcceptableOrUnknown(
+          data['due_reduced_paise']!,
+          _dueReducedPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('credit_kept_paise')) {
+      context.handle(
+        _creditKeptPaiseMeta,
+        creditKeptPaise.isAcceptableOrUnknown(
+          data['credit_kept_paise']!,
+          _creditKeptPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('refunded_paise')) {
+      context.handle(
+        _refundedPaiseMeta,
+        refundedPaise.isAcceptableOrUnknown(
+          data['refunded_paise']!,
+          _refundedPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('refund_mode')) {
+      context.handle(
+        _refundModeMeta,
+        refundMode.isAcceptableOrUnknown(data['refund_mode']!, _refundModeMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('by_name')) {
+      context.handle(
+        _byNameMeta,
+        byName.isAcceptableOrUnknown(data['by_name']!, _byNameMeta),
+      );
+    }
+    if (data.containsKey('idem_key')) {
+      context.handle(
+        _idemKeyMeta,
+        idemKey.isAcceptableOrUnknown(data['idem_key']!, _idemKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_idemKeyMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbPurchaseReturn map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbPurchaseReturn(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      number: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}number'],
+      )!,
+      purchaseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}purchase_id'],
+      )!,
+      purchaseNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}purchase_no'],
+      )!,
+      dealerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dealer_id'],
+      )!,
+      dealerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dealer_name'],
+      )!,
+      returnedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}returned_at'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day'],
+      )!,
+      totalPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_paise'],
+      )!,
+      taxablePaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taxable_paise'],
+      )!,
+      taxPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tax_paise'],
+      )!,
+      dueReducedPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}due_reduced_paise'],
+      )!,
+      creditKeptPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}credit_kept_paise'],
+      )!,
+      refundedPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}refunded_paise'],
+      )!,
+      refundMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}refund_mode'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      byName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}by_name'],
+      )!,
+      idemKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}idem_key'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+    );
+  }
+
+  @override
+  PurchaseReturns createAlias(String alias) {
+    return PurchaseReturns(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class DbPurchaseReturn extends DataClass
+    implements Insertable<DbPurchaseReturn> {
+  final String id;
+  final String number;
+  final String purchaseId;
+  final String purchaseNo;
+  final String dealerId;
+  final String dealerName;
+  final int returnedAt;
+  final String day;
+  final int totalPaise;
+  final int taxablePaise;
+  final int taxPaise;
+  final int dueReducedPaise;
+  final int creditKeptPaise;
+  final int refundedPaise;
+  final int refundMode;
+  final String reason;
+  final String byName;
+  final String idemKey;
+  final int createdAt;
+  final String deviceId;
+  const DbPurchaseReturn({
+    required this.id,
+    required this.number,
+    required this.purchaseId,
+    required this.purchaseNo,
+    required this.dealerId,
+    required this.dealerName,
+    required this.returnedAt,
+    required this.day,
+    required this.totalPaise,
+    required this.taxablePaise,
+    required this.taxPaise,
+    required this.dueReducedPaise,
+    required this.creditKeptPaise,
+    required this.refundedPaise,
+    required this.refundMode,
+    required this.reason,
+    required this.byName,
+    required this.idemKey,
+    required this.createdAt,
+    required this.deviceId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['number'] = Variable<String>(number);
+    map['purchase_id'] = Variable<String>(purchaseId);
+    map['purchase_no'] = Variable<String>(purchaseNo);
+    map['dealer_id'] = Variable<String>(dealerId);
+    map['dealer_name'] = Variable<String>(dealerName);
+    map['returned_at'] = Variable<int>(returnedAt);
+    map['day'] = Variable<String>(day);
+    map['total_paise'] = Variable<int>(totalPaise);
+    map['taxable_paise'] = Variable<int>(taxablePaise);
+    map['tax_paise'] = Variable<int>(taxPaise);
+    map['due_reduced_paise'] = Variable<int>(dueReducedPaise);
+    map['credit_kept_paise'] = Variable<int>(creditKeptPaise);
+    map['refunded_paise'] = Variable<int>(refundedPaise);
+    map['refund_mode'] = Variable<int>(refundMode);
+    map['reason'] = Variable<String>(reason);
+    map['by_name'] = Variable<String>(byName);
+    map['idem_key'] = Variable<String>(idemKey);
+    map['created_at'] = Variable<int>(createdAt);
+    map['device_id'] = Variable<String>(deviceId);
+    return map;
+  }
+
+  PurchaseReturnsCompanion toCompanion(bool nullToAbsent) {
+    return PurchaseReturnsCompanion(
+      id: Value(id),
+      number: Value(number),
+      purchaseId: Value(purchaseId),
+      purchaseNo: Value(purchaseNo),
+      dealerId: Value(dealerId),
+      dealerName: Value(dealerName),
+      returnedAt: Value(returnedAt),
+      day: Value(day),
+      totalPaise: Value(totalPaise),
+      taxablePaise: Value(taxablePaise),
+      taxPaise: Value(taxPaise),
+      dueReducedPaise: Value(dueReducedPaise),
+      creditKeptPaise: Value(creditKeptPaise),
+      refundedPaise: Value(refundedPaise),
+      refundMode: Value(refundMode),
+      reason: Value(reason),
+      byName: Value(byName),
+      idemKey: Value(idemKey),
+      createdAt: Value(createdAt),
+      deviceId: Value(deviceId),
+    );
+  }
+
+  factory DbPurchaseReturn.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbPurchaseReturn(
+      id: serializer.fromJson<String>(json['id']),
+      number: serializer.fromJson<String>(json['number']),
+      purchaseId: serializer.fromJson<String>(json['purchase_id']),
+      purchaseNo: serializer.fromJson<String>(json['purchase_no']),
+      dealerId: serializer.fromJson<String>(json['dealer_id']),
+      dealerName: serializer.fromJson<String>(json['dealer_name']),
+      returnedAt: serializer.fromJson<int>(json['returned_at']),
+      day: serializer.fromJson<String>(json['day']),
+      totalPaise: serializer.fromJson<int>(json['total_paise']),
+      taxablePaise: serializer.fromJson<int>(json['taxable_paise']),
+      taxPaise: serializer.fromJson<int>(json['tax_paise']),
+      dueReducedPaise: serializer.fromJson<int>(json['due_reduced_paise']),
+      creditKeptPaise: serializer.fromJson<int>(json['credit_kept_paise']),
+      refundedPaise: serializer.fromJson<int>(json['refunded_paise']),
+      refundMode: serializer.fromJson<int>(json['refund_mode']),
+      reason: serializer.fromJson<String>(json['reason']),
+      byName: serializer.fromJson<String>(json['by_name']),
+      idemKey: serializer.fromJson<String>(json['idem_key']),
+      createdAt: serializer.fromJson<int>(json['created_at']),
+      deviceId: serializer.fromJson<String>(json['device_id']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'number': serializer.toJson<String>(number),
+      'purchase_id': serializer.toJson<String>(purchaseId),
+      'purchase_no': serializer.toJson<String>(purchaseNo),
+      'dealer_id': serializer.toJson<String>(dealerId),
+      'dealer_name': serializer.toJson<String>(dealerName),
+      'returned_at': serializer.toJson<int>(returnedAt),
+      'day': serializer.toJson<String>(day),
+      'total_paise': serializer.toJson<int>(totalPaise),
+      'taxable_paise': serializer.toJson<int>(taxablePaise),
+      'tax_paise': serializer.toJson<int>(taxPaise),
+      'due_reduced_paise': serializer.toJson<int>(dueReducedPaise),
+      'credit_kept_paise': serializer.toJson<int>(creditKeptPaise),
+      'refunded_paise': serializer.toJson<int>(refundedPaise),
+      'refund_mode': serializer.toJson<int>(refundMode),
+      'reason': serializer.toJson<String>(reason),
+      'by_name': serializer.toJson<String>(byName),
+      'idem_key': serializer.toJson<String>(idemKey),
+      'created_at': serializer.toJson<int>(createdAt),
+      'device_id': serializer.toJson<String>(deviceId),
+    };
+  }
+
+  DbPurchaseReturn copyWith({
+    String? id,
+    String? number,
+    String? purchaseId,
+    String? purchaseNo,
+    String? dealerId,
+    String? dealerName,
+    int? returnedAt,
+    String? day,
+    int? totalPaise,
+    int? taxablePaise,
+    int? taxPaise,
+    int? dueReducedPaise,
+    int? creditKeptPaise,
+    int? refundedPaise,
+    int? refundMode,
+    String? reason,
+    String? byName,
+    String? idemKey,
+    int? createdAt,
+    String? deviceId,
+  }) => DbPurchaseReturn(
+    id: id ?? this.id,
+    number: number ?? this.number,
+    purchaseId: purchaseId ?? this.purchaseId,
+    purchaseNo: purchaseNo ?? this.purchaseNo,
+    dealerId: dealerId ?? this.dealerId,
+    dealerName: dealerName ?? this.dealerName,
+    returnedAt: returnedAt ?? this.returnedAt,
+    day: day ?? this.day,
+    totalPaise: totalPaise ?? this.totalPaise,
+    taxablePaise: taxablePaise ?? this.taxablePaise,
+    taxPaise: taxPaise ?? this.taxPaise,
+    dueReducedPaise: dueReducedPaise ?? this.dueReducedPaise,
+    creditKeptPaise: creditKeptPaise ?? this.creditKeptPaise,
+    refundedPaise: refundedPaise ?? this.refundedPaise,
+    refundMode: refundMode ?? this.refundMode,
+    reason: reason ?? this.reason,
+    byName: byName ?? this.byName,
+    idemKey: idemKey ?? this.idemKey,
+    createdAt: createdAt ?? this.createdAt,
+    deviceId: deviceId ?? this.deviceId,
+  );
+  DbPurchaseReturn copyWithCompanion(PurchaseReturnsCompanion data) {
+    return DbPurchaseReturn(
+      id: data.id.present ? data.id.value : this.id,
+      number: data.number.present ? data.number.value : this.number,
+      purchaseId: data.purchaseId.present
+          ? data.purchaseId.value
+          : this.purchaseId,
+      purchaseNo: data.purchaseNo.present
+          ? data.purchaseNo.value
+          : this.purchaseNo,
+      dealerId: data.dealerId.present ? data.dealerId.value : this.dealerId,
+      dealerName: data.dealerName.present
+          ? data.dealerName.value
+          : this.dealerName,
+      returnedAt: data.returnedAt.present
+          ? data.returnedAt.value
+          : this.returnedAt,
+      day: data.day.present ? data.day.value : this.day,
+      totalPaise: data.totalPaise.present
+          ? data.totalPaise.value
+          : this.totalPaise,
+      taxablePaise: data.taxablePaise.present
+          ? data.taxablePaise.value
+          : this.taxablePaise,
+      taxPaise: data.taxPaise.present ? data.taxPaise.value : this.taxPaise,
+      dueReducedPaise: data.dueReducedPaise.present
+          ? data.dueReducedPaise.value
+          : this.dueReducedPaise,
+      creditKeptPaise: data.creditKeptPaise.present
+          ? data.creditKeptPaise.value
+          : this.creditKeptPaise,
+      refundedPaise: data.refundedPaise.present
+          ? data.refundedPaise.value
+          : this.refundedPaise,
+      refundMode: data.refundMode.present
+          ? data.refundMode.value
+          : this.refundMode,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      byName: data.byName.present ? data.byName.value : this.byName,
+      idemKey: data.idemKey.present ? data.idemKey.value : this.idemKey,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbPurchaseReturn(')
+          ..write('id: $id, ')
+          ..write('number: $number, ')
+          ..write('purchaseId: $purchaseId, ')
+          ..write('purchaseNo: $purchaseNo, ')
+          ..write('dealerId: $dealerId, ')
+          ..write('dealerName: $dealerName, ')
+          ..write('returnedAt: $returnedAt, ')
+          ..write('day: $day, ')
+          ..write('totalPaise: $totalPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('dueReducedPaise: $dueReducedPaise, ')
+          ..write('creditKeptPaise: $creditKeptPaise, ')
+          ..write('refundedPaise: $refundedPaise, ')
+          ..write('refundMode: $refundMode, ')
+          ..write('reason: $reason, ')
+          ..write('byName: $byName, ')
+          ..write('idemKey: $idemKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deviceId: $deviceId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    number,
+    purchaseId,
+    purchaseNo,
+    dealerId,
+    dealerName,
+    returnedAt,
+    day,
+    totalPaise,
+    taxablePaise,
+    taxPaise,
+    dueReducedPaise,
+    creditKeptPaise,
+    refundedPaise,
+    refundMode,
+    reason,
+    byName,
+    idemKey,
+    createdAt,
+    deviceId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbPurchaseReturn &&
+          other.id == this.id &&
+          other.number == this.number &&
+          other.purchaseId == this.purchaseId &&
+          other.purchaseNo == this.purchaseNo &&
+          other.dealerId == this.dealerId &&
+          other.dealerName == this.dealerName &&
+          other.returnedAt == this.returnedAt &&
+          other.day == this.day &&
+          other.totalPaise == this.totalPaise &&
+          other.taxablePaise == this.taxablePaise &&
+          other.taxPaise == this.taxPaise &&
+          other.dueReducedPaise == this.dueReducedPaise &&
+          other.creditKeptPaise == this.creditKeptPaise &&
+          other.refundedPaise == this.refundedPaise &&
+          other.refundMode == this.refundMode &&
+          other.reason == this.reason &&
+          other.byName == this.byName &&
+          other.idemKey == this.idemKey &&
+          other.createdAt == this.createdAt &&
+          other.deviceId == this.deviceId);
+}
+
+class PurchaseReturnsCompanion extends UpdateCompanion<DbPurchaseReturn> {
+  final Value<String> id;
+  final Value<String> number;
+  final Value<String> purchaseId;
+  final Value<String> purchaseNo;
+  final Value<String> dealerId;
+  final Value<String> dealerName;
+  final Value<int> returnedAt;
+  final Value<String> day;
+  final Value<int> totalPaise;
+  final Value<int> taxablePaise;
+  final Value<int> taxPaise;
+  final Value<int> dueReducedPaise;
+  final Value<int> creditKeptPaise;
+  final Value<int> refundedPaise;
+  final Value<int> refundMode;
+  final Value<String> reason;
+  final Value<String> byName;
+  final Value<String> idemKey;
+  final Value<int> createdAt;
+  final Value<String> deviceId;
+  final Value<int> rowid;
+  const PurchaseReturnsCompanion({
+    this.id = const Value.absent(),
+    this.number = const Value.absent(),
+    this.purchaseId = const Value.absent(),
+    this.purchaseNo = const Value.absent(),
+    this.dealerId = const Value.absent(),
+    this.dealerName = const Value.absent(),
+    this.returnedAt = const Value.absent(),
+    this.day = const Value.absent(),
+    this.totalPaise = const Value.absent(),
+    this.taxablePaise = const Value.absent(),
+    this.taxPaise = const Value.absent(),
+    this.dueReducedPaise = const Value.absent(),
+    this.creditKeptPaise = const Value.absent(),
+    this.refundedPaise = const Value.absent(),
+    this.refundMode = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.byName = const Value.absent(),
+    this.idemKey = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PurchaseReturnsCompanion.insert({
+    required String id,
+    required String number,
+    required String purchaseId,
+    required String purchaseNo,
+    required String dealerId,
+    this.dealerName = const Value.absent(),
+    required int returnedAt,
+    required String day,
+    required int totalPaise,
+    this.taxablePaise = const Value.absent(),
+    this.taxPaise = const Value.absent(),
+    this.dueReducedPaise = const Value.absent(),
+    this.creditKeptPaise = const Value.absent(),
+    this.refundedPaise = const Value.absent(),
+    this.refundMode = const Value.absent(),
+    required String reason,
+    this.byName = const Value.absent(),
+    required String idemKey,
+    required int createdAt,
+    required String deviceId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       number = Value(number),
+       purchaseId = Value(purchaseId),
+       purchaseNo = Value(purchaseNo),
+       dealerId = Value(dealerId),
+       returnedAt = Value(returnedAt),
+       day = Value(day),
+       totalPaise = Value(totalPaise),
+       reason = Value(reason),
+       idemKey = Value(idemKey),
+       createdAt = Value(createdAt),
+       deviceId = Value(deviceId);
+  static Insertable<DbPurchaseReturn> custom({
+    Expression<String>? id,
+    Expression<String>? number,
+    Expression<String>? purchaseId,
+    Expression<String>? purchaseNo,
+    Expression<String>? dealerId,
+    Expression<String>? dealerName,
+    Expression<int>? returnedAt,
+    Expression<String>? day,
+    Expression<int>? totalPaise,
+    Expression<int>? taxablePaise,
+    Expression<int>? taxPaise,
+    Expression<int>? dueReducedPaise,
+    Expression<int>? creditKeptPaise,
+    Expression<int>? refundedPaise,
+    Expression<int>? refundMode,
+    Expression<String>? reason,
+    Expression<String>? byName,
+    Expression<String>? idemKey,
+    Expression<int>? createdAt,
+    Expression<String>? deviceId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (number != null) 'number': number,
+      if (purchaseId != null) 'purchase_id': purchaseId,
+      if (purchaseNo != null) 'purchase_no': purchaseNo,
+      if (dealerId != null) 'dealer_id': dealerId,
+      if (dealerName != null) 'dealer_name': dealerName,
+      if (returnedAt != null) 'returned_at': returnedAt,
+      if (day != null) 'day': day,
+      if (totalPaise != null) 'total_paise': totalPaise,
+      if (taxablePaise != null) 'taxable_paise': taxablePaise,
+      if (taxPaise != null) 'tax_paise': taxPaise,
+      if (dueReducedPaise != null) 'due_reduced_paise': dueReducedPaise,
+      if (creditKeptPaise != null) 'credit_kept_paise': creditKeptPaise,
+      if (refundedPaise != null) 'refunded_paise': refundedPaise,
+      if (refundMode != null) 'refund_mode': refundMode,
+      if (reason != null) 'reason': reason,
+      if (byName != null) 'by_name': byName,
+      if (idemKey != null) 'idem_key': idemKey,
+      if (createdAt != null) 'created_at': createdAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PurchaseReturnsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? number,
+    Value<String>? purchaseId,
+    Value<String>? purchaseNo,
+    Value<String>? dealerId,
+    Value<String>? dealerName,
+    Value<int>? returnedAt,
+    Value<String>? day,
+    Value<int>? totalPaise,
+    Value<int>? taxablePaise,
+    Value<int>? taxPaise,
+    Value<int>? dueReducedPaise,
+    Value<int>? creditKeptPaise,
+    Value<int>? refundedPaise,
+    Value<int>? refundMode,
+    Value<String>? reason,
+    Value<String>? byName,
+    Value<String>? idemKey,
+    Value<int>? createdAt,
+    Value<String>? deviceId,
+    Value<int>? rowid,
+  }) {
+    return PurchaseReturnsCompanion(
+      id: id ?? this.id,
+      number: number ?? this.number,
+      purchaseId: purchaseId ?? this.purchaseId,
+      purchaseNo: purchaseNo ?? this.purchaseNo,
+      dealerId: dealerId ?? this.dealerId,
+      dealerName: dealerName ?? this.dealerName,
+      returnedAt: returnedAt ?? this.returnedAt,
+      day: day ?? this.day,
+      totalPaise: totalPaise ?? this.totalPaise,
+      taxablePaise: taxablePaise ?? this.taxablePaise,
+      taxPaise: taxPaise ?? this.taxPaise,
+      dueReducedPaise: dueReducedPaise ?? this.dueReducedPaise,
+      creditKeptPaise: creditKeptPaise ?? this.creditKeptPaise,
+      refundedPaise: refundedPaise ?? this.refundedPaise,
+      refundMode: refundMode ?? this.refundMode,
+      reason: reason ?? this.reason,
+      byName: byName ?? this.byName,
+      idemKey: idemKey ?? this.idemKey,
+      createdAt: createdAt ?? this.createdAt,
+      deviceId: deviceId ?? this.deviceId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (purchaseId.present) {
+      map['purchase_id'] = Variable<String>(purchaseId.value);
+    }
+    if (purchaseNo.present) {
+      map['purchase_no'] = Variable<String>(purchaseNo.value);
+    }
+    if (dealerId.present) {
+      map['dealer_id'] = Variable<String>(dealerId.value);
+    }
+    if (dealerName.present) {
+      map['dealer_name'] = Variable<String>(dealerName.value);
+    }
+    if (returnedAt.present) {
+      map['returned_at'] = Variable<int>(returnedAt.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (totalPaise.present) {
+      map['total_paise'] = Variable<int>(totalPaise.value);
+    }
+    if (taxablePaise.present) {
+      map['taxable_paise'] = Variable<int>(taxablePaise.value);
+    }
+    if (taxPaise.present) {
+      map['tax_paise'] = Variable<int>(taxPaise.value);
+    }
+    if (dueReducedPaise.present) {
+      map['due_reduced_paise'] = Variable<int>(dueReducedPaise.value);
+    }
+    if (creditKeptPaise.present) {
+      map['credit_kept_paise'] = Variable<int>(creditKeptPaise.value);
+    }
+    if (refundedPaise.present) {
+      map['refunded_paise'] = Variable<int>(refundedPaise.value);
+    }
+    if (refundMode.present) {
+      map['refund_mode'] = Variable<int>(refundMode.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (byName.present) {
+      map['by_name'] = Variable<String>(byName.value);
+    }
+    if (idemKey.present) {
+      map['idem_key'] = Variable<String>(idemKey.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PurchaseReturnsCompanion(')
+          ..write('id: $id, ')
+          ..write('number: $number, ')
+          ..write('purchaseId: $purchaseId, ')
+          ..write('purchaseNo: $purchaseNo, ')
+          ..write('dealerId: $dealerId, ')
+          ..write('dealerName: $dealerName, ')
+          ..write('returnedAt: $returnedAt, ')
+          ..write('day: $day, ')
+          ..write('totalPaise: $totalPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('dueReducedPaise: $dueReducedPaise, ')
+          ..write('creditKeptPaise: $creditKeptPaise, ')
+          ..write('refundedPaise: $refundedPaise, ')
+          ..write('refundMode: $refundMode, ')
+          ..write('reason: $reason, ')
+          ..write('byName: $byName, ')
+          ..write('idemKey: $idemKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class PurchaseReturnLines extends Table
+    with TableInfo<PurchaseReturnLines, DbPurchaseReturnLine> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  PurchaseReturnLines(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _returnIdMeta = const VerificationMeta(
+    'returnId',
+  );
+  late final GeneratedColumn<String> returnId = GeneratedColumn<String>(
+    'return_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES purchase_returns(id)',
+  );
+  static const VerificationMeta _purchaseLineIdMeta = const VerificationMeta(
+    'purchaseLineId',
+  );
+  late final GeneratedColumn<String> purchaseLineId = GeneratedColumn<String>(
+    'purchase_line_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES purchase_lines(id)',
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES products(id)',
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'pcs\'',
+    defaultValue: const CustomExpression('\'pcs\''),
+  );
+  static const VerificationMeta _qtyMilliMeta = const VerificationMeta(
+    'qtyMilli',
+  );
+  late final GeneratedColumn<int> qtyMilli = GeneratedColumn<int>(
+    'qty_milli',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _amountPaiseMeta = const VerificationMeta(
+    'amountPaise',
+  );
+  late final GeneratedColumn<int> amountPaise = GeneratedColumn<int>(
+    'amount_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _taxablePaiseMeta = const VerificationMeta(
+    'taxablePaise',
+  );
+  late final GeneratedColumn<int> taxablePaise = GeneratedColumn<int>(
+    'taxable_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _taxPaiseMeta = const VerificationMeta(
+    'taxPaise',
+  );
+  late final GeneratedColumn<int> taxPaise = GeneratedColumn<int>(
+    'tax_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    returnId,
+    purchaseLineId,
+    productId,
+    name,
+    unit,
+    qtyMilli,
+    amountPaise,
+    taxablePaise,
+    taxPaise,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'purchase_return_lines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DbPurchaseReturnLine> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('return_id')) {
+      context.handle(
+        _returnIdMeta,
+        returnId.isAcceptableOrUnknown(data['return_id']!, _returnIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_returnIdMeta);
+    }
+    if (data.containsKey('purchase_line_id')) {
+      context.handle(
+        _purchaseLineIdMeta,
+        purchaseLineId.isAcceptableOrUnknown(
+          data['purchase_line_id']!,
+          _purchaseLineIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_purchaseLineIdMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    }
+    if (data.containsKey('qty_milli')) {
+      context.handle(
+        _qtyMilliMeta,
+        qtyMilli.isAcceptableOrUnknown(data['qty_milli']!, _qtyMilliMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_qtyMilliMeta);
+    }
+    if (data.containsKey('amount_paise')) {
+      context.handle(
+        _amountPaiseMeta,
+        amountPaise.isAcceptableOrUnknown(
+          data['amount_paise']!,
+          _amountPaiseMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountPaiseMeta);
+    }
+    if (data.containsKey('taxable_paise')) {
+      context.handle(
+        _taxablePaiseMeta,
+        taxablePaise.isAcceptableOrUnknown(
+          data['taxable_paise']!,
+          _taxablePaiseMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_taxablePaiseMeta);
+    }
+    if (data.containsKey('tax_paise')) {
+      context.handle(
+        _taxPaiseMeta,
+        taxPaise.isAcceptableOrUnknown(data['tax_paise']!, _taxPaiseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taxPaiseMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DbPurchaseReturnLine map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbPurchaseReturnLine(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      returnId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}return_id'],
+      )!,
+      purchaseLineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}purchase_line_id'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      )!,
+      qtyMilli: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}qty_milli'],
+      )!,
+      amountPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_paise'],
+      )!,
+      taxablePaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taxable_paise'],
+      )!,
+      taxPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tax_paise'],
+      )!,
+    );
+  }
+
+  @override
+  PurchaseReturnLines createAlias(String alias) {
+    return PurchaseReturnLines(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class DbPurchaseReturnLine extends DataClass
+    implements Insertable<DbPurchaseReturnLine> {
+  final String id;
+  final String returnId;
+  final String purchaseLineId;
+  final String productId;
+  final String name;
+  final String unit;
+  final int qtyMilli;
+  final int amountPaise;
+  final int taxablePaise;
+  final int taxPaise;
+  const DbPurchaseReturnLine({
+    required this.id,
+    required this.returnId,
+    required this.purchaseLineId,
+    required this.productId,
+    required this.name,
+    required this.unit,
+    required this.qtyMilli,
+    required this.amountPaise,
+    required this.taxablePaise,
+    required this.taxPaise,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['return_id'] = Variable<String>(returnId);
+    map['purchase_line_id'] = Variable<String>(purchaseLineId);
+    map['product_id'] = Variable<String>(productId);
+    map['name'] = Variable<String>(name);
+    map['unit'] = Variable<String>(unit);
+    map['qty_milli'] = Variable<int>(qtyMilli);
+    map['amount_paise'] = Variable<int>(amountPaise);
+    map['taxable_paise'] = Variable<int>(taxablePaise);
+    map['tax_paise'] = Variable<int>(taxPaise);
+    return map;
+  }
+
+  PurchaseReturnLinesCompanion toCompanion(bool nullToAbsent) {
+    return PurchaseReturnLinesCompanion(
+      id: Value(id),
+      returnId: Value(returnId),
+      purchaseLineId: Value(purchaseLineId),
+      productId: Value(productId),
+      name: Value(name),
+      unit: Value(unit),
+      qtyMilli: Value(qtyMilli),
+      amountPaise: Value(amountPaise),
+      taxablePaise: Value(taxablePaise),
+      taxPaise: Value(taxPaise),
+    );
+  }
+
+  factory DbPurchaseReturnLine.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbPurchaseReturnLine(
+      id: serializer.fromJson<String>(json['id']),
+      returnId: serializer.fromJson<String>(json['return_id']),
+      purchaseLineId: serializer.fromJson<String>(json['purchase_line_id']),
+      productId: serializer.fromJson<String>(json['product_id']),
+      name: serializer.fromJson<String>(json['name']),
+      unit: serializer.fromJson<String>(json['unit']),
+      qtyMilli: serializer.fromJson<int>(json['qty_milli']),
+      amountPaise: serializer.fromJson<int>(json['amount_paise']),
+      taxablePaise: serializer.fromJson<int>(json['taxable_paise']),
+      taxPaise: serializer.fromJson<int>(json['tax_paise']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'return_id': serializer.toJson<String>(returnId),
+      'purchase_line_id': serializer.toJson<String>(purchaseLineId),
+      'product_id': serializer.toJson<String>(productId),
+      'name': serializer.toJson<String>(name),
+      'unit': serializer.toJson<String>(unit),
+      'qty_milli': serializer.toJson<int>(qtyMilli),
+      'amount_paise': serializer.toJson<int>(amountPaise),
+      'taxable_paise': serializer.toJson<int>(taxablePaise),
+      'tax_paise': serializer.toJson<int>(taxPaise),
+    };
+  }
+
+  DbPurchaseReturnLine copyWith({
+    String? id,
+    String? returnId,
+    String? purchaseLineId,
+    String? productId,
+    String? name,
+    String? unit,
+    int? qtyMilli,
+    int? amountPaise,
+    int? taxablePaise,
+    int? taxPaise,
+  }) => DbPurchaseReturnLine(
+    id: id ?? this.id,
+    returnId: returnId ?? this.returnId,
+    purchaseLineId: purchaseLineId ?? this.purchaseLineId,
+    productId: productId ?? this.productId,
+    name: name ?? this.name,
+    unit: unit ?? this.unit,
+    qtyMilli: qtyMilli ?? this.qtyMilli,
+    amountPaise: amountPaise ?? this.amountPaise,
+    taxablePaise: taxablePaise ?? this.taxablePaise,
+    taxPaise: taxPaise ?? this.taxPaise,
+  );
+  DbPurchaseReturnLine copyWithCompanion(PurchaseReturnLinesCompanion data) {
+    return DbPurchaseReturnLine(
+      id: data.id.present ? data.id.value : this.id,
+      returnId: data.returnId.present ? data.returnId.value : this.returnId,
+      purchaseLineId: data.purchaseLineId.present
+          ? data.purchaseLineId.value
+          : this.purchaseLineId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      name: data.name.present ? data.name.value : this.name,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      qtyMilli: data.qtyMilli.present ? data.qtyMilli.value : this.qtyMilli,
+      amountPaise: data.amountPaise.present
+          ? data.amountPaise.value
+          : this.amountPaise,
+      taxablePaise: data.taxablePaise.present
+          ? data.taxablePaise.value
+          : this.taxablePaise,
+      taxPaise: data.taxPaise.present ? data.taxPaise.value : this.taxPaise,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbPurchaseReturnLine(')
+          ..write('id: $id, ')
+          ..write('returnId: $returnId, ')
+          ..write('purchaseLineId: $purchaseLineId, ')
+          ..write('productId: $productId, ')
+          ..write('name: $name, ')
+          ..write('unit: $unit, ')
+          ..write('qtyMilli: $qtyMilli, ')
+          ..write('amountPaise: $amountPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    returnId,
+    purchaseLineId,
+    productId,
+    name,
+    unit,
+    qtyMilli,
+    amountPaise,
+    taxablePaise,
+    taxPaise,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbPurchaseReturnLine &&
+          other.id == this.id &&
+          other.returnId == this.returnId &&
+          other.purchaseLineId == this.purchaseLineId &&
+          other.productId == this.productId &&
+          other.name == this.name &&
+          other.unit == this.unit &&
+          other.qtyMilli == this.qtyMilli &&
+          other.amountPaise == this.amountPaise &&
+          other.taxablePaise == this.taxablePaise &&
+          other.taxPaise == this.taxPaise);
+}
+
+class PurchaseReturnLinesCompanion
+    extends UpdateCompanion<DbPurchaseReturnLine> {
+  final Value<String> id;
+  final Value<String> returnId;
+  final Value<String> purchaseLineId;
+  final Value<String> productId;
+  final Value<String> name;
+  final Value<String> unit;
+  final Value<int> qtyMilli;
+  final Value<int> amountPaise;
+  final Value<int> taxablePaise;
+  final Value<int> taxPaise;
+  final Value<int> rowid;
+  const PurchaseReturnLinesCompanion({
+    this.id = const Value.absent(),
+    this.returnId = const Value.absent(),
+    this.purchaseLineId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.qtyMilli = const Value.absent(),
+    this.amountPaise = const Value.absent(),
+    this.taxablePaise = const Value.absent(),
+    this.taxPaise = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PurchaseReturnLinesCompanion.insert({
+    required String id,
+    required String returnId,
+    required String purchaseLineId,
+    required String productId,
+    required String name,
+    this.unit = const Value.absent(),
+    required int qtyMilli,
+    required int amountPaise,
+    required int taxablePaise,
+    required int taxPaise,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       returnId = Value(returnId),
+       purchaseLineId = Value(purchaseLineId),
+       productId = Value(productId),
+       name = Value(name),
+       qtyMilli = Value(qtyMilli),
+       amountPaise = Value(amountPaise),
+       taxablePaise = Value(taxablePaise),
+       taxPaise = Value(taxPaise);
+  static Insertable<DbPurchaseReturnLine> custom({
+    Expression<String>? id,
+    Expression<String>? returnId,
+    Expression<String>? purchaseLineId,
+    Expression<String>? productId,
+    Expression<String>? name,
+    Expression<String>? unit,
+    Expression<int>? qtyMilli,
+    Expression<int>? amountPaise,
+    Expression<int>? taxablePaise,
+    Expression<int>? taxPaise,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (returnId != null) 'return_id': returnId,
+      if (purchaseLineId != null) 'purchase_line_id': purchaseLineId,
+      if (productId != null) 'product_id': productId,
+      if (name != null) 'name': name,
+      if (unit != null) 'unit': unit,
+      if (qtyMilli != null) 'qty_milli': qtyMilli,
+      if (amountPaise != null) 'amount_paise': amountPaise,
+      if (taxablePaise != null) 'taxable_paise': taxablePaise,
+      if (taxPaise != null) 'tax_paise': taxPaise,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PurchaseReturnLinesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? returnId,
+    Value<String>? purchaseLineId,
+    Value<String>? productId,
+    Value<String>? name,
+    Value<String>? unit,
+    Value<int>? qtyMilli,
+    Value<int>? amountPaise,
+    Value<int>? taxablePaise,
+    Value<int>? taxPaise,
+    Value<int>? rowid,
+  }) {
+    return PurchaseReturnLinesCompanion(
+      id: id ?? this.id,
+      returnId: returnId ?? this.returnId,
+      purchaseLineId: purchaseLineId ?? this.purchaseLineId,
+      productId: productId ?? this.productId,
+      name: name ?? this.name,
+      unit: unit ?? this.unit,
+      qtyMilli: qtyMilli ?? this.qtyMilli,
+      amountPaise: amountPaise ?? this.amountPaise,
+      taxablePaise: taxablePaise ?? this.taxablePaise,
+      taxPaise: taxPaise ?? this.taxPaise,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (returnId.present) {
+      map['return_id'] = Variable<String>(returnId.value);
+    }
+    if (purchaseLineId.present) {
+      map['purchase_line_id'] = Variable<String>(purchaseLineId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (qtyMilli.present) {
+      map['qty_milli'] = Variable<int>(qtyMilli.value);
+    }
+    if (amountPaise.present) {
+      map['amount_paise'] = Variable<int>(amountPaise.value);
+    }
+    if (taxablePaise.present) {
+      map['taxable_paise'] = Variable<int>(taxablePaise.value);
+    }
+    if (taxPaise.present) {
+      map['tax_paise'] = Variable<int>(taxPaise.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PurchaseReturnLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('returnId: $returnId, ')
+          ..write('purchaseLineId: $purchaseLineId, ')
+          ..write('productId: $productId, ')
+          ..write('name: $name, ')
+          ..write('unit: $unit, ')
+          ..write('qtyMilli: $qtyMilli, ')
+          ..write('amountPaise: $amountPaise, ')
+          ..write('taxablePaise: $taxablePaise, ')
+          ..write('taxPaise: $taxPaise, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class Estimations extends Table with TableInfo<Estimations, DbEstimation> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -7473,6 +13122,29 @@ class Estimations extends Table with TableInfo<Estimations, DbEstimation> {
     $customConstraints: 'NOT NULL DEFAULT \'\'',
     defaultValue: const CustomExpression('\'\''),
   );
+  static const VerificationMeta _extraDiscountPaiseMeta =
+      const VerificationMeta('extraDiscountPaise');
+  late final GeneratedColumn<int> extraDiscountPaise = GeneratedColumn<int>(
+    'extra_discount_paise',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _extraDiscountBpMeta = const VerificationMeta(
+    'extraDiscountBp',
+  );
+  late final GeneratedColumn<int> extraDiscountBp = GeneratedColumn<int>(
+    'extra_discount_bp',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7490,6 +13162,8 @@ class Estimations extends Table with TableInfo<Estimations, DbEstimation> {
     deviceId,
     version,
     hlc,
+    extraDiscountPaise,
+    extraDiscountBp,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7607,6 +13281,24 @@ class Estimations extends Table with TableInfo<Estimations, DbEstimation> {
         hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
       );
     }
+    if (data.containsKey('extra_discount_paise')) {
+      context.handle(
+        _extraDiscountPaiseMeta,
+        extraDiscountPaise.isAcceptableOrUnknown(
+          data['extra_discount_paise']!,
+          _extraDiscountPaiseMeta,
+        ),
+      );
+    }
+    if (data.containsKey('extra_discount_bp')) {
+      context.handle(
+        _extraDiscountBpMeta,
+        extraDiscountBp.isAcceptableOrUnknown(
+          data['extra_discount_bp']!,
+          _extraDiscountBpMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -7676,6 +13368,14 @@ class Estimations extends Table with TableInfo<Estimations, DbEstimation> {
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
       )!,
+      extraDiscountPaise: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}extra_discount_paise'],
+      )!,
+      extraDiscountBp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}extra_discount_bp'],
+      )!,
     );
   }
 
@@ -7704,6 +13404,8 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
   final String deviceId;
   final int version;
   final String hlc;
+  final int extraDiscountPaise;
+  final int extraDiscountBp;
   const DbEstimation({
     required this.id,
     required this.number,
@@ -7720,6 +13422,8 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
     required this.deviceId,
     required this.version,
     required this.hlc,
+    required this.extraDiscountPaise,
+    required this.extraDiscountBp,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7747,6 +13451,8 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
     map['device_id'] = Variable<String>(deviceId);
     map['version'] = Variable<int>(version);
     map['hlc'] = Variable<String>(hlc);
+    map['extra_discount_paise'] = Variable<int>(extraDiscountPaise);
+    map['extra_discount_bp'] = Variable<int>(extraDiscountBp);
     return map;
   }
 
@@ -7775,6 +13481,8 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
       deviceId: Value(deviceId),
       version: Value(version),
       hlc: Value(hlc),
+      extraDiscountPaise: Value(extraDiscountPaise),
+      extraDiscountBp: Value(extraDiscountBp),
     );
   }
 
@@ -7799,6 +13507,10 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
       deviceId: serializer.fromJson<String>(json['device_id']),
       version: serializer.fromJson<int>(json['version']),
       hlc: serializer.fromJson<String>(json['hlc']),
+      extraDiscountPaise: serializer.fromJson<int>(
+        json['extra_discount_paise'],
+      ),
+      extraDiscountBp: serializer.fromJson<int>(json['extra_discount_bp']),
     );
   }
   @override
@@ -7820,6 +13532,8 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
       'device_id': serializer.toJson<String>(deviceId),
       'version': serializer.toJson<int>(version),
       'hlc': serializer.toJson<String>(hlc),
+      'extra_discount_paise': serializer.toJson<int>(extraDiscountPaise),
+      'extra_discount_bp': serializer.toJson<int>(extraDiscountBp),
     };
   }
 
@@ -7839,6 +13553,8 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
     String? deviceId,
     int? version,
     String? hlc,
+    int? extraDiscountPaise,
+    int? extraDiscountBp,
   }) => DbEstimation(
     id: id ?? this.id,
     number: number ?? this.number,
@@ -7857,6 +13573,8 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
     deviceId: deviceId ?? this.deviceId,
     version: version ?? this.version,
     hlc: hlc ?? this.hlc,
+    extraDiscountPaise: extraDiscountPaise ?? this.extraDiscountPaise,
+    extraDiscountBp: extraDiscountBp ?? this.extraDiscountBp,
   );
   DbEstimation copyWithCompanion(EstimationsCompanion data) {
     return DbEstimation(
@@ -7883,6 +13601,12 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
       version: data.version.present ? data.version.value : this.version,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      extraDiscountPaise: data.extraDiscountPaise.present
+          ? data.extraDiscountPaise.value
+          : this.extraDiscountPaise,
+      extraDiscountBp: data.extraDiscountBp.present
+          ? data.extraDiscountBp.value
+          : this.extraDiscountBp,
     );
   }
 
@@ -7903,7 +13627,9 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
           ..write('deletedAt: $deletedAt, ')
           ..write('deviceId: $deviceId, ')
           ..write('version: $version, ')
-          ..write('hlc: $hlc')
+          ..write('hlc: $hlc, ')
+          ..write('extraDiscountPaise: $extraDiscountPaise, ')
+          ..write('extraDiscountBp: $extraDiscountBp')
           ..write(')'))
         .toString();
   }
@@ -7925,6 +13651,8 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
     deviceId,
     version,
     hlc,
+    extraDiscountPaise,
+    extraDiscountBp,
   );
   @override
   bool operator ==(Object other) =>
@@ -7944,7 +13672,9 @@ class DbEstimation extends DataClass implements Insertable<DbEstimation> {
           other.deletedAt == this.deletedAt &&
           other.deviceId == this.deviceId &&
           other.version == this.version &&
-          other.hlc == this.hlc);
+          other.hlc == this.hlc &&
+          other.extraDiscountPaise == this.extraDiscountPaise &&
+          other.extraDiscountBp == this.extraDiscountBp);
 }
 
 class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
@@ -7963,6 +13693,8 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
   final Value<String> deviceId;
   final Value<int> version;
   final Value<String> hlc;
+  final Value<int> extraDiscountPaise;
+  final Value<int> extraDiscountBp;
   final Value<int> rowid;
   const EstimationsCompanion({
     this.id = const Value.absent(),
@@ -7980,6 +13712,8 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
     this.deviceId = const Value.absent(),
     this.version = const Value.absent(),
     this.hlc = const Value.absent(),
+    this.extraDiscountPaise = const Value.absent(),
+    this.extraDiscountBp = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   EstimationsCompanion.insert({
@@ -7998,6 +13732,8 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
     required String deviceId,
     this.version = const Value.absent(),
     this.hlc = const Value.absent(),
+    this.extraDiscountPaise = const Value.absent(),
+    this.extraDiscountBp = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        number = Value(number),
@@ -8022,6 +13758,8 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
     Expression<String>? deviceId,
     Expression<int>? version,
     Expression<String>? hlc,
+    Expression<int>? extraDiscountPaise,
+    Expression<int>? extraDiscountBp,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8040,6 +13778,9 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
       if (deviceId != null) 'device_id': deviceId,
       if (version != null) 'version': version,
       if (hlc != null) 'hlc': hlc,
+      if (extraDiscountPaise != null)
+        'extra_discount_paise': extraDiscountPaise,
+      if (extraDiscountBp != null) 'extra_discount_bp': extraDiscountBp,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8060,6 +13801,8 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
     Value<String>? deviceId,
     Value<int>? version,
     Value<String>? hlc,
+    Value<int>? extraDiscountPaise,
+    Value<int>? extraDiscountBp,
     Value<int>? rowid,
   }) {
     return EstimationsCompanion(
@@ -8078,6 +13821,8 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
       deviceId: deviceId ?? this.deviceId,
       version: version ?? this.version,
       hlc: hlc ?? this.hlc,
+      extraDiscountPaise: extraDiscountPaise ?? this.extraDiscountPaise,
+      extraDiscountBp: extraDiscountBp ?? this.extraDiscountBp,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8130,6 +13875,12 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
+    if (extraDiscountPaise.present) {
+      map['extra_discount_paise'] = Variable<int>(extraDiscountPaise.value);
+    }
+    if (extraDiscountBp.present) {
+      map['extra_discount_bp'] = Variable<int>(extraDiscountBp.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8154,6 +13905,8 @@ class EstimationsCompanion extends UpdateCompanion<DbEstimation> {
           ..write('deviceId: $deviceId, ')
           ..write('version: $version, ')
           ..write('hlc: $hlc, ')
+          ..write('extraDiscountPaise: $extraDiscountPaise, ')
+          ..write('extraDiscountBp: $extraDiscountBp, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15052,6 +20805,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'CREATE UNIQUE INDEX categories_name ON categories (name COLLATE NOCASE) WHERE deleted_at IS NULL',
   );
   late final Products products = Products(this);
+  late final Index productsCode = Index(
+    'products_code',
+    'CREATE UNIQUE INDEX products_code ON products (code) WHERE code <> \'\'',
+  );
   late final Index productsName = Index(
     'products_name',
     'CREATE INDEX products_name ON products (name COLLATE NOCASE)',
@@ -15168,6 +20925,90 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'bill_cancellations_bill',
     'CREATE UNIQUE INDEX bill_cancellations_bill ON bill_cancellations (bill_id)',
   );
+  late final SalesReturns salesReturns = SalesReturns(this);
+  late final Index salesReturnsNumber = Index(
+    'sales_returns_number',
+    'CREATE UNIQUE INDEX sales_returns_number ON sales_returns (number)',
+  );
+  late final Index salesReturnsIdem = Index(
+    'sales_returns_idem',
+    'CREATE UNIQUE INDEX sales_returns_idem ON sales_returns (idem_key)',
+  );
+  late final Index salesReturnsBill = Index(
+    'sales_returns_bill',
+    'CREATE INDEX sales_returns_bill ON sales_returns (bill_id)',
+  );
+  late final Index salesReturnsAt = Index(
+    'sales_returns_at',
+    'CREATE INDEX sales_returns_at ON sales_returns (returned_at DESC, id DESC)',
+  );
+  late final Index salesReturnsDay = Index(
+    'sales_returns_day',
+    'CREATE INDEX sales_returns_day ON sales_returns (day)',
+  );
+  late final SalesReturnLines salesReturnLines = SalesReturnLines(this);
+  late final Index salesReturnLinesReturn = Index(
+    'sales_return_lines_return',
+    'CREATE INDEX sales_return_lines_return ON sales_return_lines (return_id)',
+  );
+  late final Index salesReturnLinesBillline = Index(
+    'sales_return_lines_billline',
+    'CREATE INDEX sales_return_lines_billline ON sales_return_lines (bill_line_id)',
+  );
+  late final Purchases purchases = Purchases(this);
+  late final Index purchasesNumber = Index(
+    'purchases_number',
+    'CREATE UNIQUE INDEX purchases_number ON purchases (number)',
+  );
+  late final Index purchasesIdem = Index(
+    'purchases_idem',
+    'CREATE UNIQUE INDEX purchases_idem ON purchases (idem_key)',
+  );
+  late final Index purchasesDealer = Index(
+    'purchases_dealer',
+    'CREATE INDEX purchases_dealer ON purchases (dealer_id, purchased_at DESC, id DESC)',
+  );
+  late final Index purchasesAt = Index(
+    'purchases_at',
+    'CREATE INDEX purchases_at ON purchases (purchased_at DESC, id DESC)',
+  );
+  late final PurchaseLines purchaseLines = PurchaseLines(this);
+  late final Index purchaseLinesPurchase = Index(
+    'purchase_lines_purchase',
+    'CREATE INDEX purchase_lines_purchase ON purchase_lines (purchase_id, line_no)',
+  );
+  late final Index purchaseLinesProduct = Index(
+    'purchase_lines_product',
+    'CREATE INDEX purchase_lines_product ON purchase_lines (product_id, purchase_id)',
+  );
+  late final PurchaseReturns purchaseReturns = PurchaseReturns(this);
+  late final Index purchaseReturnsNumber = Index(
+    'purchase_returns_number',
+    'CREATE UNIQUE INDEX purchase_returns_number ON purchase_returns (number)',
+  );
+  late final Index purchaseReturnsIdem = Index(
+    'purchase_returns_idem',
+    'CREATE UNIQUE INDEX purchase_returns_idem ON purchase_returns (idem_key)',
+  );
+  late final Index purchaseReturnsPurchase = Index(
+    'purchase_returns_purchase',
+    'CREATE INDEX purchase_returns_purchase ON purchase_returns (purchase_id)',
+  );
+  late final Index purchaseReturnsAt = Index(
+    'purchase_returns_at',
+    'CREATE INDEX purchase_returns_at ON purchase_returns (returned_at DESC, id DESC)',
+  );
+  late final PurchaseReturnLines purchaseReturnLines = PurchaseReturnLines(
+    this,
+  );
+  late final Index purchaseReturnLinesReturn = Index(
+    'purchase_return_lines_return',
+    'CREATE INDEX purchase_return_lines_return ON purchase_return_lines (return_id)',
+  );
+  late final Index purchaseReturnLinesLine = Index(
+    'purchase_return_lines_line',
+    'CREATE INDEX purchase_return_lines_line ON purchase_return_lines (purchase_line_id)',
+  );
   late final Estimations estimations = Estimations(this);
   late final Index estimationsNumber = Index(
     'estimations_number',
@@ -15259,6 +21100,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categories,
     categoriesName,
     products,
+    productsCode,
     productsName,
     productsBarcode,
     productsCategory,
@@ -15294,6 +21136,31 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     billLinesProduct,
     billCancellations,
     billCancellationsBill,
+    salesReturns,
+    salesReturnsNumber,
+    salesReturnsIdem,
+    salesReturnsBill,
+    salesReturnsAt,
+    salesReturnsDay,
+    salesReturnLines,
+    salesReturnLinesReturn,
+    salesReturnLinesBillline,
+    purchases,
+    purchasesNumber,
+    purchasesIdem,
+    purchasesDealer,
+    purchasesAt,
+    purchaseLines,
+    purchaseLinesPurchase,
+    purchaseLinesProduct,
+    purchaseReturns,
+    purchaseReturnsNumber,
+    purchaseReturnsIdem,
+    purchaseReturnsPurchase,
+    purchaseReturnsAt,
+    purchaseReturnLines,
+    purchaseReturnLinesReturn,
+    purchaseReturnLinesLine,
     estimations,
     estimationsNumber,
     estimationsAt,
@@ -15784,6 +21651,9 @@ typedef $ProductsCreateCompanionBuilder = ProductsCompanion Function({
   Value<int> version,
   Value<String> hlc,
   Value<int> avgCostPaise,
+  Value<String> code,
+  Value<String> brand,
+  Value<int> mrpPaise,
   Value<int> rowid,
 });
 typedef $ProductsUpdateCompanionBuilder = ProductsCompanion Function({
@@ -15806,6 +21676,9 @@ typedef $ProductsUpdateCompanionBuilder = ProductsCompanion Function({
   Value<int> version,
   Value<String> hlc,
   Value<int> avgCostPaise,
+  Value<String> code,
+  Value<String> brand,
+  Value<int> mrpPaise,
   Value<int> rowid,
 });
 
@@ -15863,6 +21736,65 @@ final class $ProductsReferences
     ).filter((f) => f.productId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_billLinesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<SalesReturnLines, List<DbSalesReturnLine>>
+  _salesReturnLinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.salesReturnLines,
+    aliasName: 'products__id__sales_return_lines__product_id',
+  );
+
+  $SalesReturnLinesProcessedTableManager get salesReturnLinesRefs {
+    final manager = $SalesReturnLinesTableManager(
+      $_db,
+      $_db.salesReturnLines,
+    ).filter((f) => f.productId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _salesReturnLinesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<PurchaseLines, List<DbPurchaseLine>>
+  _purchaseLinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.purchaseLines,
+    aliasName: 'products__id__purchase_lines__product_id',
+  );
+
+  $PurchaseLinesProcessedTableManager get purchaseLinesRefs {
+    final manager = $PurchaseLinesTableManager(
+      $_db,
+      $_db.purchaseLines,
+    ).filter((f) => f.productId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_purchaseLinesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<PurchaseReturnLines, List<DbPurchaseReturnLine>>
+  _purchaseReturnLinesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.purchaseReturnLines,
+        aliasName: 'products__id__purchase_return_lines__product_id',
+      );
+
+  $PurchaseReturnLinesProcessedTableManager get purchaseReturnLinesRefs {
+    final manager = $PurchaseReturnLinesTableManager(
+      $_db,
+      $_db.purchaseReturnLines,
+    ).filter((f) => f.productId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _purchaseReturnLinesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -15992,6 +21924,21 @@ class $ProductsFilterComposer extends Composer<_$AppDatabase, Products> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mrpPaise => $composableBuilder(
+    column: $table.mrpPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> stockMovementsRefs(
     Expression<bool> Function($StockMovementsFilterComposer f) f,
   ) {
@@ -16058,6 +22005,81 @@ class $ProductsFilterComposer extends Composer<_$AppDatabase, Products> {
           }) => $BillLinesFilterComposer(
             $db: $db,
             $table: $db.billLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> salesReturnLinesRefs(
+    Expression<bool> Function($SalesReturnLinesFilterComposer f) f,
+  ) {
+    final $SalesReturnLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturnLines,
+      getReferencedColumn: (t) => t.productId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnLinesFilterComposer(
+            $db: $db,
+            $table: $db.salesReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> purchaseLinesRefs(
+    Expression<bool> Function($PurchaseLinesFilterComposer f) f,
+  ) {
+    final $PurchaseLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseLines,
+      getReferencedColumn: (t) => t.productId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseLinesFilterComposer(
+            $db: $db,
+            $table: $db.purchaseLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> purchaseReturnLinesRefs(
+    Expression<bool> Function($PurchaseReturnLinesFilterComposer f) f,
+  ) {
+    final $PurchaseReturnLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturnLines,
+      getReferencedColumn: (t) => t.productId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnLinesFilterComposer(
+            $db: $db,
+            $table: $db.purchaseReturnLines,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -16195,6 +22217,21 @@ class $ProductsOrderingComposer extends Composer<_$AppDatabase, Products> {
     column: $table.avgCostPaise,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mrpPaise => $composableBuilder(
+    column: $table.mrpPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $ProductsAnnotationComposer extends Composer<_$AppDatabase, Products> {
@@ -16267,6 +22304,15 @@ class $ProductsAnnotationComposer extends Composer<_$AppDatabase, Products> {
     column: $table.avgCostPaise,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
+
+  GeneratedColumn<int> get mrpPaise =>
+      $composableBuilder(column: $table.mrpPaise, builder: (column) => column);
 
   Expression<T> stockMovementsRefs<T extends Object>(
     Expression<T> Function($StockMovementsAnnotationComposer a) f,
@@ -16343,6 +22389,81 @@ class $ProductsAnnotationComposer extends Composer<_$AppDatabase, Products> {
     return f(composer);
   }
 
+  Expression<T> salesReturnLinesRefs<T extends Object>(
+    Expression<T> Function($SalesReturnLinesAnnotationComposer a) f,
+  ) {
+    final $SalesReturnLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturnLines,
+      getReferencedColumn: (t) => t.productId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.salesReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> purchaseLinesRefs<T extends Object>(
+    Expression<T> Function($PurchaseLinesAnnotationComposer a) f,
+  ) {
+    final $PurchaseLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseLines,
+      getReferencedColumn: (t) => t.productId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> purchaseReturnLinesRefs<T extends Object>(
+    Expression<T> Function($PurchaseReturnLinesAnnotationComposer a) f,
+  ) {
+    final $PurchaseReturnLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturnLines,
+      getReferencedColumn: (t) => t.productId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> estimationLinesRefs<T extends Object>(
     Expression<T> Function($EstimationLinesAnnotationComposer a) f,
   ) {
@@ -16386,6 +22507,9 @@ class $ProductsTableManager
             bool stockMovementsRefs,
             bool stockCacheRefs,
             bool billLinesRefs,
+            bool salesReturnLinesRefs,
+            bool purchaseLinesRefs,
+            bool purchaseReturnLinesRefs,
             bool estimationLinesRefs,
           })
         > {
@@ -16421,6 +22545,9 @@ class $ProductsTableManager
                 Value<int> version = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<int> avgCostPaise = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<String> brand = const Value.absent(),
+                Value<int> mrpPaise = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductsCompanion(
                 id: id,
@@ -16442,6 +22569,9 @@ class $ProductsTableManager
                 version: version,
                 hlc: hlc,
                 avgCostPaise: avgCostPaise,
+                code: code,
+                brand: brand,
+                mrpPaise: mrpPaise,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -16465,6 +22595,9 @@ class $ProductsTableManager
                 Value<int> version = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<int> avgCostPaise = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<String> brand = const Value.absent(),
+                Value<int> mrpPaise = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductsCompanion.insert(
                 id: id,
@@ -16486,6 +22619,9 @@ class $ProductsTableManager
                 version: version,
                 hlc: hlc,
                 avgCostPaise: avgCostPaise,
+                code: code,
+                brand: brand,
+                mrpPaise: mrpPaise,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -16501,6 +22637,9 @@ class $ProductsTableManager
                 stockMovementsRefs = false,
                 stockCacheRefs = false,
                 billLinesRefs = false,
+                salesReturnLinesRefs = false,
+                purchaseLinesRefs = false,
+                purchaseReturnLinesRefs = false,
                 estimationLinesRefs = false,
               }) {
                 return PrefetchHooks(
@@ -16509,6 +22648,9 @@ class $ProductsTableManager
                     if (stockMovementsRefs) db.stockMovements,
                     if (stockCacheRefs) db.stockCache,
                     if (billLinesRefs) db.billLines,
+                    if (salesReturnLinesRefs) db.salesReturnLines,
+                    if (purchaseLinesRefs) db.purchaseLines,
+                    if (purchaseReturnLinesRefs) db.purchaseReturnLines,
                     if (estimationLinesRefs) db.estimationLines,
                   ],
                   addJoins: null,
@@ -16568,6 +22710,66 @@ class $ProductsTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (salesReturnLinesRefs)
+                        await $_getPrefetchedData<
+                          DbProduct,
+                          Products,
+                          DbSalesReturnLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $ProductsReferences
+                              ._salesReturnLinesRefsTable(db),
+                          managerFromTypedResult: (p0) => $ProductsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).salesReturnLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.productId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (purchaseLinesRefs)
+                        await $_getPrefetchedData<
+                          DbProduct,
+                          Products,
+                          DbPurchaseLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $ProductsReferences
+                              ._purchaseLinesRefsTable(db),
+                          managerFromTypedResult: (p0) => $ProductsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).purchaseLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.productId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (purchaseReturnLinesRefs)
+                        await $_getPrefetchedData<
+                          DbProduct,
+                          Products,
+                          DbPurchaseReturnLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $ProductsReferences
+                              ._purchaseReturnLinesRefsTable(db),
+                          managerFromTypedResult: (p0) => $ProductsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).purchaseReturnLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.productId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (estimationLinesRefs)
                         await $_getPrefetchedData<
                           DbProduct,
@@ -16612,6 +22814,9 @@ typedef $ProductsProcessedTableManager =
         bool stockMovementsRefs,
         bool stockCacheRefs,
         bool billLinesRefs,
+        bool salesReturnLinesRefs,
+        bool purchaseLinesRefs,
+        bool purchaseReturnLinesRefs,
         bool estimationLinesRefs,
       })
     >;
@@ -16810,6 +23015,24 @@ final class $CustomersReferences
     );
   }
 
+  static MultiTypedResultKey<SalesReturns, List<DbSalesReturn>>
+  _salesReturnsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.salesReturns,
+    aliasName: 'customers__id__sales_returns__customer_id',
+  );
+
+  $SalesReturnsProcessedTableManager get salesReturnsRefs {
+    final manager = $SalesReturnsTableManager(
+      $_db,
+      $_db.salesReturns,
+    ).filter((f) => f.customerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_salesReturnsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<Estimations, List<DbEstimation>>
   _estimationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.estimations,
@@ -16942,6 +23165,31 @@ class $CustomersFilterComposer extends Composer<_$AppDatabase, Customers> {
           }) => $BillsFilterComposer(
             $db: $db,
             $table: $db.bills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> salesReturnsRefs(
+    Expression<bool> Function($SalesReturnsFilterComposer f) f,
+  ) {
+    final $SalesReturnsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturns,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnsFilterComposer(
+            $db: $db,
+            $table: $db.salesReturns,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -17158,6 +23406,31 @@ class $CustomersAnnotationComposer extends Composer<_$AppDatabase, Customers> {
     return f(composer);
   }
 
+  Expression<T> salesReturnsRefs<T extends Object>(
+    Expression<T> Function($SalesReturnsAnnotationComposer a) f,
+  ) {
+    final $SalesReturnsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturns,
+      getReferencedColumn: (t) => t.customerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnsAnnotationComposer(
+            $db: $db,
+            $table: $db.salesReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> estimationsRefs<T extends Object>(
     Expression<T> Function($EstimationsAnnotationComposer a) f,
   ) {
@@ -17224,6 +23497,7 @@ class $CustomersTableManager
           DbCustomer,
           PrefetchHooks Function({
             bool billsRefs,
+            bool salesReturnsRefs,
             bool estimationsRefs,
             bool remindersRefs,
           })
@@ -17318,6 +23592,7 @@ class $CustomersTableManager
           prefetchHooksCallback:
               ({
                 billsRefs = false,
+                salesReturnsRefs = false,
                 estimationsRefs = false,
                 remindersRefs = false,
               }) {
@@ -17325,6 +23600,7 @@ class $CustomersTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (billsRefs) db.bills,
+                    if (salesReturnsRefs) db.salesReturns,
                     if (estimationsRefs) db.estimations,
                     if (remindersRefs) db.reminders,
                   ],
@@ -17343,6 +23619,26 @@ class $CustomersTableManager
                           ),
                           managerFromTypedResult: (p0) =>
                               $CustomersReferences(db, table, p0).billsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.customerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (salesReturnsRefs)
+                        await $_getPrefetchedData<
+                          DbCustomer,
+                          Customers,
+                          DbSalesReturn
+                        >(
+                          currentTable: table,
+                          referencedTable: $CustomersReferences
+                              ._salesReturnsRefsTable(db),
+                          managerFromTypedResult: (p0) => $CustomersReferences(
+                            db,
+                            table,
+                            p0,
+                          ).salesReturnsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.customerId == item.id,
@@ -17408,6 +23704,7 @@ typedef $CustomersProcessedTableManager =
       DbCustomer,
       PrefetchHooks Function({
         bool billsRefs,
+        bool salesReturnsRefs,
         bool estimationsRefs,
         bool remindersRefs,
       })
@@ -17444,6 +23741,50 @@ typedef $DealersUpdateCompanionBuilder = DealersCompanion Function({
   Value<String> hlc,
   Value<int> rowid,
 });
+
+final class $DealersReferences
+    extends BaseReferences<_$AppDatabase, Dealers, DbDealer> {
+  $DealersReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<Purchases, List<DbPurchase>> _purchasesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.purchases,
+    aliasName: 'dealers__id__purchases__dealer_id',
+  );
+
+  $PurchasesProcessedTableManager get purchasesRefs {
+    final manager = $PurchasesTableManager(
+      $_db,
+      $_db.purchases,
+    ).filter((f) => f.dealerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_purchasesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<PurchaseReturns, List<DbPurchaseReturn>>
+  _purchaseReturnsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.purchaseReturns,
+    aliasName: 'dealers__id__purchase_returns__dealer_id',
+  );
+
+  $PurchaseReturnsProcessedTableManager get purchaseReturnsRefs {
+    final manager = $PurchaseReturnsTableManager(
+      $_db,
+      $_db.purchaseReturns,
+    ).filter((f) => f.dealerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _purchaseReturnsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $DealersFilterComposer extends Composer<_$AppDatabase, Dealers> {
   $DealersFilterComposer({
@@ -17517,6 +23858,56 @@ class $DealersFilterComposer extends Composer<_$AppDatabase, Dealers> {
     column: $table.hlc,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> purchasesRefs(
+    Expression<bool> Function($PurchasesFilterComposer f) f,
+  ) {
+    final $PurchasesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchases,
+      getReferencedColumn: (t) => t.dealerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchasesFilterComposer(
+            $db: $db,
+            $table: $db.purchases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> purchaseReturnsRefs(
+    Expression<bool> Function($PurchaseReturnsFilterComposer f) f,
+  ) {
+    final $PurchaseReturnsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturns,
+      getReferencedColumn: (t) => t.dealerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnsFilterComposer(
+            $db: $db,
+            $table: $db.purchaseReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $DealersOrderingComposer extends Composer<_$AppDatabase, Dealers> {
@@ -17639,6 +24030,56 @@ class $DealersAnnotationComposer extends Composer<_$AppDatabase, Dealers> {
 
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  Expression<T> purchasesRefs<T extends Object>(
+    Expression<T> Function($PurchasesAnnotationComposer a) f,
+  ) {
+    final $PurchasesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchases,
+      getReferencedColumn: (t) => t.dealerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchasesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> purchaseReturnsRefs<T extends Object>(
+    Expression<T> Function($PurchaseReturnsAnnotationComposer a) f,
+  ) {
+    final $PurchaseReturnsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturns,
+      getReferencedColumn: (t) => t.dealerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnsAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $DealersTableManager
@@ -17652,9 +24093,9 @@ class $DealersTableManager
           $DealersAnnotationComposer,
           $DealersCreateCompanionBuilder,
           $DealersUpdateCompanionBuilder,
-          (DbDealer, BaseReferences<_$AppDatabase, Dealers, DbDealer>),
+          (DbDealer, $DealersReferences),
           DbDealer,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool purchasesRefs, bool purchaseReturnsRefs})
         > {
   $DealersTableManager(_$AppDatabase db, Dealers table)
     : super(
@@ -17735,15 +24176,62 @@ class $DealersTableManager
               .map(
                 (e) => (
                   e.readTable<Dealers, DbDealer>(table),
-                  BaseReferences<_$AppDatabase, Dealers, DbDealer>(
-                    db,
-                    table,
-                    e,
-                  ),
+                  $DealersReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback:
+              ({purchasesRefs = false, purchaseReturnsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (purchasesRefs) db.purchases,
+                    if (purchaseReturnsRefs) db.purchaseReturns,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (purchasesRefs)
+                        await $_getPrefetchedData<
+                          DbDealer,
+                          Dealers,
+                          DbPurchase
+                        >(
+                          currentTable: table,
+                          referencedTable: $DealersReferences
+                              ._purchasesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $DealersReferences(db, table, p0).purchasesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.dealerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (purchaseReturnsRefs)
+                        await $_getPrefetchedData<
+                          DbDealer,
+                          Dealers,
+                          DbPurchaseReturn
+                        >(
+                          currentTable: table,
+                          referencedTable: $DealersReferences
+                              ._purchaseReturnsRefsTable(db),
+                          managerFromTypedResult: (p0) => $DealersReferences(
+                            db,
+                            table,
+                            p0,
+                          ).purchaseReturnsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.dealerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
         ),
       );
 }
@@ -17758,9 +24246,9 @@ typedef $DealersProcessedTableManager =
       $DealersAnnotationComposer,
       $DealersCreateCompanionBuilder,
       $DealersUpdateCompanionBuilder,
-      (DbDealer, BaseReferences<_$AppDatabase, Dealers, DbDealer>),
+      (DbDealer, $DealersReferences),
       DbDealer,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool purchasesRefs, bool purchaseReturnsRefs})
     >;
 typedef $StockMovementsCreateCompanionBuilder =
     StockMovementsCompanion Function({
@@ -18460,6 +24948,8 @@ typedef $BillsCreateCompanionBuilder = BillsCompanion Function({
   Value<String> createdBy,
   required int createdAt,
   required String deviceId,
+  Value<int> extraDiscountPaise,
+  Value<int> extraDiscountBp,
   Value<int> rowid,
 });
 typedef $BillsUpdateCompanionBuilder = BillsCompanion Function({
@@ -18493,6 +24983,8 @@ typedef $BillsUpdateCompanionBuilder = BillsCompanion Function({
   Value<String> createdBy,
   Value<int> createdAt,
   Value<String> deviceId,
+  Value<int> extraDiscountPaise,
+  Value<int> extraDiscountBp,
   Value<int> rowid,
 });
 
@@ -18552,6 +25044,24 @@ final class $BillsReferences
     final cache = $_typedResult.readTableOrNull(
       _billCancellationsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<SalesReturns, List<DbSalesReturn>>
+  _salesReturnsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.salesReturns,
+    aliasName: 'bills__id__sales_returns__bill_id',
+  );
+
+  $SalesReturnsProcessedTableManager get salesReturnsRefs {
+    final manager = $SalesReturnsTableManager(
+      $_db,
+      $_db.salesReturns,
+    ).filter((f) => f.billId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_salesReturnsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -18711,6 +25221,16 @@ class $BillsFilterComposer extends Composer<_$AppDatabase, Bills> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get extraDiscountPaise => $composableBuilder(
+    column: $table.extraDiscountPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get extraDiscountBp => $composableBuilder(
+    column: $table.extraDiscountBp,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $CustomersFilterComposer get customerId {
     final $CustomersFilterComposer composer = $composerBuilder(
       composer: this,
@@ -18775,6 +25295,31 @@ class $BillsFilterComposer extends Composer<_$AppDatabase, Bills> {
           }) => $BillCancellationsFilterComposer(
             $db: $db,
             $table: $db.billCancellations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> salesReturnsRefs(
+    Expression<bool> Function($SalesReturnsFilterComposer f) f,
+  ) {
+    final $SalesReturnsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturns,
+      getReferencedColumn: (t) => t.billId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnsFilterComposer(
+            $db: $db,
+            $table: $db.salesReturns,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -18938,6 +25483,16 @@ class $BillsOrderingComposer extends Composer<_$AppDatabase, Bills> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get extraDiscountPaise => $composableBuilder(
+    column: $table.extraDiscountPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get extraDiscountBp => $composableBuilder(
+    column: $table.extraDiscountBp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $CustomersOrderingComposer get customerId {
     final $CustomersOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -19077,6 +25632,16 @@ class $BillsAnnotationComposer extends Composer<_$AppDatabase, Bills> {
   GeneratedColumn<String> get deviceId =>
       $composableBuilder(column: $table.deviceId, builder: (column) => column);
 
+  GeneratedColumn<int> get extraDiscountPaise => $composableBuilder(
+    column: $table.extraDiscountPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get extraDiscountBp => $composableBuilder(
+    column: $table.extraDiscountBp,
+    builder: (column) => column,
+  );
+
   $CustomersAnnotationComposer get customerId {
     final $CustomersAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -19149,6 +25714,31 @@ class $BillsAnnotationComposer extends Composer<_$AppDatabase, Bills> {
     );
     return f(composer);
   }
+
+  Expression<T> salesReturnsRefs<T extends Object>(
+    Expression<T> Function($SalesReturnsAnnotationComposer a) f,
+  ) {
+    final $SalesReturnsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturns,
+      getReferencedColumn: (t) => t.billId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnsAnnotationComposer(
+            $db: $db,
+            $table: $db.salesReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $BillsTableManager
@@ -19168,6 +25758,7 @@ class $BillsTableManager
             bool customerId,
             bool billLinesRefs,
             bool billCancellationsRefs,
+            bool salesReturnsRefs,
           })
         > {
   $BillsTableManager(_$AppDatabase db, Bills table)
@@ -19213,6 +25804,8 @@ class $BillsTableManager
                 Value<String> createdBy = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<String> deviceId = const Value.absent(),
+                Value<int> extraDiscountPaise = const Value.absent(),
+                Value<int> extraDiscountBp = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BillsCompanion(
                 id: id,
@@ -19245,6 +25838,8 @@ class $BillsTableManager
                 createdBy: createdBy,
                 createdAt: createdAt,
                 deviceId: deviceId,
+                extraDiscountPaise: extraDiscountPaise,
+                extraDiscountBp: extraDiscountBp,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19279,6 +25874,8 @@ class $BillsTableManager
                 Value<String> createdBy = const Value.absent(),
                 required int createdAt,
                 required String deviceId,
+                Value<int> extraDiscountPaise = const Value.absent(),
+                Value<int> extraDiscountBp = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BillsCompanion.insert(
                 id: id,
@@ -19311,6 +25908,8 @@ class $BillsTableManager
                 createdBy: createdBy,
                 createdAt: createdAt,
                 deviceId: deviceId,
+                extraDiscountPaise: extraDiscountPaise,
+                extraDiscountBp: extraDiscountBp,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -19326,12 +25925,14 @@ class $BillsTableManager
                 customerId = false,
                 billLinesRefs = false,
                 billCancellationsRefs = false,
+                salesReturnsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (billLinesRefs) db.billLines,
                     if (billCancellationsRefs) db.billCancellations,
+                    if (salesReturnsRefs) db.salesReturns,
                   ],
                   addJoins:
                       <
@@ -19400,6 +26001,19 @@ class $BillsTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (salesReturnsRefs)
+                        await $_getPrefetchedData<DbBill, Bills, DbSalesReturn>(
+                          currentTable: table,
+                          referencedTable: $BillsReferences
+                              ._salesReturnsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $BillsReferences(db, table, p0).salesReturnsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.billId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -19424,6 +26038,7 @@ typedef $BillsProcessedTableManager =
         bool customerId,
         bool billLinesRefs,
         bool billCancellationsRefs,
+        bool salesReturnsRefs,
       })
     >;
 typedef $BillLinesCreateCompanionBuilder = BillLinesCompanion Function({
@@ -19500,6 +26115,26 @@ final class $BillLinesReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<SalesReturnLines, List<DbSalesReturnLine>>
+  _salesReturnLinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.salesReturnLines,
+    aliasName: 'bill_lines__id__sales_return_lines__bill_line_id',
+  );
+
+  $SalesReturnLinesProcessedTableManager get salesReturnLinesRefs {
+    final manager = $SalesReturnLinesTableManager(
+      $_db,
+      $_db.salesReturnLines,
+    ).filter((f) => f.billLineId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _salesReturnLinesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
@@ -19626,6 +26261,31 @@ class $BillLinesFilterComposer extends Composer<_$AppDatabase, BillLines> {
           ),
     );
     return composer;
+  }
+
+  Expression<bool> salesReturnLinesRefs(
+    Expression<bool> Function($SalesReturnLinesFilterComposer f) f,
+  ) {
+    final $SalesReturnLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturnLines,
+      getReferencedColumn: (t) => t.billLineId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnLinesFilterComposer(
+            $db: $db,
+            $table: $db.salesReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -19859,6 +26519,31 @@ class $BillLinesAnnotationComposer extends Composer<_$AppDatabase, BillLines> {
     );
     return composer;
   }
+
+  Expression<T> salesReturnLinesRefs<T extends Object>(
+    Expression<T> Function($SalesReturnLinesAnnotationComposer a) f,
+  ) {
+    final $SalesReturnLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturnLines,
+      getReferencedColumn: (t) => t.billLineId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.salesReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $BillLinesTableManager
@@ -19874,7 +26559,11 @@ class $BillLinesTableManager
           $BillLinesUpdateCompanionBuilder,
           (DbBillLine, $BillLinesReferences),
           DbBillLine,
-          PrefetchHooks Function({bool billId, bool productId})
+          PrefetchHooks Function({
+            bool billId,
+            bool productId,
+            bool salesReturnLinesRefs,
+          })
         > {
   $BillLinesTableManager(_$AppDatabase db, BillLines table)
     : super(
@@ -19971,56 +26660,85 @@ class $BillLinesTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({billId = false, productId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (billId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.billId,
-                        referencedTable: $BillLinesReferences._billIdTable(db),
-                        referencedColumn: $BillLinesReferences
-                            ._billIdTable(db)
-                            .id,
-                      ) as T;
-                    }
-                    if (productId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.productId,
-                        referencedTable: $BillLinesReferences._productIdTable(
-                          db,
-                        ),
-                        referencedColumn: $BillLinesReferences
-                            ._productIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                billId = false,
+                productId = false,
+                salesReturnLinesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (salesReturnLinesRefs) db.salesReturnLines,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (billId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.billId,
+                            referencedTable: $BillLinesReferences._billIdTable(
+                              db,
+                            ),
+                            referencedColumn: $BillLinesReferences
+                                ._billIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (productId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.productId,
+                            referencedTable: $BillLinesReferences
+                                ._productIdTable(db),
+                            referencedColumn: $BillLinesReferences
+                                ._productIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (salesReturnLinesRefs)
+                        await $_getPrefetchedData<
+                          DbBillLine,
+                          BillLines,
+                          DbSalesReturnLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $BillLinesReferences
+                              ._salesReturnLinesRefsTable(db),
+                          managerFromTypedResult: (p0) => $BillLinesReferences(
+                            db,
+                            table,
+                            p0,
+                          ).salesReturnLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.billLineId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -20037,7 +26755,11 @@ typedef $BillLinesProcessedTableManager =
       $BillLinesUpdateCompanionBuilder,
       (DbBillLine, $BillLinesReferences),
       DbBillLine,
-      PrefetchHooks Function({bool billId, bool productId})
+      PrefetchHooks Function({
+        bool billId,
+        bool productId,
+        bool salesReturnLinesRefs,
+      })
     >;
 typedef $BillCancellationsCreateCompanionBuilder =
     BillCancellationsCompanion Function({
@@ -20412,6 +27134,4334 @@ typedef $BillCancellationsProcessedTableManager =
       DbBillCancellation,
       PrefetchHooks Function({bool billId})
     >;
+typedef $SalesReturnsCreateCompanionBuilder = SalesReturnsCompanion Function({
+  required String id,
+  required String number,
+  required String billId,
+  required String billNo,
+  Value<String?> customerId,
+  Value<String> customerName,
+  required int returnedAt,
+  required String day,
+  required int totalPaise,
+  Value<int> taxablePaise,
+  Value<int> cgstPaise,
+  Value<int> sgstPaise,
+  Value<int> igstPaise,
+  Value<int> costPaise,
+  Value<int> roundOffPaise,
+  Value<int> dueReducedPaise,
+  Value<int> creditKeptPaise,
+  Value<int> refundedPaise,
+  Value<int> refundMode,
+  required String reason,
+  Value<String> byName,
+  required String idemKey,
+  required int createdAt,
+  required String deviceId,
+  Value<int> rowid,
+});
+typedef $SalesReturnsUpdateCompanionBuilder = SalesReturnsCompanion Function({
+  Value<String> id,
+  Value<String> number,
+  Value<String> billId,
+  Value<String> billNo,
+  Value<String?> customerId,
+  Value<String> customerName,
+  Value<int> returnedAt,
+  Value<String> day,
+  Value<int> totalPaise,
+  Value<int> taxablePaise,
+  Value<int> cgstPaise,
+  Value<int> sgstPaise,
+  Value<int> igstPaise,
+  Value<int> costPaise,
+  Value<int> roundOffPaise,
+  Value<int> dueReducedPaise,
+  Value<int> creditKeptPaise,
+  Value<int> refundedPaise,
+  Value<int> refundMode,
+  Value<String> reason,
+  Value<String> byName,
+  Value<String> idemKey,
+  Value<int> createdAt,
+  Value<String> deviceId,
+  Value<int> rowid,
+});
+
+final class $SalesReturnsReferences
+    extends BaseReferences<_$AppDatabase, SalesReturns, DbSalesReturn> {
+  $SalesReturnsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static Bills _billIdTable(_$AppDatabase db) =>
+      db.bills.createAlias('sales_returns__bill_id__bills__id');
+
+  $BillsProcessedTableManager get billId {
+    final $_column = $_itemColumn<String>('bill_id')!;
+
+    final manager = $BillsTableManager(
+      $_db,
+      $_db.bills,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_billIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Customers _customerIdTable(_$AppDatabase db) =>
+      db.customers.createAlias('sales_returns__customer_id__customers__id');
+
+  $CustomersProcessedTableManager? get customerId {
+    final $_column = $_itemColumn<String>('customer_id');
+    if ($_column == null) return null;
+    final manager = $CustomersTableManager(
+      $_db,
+      $_db.customers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_customerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<SalesReturnLines, List<DbSalesReturnLine>>
+  _salesReturnLinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.salesReturnLines,
+    aliasName: 'sales_returns__id__sales_return_lines__return_id',
+  );
+
+  $SalesReturnLinesProcessedTableManager get salesReturnLinesRefs {
+    final manager = $SalesReturnLinesTableManager(
+      $_db,
+      $_db.salesReturnLines,
+    ).filter((f) => f.returnId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _salesReturnLinesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $SalesReturnsFilterComposer
+    extends Composer<_$AppDatabase, SalesReturns> {
+  $SalesReturnsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get billNo => $composableBuilder(
+    column: $table.billNo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customerName => $composableBuilder(
+    column: $table.customerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get returnedAt => $composableBuilder(
+    column: $table.returnedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cgstPaise => $composableBuilder(
+    column: $table.cgstPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sgstPaise => $composableBuilder(
+    column: $table.sgstPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get igstPaise => $composableBuilder(
+    column: $table.igstPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get costPaise => $composableBuilder(
+    column: $table.costPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get roundOffPaise => $composableBuilder(
+    column: $table.roundOffPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dueReducedPaise => $composableBuilder(
+    column: $table.dueReducedPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get creditKeptPaise => $composableBuilder(
+    column: $table.creditKeptPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get refundedPaise => $composableBuilder(
+    column: $table.refundedPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get refundMode => $composableBuilder(
+    column: $table.refundMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get byName => $composableBuilder(
+    column: $table.byName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get idemKey => $composableBuilder(
+    column: $table.idemKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $BillsFilterComposer get billId {
+    final $BillsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.billId,
+      referencedTable: $db.bills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BillsFilterComposer(
+            $db: $db,
+            $table: $db.bills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $CustomersFilterComposer get customerId {
+    final $CustomersFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CustomersFilterComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> salesReturnLinesRefs(
+    Expression<bool> Function($SalesReturnLinesFilterComposer f) f,
+  ) {
+    final $SalesReturnLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturnLines,
+      getReferencedColumn: (t) => t.returnId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnLinesFilterComposer(
+            $db: $db,
+            $table: $db.salesReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $SalesReturnsOrderingComposer
+    extends Composer<_$AppDatabase, SalesReturns> {
+  $SalesReturnsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get billNo => $composableBuilder(
+    column: $table.billNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get customerName => $composableBuilder(
+    column: $table.customerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get returnedAt => $composableBuilder(
+    column: $table.returnedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cgstPaise => $composableBuilder(
+    column: $table.cgstPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sgstPaise => $composableBuilder(
+    column: $table.sgstPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get igstPaise => $composableBuilder(
+    column: $table.igstPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get costPaise => $composableBuilder(
+    column: $table.costPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get roundOffPaise => $composableBuilder(
+    column: $table.roundOffPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dueReducedPaise => $composableBuilder(
+    column: $table.dueReducedPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get creditKeptPaise => $composableBuilder(
+    column: $table.creditKeptPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get refundedPaise => $composableBuilder(
+    column: $table.refundedPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get refundMode => $composableBuilder(
+    column: $table.refundMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get byName => $composableBuilder(
+    column: $table.byName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get idemKey => $composableBuilder(
+    column: $table.idemKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $BillsOrderingComposer get billId {
+    final $BillsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.billId,
+      referencedTable: $db.bills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BillsOrderingComposer(
+            $db: $db,
+            $table: $db.bills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $CustomersOrderingComposer get customerId {
+    final $CustomersOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CustomersOrderingComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $SalesReturnsAnnotationComposer
+    extends Composer<_$AppDatabase, SalesReturns> {
+  $SalesReturnsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<String> get billNo =>
+      $composableBuilder(column: $table.billNo, builder: (column) => column);
+
+  GeneratedColumn<String> get customerName => $composableBuilder(
+    column: $table.customerName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get returnedAt => $composableBuilder(
+    column: $table.returnedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cgstPaise =>
+      $composableBuilder(column: $table.cgstPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get sgstPaise =>
+      $composableBuilder(column: $table.sgstPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get igstPaise =>
+      $composableBuilder(column: $table.igstPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get costPaise =>
+      $composableBuilder(column: $table.costPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get roundOffPaise => $composableBuilder(
+    column: $table.roundOffPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dueReducedPaise => $composableBuilder(
+    column: $table.dueReducedPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get creditKeptPaise => $composableBuilder(
+    column: $table.creditKeptPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get refundedPaise => $composableBuilder(
+    column: $table.refundedPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get refundMode => $composableBuilder(
+    column: $table.refundMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get byName =>
+      $composableBuilder(column: $table.byName, builder: (column) => column);
+
+  GeneratedColumn<String> get idemKey =>
+      $composableBuilder(column: $table.idemKey, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  $BillsAnnotationComposer get billId {
+    final $BillsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.billId,
+      referencedTable: $db.bills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BillsAnnotationComposer(
+            $db: $db,
+            $table: $db.bills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $CustomersAnnotationComposer get customerId {
+    final $CustomersAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.customerId,
+      referencedTable: $db.customers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CustomersAnnotationComposer(
+            $db: $db,
+            $table: $db.customers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> salesReturnLinesRefs<T extends Object>(
+    Expression<T> Function($SalesReturnLinesAnnotationComposer a) f,
+  ) {
+    final $SalesReturnLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.salesReturnLines,
+      getReferencedColumn: (t) => t.returnId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.salesReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $SalesReturnsTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          SalesReturns,
+          DbSalesReturn,
+          $SalesReturnsFilterComposer,
+          $SalesReturnsOrderingComposer,
+          $SalesReturnsAnnotationComposer,
+          $SalesReturnsCreateCompanionBuilder,
+          $SalesReturnsUpdateCompanionBuilder,
+          (DbSalesReturn, $SalesReturnsReferences),
+          DbSalesReturn,
+          PrefetchHooks Function({
+            bool billId,
+            bool customerId,
+            bool salesReturnLinesRefs,
+          })
+        > {
+  $SalesReturnsTableManager(_$AppDatabase db, SalesReturns table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $SalesReturnsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $SalesReturnsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $SalesReturnsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> number = const Value.absent(),
+                Value<String> billId = const Value.absent(),
+                Value<String> billNo = const Value.absent(),
+                Value<String?> customerId = const Value.absent(),
+                Value<String> customerName = const Value.absent(),
+                Value<int> returnedAt = const Value.absent(),
+                Value<String> day = const Value.absent(),
+                Value<int> totalPaise = const Value.absent(),
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> cgstPaise = const Value.absent(),
+                Value<int> sgstPaise = const Value.absent(),
+                Value<int> igstPaise = const Value.absent(),
+                Value<int> costPaise = const Value.absent(),
+                Value<int> roundOffPaise = const Value.absent(),
+                Value<int> dueReducedPaise = const Value.absent(),
+                Value<int> creditKeptPaise = const Value.absent(),
+                Value<int> refundedPaise = const Value.absent(),
+                Value<int> refundMode = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<String> byName = const Value.absent(),
+                Value<String> idemKey = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SalesReturnsCompanion(
+                id: id,
+                number: number,
+                billId: billId,
+                billNo: billNo,
+                customerId: customerId,
+                customerName: customerName,
+                returnedAt: returnedAt,
+                day: day,
+                totalPaise: totalPaise,
+                taxablePaise: taxablePaise,
+                cgstPaise: cgstPaise,
+                sgstPaise: sgstPaise,
+                igstPaise: igstPaise,
+                costPaise: costPaise,
+                roundOffPaise: roundOffPaise,
+                dueReducedPaise: dueReducedPaise,
+                creditKeptPaise: creditKeptPaise,
+                refundedPaise: refundedPaise,
+                refundMode: refundMode,
+                reason: reason,
+                byName: byName,
+                idemKey: idemKey,
+                createdAt: createdAt,
+                deviceId: deviceId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String number,
+                required String billId,
+                required String billNo,
+                Value<String?> customerId = const Value.absent(),
+                Value<String> customerName = const Value.absent(),
+                required int returnedAt,
+                required String day,
+                required int totalPaise,
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> cgstPaise = const Value.absent(),
+                Value<int> sgstPaise = const Value.absent(),
+                Value<int> igstPaise = const Value.absent(),
+                Value<int> costPaise = const Value.absent(),
+                Value<int> roundOffPaise = const Value.absent(),
+                Value<int> dueReducedPaise = const Value.absent(),
+                Value<int> creditKeptPaise = const Value.absent(),
+                Value<int> refundedPaise = const Value.absent(),
+                Value<int> refundMode = const Value.absent(),
+                required String reason,
+                Value<String> byName = const Value.absent(),
+                required String idemKey,
+                required int createdAt,
+                required String deviceId,
+                Value<int> rowid = const Value.absent(),
+              }) => SalesReturnsCompanion.insert(
+                id: id,
+                number: number,
+                billId: billId,
+                billNo: billNo,
+                customerId: customerId,
+                customerName: customerName,
+                returnedAt: returnedAt,
+                day: day,
+                totalPaise: totalPaise,
+                taxablePaise: taxablePaise,
+                cgstPaise: cgstPaise,
+                sgstPaise: sgstPaise,
+                igstPaise: igstPaise,
+                costPaise: costPaise,
+                roundOffPaise: roundOffPaise,
+                dueReducedPaise: dueReducedPaise,
+                creditKeptPaise: creditKeptPaise,
+                refundedPaise: refundedPaise,
+                refundMode: refundMode,
+                reason: reason,
+                byName: byName,
+                idemKey: idemKey,
+                createdAt: createdAt,
+                deviceId: deviceId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<SalesReturns, DbSalesReturn>(table),
+                  $SalesReturnsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                billId = false,
+                customerId = false,
+                salesReturnLinesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (salesReturnLinesRefs) db.salesReturnLines,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (billId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.billId,
+                            referencedTable: $SalesReturnsReferences
+                                ._billIdTable(db),
+                            referencedColumn: $SalesReturnsReferences
+                                ._billIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (customerId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.customerId,
+                            referencedTable: $SalesReturnsReferences
+                                ._customerIdTable(db),
+                            referencedColumn: $SalesReturnsReferences
+                                ._customerIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (salesReturnLinesRefs)
+                        await $_getPrefetchedData<
+                          DbSalesReturn,
+                          SalesReturns,
+                          DbSalesReturnLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $SalesReturnsReferences
+                              ._salesReturnLinesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $SalesReturnsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).salesReturnLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.returnId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $SalesReturnsProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      SalesReturns,
+      DbSalesReturn,
+      $SalesReturnsFilterComposer,
+      $SalesReturnsOrderingComposer,
+      $SalesReturnsAnnotationComposer,
+      $SalesReturnsCreateCompanionBuilder,
+      $SalesReturnsUpdateCompanionBuilder,
+      (DbSalesReturn, $SalesReturnsReferences),
+      DbSalesReturn,
+      PrefetchHooks Function({
+        bool billId,
+        bool customerId,
+        bool salesReturnLinesRefs,
+      })
+    >;
+typedef $SalesReturnLinesCreateCompanionBuilder =
+    SalesReturnLinesCompanion Function({
+      required String id,
+      required String returnId,
+      required String billLineId,
+      required String productId,
+      required String name,
+      Value<String> unit,
+      required int qtyMilli,
+      required int amountPaise,
+      required int taxablePaise,
+      required int taxPaise,
+      Value<int> costPaise,
+      Value<int> rowid,
+    });
+typedef $SalesReturnLinesUpdateCompanionBuilder =
+    SalesReturnLinesCompanion Function({
+      Value<String> id,
+      Value<String> returnId,
+      Value<String> billLineId,
+      Value<String> productId,
+      Value<String> name,
+      Value<String> unit,
+      Value<int> qtyMilli,
+      Value<int> amountPaise,
+      Value<int> taxablePaise,
+      Value<int> taxPaise,
+      Value<int> costPaise,
+      Value<int> rowid,
+    });
+
+final class $SalesReturnLinesReferences
+    extends BaseReferences<_$AppDatabase, SalesReturnLines, DbSalesReturnLine> {
+  $SalesReturnLinesReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static SalesReturns _returnIdTable(_$AppDatabase db) => db.salesReturns
+      .createAlias('sales_return_lines__return_id__sales_returns__id');
+
+  $SalesReturnsProcessedTableManager get returnId {
+    final $_column = $_itemColumn<String>('return_id')!;
+
+    final manager = $SalesReturnsTableManager(
+      $_db,
+      $_db.salesReturns,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_returnIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static BillLines _billLineIdTable(_$AppDatabase db) => db.billLines
+      .createAlias('sales_return_lines__bill_line_id__bill_lines__id');
+
+  $BillLinesProcessedTableManager get billLineId {
+    final $_column = $_itemColumn<String>('bill_line_id')!;
+
+    final manager = $BillLinesTableManager(
+      $_db,
+      $_db.billLines,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_billLineIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Products _productIdTable(_$AppDatabase db) =>
+      db.products.createAlias('sales_return_lines__product_id__products__id');
+
+  $ProductsProcessedTableManager get productId {
+    final $_column = $_itemColumn<String>('product_id')!;
+
+    final manager = $ProductsTableManager(
+      $_db,
+      $_db.products,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $SalesReturnLinesFilterComposer
+    extends Composer<_$AppDatabase, SalesReturnLines> {
+  $SalesReturnLinesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get qtyMilli => $composableBuilder(
+    column: $table.qtyMilli,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountPaise => $composableBuilder(
+    column: $table.amountPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get costPaise => $composableBuilder(
+    column: $table.costPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $SalesReturnsFilterComposer get returnId {
+    final $SalesReturnsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.returnId,
+      referencedTable: $db.salesReturns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnsFilterComposer(
+            $db: $db,
+            $table: $db.salesReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $BillLinesFilterComposer get billLineId {
+    final $BillLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.billLineId,
+      referencedTable: $db.billLines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BillLinesFilterComposer(
+            $db: $db,
+            $table: $db.billLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsFilterComposer get productId {
+    final $ProductsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsFilterComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $SalesReturnLinesOrderingComposer
+    extends Composer<_$AppDatabase, SalesReturnLines> {
+  $SalesReturnLinesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get qtyMilli => $composableBuilder(
+    column: $table.qtyMilli,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountPaise => $composableBuilder(
+    column: $table.amountPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get costPaise => $composableBuilder(
+    column: $table.costPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $SalesReturnsOrderingComposer get returnId {
+    final $SalesReturnsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.returnId,
+      referencedTable: $db.salesReturns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnsOrderingComposer(
+            $db: $db,
+            $table: $db.salesReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $BillLinesOrderingComposer get billLineId {
+    final $BillLinesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.billLineId,
+      referencedTable: $db.billLines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BillLinesOrderingComposer(
+            $db: $db,
+            $table: $db.billLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsOrderingComposer get productId {
+    final $ProductsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsOrderingComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $SalesReturnLinesAnnotationComposer
+    extends Composer<_$AppDatabase, SalesReturnLines> {
+  $SalesReturnLinesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<int> get qtyMilli =>
+      $composableBuilder(column: $table.qtyMilli, builder: (column) => column);
+
+  GeneratedColumn<int> get amountPaise => $composableBuilder(
+    column: $table.amountPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxPaise =>
+      $composableBuilder(column: $table.taxPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get costPaise =>
+      $composableBuilder(column: $table.costPaise, builder: (column) => column);
+
+  $SalesReturnsAnnotationComposer get returnId {
+    final $SalesReturnsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.returnId,
+      referencedTable: $db.salesReturns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $SalesReturnsAnnotationComposer(
+            $db: $db,
+            $table: $db.salesReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $BillLinesAnnotationComposer get billLineId {
+    final $BillLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.billLineId,
+      referencedTable: $db.billLines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BillLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.billLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsAnnotationComposer get productId {
+    final $ProductsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsAnnotationComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $SalesReturnLinesTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          SalesReturnLines,
+          DbSalesReturnLine,
+          $SalesReturnLinesFilterComposer,
+          $SalesReturnLinesOrderingComposer,
+          $SalesReturnLinesAnnotationComposer,
+          $SalesReturnLinesCreateCompanionBuilder,
+          $SalesReturnLinesUpdateCompanionBuilder,
+          (DbSalesReturnLine, $SalesReturnLinesReferences),
+          DbSalesReturnLine,
+          PrefetchHooks Function({
+            bool returnId,
+            bool billLineId,
+            bool productId,
+          })
+        > {
+  $SalesReturnLinesTableManager(_$AppDatabase db, SalesReturnLines table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $SalesReturnLinesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $SalesReturnLinesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $SalesReturnLinesAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> returnId = const Value.absent(),
+                Value<String> billLineId = const Value.absent(),
+                Value<String> productId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> unit = const Value.absent(),
+                Value<int> qtyMilli = const Value.absent(),
+                Value<int> amountPaise = const Value.absent(),
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> taxPaise = const Value.absent(),
+                Value<int> costPaise = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SalesReturnLinesCompanion(
+                id: id,
+                returnId: returnId,
+                billLineId: billLineId,
+                productId: productId,
+                name: name,
+                unit: unit,
+                qtyMilli: qtyMilli,
+                amountPaise: amountPaise,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                costPaise: costPaise,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String returnId,
+                required String billLineId,
+                required String productId,
+                required String name,
+                Value<String> unit = const Value.absent(),
+                required int qtyMilli,
+                required int amountPaise,
+                required int taxablePaise,
+                required int taxPaise,
+                Value<int> costPaise = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SalesReturnLinesCompanion.insert(
+                id: id,
+                returnId: returnId,
+                billLineId: billLineId,
+                productId: productId,
+                name: name,
+                unit: unit,
+                qtyMilli: qtyMilli,
+                amountPaise: amountPaise,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                costPaise: costPaise,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<SalesReturnLines, DbSalesReturnLine>(table),
+                  $SalesReturnLinesReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({returnId = false, billLineId = false, productId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (returnId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.returnId,
+                            referencedTable: $SalesReturnLinesReferences
+                                ._returnIdTable(db),
+                            referencedColumn: $SalesReturnLinesReferences
+                                ._returnIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (billLineId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.billLineId,
+                            referencedTable: $SalesReturnLinesReferences
+                                ._billLineIdTable(db),
+                            referencedColumn: $SalesReturnLinesReferences
+                                ._billLineIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (productId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.productId,
+                            referencedTable: $SalesReturnLinesReferences
+                                ._productIdTable(db),
+                            referencedColumn: $SalesReturnLinesReferences
+                                ._productIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $SalesReturnLinesProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      SalesReturnLines,
+      DbSalesReturnLine,
+      $SalesReturnLinesFilterComposer,
+      $SalesReturnLinesOrderingComposer,
+      $SalesReturnLinesAnnotationComposer,
+      $SalesReturnLinesCreateCompanionBuilder,
+      $SalesReturnLinesUpdateCompanionBuilder,
+      (DbSalesReturnLine, $SalesReturnLinesReferences),
+      DbSalesReturnLine,
+      PrefetchHooks Function({bool returnId, bool billLineId, bool productId})
+    >;
+typedef $PurchasesCreateCompanionBuilder = PurchasesCompanion Function({
+  required String id,
+  required String number,
+  required String dealerId,
+  Value<String> dealerName,
+  Value<String> invoiceNo,
+  required int purchasedAt,
+  required String day,
+  required int totalPaise,
+  Value<int> taxablePaise,
+  Value<int> taxPaise,
+  Value<int> paidPaise,
+  Value<int> status,
+  Value<int?> receivedAt,
+  Value<int> updateCost,
+  Value<String> note,
+  required String idemKey,
+  Value<String> byName,
+  required int createdAt,
+  required String deviceId,
+  Value<int> rowid,
+});
+typedef $PurchasesUpdateCompanionBuilder = PurchasesCompanion Function({
+  Value<String> id,
+  Value<String> number,
+  Value<String> dealerId,
+  Value<String> dealerName,
+  Value<String> invoiceNo,
+  Value<int> purchasedAt,
+  Value<String> day,
+  Value<int> totalPaise,
+  Value<int> taxablePaise,
+  Value<int> taxPaise,
+  Value<int> paidPaise,
+  Value<int> status,
+  Value<int?> receivedAt,
+  Value<int> updateCost,
+  Value<String> note,
+  Value<String> idemKey,
+  Value<String> byName,
+  Value<int> createdAt,
+  Value<String> deviceId,
+  Value<int> rowid,
+});
+
+final class $PurchasesReferences
+    extends BaseReferences<_$AppDatabase, Purchases, DbPurchase> {
+  $PurchasesReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static Dealers _dealerIdTable(_$AppDatabase db) =>
+      db.dealers.createAlias('purchases__dealer_id__dealers__id');
+
+  $DealersProcessedTableManager get dealerId {
+    final $_column = $_itemColumn<String>('dealer_id')!;
+
+    final manager = $DealersTableManager(
+      $_db,
+      $_db.dealers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_dealerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<PurchaseLines, List<DbPurchaseLine>>
+  _purchaseLinesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.purchaseLines,
+    aliasName: 'purchases__id__purchase_lines__purchase_id',
+  );
+
+  $PurchaseLinesProcessedTableManager get purchaseLinesRefs {
+    final manager = $PurchaseLinesTableManager(
+      $_db,
+      $_db.purchaseLines,
+    ).filter((f) => f.purchaseId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_purchaseLinesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<PurchaseReturns, List<DbPurchaseReturn>>
+  _purchaseReturnsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.purchaseReturns,
+    aliasName: 'purchases__id__purchase_returns__purchase_id',
+  );
+
+  $PurchaseReturnsProcessedTableManager get purchaseReturnsRefs {
+    final manager = $PurchaseReturnsTableManager(
+      $_db,
+      $_db.purchaseReturns,
+    ).filter((f) => f.purchaseId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _purchaseReturnsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $PurchasesFilterComposer extends Composer<_$AppDatabase, Purchases> {
+  $PurchasesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dealerName => $composableBuilder(
+    column: $table.dealerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get invoiceNo => $composableBuilder(
+    column: $table.invoiceNo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get purchasedAt => $composableBuilder(
+    column: $table.purchasedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get paidPaise => $composableBuilder(
+    column: $table.paidPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get receivedAt => $composableBuilder(
+    column: $table.receivedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updateCost => $composableBuilder(
+    column: $table.updateCost,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get idemKey => $composableBuilder(
+    column: $table.idemKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get byName => $composableBuilder(
+    column: $table.byName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $DealersFilterComposer get dealerId {
+    final $DealersFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.dealerId,
+      referencedTable: $db.dealers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DealersFilterComposer(
+            $db: $db,
+            $table: $db.dealers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> purchaseLinesRefs(
+    Expression<bool> Function($PurchaseLinesFilterComposer f) f,
+  ) {
+    final $PurchaseLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseLines,
+      getReferencedColumn: (t) => t.purchaseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseLinesFilterComposer(
+            $db: $db,
+            $table: $db.purchaseLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> purchaseReturnsRefs(
+    Expression<bool> Function($PurchaseReturnsFilterComposer f) f,
+  ) {
+    final $PurchaseReturnsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturns,
+      getReferencedColumn: (t) => t.purchaseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnsFilterComposer(
+            $db: $db,
+            $table: $db.purchaseReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $PurchasesOrderingComposer extends Composer<_$AppDatabase, Purchases> {
+  $PurchasesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dealerName => $composableBuilder(
+    column: $table.dealerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get invoiceNo => $composableBuilder(
+    column: $table.invoiceNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get purchasedAt => $composableBuilder(
+    column: $table.purchasedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get paidPaise => $composableBuilder(
+    column: $table.paidPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get receivedAt => $composableBuilder(
+    column: $table.receivedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updateCost => $composableBuilder(
+    column: $table.updateCost,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get idemKey => $composableBuilder(
+    column: $table.idemKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get byName => $composableBuilder(
+    column: $table.byName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $DealersOrderingComposer get dealerId {
+    final $DealersOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.dealerId,
+      referencedTable: $db.dealers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DealersOrderingComposer(
+            $db: $db,
+            $table: $db.dealers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $PurchasesAnnotationComposer extends Composer<_$AppDatabase, Purchases> {
+  $PurchasesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<String> get dealerName => $composableBuilder(
+    column: $table.dealerName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get invoiceNo =>
+      $composableBuilder(column: $table.invoiceNo, builder: (column) => column);
+
+  GeneratedColumn<int> get purchasedAt => $composableBuilder(
+    column: $table.purchasedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxPaise =>
+      $composableBuilder(column: $table.taxPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get paidPaise =>
+      $composableBuilder(column: $table.paidPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get receivedAt => $composableBuilder(
+    column: $table.receivedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updateCost => $composableBuilder(
+    column: $table.updateCost,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get idemKey =>
+      $composableBuilder(column: $table.idemKey, builder: (column) => column);
+
+  GeneratedColumn<String> get byName =>
+      $composableBuilder(column: $table.byName, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  $DealersAnnotationComposer get dealerId {
+    final $DealersAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.dealerId,
+      referencedTable: $db.dealers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DealersAnnotationComposer(
+            $db: $db,
+            $table: $db.dealers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> purchaseLinesRefs<T extends Object>(
+    Expression<T> Function($PurchaseLinesAnnotationComposer a) f,
+  ) {
+    final $PurchaseLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseLines,
+      getReferencedColumn: (t) => t.purchaseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> purchaseReturnsRefs<T extends Object>(
+    Expression<T> Function($PurchaseReturnsAnnotationComposer a) f,
+  ) {
+    final $PurchaseReturnsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturns,
+      getReferencedColumn: (t) => t.purchaseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnsAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $PurchasesTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          Purchases,
+          DbPurchase,
+          $PurchasesFilterComposer,
+          $PurchasesOrderingComposer,
+          $PurchasesAnnotationComposer,
+          $PurchasesCreateCompanionBuilder,
+          $PurchasesUpdateCompanionBuilder,
+          (DbPurchase, $PurchasesReferences),
+          DbPurchase,
+          PrefetchHooks Function({
+            bool dealerId,
+            bool purchaseLinesRefs,
+            bool purchaseReturnsRefs,
+          })
+        > {
+  $PurchasesTableManager(_$AppDatabase db, Purchases table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $PurchasesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $PurchasesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $PurchasesAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> number = const Value.absent(),
+                Value<String> dealerId = const Value.absent(),
+                Value<String> dealerName = const Value.absent(),
+                Value<String> invoiceNo = const Value.absent(),
+                Value<int> purchasedAt = const Value.absent(),
+                Value<String> day = const Value.absent(),
+                Value<int> totalPaise = const Value.absent(),
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> taxPaise = const Value.absent(),
+                Value<int> paidPaise = const Value.absent(),
+                Value<int> status = const Value.absent(),
+                Value<int?> receivedAt = const Value.absent(),
+                Value<int> updateCost = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<String> idemKey = const Value.absent(),
+                Value<String> byName = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PurchasesCompanion(
+                id: id,
+                number: number,
+                dealerId: dealerId,
+                dealerName: dealerName,
+                invoiceNo: invoiceNo,
+                purchasedAt: purchasedAt,
+                day: day,
+                totalPaise: totalPaise,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                paidPaise: paidPaise,
+                status: status,
+                receivedAt: receivedAt,
+                updateCost: updateCost,
+                note: note,
+                idemKey: idemKey,
+                byName: byName,
+                createdAt: createdAt,
+                deviceId: deviceId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String number,
+                required String dealerId,
+                Value<String> dealerName = const Value.absent(),
+                Value<String> invoiceNo = const Value.absent(),
+                required int purchasedAt,
+                required String day,
+                required int totalPaise,
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> taxPaise = const Value.absent(),
+                Value<int> paidPaise = const Value.absent(),
+                Value<int> status = const Value.absent(),
+                Value<int?> receivedAt = const Value.absent(),
+                Value<int> updateCost = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                required String idemKey,
+                Value<String> byName = const Value.absent(),
+                required int createdAt,
+                required String deviceId,
+                Value<int> rowid = const Value.absent(),
+              }) => PurchasesCompanion.insert(
+                id: id,
+                number: number,
+                dealerId: dealerId,
+                dealerName: dealerName,
+                invoiceNo: invoiceNo,
+                purchasedAt: purchasedAt,
+                day: day,
+                totalPaise: totalPaise,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                paidPaise: paidPaise,
+                status: status,
+                receivedAt: receivedAt,
+                updateCost: updateCost,
+                note: note,
+                idemKey: idemKey,
+                byName: byName,
+                createdAt: createdAt,
+                deviceId: deviceId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<Purchases, DbPurchase>(table),
+                  $PurchasesReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                dealerId = false,
+                purchaseLinesRefs = false,
+                purchaseReturnsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (purchaseLinesRefs) db.purchaseLines,
+                    if (purchaseReturnsRefs) db.purchaseReturns,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (dealerId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.dealerId,
+                            referencedTable: $PurchasesReferences
+                                ._dealerIdTable(db),
+                            referencedColumn: $PurchasesReferences
+                                ._dealerIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (purchaseLinesRefs)
+                        await $_getPrefetchedData<
+                          DbPurchase,
+                          Purchases,
+                          DbPurchaseLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $PurchasesReferences
+                              ._purchaseLinesRefsTable(db),
+                          managerFromTypedResult: (p0) => $PurchasesReferences(
+                            db,
+                            table,
+                            p0,
+                          ).purchaseLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.purchaseId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (purchaseReturnsRefs)
+                        await $_getPrefetchedData<
+                          DbPurchase,
+                          Purchases,
+                          DbPurchaseReturn
+                        >(
+                          currentTable: table,
+                          referencedTable: $PurchasesReferences
+                              ._purchaseReturnsRefsTable(db),
+                          managerFromTypedResult: (p0) => $PurchasesReferences(
+                            db,
+                            table,
+                            p0,
+                          ).purchaseReturnsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.purchaseId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $PurchasesProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      Purchases,
+      DbPurchase,
+      $PurchasesFilterComposer,
+      $PurchasesOrderingComposer,
+      $PurchasesAnnotationComposer,
+      $PurchasesCreateCompanionBuilder,
+      $PurchasesUpdateCompanionBuilder,
+      (DbPurchase, $PurchasesReferences),
+      DbPurchase,
+      PrefetchHooks Function({
+        bool dealerId,
+        bool purchaseLinesRefs,
+        bool purchaseReturnsRefs,
+      })
+    >;
+typedef $PurchaseLinesCreateCompanionBuilder = PurchaseLinesCompanion Function({
+  required String id,
+  required String purchaseId,
+  required int lineNo,
+  required String productId,
+  required String name,
+  Value<String> unit,
+  required int qtyMilli,
+  required int ratePaise,
+  Value<int> gstBp,
+  required int taxablePaise,
+  required int taxPaise,
+  required int totalPaise,
+  Value<int> rowid,
+});
+typedef $PurchaseLinesUpdateCompanionBuilder = PurchaseLinesCompanion Function({
+  Value<String> id,
+  Value<String> purchaseId,
+  Value<int> lineNo,
+  Value<String> productId,
+  Value<String> name,
+  Value<String> unit,
+  Value<int> qtyMilli,
+  Value<int> ratePaise,
+  Value<int> gstBp,
+  Value<int> taxablePaise,
+  Value<int> taxPaise,
+  Value<int> totalPaise,
+  Value<int> rowid,
+});
+
+final class $PurchaseLinesReferences
+    extends BaseReferences<_$AppDatabase, PurchaseLines, DbPurchaseLine> {
+  $PurchaseLinesReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static Purchases _purchaseIdTable(_$AppDatabase db) =>
+      db.purchases.createAlias('purchase_lines__purchase_id__purchases__id');
+
+  $PurchasesProcessedTableManager get purchaseId {
+    final $_column = $_itemColumn<String>('purchase_id')!;
+
+    final manager = $PurchasesTableManager(
+      $_db,
+      $_db.purchases,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_purchaseIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Products _productIdTable(_$AppDatabase db) =>
+      db.products.createAlias('purchase_lines__product_id__products__id');
+
+  $ProductsProcessedTableManager get productId {
+    final $_column = $_itemColumn<String>('product_id')!;
+
+    final manager = $ProductsTableManager(
+      $_db,
+      $_db.products,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<PurchaseReturnLines, List<DbPurchaseReturnLine>>
+  _purchaseReturnLinesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.purchaseReturnLines,
+        aliasName:
+            'purchase_lines__id__purchase_return_lines__purchase_line_id',
+      );
+
+  $PurchaseReturnLinesProcessedTableManager get purchaseReturnLinesRefs {
+    final manager = $PurchaseReturnLinesTableManager(
+      $_db,
+      $_db.purchaseReturnLines,
+    ).filter((f) => f.purchaseLineId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _purchaseReturnLinesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $PurchaseLinesFilterComposer
+    extends Composer<_$AppDatabase, PurchaseLines> {
+  $PurchaseLinesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lineNo => $composableBuilder(
+    column: $table.lineNo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get qtyMilli => $composableBuilder(
+    column: $table.qtyMilli,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ratePaise => $composableBuilder(
+    column: $table.ratePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get gstBp => $composableBuilder(
+    column: $table.gstBp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $PurchasesFilterComposer get purchaseId {
+    final $PurchasesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseId,
+      referencedTable: $db.purchases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchasesFilterComposer(
+            $db: $db,
+            $table: $db.purchases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsFilterComposer get productId {
+    final $ProductsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsFilterComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> purchaseReturnLinesRefs(
+    Expression<bool> Function($PurchaseReturnLinesFilterComposer f) f,
+  ) {
+    final $PurchaseReturnLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturnLines,
+      getReferencedColumn: (t) => t.purchaseLineId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnLinesFilterComposer(
+            $db: $db,
+            $table: $db.purchaseReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $PurchaseLinesOrderingComposer
+    extends Composer<_$AppDatabase, PurchaseLines> {
+  $PurchaseLinesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lineNo => $composableBuilder(
+    column: $table.lineNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get qtyMilli => $composableBuilder(
+    column: $table.qtyMilli,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ratePaise => $composableBuilder(
+    column: $table.ratePaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get gstBp => $composableBuilder(
+    column: $table.gstBp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $PurchasesOrderingComposer get purchaseId {
+    final $PurchasesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseId,
+      referencedTable: $db.purchases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchasesOrderingComposer(
+            $db: $db,
+            $table: $db.purchases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsOrderingComposer get productId {
+    final $ProductsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsOrderingComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $PurchaseLinesAnnotationComposer
+    extends Composer<_$AppDatabase, PurchaseLines> {
+  $PurchaseLinesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get lineNo =>
+      $composableBuilder(column: $table.lineNo, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<int> get qtyMilli =>
+      $composableBuilder(column: $table.qtyMilli, builder: (column) => column);
+
+  GeneratedColumn<int> get ratePaise =>
+      $composableBuilder(column: $table.ratePaise, builder: (column) => column);
+
+  GeneratedColumn<int> get gstBp =>
+      $composableBuilder(column: $table.gstBp, builder: (column) => column);
+
+  GeneratedColumn<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxPaise =>
+      $composableBuilder(column: $table.taxPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => column,
+  );
+
+  $PurchasesAnnotationComposer get purchaseId {
+    final $PurchasesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseId,
+      referencedTable: $db.purchases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchasesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsAnnotationComposer get productId {
+    final $ProductsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsAnnotationComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> purchaseReturnLinesRefs<T extends Object>(
+    Expression<T> Function($PurchaseReturnLinesAnnotationComposer a) f,
+  ) {
+    final $PurchaseReturnLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturnLines,
+      getReferencedColumn: (t) => t.purchaseLineId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $PurchaseLinesTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          PurchaseLines,
+          DbPurchaseLine,
+          $PurchaseLinesFilterComposer,
+          $PurchaseLinesOrderingComposer,
+          $PurchaseLinesAnnotationComposer,
+          $PurchaseLinesCreateCompanionBuilder,
+          $PurchaseLinesUpdateCompanionBuilder,
+          (DbPurchaseLine, $PurchaseLinesReferences),
+          DbPurchaseLine,
+          PrefetchHooks Function({
+            bool purchaseId,
+            bool productId,
+            bool purchaseReturnLinesRefs,
+          })
+        > {
+  $PurchaseLinesTableManager(_$AppDatabase db, PurchaseLines table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $PurchaseLinesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $PurchaseLinesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $PurchaseLinesAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> purchaseId = const Value.absent(),
+                Value<int> lineNo = const Value.absent(),
+                Value<String> productId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> unit = const Value.absent(),
+                Value<int> qtyMilli = const Value.absent(),
+                Value<int> ratePaise = const Value.absent(),
+                Value<int> gstBp = const Value.absent(),
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> taxPaise = const Value.absent(),
+                Value<int> totalPaise = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PurchaseLinesCompanion(
+                id: id,
+                purchaseId: purchaseId,
+                lineNo: lineNo,
+                productId: productId,
+                name: name,
+                unit: unit,
+                qtyMilli: qtyMilli,
+                ratePaise: ratePaise,
+                gstBp: gstBp,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                totalPaise: totalPaise,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String purchaseId,
+                required int lineNo,
+                required String productId,
+                required String name,
+                Value<String> unit = const Value.absent(),
+                required int qtyMilli,
+                required int ratePaise,
+                Value<int> gstBp = const Value.absent(),
+                required int taxablePaise,
+                required int taxPaise,
+                required int totalPaise,
+                Value<int> rowid = const Value.absent(),
+              }) => PurchaseLinesCompanion.insert(
+                id: id,
+                purchaseId: purchaseId,
+                lineNo: lineNo,
+                productId: productId,
+                name: name,
+                unit: unit,
+                qtyMilli: qtyMilli,
+                ratePaise: ratePaise,
+                gstBp: gstBp,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                totalPaise: totalPaise,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<PurchaseLines, DbPurchaseLine>(table),
+                  $PurchaseLinesReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                purchaseId = false,
+                productId = false,
+                purchaseReturnLinesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (purchaseReturnLinesRefs) db.purchaseReturnLines,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (purchaseId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.purchaseId,
+                            referencedTable: $PurchaseLinesReferences
+                                ._purchaseIdTable(db),
+                            referencedColumn: $PurchaseLinesReferences
+                                ._purchaseIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (productId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.productId,
+                            referencedTable: $PurchaseLinesReferences
+                                ._productIdTable(db),
+                            referencedColumn: $PurchaseLinesReferences
+                                ._productIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (purchaseReturnLinesRefs)
+                        await $_getPrefetchedData<
+                          DbPurchaseLine,
+                          PurchaseLines,
+                          DbPurchaseReturnLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $PurchaseLinesReferences
+                              ._purchaseReturnLinesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $PurchaseLinesReferences(
+                                db,
+                                table,
+                                p0,
+                              ).purchaseReturnLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.purchaseLineId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $PurchaseLinesProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      PurchaseLines,
+      DbPurchaseLine,
+      $PurchaseLinesFilterComposer,
+      $PurchaseLinesOrderingComposer,
+      $PurchaseLinesAnnotationComposer,
+      $PurchaseLinesCreateCompanionBuilder,
+      $PurchaseLinesUpdateCompanionBuilder,
+      (DbPurchaseLine, $PurchaseLinesReferences),
+      DbPurchaseLine,
+      PrefetchHooks Function({
+        bool purchaseId,
+        bool productId,
+        bool purchaseReturnLinesRefs,
+      })
+    >;
+typedef $PurchaseReturnsCreateCompanionBuilder =
+    PurchaseReturnsCompanion Function({
+      required String id,
+      required String number,
+      required String purchaseId,
+      required String purchaseNo,
+      required String dealerId,
+      Value<String> dealerName,
+      required int returnedAt,
+      required String day,
+      required int totalPaise,
+      Value<int> taxablePaise,
+      Value<int> taxPaise,
+      Value<int> dueReducedPaise,
+      Value<int> creditKeptPaise,
+      Value<int> refundedPaise,
+      Value<int> refundMode,
+      required String reason,
+      Value<String> byName,
+      required String idemKey,
+      required int createdAt,
+      required String deviceId,
+      Value<int> rowid,
+    });
+typedef $PurchaseReturnsUpdateCompanionBuilder =
+    PurchaseReturnsCompanion Function({
+      Value<String> id,
+      Value<String> number,
+      Value<String> purchaseId,
+      Value<String> purchaseNo,
+      Value<String> dealerId,
+      Value<String> dealerName,
+      Value<int> returnedAt,
+      Value<String> day,
+      Value<int> totalPaise,
+      Value<int> taxablePaise,
+      Value<int> taxPaise,
+      Value<int> dueReducedPaise,
+      Value<int> creditKeptPaise,
+      Value<int> refundedPaise,
+      Value<int> refundMode,
+      Value<String> reason,
+      Value<String> byName,
+      Value<String> idemKey,
+      Value<int> createdAt,
+      Value<String> deviceId,
+      Value<int> rowid,
+    });
+
+final class $PurchaseReturnsReferences
+    extends BaseReferences<_$AppDatabase, PurchaseReturns, DbPurchaseReturn> {
+  $PurchaseReturnsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static Purchases _purchaseIdTable(_$AppDatabase db) =>
+      db.purchases.createAlias('purchase_returns__purchase_id__purchases__id');
+
+  $PurchasesProcessedTableManager get purchaseId {
+    final $_column = $_itemColumn<String>('purchase_id')!;
+
+    final manager = $PurchasesTableManager(
+      $_db,
+      $_db.purchases,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_purchaseIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Dealers _dealerIdTable(_$AppDatabase db) =>
+      db.dealers.createAlias('purchase_returns__dealer_id__dealers__id');
+
+  $DealersProcessedTableManager get dealerId {
+    final $_column = $_itemColumn<String>('dealer_id')!;
+
+    final manager = $DealersTableManager(
+      $_db,
+      $_db.dealers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_dealerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<PurchaseReturnLines, List<DbPurchaseReturnLine>>
+  _purchaseReturnLinesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.purchaseReturnLines,
+        aliasName: 'purchase_returns__id__purchase_return_lines__return_id',
+      );
+
+  $PurchaseReturnLinesProcessedTableManager get purchaseReturnLinesRefs {
+    final manager = $PurchaseReturnLinesTableManager(
+      $_db,
+      $_db.purchaseReturnLines,
+    ).filter((f) => f.returnId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _purchaseReturnLinesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $PurchaseReturnsFilterComposer
+    extends Composer<_$AppDatabase, PurchaseReturns> {
+  $PurchaseReturnsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get purchaseNo => $composableBuilder(
+    column: $table.purchaseNo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dealerName => $composableBuilder(
+    column: $table.dealerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get returnedAt => $composableBuilder(
+    column: $table.returnedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dueReducedPaise => $composableBuilder(
+    column: $table.dueReducedPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get creditKeptPaise => $composableBuilder(
+    column: $table.creditKeptPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get refundedPaise => $composableBuilder(
+    column: $table.refundedPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get refundMode => $composableBuilder(
+    column: $table.refundMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get byName => $composableBuilder(
+    column: $table.byName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get idemKey => $composableBuilder(
+    column: $table.idemKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $PurchasesFilterComposer get purchaseId {
+    final $PurchasesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseId,
+      referencedTable: $db.purchases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchasesFilterComposer(
+            $db: $db,
+            $table: $db.purchases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DealersFilterComposer get dealerId {
+    final $DealersFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.dealerId,
+      referencedTable: $db.dealers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DealersFilterComposer(
+            $db: $db,
+            $table: $db.dealers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> purchaseReturnLinesRefs(
+    Expression<bool> Function($PurchaseReturnLinesFilterComposer f) f,
+  ) {
+    final $PurchaseReturnLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturnLines,
+      getReferencedColumn: (t) => t.returnId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnLinesFilterComposer(
+            $db: $db,
+            $table: $db.purchaseReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $PurchaseReturnsOrderingComposer
+    extends Composer<_$AppDatabase, PurchaseReturns> {
+  $PurchaseReturnsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get purchaseNo => $composableBuilder(
+    column: $table.purchaseNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dealerName => $composableBuilder(
+    column: $table.dealerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get returnedAt => $composableBuilder(
+    column: $table.returnedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dueReducedPaise => $composableBuilder(
+    column: $table.dueReducedPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get creditKeptPaise => $composableBuilder(
+    column: $table.creditKeptPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get refundedPaise => $composableBuilder(
+    column: $table.refundedPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get refundMode => $composableBuilder(
+    column: $table.refundMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get byName => $composableBuilder(
+    column: $table.byName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get idemKey => $composableBuilder(
+    column: $table.idemKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $PurchasesOrderingComposer get purchaseId {
+    final $PurchasesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseId,
+      referencedTable: $db.purchases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchasesOrderingComposer(
+            $db: $db,
+            $table: $db.purchases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DealersOrderingComposer get dealerId {
+    final $DealersOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.dealerId,
+      referencedTable: $db.dealers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DealersOrderingComposer(
+            $db: $db,
+            $table: $db.dealers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $PurchaseReturnsAnnotationComposer
+    extends Composer<_$AppDatabase, PurchaseReturns> {
+  $PurchaseReturnsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<String> get purchaseNo => $composableBuilder(
+    column: $table.purchaseNo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dealerName => $composableBuilder(
+    column: $table.dealerName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get returnedAt => $composableBuilder(
+    column: $table.returnedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<int> get totalPaise => $composableBuilder(
+    column: $table.totalPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxPaise =>
+      $composableBuilder(column: $table.taxPaise, builder: (column) => column);
+
+  GeneratedColumn<int> get dueReducedPaise => $composableBuilder(
+    column: $table.dueReducedPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get creditKeptPaise => $composableBuilder(
+    column: $table.creditKeptPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get refundedPaise => $composableBuilder(
+    column: $table.refundedPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get refundMode => $composableBuilder(
+    column: $table.refundMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get byName =>
+      $composableBuilder(column: $table.byName, builder: (column) => column);
+
+  GeneratedColumn<String> get idemKey =>
+      $composableBuilder(column: $table.idemKey, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  $PurchasesAnnotationComposer get purchaseId {
+    final $PurchasesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseId,
+      referencedTable: $db.purchases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchasesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $DealersAnnotationComposer get dealerId {
+    final $DealersAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.dealerId,
+      referencedTable: $db.dealers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $DealersAnnotationComposer(
+            $db: $db,
+            $table: $db.dealers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> purchaseReturnLinesRefs<T extends Object>(
+    Expression<T> Function($PurchaseReturnLinesAnnotationComposer a) f,
+  ) {
+    final $PurchaseReturnLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.purchaseReturnLines,
+      getReferencedColumn: (t) => t.returnId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseReturnLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $PurchaseReturnsTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          PurchaseReturns,
+          DbPurchaseReturn,
+          $PurchaseReturnsFilterComposer,
+          $PurchaseReturnsOrderingComposer,
+          $PurchaseReturnsAnnotationComposer,
+          $PurchaseReturnsCreateCompanionBuilder,
+          $PurchaseReturnsUpdateCompanionBuilder,
+          (DbPurchaseReturn, $PurchaseReturnsReferences),
+          DbPurchaseReturn,
+          PrefetchHooks Function({
+            bool purchaseId,
+            bool dealerId,
+            bool purchaseReturnLinesRefs,
+          })
+        > {
+  $PurchaseReturnsTableManager(_$AppDatabase db, PurchaseReturns table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $PurchaseReturnsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $PurchaseReturnsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $PurchaseReturnsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> number = const Value.absent(),
+                Value<String> purchaseId = const Value.absent(),
+                Value<String> purchaseNo = const Value.absent(),
+                Value<String> dealerId = const Value.absent(),
+                Value<String> dealerName = const Value.absent(),
+                Value<int> returnedAt = const Value.absent(),
+                Value<String> day = const Value.absent(),
+                Value<int> totalPaise = const Value.absent(),
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> taxPaise = const Value.absent(),
+                Value<int> dueReducedPaise = const Value.absent(),
+                Value<int> creditKeptPaise = const Value.absent(),
+                Value<int> refundedPaise = const Value.absent(),
+                Value<int> refundMode = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<String> byName = const Value.absent(),
+                Value<String> idemKey = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PurchaseReturnsCompanion(
+                id: id,
+                number: number,
+                purchaseId: purchaseId,
+                purchaseNo: purchaseNo,
+                dealerId: dealerId,
+                dealerName: dealerName,
+                returnedAt: returnedAt,
+                day: day,
+                totalPaise: totalPaise,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                dueReducedPaise: dueReducedPaise,
+                creditKeptPaise: creditKeptPaise,
+                refundedPaise: refundedPaise,
+                refundMode: refundMode,
+                reason: reason,
+                byName: byName,
+                idemKey: idemKey,
+                createdAt: createdAt,
+                deviceId: deviceId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String number,
+                required String purchaseId,
+                required String purchaseNo,
+                required String dealerId,
+                Value<String> dealerName = const Value.absent(),
+                required int returnedAt,
+                required String day,
+                required int totalPaise,
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> taxPaise = const Value.absent(),
+                Value<int> dueReducedPaise = const Value.absent(),
+                Value<int> creditKeptPaise = const Value.absent(),
+                Value<int> refundedPaise = const Value.absent(),
+                Value<int> refundMode = const Value.absent(),
+                required String reason,
+                Value<String> byName = const Value.absent(),
+                required String idemKey,
+                required int createdAt,
+                required String deviceId,
+                Value<int> rowid = const Value.absent(),
+              }) => PurchaseReturnsCompanion.insert(
+                id: id,
+                number: number,
+                purchaseId: purchaseId,
+                purchaseNo: purchaseNo,
+                dealerId: dealerId,
+                dealerName: dealerName,
+                returnedAt: returnedAt,
+                day: day,
+                totalPaise: totalPaise,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                dueReducedPaise: dueReducedPaise,
+                creditKeptPaise: creditKeptPaise,
+                refundedPaise: refundedPaise,
+                refundMode: refundMode,
+                reason: reason,
+                byName: byName,
+                idemKey: idemKey,
+                createdAt: createdAt,
+                deviceId: deviceId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<PurchaseReturns, DbPurchaseReturn>(table),
+                  $PurchaseReturnsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                purchaseId = false,
+                dealerId = false,
+                purchaseReturnLinesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (purchaseReturnLinesRefs) db.purchaseReturnLines,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (purchaseId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.purchaseId,
+                            referencedTable: $PurchaseReturnsReferences
+                                ._purchaseIdTable(db),
+                            referencedColumn: $PurchaseReturnsReferences
+                                ._purchaseIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (dealerId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.dealerId,
+                            referencedTable: $PurchaseReturnsReferences
+                                ._dealerIdTable(db),
+                            referencedColumn: $PurchaseReturnsReferences
+                                ._dealerIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (purchaseReturnLinesRefs)
+                        await $_getPrefetchedData<
+                          DbPurchaseReturn,
+                          PurchaseReturns,
+                          DbPurchaseReturnLine
+                        >(
+                          currentTable: table,
+                          referencedTable: $PurchaseReturnsReferences
+                              ._purchaseReturnLinesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $PurchaseReturnsReferences(
+                                db,
+                                table,
+                                p0,
+                              ).purchaseReturnLinesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.returnId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $PurchaseReturnsProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      PurchaseReturns,
+      DbPurchaseReturn,
+      $PurchaseReturnsFilterComposer,
+      $PurchaseReturnsOrderingComposer,
+      $PurchaseReturnsAnnotationComposer,
+      $PurchaseReturnsCreateCompanionBuilder,
+      $PurchaseReturnsUpdateCompanionBuilder,
+      (DbPurchaseReturn, $PurchaseReturnsReferences),
+      DbPurchaseReturn,
+      PrefetchHooks Function({
+        bool purchaseId,
+        bool dealerId,
+        bool purchaseReturnLinesRefs,
+      })
+    >;
+typedef $PurchaseReturnLinesCreateCompanionBuilder =
+    PurchaseReturnLinesCompanion Function({
+      required String id,
+      required String returnId,
+      required String purchaseLineId,
+      required String productId,
+      required String name,
+      Value<String> unit,
+      required int qtyMilli,
+      required int amountPaise,
+      required int taxablePaise,
+      required int taxPaise,
+      Value<int> rowid,
+    });
+typedef $PurchaseReturnLinesUpdateCompanionBuilder =
+    PurchaseReturnLinesCompanion Function({
+      Value<String> id,
+      Value<String> returnId,
+      Value<String> purchaseLineId,
+      Value<String> productId,
+      Value<String> name,
+      Value<String> unit,
+      Value<int> qtyMilli,
+      Value<int> amountPaise,
+      Value<int> taxablePaise,
+      Value<int> taxPaise,
+      Value<int> rowid,
+    });
+
+final class $PurchaseReturnLinesReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          PurchaseReturnLines,
+          DbPurchaseReturnLine
+        > {
+  $PurchaseReturnLinesReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static PurchaseReturns _returnIdTable(_$AppDatabase db) => db.purchaseReturns
+      .createAlias('purchase_return_lines__return_id__purchase_returns__id');
+
+  $PurchaseReturnsProcessedTableManager get returnId {
+    final $_column = $_itemColumn<String>('return_id')!;
+
+    final manager = $PurchaseReturnsTableManager(
+      $_db,
+      $_db.purchaseReturns,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_returnIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static PurchaseLines _purchaseLineIdTable(_$AppDatabase db) =>
+      db.purchaseLines.createAlias(
+        'purchase_return_lines__purchase_line_id__purchase_lines__id',
+      );
+
+  $PurchaseLinesProcessedTableManager get purchaseLineId {
+    final $_column = $_itemColumn<String>('purchase_line_id')!;
+
+    final manager = $PurchaseLinesTableManager(
+      $_db,
+      $_db.purchaseLines,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_purchaseLineIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Products _productIdTable(_$AppDatabase db) => db.products.createAlias(
+    'purchase_return_lines__product_id__products__id',
+  );
+
+  $ProductsProcessedTableManager get productId {
+    final $_column = $_itemColumn<String>('product_id')!;
+
+    final manager = $ProductsTableManager(
+      $_db,
+      $_db.products,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_productIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $PurchaseReturnLinesFilterComposer
+    extends Composer<_$AppDatabase, PurchaseReturnLines> {
+  $PurchaseReturnLinesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get qtyMilli => $composableBuilder(
+    column: $table.qtyMilli,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountPaise => $composableBuilder(
+    column: $table.amountPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $PurchaseReturnsFilterComposer get returnId {
+    final $PurchaseReturnsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.returnId,
+      referencedTable: $db.purchaseReturns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnsFilterComposer(
+            $db: $db,
+            $table: $db.purchaseReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $PurchaseLinesFilterComposer get purchaseLineId {
+    final $PurchaseLinesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseLineId,
+      referencedTable: $db.purchaseLines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseLinesFilterComposer(
+            $db: $db,
+            $table: $db.purchaseLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsFilterComposer get productId {
+    final $ProductsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsFilterComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $PurchaseReturnLinesOrderingComposer
+    extends Composer<_$AppDatabase, PurchaseReturnLines> {
+  $PurchaseReturnLinesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get qtyMilli => $composableBuilder(
+    column: $table.qtyMilli,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountPaise => $composableBuilder(
+    column: $table.amountPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taxPaise => $composableBuilder(
+    column: $table.taxPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $PurchaseReturnsOrderingComposer get returnId {
+    final $PurchaseReturnsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.returnId,
+      referencedTable: $db.purchaseReturns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnsOrderingComposer(
+            $db: $db,
+            $table: $db.purchaseReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $PurchaseLinesOrderingComposer get purchaseLineId {
+    final $PurchaseLinesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseLineId,
+      referencedTable: $db.purchaseLines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseLinesOrderingComposer(
+            $db: $db,
+            $table: $db.purchaseLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsOrderingComposer get productId {
+    final $ProductsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsOrderingComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $PurchaseReturnLinesAnnotationComposer
+    extends Composer<_$AppDatabase, PurchaseReturnLines> {
+  $PurchaseReturnLinesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<int> get qtyMilli =>
+      $composableBuilder(column: $table.qtyMilli, builder: (column) => column);
+
+  GeneratedColumn<int> get amountPaise => $composableBuilder(
+    column: $table.amountPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxablePaise => $composableBuilder(
+    column: $table.taxablePaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taxPaise =>
+      $composableBuilder(column: $table.taxPaise, builder: (column) => column);
+
+  $PurchaseReturnsAnnotationComposer get returnId {
+    final $PurchaseReturnsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.returnId,
+      referencedTable: $db.purchaseReturns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseReturnsAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $PurchaseLinesAnnotationComposer get purchaseLineId {
+    final $PurchaseLinesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.purchaseLineId,
+      referencedTable: $db.purchaseLines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $PurchaseLinesAnnotationComposer(
+            $db: $db,
+            $table: $db.purchaseLines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ProductsAnnotationComposer get productId {
+    final $ProductsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.productId,
+      referencedTable: $db.products,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ProductsAnnotationComposer(
+            $db: $db,
+            $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $PurchaseReturnLinesTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          PurchaseReturnLines,
+          DbPurchaseReturnLine,
+          $PurchaseReturnLinesFilterComposer,
+          $PurchaseReturnLinesOrderingComposer,
+          $PurchaseReturnLinesAnnotationComposer,
+          $PurchaseReturnLinesCreateCompanionBuilder,
+          $PurchaseReturnLinesUpdateCompanionBuilder,
+          (DbPurchaseReturnLine, $PurchaseReturnLinesReferences),
+          DbPurchaseReturnLine,
+          PrefetchHooks Function({
+            bool returnId,
+            bool purchaseLineId,
+            bool productId,
+          })
+        > {
+  $PurchaseReturnLinesTableManager(_$AppDatabase db, PurchaseReturnLines table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $PurchaseReturnLinesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $PurchaseReturnLinesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $PurchaseReturnLinesAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> returnId = const Value.absent(),
+                Value<String> purchaseLineId = const Value.absent(),
+                Value<String> productId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> unit = const Value.absent(),
+                Value<int> qtyMilli = const Value.absent(),
+                Value<int> amountPaise = const Value.absent(),
+                Value<int> taxablePaise = const Value.absent(),
+                Value<int> taxPaise = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PurchaseReturnLinesCompanion(
+                id: id,
+                returnId: returnId,
+                purchaseLineId: purchaseLineId,
+                productId: productId,
+                name: name,
+                unit: unit,
+                qtyMilli: qtyMilli,
+                amountPaise: amountPaise,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String returnId,
+                required String purchaseLineId,
+                required String productId,
+                required String name,
+                Value<String> unit = const Value.absent(),
+                required int qtyMilli,
+                required int amountPaise,
+                required int taxablePaise,
+                required int taxPaise,
+                Value<int> rowid = const Value.absent(),
+              }) => PurchaseReturnLinesCompanion.insert(
+                id: id,
+                returnId: returnId,
+                purchaseLineId: purchaseLineId,
+                productId: productId,
+                name: name,
+                unit: unit,
+                qtyMilli: qtyMilli,
+                amountPaise: amountPaise,
+                taxablePaise: taxablePaise,
+                taxPaise: taxPaise,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<PurchaseReturnLines, DbPurchaseReturnLine>(table),
+                  $PurchaseReturnLinesReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({returnId = false, purchaseLineId = false, productId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (returnId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.returnId,
+                            referencedTable: $PurchaseReturnLinesReferences
+                                ._returnIdTable(db),
+                            referencedColumn: $PurchaseReturnLinesReferences
+                                ._returnIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (purchaseLineId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.purchaseLineId,
+                            referencedTable: $PurchaseReturnLinesReferences
+                                ._purchaseLineIdTable(db),
+                            referencedColumn: $PurchaseReturnLinesReferences
+                                ._purchaseLineIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (productId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.productId,
+                            referencedTable: $PurchaseReturnLinesReferences
+                                ._productIdTable(db),
+                            referencedColumn: $PurchaseReturnLinesReferences
+                                ._productIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $PurchaseReturnLinesProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      PurchaseReturnLines,
+      DbPurchaseReturnLine,
+      $PurchaseReturnLinesFilterComposer,
+      $PurchaseReturnLinesOrderingComposer,
+      $PurchaseReturnLinesAnnotationComposer,
+      $PurchaseReturnLinesCreateCompanionBuilder,
+      $PurchaseReturnLinesUpdateCompanionBuilder,
+      (DbPurchaseReturnLine, $PurchaseReturnLinesReferences),
+      DbPurchaseReturnLine,
+      PrefetchHooks Function({
+        bool returnId,
+        bool purchaseLineId,
+        bool productId,
+      })
+    >;
 typedef $EstimationsCreateCompanionBuilder = EstimationsCompanion Function({
   required String id,
   required String number,
@@ -20428,6 +31478,8 @@ typedef $EstimationsCreateCompanionBuilder = EstimationsCompanion Function({
   required String deviceId,
   Value<int> version,
   Value<String> hlc,
+  Value<int> extraDiscountPaise,
+  Value<int> extraDiscountBp,
   Value<int> rowid,
 });
 typedef $EstimationsUpdateCompanionBuilder = EstimationsCompanion Function({
@@ -20446,6 +31498,8 @@ typedef $EstimationsUpdateCompanionBuilder = EstimationsCompanion Function({
   Value<String> deviceId,
   Value<int> version,
   Value<String> hlc,
+  Value<int> extraDiscountPaise,
+  Value<int> extraDiscountBp,
   Value<int> rowid,
 });
 
@@ -20566,6 +31620,16 @@ class $EstimationsFilterComposer extends Composer<_$AppDatabase, Estimations> {
 
   ColumnFilters<String> get hlc => $composableBuilder(
     column: $table.hlc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get extraDiscountPaise => $composableBuilder(
+    column: $table.extraDiscountPaise,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get extraDiscountBp => $composableBuilder(
+    column: $table.extraDiscountBp,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20697,6 +31761,16 @@ class $EstimationsOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get extraDiscountPaise => $composableBuilder(
+    column: $table.extraDiscountPaise,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get extraDiscountBp => $composableBuilder(
+    column: $table.extraDiscountBp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $CustomersOrderingComposer get customerId {
     final $CustomersOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -20777,6 +31851,16 @@ class $EstimationsAnnotationComposer
 
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<int> get extraDiscountPaise => $composableBuilder(
+    column: $table.extraDiscountPaise,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get extraDiscountBp => $composableBuilder(
+    column: $table.extraDiscountBp,
+    builder: (column) => column,
+  );
 
   $CustomersAnnotationComposer get customerId {
     final $CustomersAnnotationComposer composer = $composerBuilder(
@@ -20870,6 +31954,8 @@ class $EstimationsTableManager
                 Value<String> deviceId = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
+                Value<int> extraDiscountPaise = const Value.absent(),
+                Value<int> extraDiscountBp = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EstimationsCompanion(
                 id: id,
@@ -20887,6 +31973,8 @@ class $EstimationsTableManager
                 deviceId: deviceId,
                 version: version,
                 hlc: hlc,
+                extraDiscountPaise: extraDiscountPaise,
+                extraDiscountBp: extraDiscountBp,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -20906,6 +31994,8 @@ class $EstimationsTableManager
                 required String deviceId,
                 Value<int> version = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
+                Value<int> extraDiscountPaise = const Value.absent(),
+                Value<int> extraDiscountBp = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => EstimationsCompanion.insert(
                 id: id,
@@ -20923,6 +32013,8 @@ class $EstimationsTableManager
                 deviceId: deviceId,
                 version: version,
                 hlc: hlc,
+                extraDiscountPaise: extraDiscountPaise,
+                extraDiscountBp: extraDiscountBp,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -24823,6 +35915,18 @@ class $AppDatabaseManager {
       $BillLinesTableManager(_db, _db.billLines);
   $BillCancellationsTableManager get billCancellations =>
       $BillCancellationsTableManager(_db, _db.billCancellations);
+  $SalesReturnsTableManager get salesReturns =>
+      $SalesReturnsTableManager(_db, _db.salesReturns);
+  $SalesReturnLinesTableManager get salesReturnLines =>
+      $SalesReturnLinesTableManager(_db, _db.salesReturnLines);
+  $PurchasesTableManager get purchases =>
+      $PurchasesTableManager(_db, _db.purchases);
+  $PurchaseLinesTableManager get purchaseLines =>
+      $PurchaseLinesTableManager(_db, _db.purchaseLines);
+  $PurchaseReturnsTableManager get purchaseReturns =>
+      $PurchaseReturnsTableManager(_db, _db.purchaseReturns);
+  $PurchaseReturnLinesTableManager get purchaseReturnLines =>
+      $PurchaseReturnLinesTableManager(_db, _db.purchaseReturnLines);
   $EstimationsTableManager get estimations =>
       $EstimationsTableManager(_db, _db.estimations);
   $EstimationLinesTableManager get estimationLines =>

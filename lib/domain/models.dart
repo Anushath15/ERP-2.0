@@ -14,14 +14,24 @@ class Product {
     required this.barcode,
     this.hsn = '8302',
     this.minStockMilli = 5000,
+    this.code = '',
+    this.brand = '',
+    this.mrpPaise = 0,
   });
   final String id, name, category, unit, barcode, hsn;
+
+  /// Made by the program from the category when the product is first saved (ELE-0001); empty only before that.
+  final String code;
+  final String brand;
+
+  /// The maximum retail price printed on the product (GST included); 0 = not entered.
+  final int mrpPaise;
   final int pricePaise, costPaise, stockMilli, gstBp, minStockMilli;
 
   bool get outOfStock => stockMilli <= 0;
   bool get lowStock => stockMilli > 0 && stockMilli <= minStockMilli;
 
-  Product copyWith({String? name, String? category, String? unit, int? pricePaise, int? costPaise, int? stockMilli, int? gstBp, String? barcode}) => Product(
+  Product copyWith({String? name, String? category, String? unit, int? pricePaise, int? costPaise, int? stockMilli, int? gstBp, String? barcode, String? hsn, int? minStockMilli, String? code, String? brand, int? mrpPaise}) => Product(
         id: id,
         name: name ?? this.name,
         category: category ?? this.category,
@@ -31,18 +41,24 @@ class Product {
         stockMilli: stockMilli ?? this.stockMilli,
         gstBp: gstBp ?? this.gstBp,
         barcode: barcode ?? this.barcode,
-        hsn: hsn,
-        minStockMilli: minStockMilli,
+        hsn: hsn ?? this.hsn,
+        minStockMilli: minStockMilli ?? this.minStockMilli,
+        code: code ?? this.code,
+        brand: brand ?? this.brand,
+        mrpPaise: mrpPaise ?? this.mrpPaise,
       );
 }
 
 class Customer {
-  const Customer({required this.id, required this.name, required this.phone, required this.city, required this.balancePaise, this.creditLimitPaise = 5000000, this.address = ''});
+  const Customer({required this.id, required this.name, required this.phone, required this.city, required this.balancePaise, this.creditLimitPaise = 5000000, this.address = '', this.gstin = ''});
   final String id, name, phone, city, address;
+
+  /// The customer's GST number: optional, printed on the bill when there is one.
+  final String gstin;
   final int balancePaise; // money they owe us
   final int creditLimitPaise;
 
-  Customer copyWith({String? name, String? phone, String? city, String? address, int? creditLimitPaise}) => Customer(id: id, name: name ?? this.name, phone: phone ?? this.phone, city: city ?? this.city, balancePaise: balancePaise, creditLimitPaise: creditLimitPaise ?? this.creditLimitPaise, address: address ?? this.address);
+  Customer copyWith({String? name, String? phone, String? city, String? address, int? creditLimitPaise, String? gstin}) => Customer(id: id, name: name ?? this.name, phone: phone ?? this.phone, city: city ?? this.city, balancePaise: balancePaise, creditLimitPaise: creditLimitPaise ?? this.creditLimitPaise, address: address ?? this.address, gstin: gstin ?? this.gstin);
 }
 
 class CartLine {
@@ -89,10 +105,13 @@ class Rec {
 }
 
 class EstimationDoc {
-  const EstimationDoc({required this.number, required this.date, required this.customer, required this.lines, required this.totalPaise, this.editedOn, this.convertedTo});
+  const EstimationDoc({required this.number, required this.date, required this.customer, required this.lines, required this.totalPaise, this.editedOn, this.convertedTo, this.extraDiscountPaise = 0, this.extraDiscountBp = 0});
   final String number, customer;
   final DateTime date;
   final DateTime? editedOn;
   final String? convertedTo;
   final int lines, totalPaise;
+
+  /// The whole-estimate discount: the amount, and the percent it was typed as (0 when typed as an amount).
+  final int extraDiscountPaise, extraDiscountBp;
 }

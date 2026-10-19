@@ -16,6 +16,9 @@ import 'features/backup/backups_screen.dart';
 import 'features/import/import_erp1_screen.dart';
 import 'features/stock/fix_these_screen.dart';
 import 'features/reports/reports_screens.dart';
+import 'features/money/return_from_bill_screen.dart';
+import 'features/purchases/purchase_return_screen.dart';
+import 'features/purchases/purchase_screens.dart';
 import 'features/sales/sales_screens.dart';
 import 'features/shop/shop_profile_screen.dart';
 import 'features/stock/stock_screens.dart';
@@ -39,9 +42,10 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/', pageBuilder: (c, s) => _p(c, s, const DashboardScreen())),
           GoRoute(path: '/bill', pageBuilder: (c, s) => _p(c, s, const BillingScreen(mode: DocMode.invoice))),
           GoRoute(path: '/estimate', pageBuilder: (c, s) => _p(c, s, const BillingScreen(mode: DocMode.estimation))),
-          GoRoute(path: '/estimates', pageBuilder: (c, s) => _p(c, s, const EstimationsScreen())),
-          GoRoute(path: '/sales', pageBuilder: (c, s) => _p(c, s, const SalesRegisterScreen())),
+          GoRoute(path: '/estimates', pageBuilder: (c, s) => _p(c, s, EstimationsScreen(openNumber: s.uri.queryParameters['open']))),
+          GoRoute(path: '/sales', pageBuilder: (c, s) => _p(c, s, SalesRegisterScreen(openBillId: s.uri.queryParameters['open']))),
           GoRoute(path: '/sales-returns', pageBuilder: (c, s) => _p(c, s, const SalesReturnsScreen())),
+          GoRoute(path: '/sales-returns/bill/:id', pageBuilder: (c, s) => _p(c, s, ReturnFromBillScreen(billId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/delivery', pageBuilder: (c, s) => _p(c, s, const DeliveryScreen())),
           GoRoute(path: '/products', pageBuilder: (c, s) => _p(c, s, ProductsScreen(autoAdd: s.uri.queryParameters['add'] == '1'), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/categories', pageBuilder: (c, s) => _p(c, s, const CategoriesScreen())),
@@ -49,13 +53,17 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/restore', pageBuilder: (c, s) => _p(c, s, const RestoreScreen())),
           GoRoute(path: '/fix', pageBuilder: (c, s) => _p(c, s, const FixTheseScreen())),
           GoRoute(path: '/inventory', pageBuilder: (c, s) => _p(c, s, const InventoryScreen())),
+          GoRoute(path: '/purchases/new', pageBuilder: (c, s) => _p(c, s, PurchaseFormScreen(dealerId: s.uri.queryParameters['dealer']), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/purchases', pageBuilder: (c, s) => _p(c, s, const PurchasesScreen())),
+          GoRoute(path: '/purchase-returns/purchase/:id', pageBuilder: (c, s) => _p(c, s, PurchaseReturnScreen(purchaseId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/purchase-returns', pageBuilder: (c, s) => _p(c, s, const PurchaseReturnsScreen())),
           GoRoute(path: '/adjustments', pageBuilder: (c, s) => _p(c, s, const AdjustmentsScreen())),
           GoRoute(path: '/customers', pageBuilder: (c, s) => _p(c, s, const CustomersScreen())),
-          GoRoute(path: '/customers/:id', pageBuilder: (c, s) => _p(c, s, ProfileScreen(partyId: s.pathParameters['id']!, kind: PartyKind.customer), key: ValueKey(s.uri.toString()))),
+          GoRoute(path: '/customers/:id', pageBuilder: (c, s) => _p(c, s, ProfileScreen(partyId: s.pathParameters['id']!, kind: PartyKind.customer, openBillId: s.uri.queryParameters['openBill']), key: ValueKey(s.uri.toString()))),
+          GoRoute(path: '/customers/:id/account', pageBuilder: (c, s) => _p(c, s, ProfileScreen(partyId: s.pathParameters['id']!, kind: PartyKind.customer, accountView: true), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/customers/:id/statement', pageBuilder: (c, s) => _p(c, s, StatementScreen(customerId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/dealers', pageBuilder: (c, s) => _p(c, s, const DealersScreen())),
+          GoRoute(path: '/dealers/:id/account', pageBuilder: (c, s) => _p(c, s, ProfileScreen(partyId: s.pathParameters['id']!, kind: PartyKind.dealer, accountView: true), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/dealers/:id', pageBuilder: (c, s) => _p(c, s, ProfileScreen(partyId: s.pathParameters['id']!, kind: PartyKind.dealer), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/credit', pageBuilder: (c, s) => _p(c, s, const CreditScreen())),
           GoRoute(path: '/staff', pageBuilder: (c, s) => _p(c, s, const StaffScreen())),
@@ -65,7 +73,6 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/export', pageBuilder: (c, s) => _p(c, s, const ExportScreen())),
           GoRoute(path: '/import', pageBuilder: (c, s) => _p(c, s, const ImportScreen())),
           GoRoute(path: '/warranty', pageBuilder: (c, s) => _p(c, s, const WarrantyScreen())),
-          GoRoute(path: '/projects', pageBuilder: (c, s) => _p(c, s, const ProjectsScreen())),
           GoRoute(path: '/notifications', pageBuilder: (c, s) => _p(c, s, const NotificationsScreen())),
           GoRoute(path: '/shop', pageBuilder: (c, s) => _p(c, s, const ShopProfileScreen())),
           GoRoute(path: '/settings', pageBuilder: (c, s) => _p(c, s, const SettingsScreen())),

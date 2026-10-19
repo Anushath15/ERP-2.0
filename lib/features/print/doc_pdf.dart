@@ -7,6 +7,8 @@ import '../../fake/shop_profile.dart';
 import '../../fake/store.dart' show PaperSize, PrintTextSize;
 import '../../strings.dart';
 import '../billing/cart.dart';
+import 'bill_template.dart';
+import 'bill_template_pdf.dart';
 import 'print_layout.dart';
 
 /// The printed bill or estimate as a real PDF (pure Dart, no plugin), from the same layout the on-screen paper uses.
@@ -19,6 +21,9 @@ Future<Uint8List> buildDocPdf({
   required PrintTextSize size,
   required Strings l,
 }) async {
+  if (!isRoll(paper)) {
+    return buildTemplatePdf(t: buildBillTemplate(doc: doc, shop: shop, l: l), number: doc.number, paper: paper, shop: shop, size: size);
+  }
   final lay = buildPrintLayout(doc: doc, shop: shop, l: l);
   final font = pw.Font.ttf(await rootBundle.load('assets/fonts/Inter-Variable.ttf'));
   final bold = pw.Font.ttf(await rootBundle.load('assets/fonts/Inter-Bold.ttf'));

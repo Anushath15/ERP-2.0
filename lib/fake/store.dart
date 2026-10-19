@@ -26,7 +26,12 @@ class ProductsNotifier extends Notifier<List<Product>> {
 
   void add(Product p) {
     state = [p, ...state];
-    _write(ref, (d) => d.catalog.saveProduct(p, create: true));
+    _write(ref, (d) async {
+      await d.catalog.saveProduct(p, create: true);
+      // the product code is made inside the save: show it as soon as it exists
+      final saved = await d.catalog.product(p.id);
+      if (saved != null && ref.mounted) state = [for (final x in state) x.id == p.id ? saved : x];
+    });
   }
 
   void update(Product p) {
@@ -69,7 +74,7 @@ class CustomersNotifier extends Notifier<List<Customer>> {
 
   /// What the customer owes now (after a bill, a payment or an adjustment). The balance itself lives in the ledger; this keeps the list in step.
   void setBalance(String id, int balancePaise) {
-    state = [for (final c in state) c.id == id ? Customer(id: c.id, name: c.name, phone: c.phone, city: c.city, balancePaise: balancePaise, creditLimitPaise: c.creditLimitPaise, address: c.address) : c];
+    state = [for (final c in state) c.id == id ? Customer(id: c.id, name: c.name, phone: c.phone, city: c.city, balancePaise: balancePaise, creditLimitPaise: c.creditLimitPaise, address: c.address, gstin: c.gstin) : c];
   }
 }
 
@@ -82,9 +87,9 @@ class EstimationsNotifier extends Notifier<List<EstimationDoc>> {
   Future<void> reload() async => state = await ref.read(appDataProvider).estimations.list();
 
   /// Saves a new estimate (or [editNumber] in place). Returns what was saved, with its number.
-  Future<EstimationDoc> save({required List<EstimateLine> lines, required int totalPaise, required String customerName, String? customerId, required DateTime at, String? editNumber}) async {
+  Future<EstimationDoc> save({required List<EstimateLine> lines, required int totalPaise, required String customerName, String? customerId, required DateTime at, String? editNumber, int extraDiscountPaise = 0, int extraDiscountBp = 0}) async {
     final d = ref.read(appDataProvider);
-    final doc = await ref.read(writeQueueProvider).run(() => d.estimations.save(lines: lines, totalPaise: totalPaise, customerName: customerName, customerId: customerId, at: at, editNumber: editNumber));
+    final doc = await ref.read(writeQueueProvider).run(() => d.estimations.save(lines: lines, totalPaise: totalPaise, customerName: customerName, customerId: customerId, at: at, editNumber: editNumber, extraDiscountPaise: extraDiscountPaise, extraDiscountBp: extraDiscountBp));
     await reload();
     await ref.read(nextNumbersProvider.notifier).refresh();
     return doc;

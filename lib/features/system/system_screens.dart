@@ -105,6 +105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final cards = [look, anim, printing, sounds, backup, sync, security, people, demo];
     return PageFrame(
       title: l.navSettings,
+      actions: [if (context.canPop()) TextButton.icon(key: const ValueKey('settings-back'), onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back), label: Text(l.back))],
       child: context.isDesktop
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),

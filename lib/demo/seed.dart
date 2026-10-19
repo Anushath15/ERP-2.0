@@ -278,21 +278,6 @@ List<Rec> seedWarranty(DateTime base, List<Customer> customers, List<Product> pr
   });
 }
 
-List<Rec> seedProjects() {
-  const names = ['Villa wiring - Race Course Road', 'Apartment plumbing - 24 flats', 'Textile unit lighting', 'School block fans and lights', 'House renovation - Gandhipuram', 'Hostel pipeline work'];
-  final r = Random(38);
-  return List.generate(names.length, (i) {
-    final budget = 20000000 + r.nextInt(60000000);
-    return Rec('hp$i', {
-      'name': names[i],
-      'customer': '${_first[r.nextInt(_first.length)]} ${_second[r.nextInt(_second.length)]}',
-      'budget': budget,
-      'spent': budget * (20 + r.nextInt(70)) ~/ 100,
-      'status': ['running', 'running', 'done', 'planning'][r.nextInt(4)],
-    });
-  });
-}
-
 List<Rec> seedStaff() => const [
       Rec('s1', {'name': 'Senthil Kumar', 'email': 'owner@example.com', 'role': 'owner'}),
       Rec('s2', {'name': 'Murugesan', 'email': 'father@example.com', 'role': 'manager'}),

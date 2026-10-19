@@ -13,7 +13,7 @@ final _dueId = _credit.entries.firstWhere((e) => e.value.balance > 0 && e.value.
 final routes = <String>[
   '/signin', '/forgot', '/wizard', '/', '/bill', '/estimate', '/estimates', '/sales', '/sales-returns', '/delivery', '/products', '/categories',
   '/inventory', '/purchases', '/purchase-returns', '/adjustments', '/customers', '/dealers', '/credit', '/staff', '/expenses', '/closing', '/reports',
-  '/export', '/import', '/warranty', '/projects', '/notifications', '/settings', '/health', '/fix', '/backups', '/restore', '/help', '/about', '/more', '/preview/a4', '/preview/80',
+  '/export', '/import', '/warranty', '/notifications', '/settings', '/health', '/fix', '/backups', '/restore', '/help', '/about', '/more', '/preview/a4', '/preview/80',
   '/preview/58', '/preview/estimate', '/preview/payment', '/customers/$_dueId', '/customers/$_dueId/statement',
   '/shop', '/dealers/$_dealerId', '/preview/a5',
 ];

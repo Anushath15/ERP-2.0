@@ -40,7 +40,7 @@ class CustomersScreen extends ConsumerWidget {
       onAdd: () async {
         final v = await showQuickCustomer(context);
         if (v != null) {
-          ref.read(customersProvider.notifier).add(Customer(id: newId(), name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', balancePaise: 0));
+          ref.read(customersProvider.notifier).add(Customer(id: newId(), name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', gstin: v['gstin'] ?? '', balancePaise: 0));
           if (context.mounted) toast(context, l.saved);
         }
       },
@@ -137,7 +137,7 @@ class StaffScreen extends ConsumerWidget {
       phoneSubtitle: (r) => '${r.s('email')}\n${roleHelp(r.s('role'))}',
       phoneTrailing: (c, r) => StatusBadge(role(r.s('role')), kind: r.s('role') == 'owner' ? BadgeKind.info : BadgeKind.neutral),
       onTap: (ctx, r) => showDetail(ctx, title: r.s('name'), subtitle: r.s('email'), body: [KeyValue(l.fieldRole, role(r.s('role')), bold: true), KeyValue(l.canDo, roleHelp(r.s('role'))), const SizedBox(height: 8), Text(l.removeAccessHelp, style: th.bodySmall)], actions: [
-        if (r.s('role') != 'owner') OutlinedButton.icon(onPressed: () async { Navigator.pop(ctx); final ok = await confirmDialog(context, title: l.removeAccess, message: l.removeAccessConfirm(r.s('name')), confirmLabel: l.removeAccess, danger: true); if (ok) ref.read(recsProvider('staff').notifier).remove(r.id); }, icon: const Icon(Icons.person_remove_outlined), label: Text(l.removeAccess)),
+        if (r.s('role') != 'owner') OutlinedButton.icon(onPressed: () async { Navigator.of(ctx, rootNavigator: true).pop(); final ok = await confirmDialog(context, title: l.removeAccess, message: l.removeAccessConfirm(r.s('name')), confirmLabel: l.removeAccess, danger: true); if (ok) ref.read(recsProvider('staff').notifier).remove(r.id); }, icon: const Icon(Icons.person_remove_outlined), label: Text(l.removeAccess)),
       ]),
     );
   }

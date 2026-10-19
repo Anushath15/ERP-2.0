@@ -99,8 +99,9 @@ void main() {
 
     test('products, customers, money to collect', () async {
       final prod = await buildExport(d, ExportKind.products);
-      expect(prod.rows.single[0], 'Wood screw');
-      expect((prod.rows.single[7] as Qty).milli, 14000);
+      expect(prod.rows.single[0], 'HAR-0001', reason: 'the product code');
+      expect(prod.rows.single[1], 'Wood screw');
+      expect((prod.rows.single[10] as Qty).milli, 14000);
       final cust = await buildExport(d, ExportKind.customers);
       expect((cust.rows.single[6] as Rupees).paise, 30000);
       final dues = await buildExport(d, ExportKind.dues);
@@ -198,7 +199,7 @@ void main() {
       final byExt = {for (final e in saver.saved.entries) e.key.split('.').last: e.value};
       expect(byExt.keys, containsAll(['xlsx', 'csv', 'pdf']));
       expect(String.fromCharCodes(byExt['xlsx']!.take(2)), 'PK');
-      expect(utf8.decode(byExt['csv']!.skip(3).toList()), startsWith('Name,Category,Unit'));
+      expect(utf8.decode(byExt['csv']!.skip(3).toList()), startsWith('Code,Name,Brand,Category'));
       expect(String.fromCharCodes(byExt['pdf']!.take(5)), '%PDF-');
       await tester.pumpAndSettle(const Duration(seconds: 6));
     });

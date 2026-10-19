@@ -35,6 +35,7 @@ class ShopProfile {
   const ShopProfile({
     this.name = '',
     this.ownerName = '',
+    this.email = '',
     this.address = '',
     this.phone = '',
     this.gstin = '',
@@ -68,6 +69,9 @@ class ShopProfile {
   );
 
   final String name, ownerName, address, phone, gstin, upiId, bankDetails, billFooter, invoicePrefix;
+
+  /// Printed in the shop block of the bill.
+  final String email;
   final bool pricesIncludeGst;
 
   /// Round each bill total to the nearest rupee (the difference is printed as Round off). Off: the exact total.
@@ -87,6 +91,7 @@ class ShopProfile {
   Map<String, Object?> toJson() => {
         'name': name,
         'ownerName': ownerName,
+        'email': email,
         'address': address,
         'phone': phone,
         'gstin': gstin,
@@ -114,6 +119,7 @@ class ShopProfile {
     return ShopProfile(
       name: str('name', base.name),
       ownerName: str('ownerName', base.ownerName),
+      email: str('email', base.email),
       address: str('address', base.address),
       phone: str('phone', base.phone),
       gstin: str('gstin', base.gstin),
@@ -140,6 +146,7 @@ class ShopProfile {
   ShopProfile copyWith({
     String? name,
     String? ownerName,
+    String? email,
     String? address,
     String? phone,
     String? gstin,
@@ -162,6 +169,7 @@ class ShopProfile {
       ShopProfile(
         name: name ?? this.name,
         ownerName: ownerName ?? this.ownerName,
+        email: email ?? this.email,
         address: address ?? this.address,
         phone: phone ?? this.phone,
         gstin: gstin ?? this.gstin,

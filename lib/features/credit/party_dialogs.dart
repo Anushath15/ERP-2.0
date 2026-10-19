@@ -100,6 +100,7 @@ Future<void> showAddCreditCustomer(BuildContext context) async {
     FieldSpec('phone', l.fieldPhone, type: FieldType.phone, hint: '98765 43210', check: (x) => normalizePhone(x) == null ? l.errPhone : null),
     FieldSpec('city', l.fieldCity),
     FieldSpec('address', l.fieldAddress),
+    FieldSpec('gstin', l.fieldGstinOptional, kind: TextKind.gstin),
     FieldSpec('limit', l.creditLimitField, type: FieldType.money, initial: '50000.00'),
     FieldSpec('amount', l.openingBalance, type: FieldType.money, required: true),
     FieldSpec('date', l.creditStartDate, type: FieldType.date, initial: formatDate(container.read(clockProvider))),
@@ -109,7 +110,7 @@ Future<void> showAddCreditCustomer(BuildContext context) async {
   if (amt <= 0) return;
   final limit = parseRupeesToPaise(v['limit'] ?? '') ?? 5000000;
   final id = newId();
-  final c = Customer(id: id, name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', address: v['address'] ?? '', balancePaise: 0, creditLimitPaise: limit);
+  final c = Customer(id: id, name: v['name']!, phone: v['phone'] ?? '', city: v['city'] ?? '', address: v['address'] ?? '', gstin: v['gstin'] ?? '', balancePaise: 0, creditLimitPaise: limit);
   container.read(customersProvider.notifier).add(c);
   await container.read(creditProvider.notifier).addOpening(customerId: id, amount: amt, at: parseDmy(v['date'] ?? '') ?? container.read(clockProvider));
   if (context.mounted) toast(context, l.partyAdded(c.name, _m(amt)));
@@ -126,10 +127,11 @@ Future<void> showEditParty(BuildContext context, PartyRef party) async {
       FieldSpec('phone', l.fieldPhone, type: FieldType.phone, initial: c.phone, check: (x) => normalizePhone(x) == null ? l.errPhone : null),
       FieldSpec('city', l.fieldCity, initial: c.city),
       FieldSpec('address', l.fieldAddress, initial: c.address),
+      FieldSpec('gstin', l.fieldGstinOptional, initial: c.gstin, kind: TextKind.gstin),
       FieldSpec('limit', l.creditLimitField, type: FieldType.money, initial: (c.creditLimitPaise / 100).toStringAsFixed(2)),
     ]);
     if (v == null || !context.mounted) return;
-    container.read(customersProvider.notifier).update(c.copyWith(name: v['name'], phone: v['phone'], city: v['city'], address: v['address'], creditLimitPaise: parseRupeesToPaise(v['limit'] ?? '') ?? c.creditLimitPaise));
+    container.read(customersProvider.notifier).update(c.copyWith(name: v['name'], phone: v['phone'], city: v['city'], address: v['address'], gstin: v['gstin'], creditLimitPaise: parseRupeesToPaise(v['limit'] ?? '') ?? c.creditLimitPaise));
   } else {
     final r = container.read(recsProvider('dealers')).firstWhere((x) => x.id == party.id);
     final v = await showFormSheet(context, title: l.editParty, saveLabel: l.save, fields: [

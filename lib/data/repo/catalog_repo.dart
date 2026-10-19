@@ -3,6 +3,7 @@ import '../../domain/models.dart';
 import '../context.dart';
 import '../db/app_database.dart';
 import '../ids.dart';
+import 'product_codes.dart';
 
 /// Products, categories, customers and dealers. Editable records: every change bumps `version` and `hlc`, and the same transaction
 /// writes the upload queue row. Price, cost and credit-limit changes also write an audit row (the rules ask for it when it syncs).
@@ -25,6 +26,9 @@ class CatalogRepo {
         barcode: r.read<String>('barcode'),
         hsn: r.read<String>('hsn'),
         minStockMilli: r.read<int>('min_stock_milli'),
+        code: r.read<String>('code'),
+        brand: r.read<String>('brand'),
+        mrpPaise: r.read<int>('mrp_paise'),
       );
 
   static const _productSelect = 'SELECT p.*, COALESCE(s.qty_milli, 0) AS stock FROM products p LEFT JOIN stock_cache s ON s.product_id = p.id';
@@ -70,9 +74,10 @@ class CatalogRepo {
     return _db.transaction(() async {
       final now = cx.nowMs();
       if (create) {
+        final code = p.code.isNotEmpty ? p.code : await nextProductCode(_db, p.category);
         await _db.exec(
-          'INSERT INTO products(id, name, category, unit, price_paise, cost_paise, gst_bp, hsn, barcode, min_stock_milli, active, created_at, updated_at, device_id, version, hlc) VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?,?,1,?)',
-          [p.id, p.name, p.category, p.unit, p.pricePaise, p.costPaise, p.gstBp, p.hsn, p.barcode, p.minStockMilli, now, now, cx.deviceId, cx.hlc.next()],
+          'INSERT INTO products(id, name, category, unit, price_paise, cost_paise, gst_bp, hsn, barcode, min_stock_milli, code, brand, mrp_paise, active, created_at, updated_at, device_id, version, hlc) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,?,1,?)',
+          [p.id, p.name, p.category, p.unit, p.pricePaise, p.costPaise, p.gstBp, p.hsn, p.barcode, p.minStockMilli, code, p.brand, p.mrpPaise, now, now, cx.deviceId, cx.hlc.next()],
         );
         await _db.exec('INSERT INTO stock_cache(product_id, qty_milli) VALUES (?, 0) ON CONFLICT(product_id) DO NOTHING', [p.id]);
         if (p.stockMilli != 0) await _move(p.id, p.stockMilli, 'opening', 'Opening stock', now);
@@ -81,8 +86,8 @@ class CatalogRepo {
         if (old == null) throw StateError('No such product.');
         final before = _product(old);
         await _db.exec(
-          'UPDATE products SET name = ?, category = ?, unit = ?, price_paise = ?, cost_paise = ?, gst_bp = ?, barcode = ?, hsn = ?, min_stock_milli = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?',
-          [p.name, p.category, p.unit, p.pricePaise, p.costPaise, p.gstBp, p.barcode, p.hsn, p.minStockMilli, now, cx.hlc.next(), cx.deviceId, p.id],
+          'UPDATE products SET name = ?, category = ?, unit = ?, price_paise = ?, cost_paise = ?, gst_bp = ?, barcode = ?, hsn = ?, min_stock_milli = ?, brand = ?, mrp_paise = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?',
+          [p.name, p.category, p.unit, p.pricePaise, p.costPaise, p.gstBp, p.barcode, p.hsn, p.minStockMilli, p.brand, p.mrpPaise, now, cx.hlc.next(), cx.deviceId, p.id],
         );
         if (before.pricePaise != p.pricePaise) await _audit('price', 'product', p.id, 'price', '${before.pricePaise}', '${p.pricePaise}');
         if (before.costPaise != p.costPaise) await _audit('cost', 'product', p.id, 'cost', '${before.costPaise}', '${p.costPaise}');
@@ -117,6 +122,31 @@ class CatalogRepo {
     });
   }
 
+  /// Changes a brand's spelling on every product that carries it (capital letters do not matter when finding them). Returns the ids of
+  /// the products changed, so the screens can read them again.
+  Future<List<String>> renameBrand(String from, String to) {
+    return _db.transaction(() async {
+      final ids = [for (final r in await _db.rows('SELECT id FROM products WHERE brand = ? COLLATE NOCASE AND deleted_at IS NULL', [from.trim()])) r.read<String>('id')];
+      for (final id in ids) {
+        await _db.exec('UPDATE products SET brand = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [to.trim(), cx.nowMs(), cx.hlc.next(), cx.deviceId, id]);
+        await enqueue(cx, _db, 'products', id);
+      }
+      return ids;
+    });
+  }
+
+  /// Changes a unit's spelling on every product that carries it. Returns the ids of the products changed.
+  Future<List<String>> renameUnit(String from, String to) {
+    return _db.transaction(() async {
+      final ids = [for (final r in await _db.rows('SELECT id FROM products WHERE unit = ? COLLATE NOCASE AND deleted_at IS NULL', [from.trim()])) r.read<String>('id')];
+      for (final id in ids) {
+        await _db.exec('UPDATE products SET unit = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [to.trim(), cx.nowMs(), cx.hlc.next(), cx.deviceId, id]);
+        await enqueue(cx, _db, 'products', id);
+      }
+      return ids;
+    });
+  }
+
   // ---------------------------------------------------------------- customers
 
   static Customer _customer(QueryRow r) => Customer(
@@ -125,6 +155,7 @@ class CatalogRepo {
         phone: r.read<String>('phone'),
         city: r.read<String>('city'),
         address: r.read<String>('address'),
+        gstin: r.read<String>('gstin'),
         balancePaise: r.read<int>('balance'),
         creditLimitPaise: r.read<int>('credit_limit_paise'),
       );
@@ -156,13 +187,13 @@ class CatalogRepo {
       final now = cx.nowMs();
       if (create) {
         await _db.exec(
-          'INSERT INTO customers(id, name, phone, city, address, credit_limit_paise, created_at, updated_at, device_id, version, hlc) VALUES (?,?,?,?,?,?,?,?,?,1,?)',
-          [c.id, c.name, c.phone, c.city, c.address, c.creditLimitPaise, now, now, cx.deviceId, cx.hlc.next()],
+          'INSERT INTO customers(id, name, phone, city, address, gstin, credit_limit_paise, created_at, updated_at, device_id, version, hlc) VALUES (?,?,?,?,?,?,?,?,?,?,1,?)',
+          [c.id, c.name, c.phone, c.city, c.address, c.gstin, c.creditLimitPaise, now, now, cx.deviceId, cx.hlc.next()],
         );
       } else {
         final old = await _db.row('SELECT credit_limit_paise FROM customers WHERE id = ?', [c.id]);
         if (old == null) throw StateError('No such customer.');
-        await _db.exec('UPDATE customers SET name = ?, phone = ?, city = ?, address = ?, credit_limit_paise = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [c.name, c.phone, c.city, c.address, c.creditLimitPaise, now, cx.hlc.next(), cx.deviceId, c.id]);
+        await _db.exec('UPDATE customers SET name = ?, phone = ?, city = ?, address = ?, gstin = ?, credit_limit_paise = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [c.name, c.phone, c.city, c.address, c.gstin, c.creditLimitPaise, now, cx.hlc.next(), cx.deviceId, c.id]);
         final was = old.read<int>('credit_limit_paise');
         if (was != c.creditLimitPaise) await _audit('creditLimit', 'customer', c.id, 'creditLimit', '$was', '${c.creditLimitPaise}');
       }

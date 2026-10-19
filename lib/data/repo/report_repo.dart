@@ -84,6 +84,47 @@ class ReportRepo {
     return (total: r?.read<int>('t') ?? 0, people: r?.read<int>('n') ?? 0);
   }
 
+  /// What one customer has bought, and what the shop made on it: bills that count (not cancelled) minus what they gave back.
+  /// Profit is worked out like the day totals do: the value before tax minus the buying cost of what was sold (an estimate:
+  /// a product with no buying price counts as cost 0).
+  Future<CustomerSummary> customerSummary(String customerId) async {
+    final b = await _db.row('SELECT COUNT(*) AS n, COALESCE(SUM(total_paise), 0) AS total, COALESCE(SUM(taxable_paise), 0) AS taxable, MAX(billed_at) AS last FROM bills WHERE customer_id = ? AND cancelled = 0', [customerId]);
+    final cost = await _db.scalarInt('SELECT COALESCE(SUM((l.cost_paise * l.qty_milli * 2 + 1000) / 2000), 0) FROM bill_lines l JOIN bills b ON b.id = l.bill_id WHERE b.customer_id = ? AND b.cancelled = 0', [customerId]);
+    final r = await _db.row('SELECT COUNT(*) AS n, COALESCE(SUM(total_paise), 0) AS total, COALESCE(SUM(taxable_paise), 0) AS taxable, COALESCE(SUM(cost_paise), 0) AS cost FROM sales_returns WHERE customer_id = ?', [customerId]);
+    final cancelled = await _db.scalarInt('SELECT COUNT(*) FROM bills WHERE customer_id = ? AND cancelled = 1', [customerId]);
+    final billTotal = b?.read<int>('total') ?? 0, retTotal = r?.read<int>('total') ?? 0;
+    final profit = ((b?.read<int>('taxable') ?? 0) - cost) - ((r?.read<int>('taxable') ?? 0) - (r?.read<int>('cost') ?? 0));
+    final last = b?.readNullable<int>('last');
+    return CustomerSummary(
+      bills: b?.read<int>('n') ?? 0,
+      cancelledBills: cancelled,
+      boughtPaise: billTotal - retTotal,
+      grossPaise: billTotal,
+      returnedPaise: retTotal,
+      returns: r?.read<int>('n') ?? 0,
+      profitPaise: profit,
+      lastBillAt: last == null ? null : DateTime.fromMillisecondsSinceEpoch(last),
+    );
+  }
+
+  /// What each product has sold (bills that count, minus what came back): quantity, sales (with GST) and profit (the value before tax
+  /// minus the buying cost). All time. A product that never sold is not in the map.
+  Future<Map<String, ProductSales>> productSales() async {
+    final sold = await _db.rows(
+        'SELECT l.product_id AS pid, SUM(l.qty_milli) AS qty, SUM(l.total_paise) AS sales, SUM(l.taxable_paise - (l.cost_paise * l.qty_milli * 2 + 1000) / 2000) AS profit '
+        'FROM bill_lines l JOIN bills b ON b.id = l.bill_id WHERE b.cancelled = 0 GROUP BY l.product_id');
+    final back = await _db.rows('SELECT product_id AS pid, SUM(qty_milli) AS qty, SUM(amount_paise) AS sales, SUM(taxable_paise - cost_paise) AS profit FROM sales_return_lines GROUP BY product_id');
+    final out = <String, ProductSales>{
+      for (final r in sold) r.read<String>('pid'): ProductSales(qtyMilli: r.read<int>('qty'), salesPaise: r.read<int>('sales'), profitPaise: r.read<int>('profit')),
+    };
+    for (final r in back) {
+      final id = r.read<String>('pid');
+      final o = out[id] ?? const ProductSales(qtyMilli: 0, salesPaise: 0, profitPaise: 0);
+      out[id] = ProductSales(qtyMilli: o.qtyMilli - r.read<int>('qty'), salesPaise: o.salesPaise - r.read<int>('sales'), profitPaise: o.profitPaise - r.read<int>('profit'));
+    }
+    return out;
+  }
+
   Future<int> weOwe() async => _db.scalarInt("SELECT COALESCE(SUM(balance_paise), 0) FROM party_balance WHERE party_kind = 'dealer' AND balance_paise > 0");
 
   /// How much the shop's data holds right now (live rows) and when the last bill was made: the Health page shows it so the owner can see the real data is in use.
@@ -119,4 +160,23 @@ class ReportRepo {
     final rule = await _db.rows("SELECT value FROM kv WHERE name = 'valuation.rule'");
     return StockValuation.compute(await stockLines(), chosen: ruleFromSetting(rule.isEmpty ? null : rule.first.read<String>('value')));
   }
+}
+
+/// What a customer's page shows first.
+class CustomerSummary {
+  const CustomerSummary({required this.bills, required this.cancelledBills, required this.boughtPaise, required this.grossPaise, required this.returnedPaise, required this.returns, required this.profitPaise, required this.lastBillAt});
+  final int bills, cancelledBills, returns;
+
+  /// Bought in total, after what they gave back.
+  final int boughtPaise, grossPaise, returnedPaise;
+
+  /// What the shop made on this customer (an estimate from the buying prices).
+  final int profitPaise;
+  final DateTime? lastBillAt;
+}
+
+/// What one product has sold and made (see [ReportRepo.productSales]).
+class ProductSales {
+  const ProductSales({required this.qtyMilli, required this.salesPaise, required this.profitPaise});
+  final int qtyMilli, salesPaise, profitPaise;
 }

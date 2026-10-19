@@ -95,7 +95,7 @@ void main() {
     await expectLater(d.bills.saveBill(input([line(screw, 1000)], received: 5000)), throwsStateError);
     expect(await d.bills.count(), 0);
     expect(await stockOf('p-screw'), 20000);
-    expect((await d.db.rows('SELECT * FROM counters')), isEmpty, reason: 'the number was not used up');
+    expect((await d.db.rows("SELECT * FROM counters WHERE name LIKE 'inv.%'")), isEmpty, reason: 'the number was not used up');
     expect((await d.db.rows('SELECT * FROM outbox')).where((r) => r.read<String>('coll') == 'bills'), isEmpty);
   });
 
@@ -112,7 +112,7 @@ void main() {
     await expectLater(d.bills.saveBill(input([line(screw, 1000), const BillLineInput(productId: 'does-not-exist', name: 'x', unit: 'pcs', qtyMilli: 1000, ratePaise: 100, gstBp: 0)])), throwsA(anything));
     expect(await d.bills.count(), 0);
     expect(await stockOf('p-screw'), 20000);
-    expect((await d.db.rows('SELECT * FROM counters')), isEmpty);
+    expect((await d.db.rows("SELECT * FROM counters WHERE name LIKE 'inv.%'")), isEmpty);
   });
 
   test('selling more than the stock is allowed (it warns on the screen) and the stock goes below zero', () async {

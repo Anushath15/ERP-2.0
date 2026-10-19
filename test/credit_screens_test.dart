@@ -99,18 +99,17 @@ void main() {
   group('customer page', () {
     testWidgets('balance, limit, ageing buckets, bill-wise dues, ledger with running balance, reminders', (tester) async {
       final s = sample(reminded: true);
-      await app(tester, '/customers/${s.c.id}', size: const ScreenSpec('tall', 1920, 3600));
+      await app(tester, '/customers/${s.c.id}/account', size: const ScreenSpec('tall', 1920, 3600));
       expect(find.text(s.c.name), findsWidgets);
       expect(find.text('Money to collect'), findsWidgets);
       expect(find.text('Credit limit'), findsWidgets);
       expect(find.text('Last payment'), findsOneWidget);
-      expect(find.text('WhatsApp number'), findsOneWidget);
       expect(find.text('Bills still to pay'), findsOneWidget);
       expect(find.textContaining('0-30 days'), findsOneWidget);
       expect(find.textContaining('31-60 days'), findsOneWidget);
       expect(find.textContaining('61-90 days'), findsOneWidget);
       expect(find.textContaining('Over 90 days'), findsOneWidget);
-      expect(find.text('Credit account'), findsOneWidget);
+      expect(find.text('Credit account'), findsWidgets, reason: 'the page subtitle and the ledger card');
       expect(find.textContaining('Bill on credit'), findsWidgets);
       expect(find.text('Reminders opened in WhatsApp'), findsWidgets);
       expect(tester.takeException(), isNull);
@@ -153,7 +152,7 @@ void main() {
   group('Receive payment', () {
     testWidgets('amount defaults to the dues; the oldest bill is settled first; the receipt can be opened', (tester) async {
       final s = sample();
-      final c = await app(tester, '/customers/${s.c.id}');
+      final c = await app(tester, '/customers/${s.c.id}/account');
       await tester.tap(find.byKey(const ValueKey('receiveOrPay')));
       await tester.pumpAndSettle();
       final field = tester.widget<TextField>(find.byKey(const ValueKey('payAmount')));
@@ -179,7 +178,7 @@ void main() {
 
     testWidgets('paying more than the dues keeps the rest as an advance; the dialog says so', (tester) async {
       final s = sample();
-      final c = await app(tester, '/customers/${s.c.id}');
+      final c = await app(tester, '/customers/${s.c.id}/account');
       await tester.tap(find.byKey(const ValueKey('receiveOrPay')));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const ValueKey('payAmount')), ((s.a.balance + 12345) / 100).toStringAsFixed(2));
@@ -192,7 +191,7 @@ void main() {
 
     testWidgets('"I will choose the bills": only the chosen bills are settled', (tester) async {
       final s = sample();
-      final c = await app(tester, '/customers/${s.c.id}');
+      final c = await app(tester, '/customers/${s.c.id}/account');
       await tester.tap(find.byKey(const ValueKey('receiveOrPay')));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(Switch).first);
@@ -212,7 +211,7 @@ void main() {
 
     testWidgets('write-off is limited to what is owed and keeps bills and ledger equal', (tester) async {
       final s = sample();
-      final c = await app(tester, '/customers/${s.c.id}');
+      final c = await app(tester, '/customers/${s.c.id}/account');
       final n = c.read(creditProvider.notifier);
       await expectLater(n.writeOff(customerId: s.c.id, amount: s.a.balance + 1, reason: 'x', at: fixedNow), throwsStateError);
       await n.writeOff(customerId: s.c.id, amount: 500, reason: 'small amount', at: fixedNow);
@@ -231,7 +230,7 @@ void main() {
     testWidgets('preview dialog: ready message (editable), tones, Open WhatsApp builds the app link first on Windows; one reminder is counted', (tester) async {
       final s = sample();
       final fake = FakeLauncher();
-      final c = await app(tester, '/customers/${s.c.id}', extra: [linkLauncherProvider.overrideWithValue(fake)]);
+      final c = await app(tester, '/customers/${s.c.id}/account', extra: [linkLauncherProvider.overrideWithValue(fake)]);
       await openDialog(tester);
       expect(find.text('Remind ${s.c.name} on WhatsApp'), findsOneWidget);
       final msg = tester.widget<TextField>(find.byKey(const ValueKey('remMessage'))).controller!.text;
@@ -261,13 +260,13 @@ void main() {
     testWidgets('app not installed: falls back to the wa.me link; on the web only wa.me is used', (tester) async {
       final s = sample();
       final fake = FakeLauncher(appInstalled: false);
-      await app(tester, '/customers/${s.c.id}', extra: [linkLauncherProvider.overrideWithValue(fake)]);
+      await app(tester, '/customers/${s.c.id}/account', extra: [linkLauncherProvider.overrideWithValue(fake)]);
       await openDialog(tester);
       await tester.tap(find.byKey(const ValueKey('openWhatsapp')));
       await tester.pumpAndSettle();
       expect(fake.opened.single, startsWith('https://wa.me/91'));
       final web = FakeLauncher(platform: LinkPlatform.web);
-      await app(tester, '/customers/${s.c.id}', extra: [linkLauncherProvider.overrideWithValue(web)]);
+      await app(tester, '/customers/${s.c.id}/account', extra: [linkLauncherProvider.overrideWithValue(web)]);
       await openDialog(tester);
       await tester.tap(find.byKey(const ValueKey('openWhatsapp')));
       await tester.pumpAndSettle();
@@ -277,7 +276,7 @@ void main() {
     testWidgets('offline: Open WhatsApp is disabled with the reason; Copy message still works', (tester) async {
       final s = sample();
       final fake = FakeLauncher();
-      final c = await app(tester, '/customers/${s.c.id}', extra: [linkLauncherProvider.overrideWithValue(fake)]);
+      final c = await app(tester, '/customers/${s.c.id}/account', extra: [linkLauncherProvider.overrideWithValue(fake)]);
       c.read(settingsProvider.notifier).set((x) => x.copyWith(sync: SyncState.offline));
       await tester.pumpAndSettle();
       await openDialog(tester);
@@ -292,7 +291,7 @@ void main() {
     testWidgets('no WhatsApp number: asks for it first, refuses nonsense, accepts 10 digits and enables the button', (tester) async {
       final s = sample(withPhone: false);
       final fake = FakeLauncher();
-      final c = await app(tester, '/customers/${s.c.id}', extra: [linkLauncherProvider.overrideWithValue(fake)]);
+      final c = await app(tester, '/customers/${s.c.id}/account', extra: [linkLauncherProvider.overrideWithValue(fake)]);
       await openDialog(tester);
       expect(find.text('This customer has no WhatsApp number yet. Add one to continue.'), findsOneWidget);
       expect(tester.widget<FilledButton>(find.byKey(const ValueKey('openWhatsapp'))).onPressed, isNull);
@@ -313,7 +312,7 @@ void main() {
     testWidgets('24-hour guard: asks "Send again?" and only opens if the person says yes', (tester) async {
       final s = sample();
       final fake = FakeLauncher();
-      final c = await app(tester, '/customers/${s.c.id}', extra: [linkLauncherProvider.overrideWithValue(fake)]);
+      final c = await app(tester, '/customers/${s.c.id}/account', extra: [linkLauncherProvider.overrideWithValue(fake)]);
       c.read(reminderLogProvider.notifier).record(customerId: s.c.id, amountDue: s.a.balance, message: 'earlier', at: fixedNow.subtract(const Duration(hours: 2)));
       await tester.pumpAndSettle();
       await openDialog(tester);
@@ -335,7 +334,7 @@ void main() {
     testWidgets('if WhatsApp cannot be opened nothing is counted', (tester) async {
       final s = sample();
       final fake = FakeLauncher(ok: false);
-      final c = await app(tester, '/customers/${s.c.id}', extra: [linkLauncherProvider.overrideWithValue(fake)]);
+      final c = await app(tester, '/customers/${s.c.id}/account', extra: [linkLauncherProvider.overrideWithValue(fake)]);
       final before = c.read(reminderLogProvider).countFor(s.c.id);
       await openDialog(tester);
       await tester.tap(find.byKey(const ValueKey('openWhatsapp')));

@@ -76,12 +76,14 @@ class EstimationRepo {
         totalPaise: r.read<int>('total_paise'),
         editedOn: r.readNullable<int>('edited_on') == null ? null : DateTime.fromMillisecondsSinceEpoch(r.read<int>('edited_on')),
         convertedTo: r.readNullable<String>('converted_bill_id'),
+        extraDiscountPaise: r.read<int>('extra_discount_paise'),
+        extraDiscountBp: r.read<int>('extra_discount_bp'),
       );
 
   Future<List<EstimationDoc>> list({int limit = 5000}) async => [for (final r in await _db.rows('SELECT * FROM estimations WHERE deleted_at IS NULL ORDER BY at DESC, id DESC LIMIT ?', [limit])) _doc(r)];
 
   /// Saves a new estimate (a new number) or, with [editNumber], saves changes in place (the number and its date stay).
-  Future<EstimationDoc> save({required List<EstimateLine> lines, required int totalPaise, required String customerName, String? customerId, required DateTime at, String? editNumber}) {
+  Future<EstimationDoc> save({required List<EstimateLine> lines, required int totalPaise, required String customerName, String? customerId, required DateTime at, String? editNumber, int extraDiscountPaise = 0, int extraDiscountBp = 0}) {
     return _db.transaction(() async {
       final now = cx.nowMs();
       String id;
@@ -91,14 +93,14 @@ class EstimationRepo {
         if (e == null) throw StateError('No such estimate.');
         id = e.read<String>('id');
         number = editNumber;
-        await _db.exec('UPDATE estimations SET customer_id = ?, customer_name = ?, total_paise = ?, line_count = ?, edited_on = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [customerId, customerName, totalPaise, lines.length, at.millisecondsSinceEpoch, now, cx.hlc.next(), cx.deviceId, id]);
+        await _db.exec('UPDATE estimations SET customer_id = ?, customer_name = ?, total_paise = ?, line_count = ?, edited_on = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ?, extra_discount_paise = ?, extra_discount_bp = ? WHERE id = ?', [customerId, customerName, totalPaise, lines.length, at.millisecondsSinceEpoch, now, cx.hlc.next(), cx.deviceId, extraDiscountPaise, extraDiscountBp, id]);
         await _db.exec('DELETE FROM estimation_lines WHERE estimation_id = ?', [id]);
       } else {
         id = newId();
         number = numberFor(await nextCounter(_db, 'est'));
         await _db.exec(
-          'INSERT INTO estimations(id, number, at, customer_id, customer_name, total_paise, line_count, created_at, updated_at, device_id, version, hlc) VALUES (?,?,?,?,?,?,?,?,?,?,1,?)',
-          [id, number, at.millisecondsSinceEpoch, customerId, customerName, totalPaise, lines.length, now, now, cx.deviceId, cx.hlc.next()],
+          'INSERT INTO estimations(id, number, at, customer_id, customer_name, total_paise, line_count, created_at, updated_at, device_id, version, hlc, extra_discount_paise, extra_discount_bp) VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?,?)',
+          [id, number, at.millisecondsSinceEpoch, customerId, customerName, totalPaise, lines.length, now, now, cx.deviceId, cx.hlc.next(), extraDiscountPaise, extraDiscountBp],
         );
       }
       for (var i = 0; i < lines.length; i++) {

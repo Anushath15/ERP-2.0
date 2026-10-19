@@ -123,7 +123,7 @@ String buildReport(Erp1Plan p, {String? fileName, bool dryRun = true, String? va
     'products': 'erp_products', 'customers': 'erp_customers', 'dealers': 'erp_dealers', 'bills': 'erp_sales_invoices', 'estimates': 'erp_estimations',
     'customer payments': 'erp_credit_payments', 'dealer payments': 'erp_dealer_payments', 'purchases': 'erp_purchases', 'sales returns': 'erp_sales_returns',
     'purchase returns': 'erp_purchase_returns', 'stock adjustments': 'erp_stock_adjustments', 'expenses': 'erp_expenses', 'deliveries': 'erp_deliveries',
-    'warranties': 'erp_warranties', 'projects': 'erp_house_projects', 'staff': 'erp_staff', 'notifications': 'erp_notifications', 'categories': 'erp_categories',
+    'warranties': 'erp_warranties', 'staff': 'erp_staff', 'notifications': 'erp_notifications', 'categories': 'erp_categories',
   };
   for (final e in keyOf.entries) {
     final read = p.read[e.value] ?? 0;

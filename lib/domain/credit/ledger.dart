@@ -140,13 +140,13 @@ LedgerEntry reverseBillCredit({required List<LedgerEntry> entries, required Stri
   return LedgerEntry.billCancel(id: entryId, customerId: customerId, paise: credit - reversed, at: at, billNo: billNo, reason: reason, by: by);
 }
 
-/// Payments, advances, manual credit, write-offs, opening balances, credit notes and adjustments can be reversed. Bills are
-/// cancelled through the bill (with the stock effects), a bill cancellation is final, and a reversal is never reversed:
-/// make a new entry instead.
+/// Payments, advances, manual credit, write-offs, opening balances and adjustments can be reversed. Bills are cancelled through
+/// the bill (with the stock effects), a bill cancellation is final, a sales return is final (the stock and the totals moved with
+/// it), and a reversal is never reversed: make a new entry instead.
 bool isReversible(LedgerEntry e) {
   if (e.reverses != null) return false;
   return switch (e.kind) {
-    LedgerKind.billCredit || LedgerKind.billCancel => false,
+    LedgerKind.billCredit || LedgerKind.billCancel || LedgerKind.returnCredit => false, // a return is final (its stock and totals moved with it)
     _ => true,
   };
 }
