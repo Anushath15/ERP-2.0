@@ -123,7 +123,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
           padding: const EdgeInsets.fromLTRB(20, 14, 8, 4),
           child: Row(children: [
             Expanded(child: Text(dealer ? l.payDealer : l.receivePayment, style: th.titleLarge)),
-            IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+            IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
           ]),
         ),
         Flexible(
@@ -142,7 +142,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
                 decoration: InputDecoration(labelText: l.fieldAmount, prefixText: '₹ ', errorText: _error),
               ),
               const SizedBox(height: 12),
-              SlideSegments<String>(options: [('cash', l.payCash, Icons.payments_outlined), ('upi', l.payUpi, Icons.qr_code_2), ('card', l.payCard, Icons.credit_card)], selected: _mode, onChanged: (v) => setState(() => _mode = v)),
+              SlideSegments<String>(options: [('cash', l.payCash, Icons.payments_rounded), ('upi', l.payUpi, Icons.qr_code_2_rounded), ('card', l.payCard, Icons.credit_card_rounded)], selected: _mode, onChanged: (v) => setState(() => _mode = v)),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(
@@ -151,7 +151,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
                       final d = await showDatePicker(context: context, firstDate: DateTime(_date.year - 2), lastDate: DateTime(_date.year + 1), initialDate: _date);
                       if (d != null) setState(() => _date = d);
                     },
-                    child: InputDecorator(decoration: InputDecoration(labelText: l.fieldDate, suffixIcon: const Icon(Icons.calendar_today)), child: Text(formatDate(_date))),
+                    child: InputDecorator(decoration: InputDecoration(labelText: l.fieldDate, suffixIcon: const Icon(Icons.calendar_today_rounded)), child: Text(formatDate(_date))),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -160,7 +160,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
               const SizedBox(height: 14),
               SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(_manual ? l.recvChoose : l.recvAuto), value: _manual, onChanged: unpaid.isEmpty ? null : (v) => setState(() => _manual = v)),
               if (unpaid.isEmpty)
-                Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: StatusBadge(l.recvNothingDue, kind: BadgeKind.info, icon: Icons.info_outline))
+                Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: StatusBadge(l.recvNothingDue, kind: BadgeKind.info, icon: Icons.info_outline_rounded))
               else
                 for (final b in unpaid)
                   Container(
@@ -176,7 +176,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
               if (res != null) ...[
                 const Divider(),
                 if (res.appliedPaise > 0) Padding(padding: const EdgeInsets.symmetric(vertical: 2), child: Text(l.recvSettles(formatPaise(res.appliedPaise, symbol: true)), style: th.titleSmall)),
-                if (res.advancePaise > 0) Padding(padding: const EdgeInsets.symmetric(vertical: 2), child: StatusBadge(l.recvAdvance(formatPaise(res.advancePaise, symbol: true)), kind: BadgeKind.info, icon: Icons.savings_outlined)),
+                if (res.advancePaise > 0) Padding(padding: const EdgeInsets.symmetric(vertical: 2), child: StatusBadge(l.recvAdvance(formatPaise(res.advancePaise, symbol: true)), kind: BadgeKind.info, icon: Icons.savings_rounded)),
               ],
             ]),
           ),
@@ -186,7 +186,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
           child: Row(children: [
             Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel))),
             const SizedBox(width: 12),
-            Expanded(flex: 2, child: FilledButton.icon(onPressed: canAllocate ? save : null, icon: const Icon(Icons.check), label: Text(l.savePayment))),
+            Expanded(flex: 2, child: FilledButton.icon(onPressed: canAllocate ? save : null, icon: const Icon(Icons.check_rounded), label: Text(l.savePayment))),
           ]),
         ),
       ]),
@@ -316,7 +316,7 @@ class _ReminderPanelState extends ConsumerState<ReminderPanel> {
         padding: const EdgeInsets.fromLTRB(20, 14, 8, 4),
         child: Row(children: [
           Expanded(child: Text(l.remTitle(widget.customer.name), style: th.titleLarge)),
-          IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+          IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
         ]),
       ),
       Flexible(
@@ -335,7 +335,7 @@ class _ReminderPanelState extends ConsumerState<ReminderPanel> {
               ]),
               const SizedBox(height: 12),
             ] else
-              Padding(padding: const EdgeInsets.only(bottom: 8), child: Row(children: [const Icon(Icons.chat_outlined, size: 18), const SizedBox(width: 8), Text(prettyPhone(digits), style: th.titleSmall)])),
+              Padding(padding: const EdgeInsets.only(bottom: 8), child: Row(children: [const Icon(Icons.chat_rounded, size: 18), const SizedBox(width: 8), Text(prettyPhone(digits), style: th.titleSmall)])),
             SlideSegments<ReminderTone>(
               options: [(ReminderTone.friendly, l.toneFriendly, null), (ReminderTone.firm, l.toneFirm, null)],
               selected: _tone,
@@ -347,7 +347,7 @@ class _ReminderPanelState extends ConsumerState<ReminderPanel> {
             const SizedBox(height: 12),
             TextField(key: const ValueKey('remMessage'), controller: _msg, inputFormatters: [safeInput(TextKind.message)], minLines: 8, maxLines: 14, decoration: InputDecoration(labelText: l.remMessage, alignLabelWithHint: true)),
             Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(top: 4), child: Text('${_msg.text.length} / $maxReminderLength', style: th.bodySmall))),
-            if (!check.allowed && hasNumber) Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(check.reason!, kind: BadgeKind.warning, icon: Icons.cloud_off_outlined)),
+            if (!check.allowed && hasNumber) Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(check.reason!, kind: BadgeKind.warning, icon: Icons.cloud_off_rounded)),
           ]),
         ),
       ),
@@ -359,12 +359,12 @@ class _ReminderPanelState extends ConsumerState<ReminderPanel> {
               unawaited(Clipboard.setData(ClipboardData(text: _msg.text)));
               toast(context, l.remCopied);
             },
-            icon: const Icon(Icons.copy_outlined),
+            icon: const Icon(Icons.copy_rounded),
             label: Text(l.remCopy),
           ),
           Tooltip(
             message: check.allowed ? l.remsTooltipOpen : (check.reason ?? ''),
-            child: FilledButton.icon(key: const ValueKey('openWhatsapp'), onPressed: check.allowed && hasNumber ? _open : null, icon: const Icon(Icons.open_in_new), label: Text(l.remOpen)),
+            child: FilledButton.icon(key: const ValueKey('openWhatsapp'), onPressed: check.allowed && hasNumber ? _open : null, icon: const Icon(Icons.open_in_new_rounded), label: Text(l.remOpen)),
           ),
         ]),
       ),

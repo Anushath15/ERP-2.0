@@ -194,7 +194,7 @@ class Gap {
 }
 
 class Radii {
-  static const double s = 6, m = 10, l = 14;
+  static const double s = 8, m = 12, l = 20; // soft, rounded corners
 }
 
 class Sizes {

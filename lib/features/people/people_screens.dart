@@ -45,8 +45,8 @@ class CustomersScreen extends ConsumerWidget {
         }
       },
       stats: [
-        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(items.fold<int>(0, (s, c) => bal(c) > 0 ? s + bal(c) : s))}', icon: Icons.south_west),
-        StatCard(label: l.statCustomersOwing, value: owing.toString(), icon: Icons.people_outline),
+        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(items.fold<int>(0, (s, c) => bal(c) > 0 ? s + bal(c) : s))}', icon: Icons.south_west_rounded),
+        StatCard(label: l.statCustomersOwing, value: owing.toString(), icon: Icons.people_outline_rounded),
       ],
       filters: [FilterSpec(l.filterOwing, (c) => bal(c) > 0), FilterSpec(l.filterAdvance, (c) => bal(c) < 0), FilterSpec(l.filterClear, (c) => bal(c) == 0)],
       sorts: [(l.sortOwedHigh, (a, b) => bal(b).compareTo(bal(a)))],
@@ -80,8 +80,8 @@ class DealersScreen extends ConsumerWidget {
       items: items,
       searchText: (r) => '${r.s('name')} ${r.s('phone')} ${r.s('city')}',
       stats: [
-        StatCard(label: l.statTotalWeOwe, value: '₹ ${formatPaise(items.fold<int>(0, (s, r) => owe(r) > 0 ? s + owe(r) : s))}', icon: Icons.north_east, tone: context.c.danger),
-        StatCard(label: l.statDealersOwed, value: items.where((r) => owe(r) > 0).length.toString(), icon: Icons.local_shipping_outlined),
+        StatCard(label: l.statTotalWeOwe, value: '₹ ${formatPaise(items.fold<int>(0, (s, r) => owe(r) > 0 ? s + owe(r) : s))}', icon: Icons.north_east_rounded, tone: context.c.danger),
+        StatCard(label: l.statDealersOwed, value: items.where((r) => owe(r) > 0).length.toString(), icon: Icons.local_shipping_rounded),
       ],
       addLabel: l.addDealer,
       onAdd: () async {
@@ -137,7 +137,7 @@ class StaffScreen extends ConsumerWidget {
       phoneSubtitle: (r) => '${r.s('email')}\n${roleHelp(r.s('role'))}',
       phoneTrailing: (c, r) => StatusBadge(role(r.s('role')), kind: r.s('role') == 'owner' ? BadgeKind.info : BadgeKind.neutral),
       onTap: (ctx, r) => showDetail(ctx, title: r.s('name'), subtitle: r.s('email'), body: [KeyValue(l.fieldRole, role(r.s('role')), bold: true), KeyValue(l.canDo, roleHelp(r.s('role'))), const SizedBox(height: 8), Text(l.removeAccessHelp, style: th.bodySmall)], actions: [
-        if (r.s('role') != 'owner') OutlinedButton.icon(onPressed: () async { Navigator.of(ctx, rootNavigator: true).pop(); final ok = await confirmDialog(context, title: l.removeAccess, message: l.removeAccessConfirm(r.s('name')), confirmLabel: l.removeAccess, danger: true); if (ok) ref.read(recsProvider('staff').notifier).remove(r.id); }, icon: const Icon(Icons.person_remove_outlined), label: Text(l.removeAccess)),
+        if (r.s('role') != 'owner') OutlinedButton.icon(onPressed: () async { Navigator.of(ctx, rootNavigator: true).pop(); final ok = await confirmDialog(context, title: l.removeAccess, message: l.removeAccessConfirm(r.s('name')), confirmLabel: l.removeAccess, danger: true); if (ok) ref.read(recsProvider('staff').notifier).remove(r.id); }, icon: const Icon(Icons.person_remove_rounded), label: Text(l.removeAccess)),
       ]),
     );
   }

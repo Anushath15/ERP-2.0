@@ -39,7 +39,7 @@ class BillHeader extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(color: c.badgeBgInfo, borderRadius: BorderRadius.circular(8), border: Border.all(color: c.info.withValues(alpha: 0.5))),
           child: Row(children: [
-            Icon(Icons.edit_note, color: c.info),
+            Icon(Icons.edit_note_rounded, color: c.info),
             const SizedBox(width: 8),
             Expanded(child: Text(l.editingKeeps(cart.editingNumber!, formatDate(cart.editingDate!)), style: th.bodyMedium?.copyWith(color: c.info))),
           ]),
@@ -49,7 +49,7 @@ class BillHeader extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: onPickCustomer,
             style: OutlinedButton.styleFrom(alignment: Alignment.centerLeft, minimumSize: const Size(0, Sizes.touch)),
-            icon: const Icon(Icons.person_outline),
+            icon: const Icon(Icons.person_outline_rounded),
             label: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
               Text(cust?.name ?? l.walkInCustomer, maxLines: 2, overflow: TextOverflow.fade),
               if (onEditGst != null && cust != null && cust.gstin.isNotEmpty) Text(l.gstOnBill(cust.gstin), key: const ValueKey('bill-gst-text'), style: th.bodySmall),
@@ -63,7 +63,7 @@ class BillHeader extends StatelessWidget {
             key: const ValueKey('bill-gst'),
             tooltip: cust == null ? l.gstPickCustomer : (cust.gstin.isEmpty ? l.gstAddForBill : l.gstEditTitle),
             onPressed: cust == null ? onPickCustomer : onEditGst,
-            icon: Icon(cust != null && cust.gstin.isNotEmpty ? Icons.receipt_long : Icons.receipt_long_outlined),
+            icon: Icon(cust != null && cust.gstin.isNotEmpty ? Icons.receipt_long_rounded : Icons.receipt_long_rounded),
           ),
         ],
         const SizedBox(width: 10),
@@ -73,9 +73,9 @@ class BillHeader extends StatelessWidget {
         ]),
       ]),
       if (cust != null && balance > 0)
-        Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(l.customerOwes(formatPaise(balance, symbol: true)), kind: BadgeKind.warning, icon: Icons.account_balance_wallet_outlined)),
+        Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(l.customerOwes(formatPaise(balance, symbol: true)), kind: BadgeKind.warning, icon: Icons.account_balance_wallet_rounded)),
       if (cust != null && balance < 0)
-        Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(l.advanceAmount(formatPaise(-balance, symbol: true)), kind: BadgeKind.success, icon: Icons.savings_outlined)),
+        Padding(padding: const EdgeInsets.only(top: 6), child: StatusBadge(l.advanceAmount(formatPaise(-balance, symbol: true)), kind: BadgeKind.success, icon: Icons.savings_rounded)),
     ]);
   }
 }
@@ -123,7 +123,7 @@ class _BillLinesState extends State<BillLines> {
     final l = tr(context);
     final lines = widget.cart.lines;
     if (lines.isEmpty) {
-      return EmptyState(icon: Icons.shopping_cart_outlined, title: l.billEmptyTitle, text: l.billEmptyText);
+      return EmptyState(icon: Icons.shopping_cart_rounded, title: l.billEmptyTitle, text: l.billEmptyText);
     }
     return LayoutBuilder(builder: (ctx, bc) => _buildLines(ctx, lines, bc.maxWidth / ctx.textFactor < 560));
   }
@@ -196,7 +196,7 @@ class _LineBody extends StatelessWidget {
     ]);
     final stepper = _QtyStepper(qtyMilli: line.qtyMilli, unit: p.unit, onChanged: onQty);
     final amount = Text(formatPaise(calc.total), style: th.titleSmall, textAlign: TextAlign.right);
-    final del = IconButton(tooltip: l.removeLine, onPressed: onRemove, icon: Icon(Icons.delete_outline, color: c.danger));
+    final del = IconButton(tooltip: l.removeLine, onPressed: onRemove, icon: Icon(Icons.delete_outline_rounded, color: c.danger));
     Future<void> editRate() async {
       final v = await showFormSheet(context, title: l.changeRate, saveLabel: l.save, fields: [FieldSpec('rate', l.colRate, type: FieldType.money, initial: (line.rate / 100).toStringAsFixed(2), required: true, autofocus: true), FieldSpec('disc', l.discountPercentLabel, type: FieldType.number, initial: (line.discountBp / 100).toString())]);
       if (v == null) return;
@@ -289,7 +289,7 @@ class _QtyStepper extends StatelessWidget {
           child: IconButton(tooltip: tip, padding: EdgeInsets.zero, style: IconButton.styleFrom(backgroundColor: c.surfaceAlt, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), onPressed: f, icon: Icon(i, size: 20)),
         );
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      btn(Icons.remove, l.lessQty, () => onChanged(qtyMilli - 1000)),
+      btn(Icons.remove_rounded, l.lessQty, () => onChanged(qtyMilli - 1000)),
       InkWell(
         onTap: () async {
           final v = await showFormSheet(context, title: l.changeQty, saveLabel: l.save, fields: [FieldSpec('q', '${l.colQty} ($unit)', type: FieldType.number, initial: formatQty(qtyMilli), required: true, autofocus: true)]);
@@ -303,7 +303,7 @@ class _QtyStepper extends StatelessWidget {
           child: PulseOnChange(token: qtyMilli, child: Text(formatQty(qtyMilli), style: Theme.of(context).textTheme.titleMedium)),
         ),
       ),
-      btn(Icons.add, l.moreQty, () => onChanged(qtyMilli + 1000)),
+      btn(Icons.add_rounded, l.moreQty, () => onChanged(qtyMilli + 1000)),
     ]);
   }
 }
@@ -364,7 +364,7 @@ class BillFooter extends StatelessWidget {
 
     final Widget pay = invoice
         ? PaymentArea(cart: cart, calc: calc, customerName: customerName, customerBalance: customerBalance, onPay: onPay, onReceived: onReceived, onKeepAdvance: onKeepAdvance)
-        : Row(children: [Icon(Icons.info_outline, size: 18, color: c.textMuted), const SizedBox(width: 8), Expanded(child: Text(l.estimateNoStock, style: th.bodySmall))]);
+        : Row(children: [Icon(Icons.info_outline_rounded, size: 18, color: c.textMuted), const SizedBox(width: 8), Expanded(child: Text(l.estimateNoStock, style: th.bodySmall))]);
 
     final saveLabel = invoice ? l.saveBill : l.saveEstimate;
     final buttons = LayoutBuilder(builder: (ctx, bc) {
@@ -373,8 +373,8 @@ class BillFooter extends StatelessWidget {
       final stacked = big && bc.maxWidth < 640;
       Widget lbl(String t) => FittedBox(fit: BoxFit.scaleDown, child: Text(t, textAlign: TextAlign.center, maxLines: 1));
       Widget? ic(IconData i) => narrow ? null : Icon(i);
-      final save = Tooltip(message: 'Ctrl+S', child: PressScale(child: FilledButton.icon(onPressed: empty ? null : onSave, icon: ic(Icons.save_outlined), label: lbl(saveLabel))));
-      final savePrint = Tooltip(message: 'F9', child: PressScale(child: FilledButton.tonalIcon(onPressed: empty ? null : onSavePrint, icon: ic(Icons.print_outlined), label: lbl(l.saveAndPrint))));
+      final save = Tooltip(message: 'Ctrl+S', child: PressScale(child: FilledButton.icon(onPressed: empty ? null : onSave, icon: ic(Icons.save_rounded), label: lbl(saveLabel))));
+      final savePrint = Tooltip(message: 'F9', child: PressScale(child: FilledButton.tonalIcon(onPressed: empty ? null : onSavePrint, icon: ic(Icons.print_rounded), label: lbl(l.saveAndPrint))));
       if (stacked) {
         return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           save,
@@ -388,7 +388,7 @@ class BillFooter extends StatelessWidget {
         Expanded(flex: 3, child: savePrint),
         if (!narrow) ...[
           const SizedBox(width: 8),
-          Tooltip(message: 'Esc', child: IconButton(onPressed: empty ? null : onClear, icon: const Icon(Icons.layers_clear_outlined), tooltip: l.clearBill)),
+          Tooltip(message: 'Esc', child: IconButton(onPressed: empty ? null : onClear, icon: const Icon(Icons.layers_clear_rounded), tooltip: l.clearBill)),
         ],
       ]);
     });
@@ -470,37 +470,37 @@ class _PaymentAreaState extends State<PaymentArea> {
       if (name == null) {
         text = '$base. ${l.creditPickCustomer}';
         color = c.danger;
-        icon = Icons.person_add_alt;
+        icon = Icons.person_add_alt_rounded;
       } else {
         final owes = widget.customerBalance;
         text = owes == null || owes == 0 ? base : (owes > 0 ? '$base. ${l.creditOwesNow(name, money(owes))}' : '$base. ${l.creditAdvanceNow(name, money(-owes))}');
         color = split.balance > 0 ? c.warning : c.success;
-        icon = Icons.schedule;
+        icon = Icons.schedule_rounded;
       }
     } else if (split.balance > 0) {
       if (name == null) {
         text = l.balanceNeedsCustomer(money(split.balance));
         color = c.danger;
-        icon = Icons.person_add_alt;
+        icon = Icons.person_add_alt_rounded;
       } else {
         text = l.balanceToCredit(money(split.balance), name);
         color = c.warning;
-        icon = Icons.schedule;
+        icon = Icons.schedule_rounded;
       }
     } else if (split.change > 0) {
       if (name != null && widget.cart.keepAdvance) {
         text = l.advanceKeptFor(money(split.change), name);
         color = c.info;
-        icon = Icons.savings_outlined;
+        icon = Icons.savings_rounded;
       } else {
         text = l.changeGiveBack(money(split.change));
         color = c.info;
-        icon = Icons.currency_exchange;
+        icon = Icons.currency_exchange_rounded;
       }
     } else {
       text = l.paidInFull;
       color = c.success;
-      icon = Icons.check_circle_outline;
+      icon = Icons.check_circle_outline_rounded;
     }
     final lineH = scaler.scale(th.bodyMedium?.fontSize ?? 14) * 1.5;
     final fieldH = scaler.scale(16) * 1.5 + 30;
@@ -551,7 +551,7 @@ class _PaymentAreaState extends State<PaymentArea> {
                 child: FittedBox(fit: BoxFit.scaleDown, child: Text(l.fullAmount, maxLines: 1)),
               ),
             ),
-            Tooltip(message: l.nothingReceived, child: IconButton(key: const ValueKey('nothingReceived'), onPressed: () => widget.onPay(PayMode.credit), icon: const Icon(Icons.schedule))),
+            Tooltip(message: l.nothingReceived, child: IconButton(key: const ValueKey('nothingReceived'), onPressed: () => widget.onPay(PayMode.credit), icon: const Icon(Icons.schedule_rounded))),
           ],
         ]),
       ),
@@ -569,10 +569,10 @@ class _PaymentAreaState extends State<PaymentArea> {
       const SizedBox(height: 4),
       SlideSegments<PayMode>(
         options: [
-              (PayMode.cash, l.payCash, Icons.payments_outlined),
-              (PayMode.upi, l.payUpi, Icons.qr_code_2),
-              (PayMode.card, l.payCard, Icons.credit_card),
-              (PayMode.credit, l.payCredit, Icons.schedule),
+              (PayMode.cash, l.payCash, Icons.payments_rounded),
+              (PayMode.upi, l.payUpi, Icons.qr_code_2_rounded),
+              (PayMode.card, l.payCard, Icons.credit_card_rounded),
+              (PayMode.credit, l.payCredit, Icons.schedule_rounded),
         ],
         selected: widget.cart.pay,
         onChanged: widget.onPay,

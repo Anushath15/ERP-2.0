@@ -68,28 +68,28 @@ class DashboardScreen extends ConsumerWidget {
 
     final actions = phone
         ? Column(children: [
-            Row(children: [action(Icons.point_of_sale, l.navNewBill, '/bill', primary: true), const SizedBox(width: 8), action(Icons.request_quote_outlined, l.navNewEstimate, '/estimate')]),
+            Row(children: [action(Icons.point_of_sale_rounded, l.navNewBill, '/bill', primary: true), const SizedBox(width: 8), action(Icons.request_quote_rounded, l.navNewEstimate, '/estimate')]),
             const SizedBox(height: 8),
-            Row(children: [action(Icons.add_box_outlined, l.addProduct, '/products?add=1'), const SizedBox(width: 8), action(Icons.payments_outlined, l.receivePayment, '/credit')]),
+            Row(children: [action(Icons.add_box_rounded, l.addProduct, '/products?add=1'), const SizedBox(width: 8), action(Icons.payments_rounded, l.receivePayment, '/credit')]),
           ])
         : Row(children: [
-            action(Icons.point_of_sale, '${l.navNewBill}  (F2)', '/bill', primary: true),
+            action(Icons.point_of_sale_rounded, '${l.navNewBill}  (F2)', '/bill', primary: true),
             const SizedBox(width: 10),
-            action(Icons.request_quote_outlined, '${l.navNewEstimate}  (F3)', '/estimate'),
+            action(Icons.request_quote_rounded, '${l.navNewEstimate}  (F3)', '/estimate'),
             const SizedBox(width: 10),
-            action(Icons.add_box_outlined, '${l.addProduct}  (Ctrl+Shift+N)', '/products?add=1'),
+            action(Icons.add_box_rounded, '${l.addProduct}  (Ctrl+Shift+N)', '/products?add=1'),
             const SizedBox(width: 10),
-            action(Icons.payments_outlined, l.receivePayment, '/credit'),
+            action(Icons.payments_rounded, l.receivePayment, '/credit'),
           ]);
 
     final stats = LayoutBuilder(builder: (ctx, bc) {
       final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
       final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
       final cards = [
-        StatCard(label: l.statTodaySales, value: '₹ ${formatPaise(todayTotal)}', icon: Icons.trending_up, tone: context.c.success, hint: l.billsCount(hs.today.bills.toString())),
-        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(hs.toCollect)}', icon: Icons.south_west, tone: context.c.warning, hint: l.customersOwing(hs.owingPeople.toString())),
+        StatCard(label: l.statTodaySales, value: '₹ ${formatPaise(todayTotal)}', icon: Icons.trending_up_rounded, tone: context.c.success, hint: l.billsCount(hs.today.bills.toString())),
+        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(hs.toCollect)}', icon: Icons.south_west_rounded, tone: context.c.warning, hint: l.customersOwing(hs.owingPeople.toString())),
         StatCard(label: l.statLow, value: low.length.toString(), icon: Icons.warning_amber_rounded, tone: context.c.danger, hint: l.needReorder),
-        StatCard(label: l.statCashToday, value: '₹ ${formatPaise(hs.today.cash)}', icon: Icons.payments_outlined, hint: l.cashEstimate),
+        StatCard(label: l.statCashToday, value: '₹ ${formatPaise(hs.today.cash)}', icon: Icons.payments_rounded, hint: l.cashEstimate),
       ];
       return Wrap(spacing: 12, runSpacing: 12, children: [for (final c in cards) SizedBox(width: w, child: c)]);
     });

@@ -58,7 +58,7 @@ class BackupStatusLine extends ConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(f == BackupFreshness.fresh ? Icons.cloud_done_outlined : Icons.warning_amber_rounded, size: 18, color: color),
+          Icon(f == BackupFreshness.fresh ? Icons.cloud_done_rounded : Icons.warning_amber_rounded, size: 18, color: color),
           const SizedBox(width: 6),
           Flexible(child: Text(text, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color))),
         ]),
@@ -135,18 +135,18 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
         SectionCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Icon(f == BackupFreshness.fresh ? Icons.cloud_done_outlined : Icons.warning_amber_rounded, color: color, size: 30),
+              Icon(f == BackupFreshness.fresh ? Icons.cloud_done_rounded : Icons.warning_amber_rounded, color: color, size: 30),
               const SizedBox(width: 10),
               Expanded(child: Text(s.last == null ? l.backupNever : l.backupLastLine('${formatDateTime(s.last!)} (${agoLabel(l, s.last!, now)})'), style: th.titleMedium?.copyWith(color: color))),
             ]),
             if (s.lastError != null) ...[
               const SizedBox(height: 8),
-              StatusBadge(l.backupFailed(s.lastError!), kind: BadgeKind.danger, icon: Icons.error_outline),
+              StatusBadge(l.backupFailed(s.lastError!), kind: BadgeKind.danger, icon: Icons.error_outline_rounded),
             ],
             const SizedBox(height: 12),
             Wrap(spacing: 10, runSpacing: 8, children: [
-              FilledButton.icon(key: const ValueKey('backupNow'), onPressed: s.running ? null : _now, icon: s.running ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.backup_outlined), label: Text(s.running ? l.backupRunning : l.backupNow)),
-              OutlinedButton.icon(key: const ValueKey('restoreLink'), onPressed: () => context.go('/restore'), icon: const Icon(Icons.restore), label: Text(l.backupRestoreLink)),
+              FilledButton.icon(key: const ValueKey('backupNow'), onPressed: s.running ? null : _now, icon: s.running ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.backup_rounded), label: Text(s.running ? l.backupRunning : l.backupNow)),
+              OutlinedButton.icon(key: const ValueKey('restoreLink'), onPressed: () => context.go('/restore'), icon: const Icon(Icons.restore_rounded), label: Text(l.backupRestoreLink)),
             ]),
           ]),
         ),
@@ -160,7 +160,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
               OutlinedButton(key: const ValueKey('changeFolder'), onPressed: _pickFolder, child: Text(l.backupChangeFolder)),
               TextButton(onPressed: () => ref.read(backupControllerProvider.notifier).useDefaultFolder(), child: Text(l.backupUseDefault)),
             ]),
-            if (_message != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline)),
+            if (_message != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded)),
           ]),
         ),
         const SizedBox(height: 12),
@@ -169,7 +169,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(l.backupCopyHelp, style: th.bodySmall),
             const SizedBox(height: 8),
-            OutlinedButton.icon(key: const ValueKey('copyBackup'), onPressed: _copying ? null : _copy, icon: const Icon(Icons.usb), label: Text(l.backupCopyButton)),
+            OutlinedButton.icon(key: const ValueKey('copyBackup'), onPressed: _copying ? null : _copy, icon: const Icon(Icons.usb_rounded), label: Text(l.backupCopyButton)),
           ]),
         ),
         const SizedBox(height: 12),
@@ -178,7 +178,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(l.backupYearlyHelp, style: th.bodySmall),
             const SizedBox(height: 8),
-            if (hasArchive) Row(children: [Icon(Icons.check_circle_outline, color: c.success), const SizedBox(width: 8), Expanded(child: Text(l.backupYearlyHave(fy)))]) else FilledButton(key: const ValueKey('makeYearly'), onPressed: s.running ? null : () => ref.read(backupControllerProvider.notifier).run(BackupKind.archive, fy: fy), child: Text(l.backupYearlyMake(fy))),
+            if (hasArchive) Row(children: [Icon(Icons.check_circle_outline_rounded, color: c.success), const SizedBox(width: 8), Expanded(child: Text(l.backupYearlyHave(fy)))]) else FilledButton(key: const ValueKey('makeYearly'), onPressed: s.running ? null : () => ref.read(backupControllerProvider.notifier).run(BackupKind.archive, fy: fy), child: Text(l.backupYearlyMake(fy))),
           ]),
         ),
         const SizedBox(height: 12),
@@ -288,7 +288,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
           dense: true,
           contentPadding: EdgeInsets.zero,
           title: Text(l.backupItem(formatDateTime(b.at), kindLabel(l, b), sizeLabel(b.bytes))),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const Icon(Icons.chevron_right_rounded),
           onTap: _working ? null : () => _inspect(b.path, b.name),
         );
     Widget body;
@@ -306,22 +306,22 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
           SectionCard(
             title: _name,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (!r.ok) StatusBadge(_problemText(l, r.problem), kind: BadgeKind.danger, icon: Icons.error_outline),
+              if (!r.ok) StatusBadge(_problemText(l, r.problem), kind: BadgeKind.danger, icon: Icons.error_outline_rounded),
               if (r.contents != null && r.problem != RestoreProblem.notDatabase && r.problem != RestoreProblem.corrupt)
                 Text(l.restoreContents('${r.contents!.products}', '${r.contents!.customers}', '${r.contents!.bills}', r.contents!.lastBill == null ? '-' : formatDate(r.contents!.lastBill!), r.contents!.madeAt == null ? '-' : formatDateTime(r.contents!.madeAt!)), style: th.bodyMedium),
-              if (_message != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline)),
-              if (r.ok) Padding(padding: const EdgeInsets.only(top: 10), child: FilledButton.icon(key: const ValueKey('restoreNow'), onPressed: _restore, icon: const Icon(Icons.restore), label: Text(l.restoreNow))),
+              if (_message != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded)),
+              if (r.ok) Padding(padding: const EdgeInsets.only(top: 10), child: FilledButton.icon(key: const ValueKey('restoreNow'), onPressed: _restore, icon: const Icon(Icons.restore_rounded), label: Text(l.restoreNow))),
             ]),
           ),
           const SizedBox(height: 12),
         ],
-        if (_message != null && r == null) ...[StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline), const SizedBox(height: 12)],
+        if (_message != null && r == null) ...[StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded), const SizedBox(height: 12)],
         SectionCard(
           title: l.restoreFromList,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (restorable.isEmpty) Text(l.backupNone) else for (final b in restorable.take(20)) item(b),
             const SizedBox(height: 8),
-            OutlinedButton.icon(key: const ValueKey('chooseBackupFile'), onPressed: _choose, icon: const Icon(Icons.folder_open), label: Text(l.restoreChooseFile)),
+            OutlinedButton.icon(key: const ValueKey('chooseBackupFile'), onPressed: _choose, icon: const Icon(Icons.folder_open_rounded), label: Text(l.restoreChooseFile)),
           ]),
         ),
         const SizedBox(height: 12),

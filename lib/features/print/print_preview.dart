@@ -73,7 +73,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
       ),
     ]);
     final actions = [
-      FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print), label: Text(l.print)),
+      FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print_rounded), label: Text(l.print)),
       OutlinedButton.icon(
         key: const ValueKey('printSavePdf'),
         onPressed: () async {
@@ -82,7 +82,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
           final where = await ref.read(fileSaverProvider).save('${kind[0]}${kind.substring(1).toLowerCase()} ${doc.number}.pdf'.replaceAll('/', '-'), bytes);
           if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
         },
-        icon: const Icon(Icons.picture_as_pdf_outlined),
+        icon: const Icon(Icons.picture_as_pdf_rounded),
         label: Text(l.saveAsPdf),
       ),
       if (doc.backTo != null || context.canPop()) TextButton(key: const ValueKey('printBack'), onPressed: () => doc?.backTo != null ? context.go(doc!.backTo!) : context.pop(), child: Text(l.back)),

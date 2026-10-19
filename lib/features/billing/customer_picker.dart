@@ -42,7 +42,7 @@ class _CustomerPickerState extends ConsumerState<_CustomerPicker> {
         padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
         child: Row(children: [
           Expanded(child: Text(l.chooseCustomer, style: th.titleLarge)),
-          IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+          IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
         ]),
       ),
       Padding(
@@ -58,7 +58,7 @@ class _CustomerPickerState extends ConsumerState<_CustomerPicker> {
               ref.read(customersProvider.notifier).add(c);
               if (context.mounted) Navigator.pop(context, c);
             },
-            icon: const Icon(Icons.person_add_alt),
+            icon: const Icon(Icons.person_add_alt_rounded),
             label: Text(context.isPhone ? l.add : l.addCustomer),
           ),
         ]),
@@ -69,7 +69,7 @@ class _CustomerPickerState extends ConsumerState<_CustomerPicker> {
           itemBuilder: (ctx, i) {
             if (i == 0) {
               return ListTile(
-                leading: const Icon(Icons.person_outline),
+                leading: const Icon(Icons.person_outline_rounded),
                 title: Text(l.walkInCustomer, style: th.titleSmall),
                 onTap: () => Navigator.pop(context, const Customer(id: '__walkin', name: '', phone: '', city: '', balancePaise: 0)),
               );

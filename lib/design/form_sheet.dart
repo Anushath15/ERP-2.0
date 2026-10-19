@@ -131,7 +131,7 @@ class _FormBodyState extends State<_FormBody> {
                 ? null
                 : PopupMenuButton<String>(
                     key: ValueKey('combo-menu-${f.key}'),
-                    icon: const Icon(Icons.arrow_drop_down),
+                    icon: const Icon(Icons.arrow_drop_down_rounded),
                     tooltip: f.label,
                     onSelected: (v) => setState(() => _ctl[f.key]!.text = v),
                     itemBuilder: (_) => [for (final o in f.options) PopupMenuItem(value: o.$1, child: Text(o.$2))],
@@ -154,7 +154,7 @@ class _FormBodyState extends State<_FormBody> {
         return TextFormField(
           controller: _ctl[f.key],
           readOnly: true,
-          decoration: InputDecoration(labelText: f.label, suffixIcon: const Icon(Icons.calendar_today)),
+          decoration: InputDecoration(labelText: f.label, suffixIcon: const Icon(Icons.calendar_today_rounded)),
           onTap: () async {
             final now = DateTime.now();
             final d = await showDatePicker(context: context, firstDate: DateTime(now.year - 15), lastDate: DateTime(now.year + 3), initialDate: parseDmy(_ctl[f.key]!.text) ?? now);
@@ -196,7 +196,7 @@ class _FormBodyState extends State<_FormBody> {
             padding: const EdgeInsets.fromLTRB(20, 16, 8, 4),
             child: Row(children: [
               Expanded(child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge)),
-              IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+              IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
             ]),
           ),
           Flexible(
@@ -213,7 +213,7 @@ class _FormBodyState extends State<_FormBody> {
             child: Row(children: [
               Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel))),
               const SizedBox(width: 12),
-              Expanded(flex: 2, child: FilledButton.icon(onPressed: _save, icon: const Icon(Icons.check), label: Text(widget.saveLabel))),
+              Expanded(flex: 2, child: FilledButton.icon(onPressed: _save, icon: const Icon(Icons.check_rounded), label: Text(widget.saveLabel))),
             ]),
           ),
         ]),

@@ -43,14 +43,14 @@ Future<void> showSettleFully(BuildContext context, PartyRef party) async {
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text(party.kind == PartyKind.customer ? l.settleText(_m(owed)) : l.settleTextDealer(_m(owed), party.name)),
             const SizedBox(height: 12),
-            SlideSegments<String>(options: [('cash', l.payCash, Icons.payments_outlined), ('upi', l.payUpi, Icons.qr_code_2), ('card', l.payCard, Icons.credit_card)], selected: mode, onChanged: (v) => setState(() => mode = v)),
+            SlideSegments<String>(options: [('cash', l.payCash, Icons.payments_rounded), ('upi', l.payUpi, Icons.qr_code_2_rounded), ('card', l.payCard, Icons.credit_card_rounded)], selected: mode, onChanged: (v) => setState(() => mode = v)),
             const SizedBox(height: 12),
             TextField(key: const ValueKey('settleNote'), controller: note, inputFormatters: [safeInput(TextKind.note)], decoration: InputDecoration(labelText: l.settleNote)),
           ]),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
-          FilledButton.icon(key: const ValueKey('settleConfirm'), onPressed: () => Navigator.pop(ctx, true), icon: const Icon(Icons.done_all), label: Text(l.settleConfirm(_m(owed)))),
+          FilledButton.icon(key: const ValueKey('settleConfirm'), onPressed: () => Navigator.pop(ctx, true), icon: const Icon(Icons.done_all_rounded), label: Text(l.settleConfirm(_m(owed)))),
         ],
       ),
     ),

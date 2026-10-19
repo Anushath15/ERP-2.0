@@ -113,8 +113,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: Text(l.needCustomerText(formatPaise(balance, symbol: true)))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, 'cancel'), child: Text(l.cancel)),
-          OutlinedButton.icon(onPressed: () => Navigator.pop(ctx, 'new'), icon: const Icon(Icons.person_add_alt), label: Text(l.addNewCustomer)),
-          FilledButton.icon(key: const ValueKey('pickCustomerForCredit'), onPressed: () => Navigator.pop(ctx, 'pick'), icon: const Icon(Icons.person_search_outlined), label: Text(l.chooseCustomer)),
+          OutlinedButton.icon(onPressed: () => Navigator.pop(ctx, 'new'), icon: const Icon(Icons.person_add_alt_rounded), label: Text(l.addNewCustomer)),
+          FilledButton.icon(key: const ValueKey('pickCustomerForCredit'), onPressed: () => Navigator.pop(ctx, 'pick'), icon: const Icon(Icons.person_search_rounded), label: Text(l.chooseCustomer)),
         ],
       ),
     );
@@ -279,7 +279,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
           child: SlideSegments<int>(
-            options: [(0, l.tabProducts, Icons.inventory_2_outlined), (1, l.tabBill(cart.lines.length.toString()), Icons.receipt_long_outlined)],
+            options: [(0, l.tabProducts, Icons.inventory_2_rounded), (1, l.tabBill(cart.lines.length.toString()), Icons.receipt_long_rounded)],
             selected: _phoneTab,
             onChanged: (v) => setState(() => _phoneTab = v),
           ),

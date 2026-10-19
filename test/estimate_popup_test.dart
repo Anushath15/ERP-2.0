@@ -26,7 +26,7 @@ void main() {
     expect(tester.takeException(), isNull);
     final after = (await tester.runAsync(() => c.read(appDataProvider).estimations.list()))!;
     expect(after.length, before.length + 1);
-    expect(find.text('Saved estimates'), findsWidgets, reason: 'the page is still there, not a blank screen');
+    expect(find.text('All estimates'), findsWidgets, reason: 'the page is still there, not a blank screen');
     expect(find.text('Make a copy'), findsNothing, reason: 'the popup is closed');
     expect(find.text(after.first.number), findsWidgets, reason: 'the copy is in the list');
   });
@@ -43,7 +43,7 @@ void main() {
     expect(find.text('Make a copy'), findsNothing, reason: 'no popup on top of the print page');
     await tester.tap(find.byKey(const ValueKey('printBack')));
     await tester.pumpAndSettle();
-    expect(find.text('Saved estimates'), findsWidgets);
+    expect(find.text('All estimates'), findsWidgets);
     expect(find.text('Make a copy'), findsOneWidget, reason: 'the estimate popup is open again');
     expect(find.text(number), findsWidgets);
     expect(tester.takeException(), isNull);
@@ -54,10 +54,10 @@ void main() {
     final number = await firstNumber(tester, c);
     await tester.tap(find.text(number).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.close).last);
+    await tester.tap(find.byIcon(Icons.close_rounded).last);
     await tester.pumpAndSettle();
     expect(find.text('Make a copy'), findsNothing);
-    expect(find.text('Saved estimates'), findsWidgets);
+    expect(find.text('All estimates'), findsWidgets);
     expect(find.text(number), findsWidgets);
   });
 

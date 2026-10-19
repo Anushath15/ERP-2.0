@@ -153,7 +153,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(l.importHelp, style: th.bodyMedium),
         const SizedBox(height: 14),
-        FilledButton.icon(key: const ValueKey('chooseBackup'), onPressed: _choose, icon: const Icon(Icons.folder_open), label: Text(l.chooseBackupFile)),
+        FilledButton.icon(key: const ValueKey('chooseBackup'), onPressed: _choose, icon: const Icon(Icons.folder_open_rounded), label: Text(l.chooseBackupFile)),
         const SizedBox(height: 8),
         Text(l.importSafe, style: th.bodySmall),
       ]),
@@ -168,15 +168,15 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       return SectionCard(
         title: l.importCannotUse,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          StatusBadge(p.error, kind: BadgeKind.danger, icon: Icons.error_outline),
+          StatusBadge(p.error, kind: BadgeKind.danger, icon: Icons.error_outline_rounded),
           const SizedBox(height: 8),
           Text(l.importNothingChanged, style: th.bodySmall),
           const SizedBox(height: 12),
-          OutlinedButton.icon(key: const ValueKey('chooseAnother'), onPressed: _reset, icon: const Icon(Icons.folder_open), label: Text(l.importChooseAnother)),
+          OutlinedButton.icon(key: const ValueKey('chooseAnother'), onPressed: _reset, icon: const Icon(Icons.folder_open_rounded), label: Text(l.importChooseAnother)),
         ]),
       );
     }
-    Widget line(String t, {IconData icon = Icons.check, Color? color}) => Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, size: 18, color: color ?? c.success), const SizedBox(width: 8), Expanded(child: Text(t))]));
+    Widget line(String t, {IconData icon = Icons.check_rounded, Color? color}) => Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, size: 18, color: color ?? c.success), const SizedBox(width: 8), Expanded(child: Text(t))]));
     final n = p.counts;
     final checksum = p.checksum == ChecksumResult.ok.name ? l.importChecksumOk : (p.checksumBad ? l.importChecksumBad : l.importChecksumNone);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -184,7 +184,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         title: l.importWhatWeFound,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(l.importFileName(p.fileName), style: th.bodySmall),
-          line(checksum, icon: p.checksumBad ? Icons.error_outline : Icons.verified_outlined, color: p.checksumBad ? c.danger : c.success),
+          line(checksum, icon: p.checksumBad ? Icons.error_outline_rounded : Icons.verified_rounded, color: p.checksumBad ? c.danger : c.success),
           line(l.importCountsLine('${n['products'] ?? 0}', '${n['customers'] ?? 0}', '${n['dealers'] ?? 0}', '${n['bills'] ?? 0}', '${n['estimates'] ?? 0}')),
           line(l.importSalesLine(rupees(p.salesPaise), '${p.bills}', p.thisMonth.isEmpty ? '-' : p.thisMonth, rupees(p.thisMonthSalesPaise))),
           line(l.importOwedLine('${p.customersOwing}', rupees(p.customersOwedPaise))),
@@ -206,15 +206,15 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         const SizedBox(height: 12),
         SectionCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (p.rejected > 0) line(l.importRejectedLine('${p.rejected}'), icon: Icons.error_outline, color: c.danger),
-            if (p.repaired > 0) line(l.importRepairedLine('${p.repaired}'), icon: Icons.build_outlined, color: c.warning),
+            if (p.rejected > 0) line(l.importRejectedLine('${p.rejected}'), icon: Icons.error_outline_rounded, color: c.danger),
+            if (p.repaired > 0) line(l.importRepairedLine('${p.repaired}'), icon: Icons.build_rounded, color: c.warning),
             if (p.corrections.isNotEmpty) ...[
               Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.importCorrectionsTitle, style: th.titleSmall)),
               for (final t in p.corrections) line(t),
             ],
             if (p.decisions.isNotEmpty) ...[
               Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.importDecisionsTitle, style: th.titleSmall)),
-              for (final t in p.decisions) line(t, icon: Icons.help_outline, color: c.warning),
+              for (final t in p.decisions) line(t, icon: Icons.help_outline_rounded, color: c.warning),
             ],
           ]),
         ),
@@ -232,7 +232,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                 await Clipboard.setData(ClipboardData(text: p.reportText));
                 if (mounted) toast(context, l.importReportCopied);
               },
-              icon: const Icon(Icons.copy),
+              icon: const Icon(Icons.copy_rounded),
               label: Text(l.importCopyReport),
             ),
           ),
@@ -245,7 +245,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       Row(children: [
         OutlinedButton(onPressed: _reset, child: Text(l.cancel)),
         const SizedBox(width: 10),
-        Expanded(child: FilledButton.icon(key: const ValueKey('createNewData'), onPressed: p.canImport ? _create : null, icon: const Icon(Icons.download_done), label: Text(l.importCreate))),
+        Expanded(child: FilledButton.icon(key: const ValueKey('createNewData'), onPressed: p.canImport ? _create : null, icon: const Icon(Icons.download_done_rounded), label: Text(l.importCreate))),
       ]),
     ]);
   }
@@ -254,12 +254,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     final o = _outcome!;
     final th = Theme.of(context).textTheme;
     final c = context.c;
-    Widget line(bool ok, String t) => Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(ok ? Icons.check : Icons.error_outline, size: 18, color: ok ? c.success : c.danger), const SizedBox(width: 8), Expanded(child: Text(t))]));
+    Widget line(bool ok, String t) => Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(ok ? Icons.check_rounded : Icons.error_outline_rounded, size: 18, color: ok ? c.success : c.danger), const SizedBox(width: 8), Expanded(child: Text(t))]));
     if (!o.ok) {
       return SectionCard(
         title: l.importCannotUse,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          StatusBadge(o.error, kind: BadgeKind.danger, icon: Icons.error_outline),
+          StatusBadge(o.error, kind: BadgeKind.danger, icon: Icons.error_outline_rounded),
           const SizedBox(height: 12),
           OutlinedButton(onPressed: _reset, child: Text(l.importDifferentFile)),
         ]),
@@ -276,13 +276,13 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         line(o.selfCheckProblems.isEmpty, l.importCheckSelf),
         for (final m in [...o.mismatches, ...o.selfCheckProblems]) line(false, l.importCheckFailed(m)),
         const SizedBox(height: 12),
-        if (_message != null) StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline),
+        if (_message != null) StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded),
         if (o.allChecksPassed) ...[
           Text(l.importSwitchTitle, style: th.titleMedium),
           Text(l.importSwitchHelp, style: th.bodyMedium),
           const SizedBox(height: 10),
           Wrap(spacing: 10, runSpacing: 8, children: [
-            FilledButton.icon(key: const ValueKey('switchNow'), onPressed: _switch, icon: const Icon(Icons.swap_horiz), label: Text(l.importSwitchNow)),
+            FilledButton.icon(key: const ValueKey('switchNow'), onPressed: _switch, icon: const Icon(Icons.swap_horiz_rounded), label: Text(l.importSwitchNow)),
             OutlinedButton(onPressed: _reset, child: Text(l.importNotNow)),
           ]),
         ] else

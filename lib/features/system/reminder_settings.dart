@@ -93,7 +93,7 @@ class _RemindersCardState extends ConsumerState<RemindersCard> {
               _template.text = std;
               _save(s);
             },
-            icon: const Icon(Icons.restart_alt),
+            icon: const Icon(Icons.restart_alt_rounded),
             label: Text(l.setRemReset),
           ),
         ),

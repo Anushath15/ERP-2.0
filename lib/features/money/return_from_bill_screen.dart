@@ -198,7 +198,7 @@ class _ReturnFromBillState extends ConsumerState<ReturnFromBillScreen> {
     return PageFrame(
       title: s.retTitle(b.number),
       subtitle: s.retSubtitle,
-      actions: [OutlinedButton.icon(onPressed: () => context.go('/sales-returns'), icon: const Icon(Icons.arrow_back), label: Text(s.back))],
+      actions: [OutlinedButton.icon(onPressed: () => context.go('/sales-returns'), icon: const Icon(Icons.arrow_back_rounded), label: Text(s.back))],
       child: !b.anythingLeft
           ? Align(alignment: Alignment.topLeft, child: Text(s.retAllDone, key: const ValueKey('ret-all-done')))
           : ListView(padding: const EdgeInsets.only(bottom: 24), children: [
@@ -221,7 +221,7 @@ class _ReturnFromBillState extends ConsumerState<ReturnFromBillScreen> {
                 child: FilledButton.icon(
                   key: const ValueKey('ret-save'),
                   onPressed: _busy ? null : () => _save(s, b),
-                  icon: _busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.assignment_return_outlined),
+                  icon: _busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.assignment_return_rounded),
                   label: Text(s.retSave),
                 ),
               ),

@@ -101,7 +101,7 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
       TextField(controller: _counted, enabled: !_closed, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setState(() {}), decoration: InputDecoration(labelText: l.closingCounted, prefixText: '₹ ')),
       const SizedBox(height: 10),
       if (_counted.text.isNotEmpty)
-        StatusBadge(diff == 0 ? l.closingTally : (diff > 0 ? l.closingExtra(formatPaise(diff.abs(), symbol: true)) : l.closingShort(formatPaise(diff.abs(), symbol: true))), kind: diff == 0 ? BadgeKind.success : BadgeKind.warning, icon: diff == 0 ? Icons.check_circle_outline : Icons.warning_amber_rounded),
+        StatusBadge(diff == 0 ? l.closingTally : (diff > 0 ? l.closingExtra(formatPaise(diff.abs(), symbol: true)) : l.closingShort(formatPaise(diff.abs(), symbol: true))), kind: diff == 0 ? BadgeKind.success : BadgeKind.warning, icon: diff == 0 ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded),
       const SizedBox(height: 14),
       FilledButton.icon(
         onPressed: _closed || _counted.text.isEmpty ? null : () async {
@@ -111,7 +111,7 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
             if (context.mounted) toast(context, l.closingDone);
           }
         },
-        icon: const Icon(Icons.event_available),
+        icon: const Icon(Icons.event_available_rounded),
         label: Text(_closed ? l.dayClosed : l.closeDay),
       ),
     ]));
@@ -166,10 +166,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     final stats = Wrap(spacing: 12, runSpacing: 12, children: [
       for (final s in [
-        StatCard(label: l.statSales, value: '₹ ${formatPaise(total)}', icon: Icons.trending_up, tone: context.c.success),
-        StatCard(label: l.statBills, value: '${r.bills}', icon: Icons.receipt_long_outlined),
-        StatCard(label: l.statAvgBill, value: '₹ ${formatPaise(avg)}', icon: Icons.calculate_outlined),
-        StatCard(label: l.statProfit, value: '₹ ${formatPaise(profit)}', icon: Icons.savings_outlined, tone: context.c.success, hint: l.profitEstimate),
+        StatCard(label: l.statSales, value: '₹ ${formatPaise(total)}', icon: Icons.trending_up_rounded, tone: context.c.success),
+        StatCard(label: l.statBills, value: '${r.bills}', icon: Icons.receipt_long_rounded),
+        StatCard(label: l.statAvgBill, value: '₹ ${formatPaise(avg)}', icon: Icons.calculate_rounded),
+        StatCard(label: l.statProfit, value: '₹ ${formatPaise(profit)}', icon: Icons.savings_rounded, tone: context.c.success, hint: l.profitEstimate),
       ])
         SizedBox(width: context.isPhone ? double.infinity : 230, child: s),
     ]);
@@ -181,7 +181,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return PageFrame(
       title: l.navReports,
       subtitle: l.reportsSubtitle,
-      actions: [OutlinedButton.icon(key: const ValueKey('reports-export'), onPressed: () => context.go('/export'), icon: const Icon(Icons.ios_share), label: Text(l.navExport))],
+      actions: [OutlinedButton.icon(key: const ValueKey('reports-export'), onPressed: () => context.go('/export'), icon: const Icon(Icons.ios_share_rounded), label: Text(l.navExport))],
       child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
         SegmentedButton<int>(
           showSelectedIcon: false,
@@ -209,12 +209,12 @@ class ExportScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
     final items = <(IconData, String, String, ExportKind)>[
-      (Icons.receipt_long_outlined, l.expSales, l.expSalesHelp, ExportKind.sales),
-      (Icons.inventory_2_outlined, l.expProducts, l.expProductsHelp, ExportKind.products),
-      (Icons.people_outline, l.expCustomers, l.expCustomersHelp, ExportKind.customers),
-      (Icons.account_balance_wallet_outlined, l.expDues, l.expDuesHelp, ExportKind.dues),
-      (Icons.payments_outlined, l.expExpenses, l.expExpensesHelp, ExportKind.expenses),
-      (Icons.percent, l.expGst, l.expGstHelp, ExportKind.gst),
+      (Icons.receipt_long_rounded, l.expSales, l.expSalesHelp, ExportKind.sales),
+      (Icons.inventory_2_rounded, l.expProducts, l.expProductsHelp, ExportKind.products),
+      (Icons.people_outline_rounded, l.expCustomers, l.expCustomersHelp, ExportKind.customers),
+      (Icons.account_balance_wallet_rounded, l.expDues, l.expDuesHelp, ExportKind.dues),
+      (Icons.payments_rounded, l.expExpenses, l.expExpensesHelp, ExportKind.expenses),
+      (Icons.percent_rounded, l.expGst, l.expGstHelp, ExportKind.gst),
     ];
     final th = Theme.of(context).textTheme;
     return PageFrame(

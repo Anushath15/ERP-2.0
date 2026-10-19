@@ -78,7 +78,7 @@ class PurchasesScreen extends ConsumerWidget {
                 Navigator.of(ctx, rootNavigator: true).pop();
                 toast(context, l.markedReceived);
               },
-              icon: const Icon(Icons.inventory_outlined),
+              icon: const Icon(Icons.inventory_rounded),
               label: Text(l.markReceived),
             ),
         ]));
@@ -256,8 +256,8 @@ class DeliveryScreen extends ConsumerWidget {
       phoneSubtitle: (r) => '${r.s('bill')}\n${r.s('address')}',
       phoneTrailing: (c, r) => badge(r),
       onTap: (ctx, r) => showDetail(ctx, title: r.s('bill'), subtitle: r.s('customer'), body: [KeyValue(l.fieldAddress, r.s('address')), KeyValue(l.colStatus, st(r.s('status')).$1, bold: true)], actions: [
-        if (r.s('status') == 'pending') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'out'})); Navigator.of(ctx, rootNavigator: true).pop(); toast(context, l.saved); }, icon: const Icon(Icons.local_shipping_outlined), label: Text(l.markOut)),
-        if (r.s('status') == 'out') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'delivered'})); Navigator.of(ctx, rootNavigator: true).pop(); toast(context, l.saved); }, icon: const Icon(Icons.check), label: Text(l.markDelivered)),
+        if (r.s('status') == 'pending') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'out'})); Navigator.of(ctx, rootNavigator: true).pop(); toast(context, l.saved); }, icon: const Icon(Icons.local_shipping_rounded), label: Text(l.markOut)),
+        if (r.s('status') == 'out') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'delivered'})); Navigator.of(ctx, rootNavigator: true).pop(); toast(context, l.saved); }, icon: const Icon(Icons.check_rounded), label: Text(l.markDelivered)),
       ]),
     );
   }
@@ -288,7 +288,7 @@ class ExpensesScreen extends ConsumerWidget {
         ref.read(recsProvider('expenses').notifier).add(Rec(newId(), {'date': now, 'category': v['category']!, 'note': v['note'] ?? '', 'amount': ((double.tryParse(v['amount']!) ?? 0) * 100).round()}));
         if (context.mounted) toast(context, l.saved);
       },
-      stats: [StatCard(label: l.statExpToday, value: '₹ ${formatPaise(today)}', icon: Icons.today_outlined), StatCard(label: l.statExpMonth, value: '₹ ${formatPaise(month)}', icon: Icons.calendar_month_outlined, tone: context.c.warning)],
+      stats: [StatCard(label: l.statExpToday, value: '₹ ${formatPaise(today)}', icon: Icons.today_rounded), StatCard(label: l.statExpMonth, value: '₹ ${formatPaise(month)}', icon: Icons.calendar_month_rounded, tone: context.c.warning)],
       columns: [
         ColumnSpec(l.colDate, (c, r) => Cell(_d(r, 'date'), muted: true), width: 100),
         ColumnSpec(l.fieldCategory, (c, r) => Cell(r.s('category'), bold: true), flex: 2),
@@ -339,13 +339,13 @@ class NotificationsScreen extends ConsumerWidget {
     final l = tr(context);
     final items = ref.watch(recsProvider('notifications'));
     final th = Theme.of(context).textTheme;
-    IconData icon(String k) => switch (k) { 'stock' => Icons.inventory_2_outlined, 'money' => Icons.account_balance_wallet_outlined, 'backup' => Icons.save_alt, 'sync' => Icons.cloud_done_outlined, 'warranty' => Icons.verified_user_outlined, _ => Icons.request_quote_outlined };
+    IconData icon(String k) => switch (k) { 'stock' => Icons.inventory_2_rounded, 'money' => Icons.account_balance_wallet_rounded, 'backup' => Icons.save_alt_rounded, 'sync' => Icons.cloud_done_rounded, 'warranty' => Icons.verified_user_rounded, _ => Icons.request_quote_rounded };
     return PageFrame(
       title: l.navNotifications,
       subtitle: l.notificationsSubtitle,
-      actions: [OutlinedButton.icon(onPressed: () { for (final r in items) { ref.read(recsProvider('notifications').notifier).replace(r.with_({'read': 1})); } }, icon: const Icon(Icons.done_all), label: Text(l.markAllRead))],
+      actions: [OutlinedButton.icon(onPressed: () { for (final r in items) { ref.read(recsProvider('notifications').notifier).replace(r.with_({'read': 1})); } }, icon: const Icon(Icons.done_all_rounded), label: Text(l.markAllRead))],
       child: items.isEmpty
-          ? EmptyState(icon: Icons.notifications_none, title: l.noNotifications, text: l.noNotificationsHelp)
+          ? EmptyState(icon: Icons.notifications_none_rounded, title: l.noNotifications, text: l.noNotificationsHelp)
           : ListView.separated(
               itemCount: items.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),

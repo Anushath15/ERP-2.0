@@ -160,7 +160,7 @@ class ProblemScreen extends StatelessWidget {
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               const Center(child: AppLogo(size: 72)),
               const SizedBox(height: 16),
-              Row(children: [Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error), const SizedBox(width: 10), Expanded(child: Text(title, style: th.titleLarge))]),
+              Row(children: [Icon(Icons.error_outline_rounded, color: Theme.of(context).colorScheme.error), const SizedBox(width: 10), Expanded(child: Text(title, style: th.titleLarge))]),
               const SizedBox(height: 12),
               Text(text, key: const ValueKey('problemText'), style: th.bodyLarge),
               if (problem.error.detail.isNotEmpty) ...[
@@ -168,14 +168,14 @@ class ProblemScreen extends StatelessWidget {
                 SelectableText(problem.error.detail, key: const ValueKey('problemDetail'), style: th.bodySmall),
               ],
               const SizedBox(height: 20),
-              FilledButton.icon(key: const ValueKey('problemRetry'), onPressed: onRetry, icon: const Icon(Icons.refresh), label: Text(l.probRetry)),
+              FilledButton.icon(key: const ValueKey('problemRetry'), onPressed: onRetry, icon: const Icon(Icons.refresh_rounded), label: Text(l.probRetry)),
               if (problem.mode == DataMode.real && onDemo != null) ...[
                 const SizedBox(height: 10),
-                OutlinedButton.icon(key: const ValueKey('problemDemo'), onPressed: onDemo, icon: const Icon(Icons.school_outlined), label: Text(l.probDemo)),
+                OutlinedButton.icon(key: const ValueKey('problemDemo'), onPressed: onDemo, icon: const Icon(Icons.school_rounded), label: Text(l.probDemo)),
               ],
               if (problem.mode == DataMode.demo && onReal != null) ...[
                 const SizedBox(height: 10),
-                OutlinedButton.icon(onPressed: onReal, icon: const Icon(Icons.storefront_outlined), label: Text(l.probBackToShop)),
+                OutlinedButton.icon(onPressed: onReal, icon: const Icon(Icons.storefront_rounded), label: Text(l.probBackToShop)),
               ],
             ]),
           ),
@@ -201,7 +201,7 @@ class DamagedFileScreen extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Row(children: [Icon(Icons.healing_outlined, color: context.c.danger, size: 32), const SizedBox(width: 10), Expanded(child: Text(l.damagedTitle, style: th.titleLarge))]),
+              Row(children: [Icon(Icons.healing_rounded, color: context.c.danger, size: 32), const SizedBox(width: 10), Expanded(child: Text(l.damagedTitle, style: th.titleLarge))]),
               const SizedBox(height: 12),
               Text(l.damagedText, style: th.bodyLarge),
               const SizedBox(height: 12),
@@ -209,7 +209,7 @@ class DamagedFileScreen extends ConsumerWidget {
               const SizedBox(height: 4),
               Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: context.c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.s)), child: Text(details.take(6).join('\n'), key: const ValueKey('damageDetails'), style: th.bodySmall)),
               const SizedBox(height: 20),
-              FilledButton.icon(key: const ValueKey('restoreFromBackup'), onPressed: () => toast(context, l.restoreLater), icon: const Icon(Icons.restore), label: Text(l.damagedRestore)),
+              FilledButton.icon(key: const ValueKey('restoreFromBackup'), onPressed: () => toast(context, l.restoreLater), icon: const Icon(Icons.restore_rounded), label: Text(l.damagedRestore)),
               const SizedBox(height: 10),
               OutlinedButton(key: const ValueKey('continueAnyway'), onPressed: () => ref.read(fileHealthProvider.notifier).set(FileHealth.ok), child: Text(l.damagedCarryOn)),
             ]),

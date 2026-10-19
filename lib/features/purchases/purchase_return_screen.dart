@@ -125,7 +125,7 @@ class _PurchaseReturnState extends ConsumerState<PurchaseReturnScreen> {
     if (!_loaded) return PageFrame(title: s.navPurchaseReturns, child: const Center(child: CircularProgressIndicator()));
     if (p == null) return PageFrame(title: s.pretNotFoundTitle, child: Align(alignment: Alignment.topLeft, child: Text(s.pretNoPurchase)));
     String m(int paise) => formatPaise(paise, symbol: true);
-    final back = TextButton.icon(onPressed: () => context.go('/purchase-returns'), icon: const Icon(Icons.arrow_back), label: Text(s.back));
+    final back = TextButton.icon(onPressed: () => context.go('/purchase-returns'), icon: const Icon(Icons.arrow_back_rounded), label: Text(s.back));
     if (!p.received) {
       return PageFrame(title: s.pretTitle(p.number), actions: [back], child: Align(alignment: Alignment.topLeft, child: Text(s.pretNotReceived, key: const ValueKey('pret-not-received'))));
     }
@@ -216,7 +216,7 @@ class _PurchaseReturnState extends ConsumerState<PurchaseReturnScreen> {
                 child: FilledButton.icon(
                   key: const ValueKey('pret-save'),
                   onPressed: _busy ? null : () => _save(s, p),
-                  icon: _busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.assignment_return_outlined),
+                  icon: _busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.assignment_return_rounded),
                   label: Text(s.pretSave),
                 ),
               ),

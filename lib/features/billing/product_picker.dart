@@ -153,14 +153,14 @@ class _ProductPickerState extends State<ProductPicker> {
                 _enter();
               },
               textInputAction: TextInputAction.done,
-              decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: l.searchProductHint, suffixIcon: _q.isEmpty ? const Icon(Icons.qr_code_scanner) : IconButton(tooltip: l.clear, onPressed: () => setState(() { _ctl.clear(); _q = ''; _filter(); }), icon: const Icon(Icons.close))),
+              decoration: InputDecoration(prefixIcon: const Icon(Icons.search_rounded), hintText: l.searchProductHint, suffixIcon: _q.isEmpty ? const Icon(Icons.qr_code_scanner_rounded) : IconButton(tooltip: l.clear, onPressed: () => setState(() { _ctl.clear(); _q = ''; _filter(); }), icon: const Icon(Icons.close_rounded))),
             ),
           ),
         ),
         const SizedBox(width: 8),
         Tooltip(
           message: l.addProductShortcut,
-          child: OutlinedButton.icon(onPressed: () => widget.onQuickAdd(_q.trim()), icon: const Icon(Icons.add), label: Text(phone ? l.add : l.addProduct)),
+          child: OutlinedButton.icon(onPressed: () => widget.onQuickAdd(_q.trim()), icon: const Icon(Icons.add_rounded), label: Text(phone ? l.add : l.addProduct)),
         ),
       ]),
       const SizedBox(height: 8),
@@ -213,7 +213,7 @@ class _NoProduct extends StatelessWidget {
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Text(l.noProductFound, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
-          FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add), label: Text(text.isEmpty ? l.addProduct : l.addNamed(text), softWrap: true)),
+          FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add_rounded), label: Text(text.isEmpty ? l.addProduct : l.addNamed(text), softWrap: true)),
         ]),
       ),
     );
@@ -237,15 +237,15 @@ class _ProductRow extends StatelessWidget {
     final name = Text.rich(
       TextSpan(children: [
         TextSpan(text: p.name, style: th.titleMedium?.copyWith(fontWeight: FontWeight.w700)), // wraps, never an ellipsis
-        WidgetSpan(alignment: PlaceholderAlignment.middle, child: AnimatedOpacity(opacity: ticked ? 1 : 0, duration: context.motion.fx(150), child: Padding(padding: const EdgeInsets.only(left: 8), child: Icon(Icons.check_circle, size: 20, color: c.success)))),
+        WidgetSpan(alignment: PlaceholderAlignment.middle, child: AnimatedOpacity(opacity: ticked ? 1 : 0, duration: context.motion.fx(150), child: Padding(padding: const EdgeInsets.only(left: 8), child: Icon(Icons.check_circle_rounded, size: 20, color: c.success)))),
       ]),
     );
     final badges = Wrap(spacing: 6, runSpacing: 4, children: [
-      if (inBill > 0) StatusBadge(l.inBillQty(formatQty(inBill)), kind: BadgeKind.info, icon: Icons.shopping_cart_outlined),
+      if (inBill > 0) StatusBadge(l.inBillQty(formatQty(inBill)), kind: BadgeKind.info, icon: Icons.shopping_cart_rounded),
     ]);
     final stock = Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
       Text('${formatQty(p.stockMilli)} ${p.unit}', style: th.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: p.outOfStock ? c.danger : null)),
-      if (p.outOfStock) Padding(padding: const EdgeInsets.only(top: 3), child: StatusBadge(l.outOfStock, kind: BadgeKind.danger, icon: Icons.block)),
+      if (p.outOfStock) Padding(padding: const EdgeInsets.only(top: 3), child: StatusBadge(l.outOfStock, kind: BadgeKind.danger, icon: Icons.block_rounded)),
       if (p.lowStock) Padding(padding: const EdgeInsets.only(top: 3), child: StatusBadge(l.lowStock, kind: BadgeKind.warning)),
     ]);
     return Semantics(

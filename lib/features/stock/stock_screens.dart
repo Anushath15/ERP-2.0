@@ -23,7 +23,7 @@ Widget _stockCell(BuildContext context, Product p) {
   final l = tr(context);
   return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
     Text('${formatQty(p.stockMilli)} ${p.unit}', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: p.outOfStock ? context.c.danger : null)),
-    if (p.outOfStock) Padding(padding: const EdgeInsets.only(top: 3), child: StatusBadge(l.outOfStock, kind: BadgeKind.danger, icon: Icons.block)),
+    if (p.outOfStock) Padding(padding: const EdgeInsets.only(top: 3), child: StatusBadge(l.outOfStock, kind: BadgeKind.danger, icon: Icons.block_rounded)),
     if (p.lowStock) Padding(padding: const EdgeInsets.only(top: 3), child: StatusBadge(l.lowStock, kind: BadgeKind.warning)),
   ]);
 }
@@ -130,10 +130,10 @@ class InventoryScreen extends ConsumerWidget {
       searchText: (p) => '${p.name} ${p.barcode}',
       searchHint: l.searchProductHint,
       stats: [
-        InkWell(onTap: () => showStockValueSheet(context, ref), child: StatCard(label: l.statStockValue, value: sv == null ? '…' : '₹ ${formatPaise(sv.shownTotal)}', icon: Icons.account_balance_outlined, hint: sv == null ? null : ruleCaption(l, sv))),
-        StatCard(label: l.statItems, value: items.length.toString(), icon: Icons.inventory_2_outlined),
+        InkWell(onTap: () => showStockValueSheet(context, ref), child: StatCard(label: l.statStockValue, value: sv == null ? '…' : '₹ ${formatPaise(sv.shownTotal)}', icon: Icons.account_balance_rounded, hint: sv == null ? null : ruleCaption(l, sv))),
+        StatCard(label: l.statItems, value: items.length.toString(), icon: Icons.inventory_2_rounded),
         StatCard(label: l.statLow, value: low.toString(), icon: Icons.warning_amber_rounded, tone: context.c.warning),
-        StatCard(label: l.statOut, value: out.toString(), icon: Icons.block, tone: context.c.danger),
+        StatCard(label: l.statOut, value: out.toString(), icon: Icons.block_rounded, tone: context.c.danger),
       ],
       filters: [FilterSpec(l.filterLow, (p) => p.lowStock), FilterSpec(l.filterOut, (p) => p.outOfStock)],
       sorts: [(l.sortValueHigh, (a, b) => value(b).compareTo(value(a))), (l.sortStockLow, (a, b) => a.stockMilli.compareTo(b.stockMilli))],
@@ -186,7 +186,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     await showDetail(ctx, title: name, subtitle: l.itemsCount('$used'), body: [Text(n.brand ? l.brandsHelp : l.unitsHelp)], actions: [
       OutlinedButton.icon(
         key: ValueKey('${n.kind}-rename'),
-        icon: const Icon(Icons.edit_outlined),
+        icon: const Icon(Icons.edit_rounded),
         label: Text(n.brand ? l.brandRename : l.unitRename),
         onPressed: () async {
           Navigator.of(ctx, rootNavigator: true).pop();
@@ -208,7 +208,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
       OutlinedButton.icon(
         key: ValueKey('${n.kind}-delete'),
         style: OutlinedButton.styleFrom(foregroundColor: context.c.danger),
-        icon: const Icon(Icons.delete_outline),
+        icon: const Icon(Icons.delete_outline_rounded),
         label: Text(n.brand ? l.brandDelete : l.unitDelete),
         onPressed: () async {
           Navigator.of(ctx, rootNavigator: true).pop();

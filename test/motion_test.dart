@@ -26,13 +26,13 @@ void main() {
       await pumpApp(tester, size: desktop1366, location: '/', motion: MotionLevel.off, followSystemMotion: false);
       routerOf(tester).go('/sales');
       await tester.pump();
-      expect(find.text('Sales register').evaluate().isNotEmpty, true);
+      expect(find.text('All bills').evaluate().isNotEmpty, true);
       expect(tester.hasRunningAnimations, false);
     });
 
     for (final level in [MotionLevel.gentle, MotionLevel.full]) {
       testWidgets('${level.name}: a page change swaps at once and the new page fades in (100 ms) and is finished by 310 ms', (tester) async {
-        double minOpacity() => find.ancestor(of: find.text('Sales register').last, matching: find.byType(FadeTransition)).evaluate().map((e) => (e.widget as FadeTransition).opacity.value).reduce((a, b) => a < b ? a : b);
+        double minOpacity() => find.ancestor(of: find.text('All bills').last, matching: find.byType(FadeTransition)).evaluate().map((e) => (e.widget as FadeTransition).opacity.value).reduce((a, b) => a < b ? a : b);
         await pumpApp(tester, size: desktop1366, location: '/', motion: level, followSystemMotion: false);
         routerOf(tester).go('/sales');
         await tester.pump();
@@ -145,7 +145,7 @@ void main() {
     testWidgets('fast load: nothing flashes; slow load: skeleton (Full) after 150 ms', (tester) async {
       await pumpApp(tester, size: desktop1366, location: '/import', motion: MotionLevel.full, followSystemMotion: false, extraOverrides: importOverrides());
       await tester.pump(const Duration(seconds: 1));
-      await tester.tap(find.byIcon(Icons.folder_open));
+      await tester.tap(find.byIcon(Icons.folder_open_rounded).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.byType(SkeletonBlocks), findsNothing, reason: 'under 150 ms: no placeholder');
@@ -158,7 +158,7 @@ void main() {
     testWidgets('Gentle shows a plain spinner instead of shimmer', (tester) async {
       await pumpApp(tester, size: desktop1366, location: '/import', motion: MotionLevel.gentle, followSystemMotion: false, extraOverrides: importOverrides());
       await tester.pump(const Duration(seconds: 1));
-      await tester.tap(find.byIcon(Icons.folder_open));
+      await tester.tap(find.byIcon(Icons.folder_open_rounded).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(SkeletonBlocks), findsNothing);

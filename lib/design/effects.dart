@@ -356,7 +356,7 @@ class _CheckPopState extends State<_CheckPop> with SingleTickerProviderStateMixi
             opacity: fade.clamp(0.0, 1.0),
             child: Transform.scale(
               scale: scale,
-              child: Container(width: 96, height: 96, decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color), child: Icon(Icons.check, size: 64, color: widget.onColor)),
+              child: Container(width: 96, height: 96, decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color), child: Icon(Icons.check_rounded, size: 64, color: widget.onColor)),
             ),
           );
         },

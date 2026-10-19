@@ -129,7 +129,7 @@ Future<ExportTable> buildExport(AppData d, ExportKind kind) async {
           'ORDER BY b.balance_paise DESC LIMIT ?',
           [maxExportRows]);
       return ExportTable(
-        name: 'Money to collect',
+        name: 'Credit and Dues',
         headers: ['Customer', 'Phone', 'City', 'Owes us', 'Last bill', 'Last payment'],
         rows: [
           for (final x in r)

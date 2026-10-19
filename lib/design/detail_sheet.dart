@@ -30,7 +30,7 @@ class _Detail extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 14, 8, 4),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: th.titleLarge), if (subtitle != null) Text(subtitle!, style: th.bodySmall)])),
-          IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+          IconButton(tooltip: l.close, onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
         ]),
       ),
       Flexible(child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: body))),

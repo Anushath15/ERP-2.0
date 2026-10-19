@@ -71,7 +71,7 @@ ThemeData buildTheme(
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Radii.m),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: c.border.withValues(alpha: 0.7)),
       ),
     ),
@@ -122,6 +122,7 @@ ThemeData buildTheme(
         foregroundColor: c.primary,
         minimumSize: const Size(48, Sizes.touch),
         textStyle: text.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.m)),
       ),
     ),
     chipTheme: ChipThemeData(
@@ -145,15 +146,17 @@ ThemeData buildTheme(
       backgroundColor: c.surfaceAlt,
       contentTextStyle: text.bodyMedium,
       behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.m)),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: c.surface,
       indicatorColor: c.rowSelected,
+      indicatorShape: const StadiumBorder(),
       labelTextStyle: WidgetStatePropertyAll(text.labelMedium),
     ),
     dropdownMenuTheme: DropdownMenuThemeData(textStyle: text.bodyLarge),
     tooltipTheme: TooltipThemeData(
-      decoration: BoxDecoration(color: c.surfaceAlt, borderRadius: BorderRadius.circular(6), border: Border.all(color: c.border)),
+      decoration: BoxDecoration(color: c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.s), border: Border.all(color: c.border)),
       textStyle: text.bodyMedium,
     ),
     switchTheme: SwitchThemeData(

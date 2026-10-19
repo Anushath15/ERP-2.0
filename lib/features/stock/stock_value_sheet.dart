@@ -57,7 +57,7 @@ class _Body extends StatelessWidget {
                 ]),
               ),
               const SizedBox(width: 8),
-              if (v.chosen == r) StatusBadge(l.ruleInUse, kind: BadgeKind.success, icon: Icons.check) else OutlinedButton(key: ValueKey('useRule-${r.name}'), onPressed: () => choose(r), child: Text(l.useThisRule)),
+              if (v.chosen == r) StatusBadge(l.ruleInUse, kind: BadgeKind.success, icon: Icons.check_rounded) else OutlinedButton(key: ValueKey('useRule-${r.name}'), onPressed: () => choose(r), child: Text(l.useThisRule)),
             ]),
           ),
         ),
@@ -67,11 +67,11 @@ class _Body extends StatelessWidget {
           context.go('/fix');
         }, child: Text(l.fixLink('${v.unpricedProducts + v.negatives.length}')))),
       if (v.unpricedProducts > 0) ...[
-        StatusBadge(l.costNotSetLine(v.unpricedProducts.toString(), formatQty(v.unpricedQtyMilli)), kind: BadgeKind.warning, icon: Icons.sell_outlined),
+        StatusBadge(l.costNotSetLine(v.unpricedProducts.toString(), formatQty(v.unpricedQtyMilli)), kind: BadgeKind.warning, icon: Icons.sell_rounded),
         Padding(padding: const EdgeInsets.only(top: 4, bottom: 8), child: Text(l.costNotSetHelp, style: th.bodySmall)),
       ],
       if (v.negatives.isNotEmpty) ...[
-        StatusBadge(l.negativeStockLine(v.negatives.length.toString()), kind: BadgeKind.danger, icon: Icons.error_outline),
+        StatusBadge(l.negativeStockLine(v.negatives.length.toString()), kind: BadgeKind.danger, icon: Icons.error_outline_rounded),
         for (final n in v.negatives.take(10)) Text('${n.name}: ${formatQty(n.stockMilli)}', style: th.bodySmall),
       ],
     ]);

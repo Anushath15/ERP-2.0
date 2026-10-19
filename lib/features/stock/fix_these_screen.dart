@@ -33,7 +33,7 @@ class FixTheseScreen extends ConsumerWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 760),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  if (nothing) SectionCard(child: Row(children: [Icon(Icons.check_circle_outline, color: context.c.success), const SizedBox(width: 8), Expanded(child: Text(l.fixNothing))])),
+                  if (nothing) SectionCard(child: Row(children: [Icon(Icons.check_circle_outline_rounded, color: context.c.success), const SizedBox(width: 8), Expanded(child: Text(l.fixNothing))])),
                   if (sv.negatives.isNotEmpty) ...[
                     SectionCard(
                       title: '${l.fixNegTitle} (${sv.negatives.length})',

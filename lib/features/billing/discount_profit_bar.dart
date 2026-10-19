@@ -119,11 +119,11 @@ class _DiscountProfitBarState extends ConsumerState<DiscountProfitBar> {
         Text(l.discBarTitle, style: th.labelLarge),
         amount,
         percent,
-        if (hasDiscount) IconButton(key: const ValueKey('disc-clear'), tooltip: l.discClear, onPressed: () => widget.onAmount(0), icon: const Icon(Icons.close, size: 18)),
+        if (hasDiscount) IconButton(key: const ValueKey('disc-clear'), tooltip: l.discClear, onPressed: () => widget.onAmount(0), icon: const Icon(Icons.close_rounded, size: 18)),
         Tooltip(
           message: l.profitPrivate,
           child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.lock_outline, size: 16, color: c.textMuted),
+            Icon(Icons.lock_outline_rounded, size: 16, color: c.textMuted),
             const SizedBox(width: 4),
             Text(widget.mode == DocMode.invoice ? l.profitOnBill : l.profitOnEstimate, style: th.bodySmall),
             const SizedBox(width: 6),
@@ -133,7 +133,7 @@ class _DiscountProfitBarState extends ConsumerState<DiscountProfitBar> {
               tooltip: show ? l.profitHide : l.profitShow,
               visualDensity: VisualDensity.compact,
               onPressed: () => ref.read(showProfitProvider.notifier).toggle(),
-              icon: Icon(show ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 18),
+              icon: Icon(show ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 18),
             ),
           ])),
         ),

@@ -34,7 +34,7 @@ class _AuthFrame extends ConsumerWidget {
                 IconButton(
                   tooltip: Theme.of(context).brightness == Brightness.dark ? l.themeLight : l.themeDark,
                   onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(theme: Theme.of(context).brightness == Brightness.dark ? ThemeMode.light : ThemeMode.dark)),
-                  icon: Icon(Theme.of(context).brightness == Brightness.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+                  icon: Icon(Theme.of(context).brightness == Brightness.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
                 ),
               ]),
             ),
@@ -109,15 +109,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             const SizedBox(height: 14),
             Row(children: [const Expanded(child: Divider()), Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(l.orWithEmail, style: th.bodySmall)), const Expanded(child: Divider())]),
             const SizedBox(height: 14),
-            TextField(controller: _email, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.email], decoration: InputDecoration(labelText: l.fieldEmail, prefixIcon: const Icon(Icons.mail_outline))),
+            TextField(controller: _email, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.email], decoration: InputDecoration(labelText: l.fieldEmail, prefixIcon: const Icon(Icons.mail_outline_rounded))),
             const SizedBox(height: 12),
             TextField(
               controller: _pass,
               obscureText: !_show,
               onSubmitted: (_) => _go(),
-              decoration: InputDecoration(labelText: l.fieldPassword, prefixIcon: const Icon(Icons.lock_outline), suffixIcon: IconButton(tooltip: _show ? l.hidePassword : l.showPassword, onPressed: () => setState(() => _show = !_show), icon: Icon(_show ? Icons.visibility_off_outlined : Icons.visibility_outlined))),
+              decoration: InputDecoration(labelText: l.fieldPassword, prefixIcon: const Icon(Icons.lock_outline_rounded), suffixIcon: IconButton(tooltip: _show ? l.hidePassword : l.showPassword, onPressed: () => setState(() => _show = !_show), icon: Icon(_show ? Icons.visibility_off_rounded : Icons.visibility_rounded))),
             ),
-            if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: StatusBadge(_error!, kind: BadgeKind.danger, icon: Icons.error_outline)),
+            if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: StatusBadge(_error!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded)),
             const SizedBox(height: 16),
             FilledButton(onPressed: _go, style: FilledButton.styleFrom(minimumSize: const Size(0, 52)), child: Text(_create ? l.createAccount : l.signIn)),
             const SizedBox(height: 6),
@@ -164,11 +164,11 @@ class _ForgotScreenState extends ConsumerState<ForgotScreen> {
             Text(l.forgotHelp, style: th.bodySmall, textAlign: TextAlign.center),
             const SizedBox(height: 18),
             if (!_sent) ...[
-              TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l.fieldEmail, prefixIcon: const Icon(Icons.mail_outline))),
+              TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l.fieldEmail, prefixIcon: const Icon(Icons.mail_outline_rounded))),
               const SizedBox(height: 16),
               FilledButton(onPressed: () => setState(() => _sent = true), style: FilledButton.styleFrom(minimumSize: const Size(0, 52)), child: Text(l.sendResetLink)),
             ] else ...[
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.mark_email_read_outlined, color: context.c.success), const SizedBox(width: 10), Expanded(child: Text(l.resetSent(_email.text.isEmpty ? 'owner@example.com' : _email.text), style: th.bodyLarge))]),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.mark_email_read_rounded, color: context.c.success), const SizedBox(width: 10), Expanded(child: Text(l.resetSent(_email.text.isEmpty ? 'owner@example.com' : _email.text), style: th.bodyLarge))]),
               const SizedBox(height: 8),
               Text(l.resetSentHelp, style: th.bodySmall),
             ],
@@ -320,7 +320,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
         ]);
       case 4:
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Container(height: 120, decoration: BoxDecoration(color: context.c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.m), border: Border.all(color: context.c.border)), child: Center(child: ref.watch(shopProvider).logoPng.isEmpty ? Icon(Icons.image_outlined, size: 48, color: context.c.textMuted) : ShopLogo(png: ref.watch(shopProvider).logoPng, size: 96))),
+          Container(height: 120, decoration: BoxDecoration(color: context.c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.m), border: Border.all(color: context.c.border)), child: Center(child: ref.watch(shopProvider).logoPng.isEmpty ? Icon(Icons.image_rounded, size: 48, color: context.c.textMuted) : ShopLogo(png: ref.watch(shopProvider).logoPng, size: 96))),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             key: const ValueKey('wizard-logo-choose'),
@@ -335,7 +335,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
               ref.read(shopProvider.notifier).set((x) => x.copyWith(logoPng: b64));
               toast(context, l.logoSaved);
             },
-            icon: const Icon(Icons.upload_file),
+            icon: const Icon(Icons.upload_file_rounded),
             label: Text(l.chooseFile),
           ),
           const SizedBox(height: 8),
@@ -353,8 +353,8 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(l.wizStockText, style: th.bodyLarge),
           const SizedBox(height: 12),
-          for (final e in [(0, l.wizStockLater, Icons.schedule), (1, l.wizStockExcel, Icons.table_chart_outlined), (2, l.wizStockHand, Icons.edit_outlined)])
-            Padding(padding: const EdgeInsets.only(bottom: 8), child: Card(color: _stockChoice == e.$1 ? context.c.rowSelected : null, child: ListTile(minTileHeight: 56, leading: Icon(e.$3), title: Text(e.$2, style: th.titleSmall), trailing: _stockChoice == e.$1 ? Icon(Icons.check_circle, color: context.c.primary) : null, onTap: () => setState(() => _stockChoice = e.$1)))),
+          for (final e in [(0, l.wizStockLater, Icons.schedule_rounded), (1, l.wizStockExcel, Icons.table_chart_rounded), (2, l.wizStockHand, Icons.edit_rounded)])
+            Padding(padding: const EdgeInsets.only(bottom: 8), child: Card(color: _stockChoice == e.$1 ? context.c.rowSelected : null, child: ListTile(minTileHeight: 56, leading: Icon(e.$3), title: Text(e.$2, style: th.titleSmall), trailing: _stockChoice == e.$1 ? Icon(Icons.check_circle_rounded, color: context.c.primary) : null, onTap: () => setState(() => _stockChoice = e.$1)))),
         ]);
     }
     void next() {
@@ -381,7 +381,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
             Row(children: [
               if (_step > 0) OutlinedButton(onPressed: _busy ? null : () => setState(() { _step--; _error = null; }), child: Text(l.back)),
               const Spacer(),
-              if (_step < _total - 1) FilledButton(onPressed: next, child: Text(l.next)) else FilledButton.icon(key: const ValueKey('wizFinish'), onPressed: _busy ? null : () => _finish(l), icon: const Icon(Icons.check), label: Text(l.finish)),
+              if (_step < _total - 1) FilledButton(onPressed: next, child: Text(l.next)) else FilledButton.icon(key: const ValueKey('wizFinish'), onPressed: _busy ? null : () => _finish(l), icon: const Icon(Icons.check_rounded), label: Text(l.finish)),
             ]),
           ]),
         ),

@@ -70,7 +70,7 @@ class AppearanceCard extends ConsumerWidget {
         _Group(
           title: l.setTheme,
           child: SlideSegments<ThemeMode>(
-            options: [(ThemeMode.dark, l.themeDark, Icons.dark_mode_outlined), (ThemeMode.light, l.themeLight, Icons.light_mode_outlined), (ThemeMode.system, l.themeSystem, Icons.brightness_auto_outlined)],
+            options: [(ThemeMode.dark, l.themeDark, Icons.dark_mode_rounded), (ThemeMode.light, l.themeLight, Icons.light_mode_rounded), (ThemeMode.system, l.themeSystem, Icons.brightness_auto_rounded)],
             selected: s.theme,
             onChanged: (v) => set((x) => x.copyWith(theme: v)),
           ),
@@ -95,7 +95,7 @@ class AppearanceCard extends ConsumerWidget {
                       color: Theme.of(context).brightness == Brightness.dark ? a.dark : a.light,
                       border: Border.all(color: s.accent == a ? c.text : c.border, width: s.accent == a ? 3 : 1),
                     ),
-                    child: s.accent == a ? Icon(Icons.check, color: contrastRatio(Colors.black, Theme.of(context).brightness == Brightness.dark ? a.dark : a.light) > 4.5 ? Colors.black : Colors.white) : null,
+                    child: s.accent == a ? Icon(Icons.check_rounded, color: contrastRatio(Colors.black, Theme.of(context).brightness == Brightness.dark ? a.dark : a.light) > 4.5 ? Colors.black : Colors.white) : null,
                   ),
                 ),
               ),
@@ -113,7 +113,7 @@ class AppearanceCard extends ConsumerWidget {
           help: l.setTextSizeHelp,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              IconButton(tooltip: l.textSmaller, onPressed: () => set((x) => x.copyWith(textScale: TextZoom.down(x.textScale))), icon: const Icon(Icons.text_decrease)),
+              IconButton(tooltip: l.textSmaller, onPressed: () => set((x) => x.copyWith(textScale: TextZoom.down(x.textScale))), icon: const Icon(Icons.text_decrease_rounded)),
               Expanded(
                 child: Slider(
                   key: const ValueKey('textSlider'),
@@ -125,7 +125,7 @@ class AppearanceCard extends ConsumerWidget {
                   onChanged: (v) => set((x) => x.copyWith(textScale: (v * 20).round() / 20)),
                 ),
               ),
-              IconButton(tooltip: l.textLarger, onPressed: () => set((x) => x.copyWith(textScale: TextZoom.up(x.textScale))), icon: const Icon(Icons.text_increase)),
+              IconButton(tooltip: l.textLarger, onPressed: () => set((x) => x.copyWith(textScale: TextZoom.up(x.textScale))), icon: const Icon(Icons.text_increase_rounded)),
             ]),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final p in [(l.sizeSmall, 0.9), (l.sizeNormal, 1.0), (l.sizeLarge, 1.25), (l.sizeExtraLarge, 1.5), (l.sizeHuge, 2.0)])
@@ -136,7 +136,7 @@ class AppearanceCard extends ConsumerWidget {
             const SizedBox(height: 8),
             const SampleBillRow(scale: 1.0),
             const SizedBox(height: 8),
-            Align(alignment: Alignment.centerLeft, child: OutlinedButton.icon(onPressed: () => set((x) => x.copyWith(textScale: 1.0)), icon: const Icon(Icons.restart_alt), label: Text(l.resetNormal))),
+            Align(alignment: Alignment.centerLeft, child: OutlinedButton.icon(onPressed: () => set((x) => x.copyWith(textScale: 1.0)), icon: const Icon(Icons.restart_alt_rounded), label: Text(l.resetNormal))),
           ]),
         ),
         _Group(
@@ -154,7 +154,7 @@ class AppearanceCard extends ConsumerWidget {
             ),
             SampleBillRow(scale: s.billingScale),
             const SizedBox(height: 8),
-            Align(alignment: Alignment.centerLeft, child: OutlinedButton.icon(onPressed: () => set((x) => x.copyWith(billingScale: 1.0)), icon: const Icon(Icons.restart_alt), label: Text(l.resetNormal))),
+            Align(alignment: Alignment.centerLeft, child: OutlinedButton.icon(onPressed: () => set((x) => x.copyWith(billingScale: 1.0)), icon: const Icon(Icons.restart_alt_rounded), label: Text(l.resetNormal))),
           ]),
         ),
         _Group(
@@ -220,7 +220,7 @@ class AnimationsCard extends ConsumerWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: context.c.badgeBgInfo, borderRadius: BorderRadius.circular(Radii.m), border: Border.all(color: context.c.info.withValues(alpha: 0.5))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [Icon(Icons.speed, color: context.c.info), const SizedBox(width: 8), Expanded(child: Text(l.animAutoNote, style: th.bodyMedium?.copyWith(color: context.c.info)))]),
+              Row(children: [Icon(Icons.speed_rounded, color: context.c.info), const SizedBox(width: 8), Expanded(child: Text(l.animAutoNote, style: th.bodyMedium?.copyWith(color: context.c.info)))]),
               const SizedBox(height: 8),
               OutlinedButton(onPressed: () => set((x) => x.copyWith(motion: MotionLevel.gentle, motionAutoReduced: false)), child: Text(l.animTurnBackOn)),
             ]),

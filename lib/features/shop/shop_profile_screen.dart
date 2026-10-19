@@ -64,7 +64,7 @@ class ShopProfileScreen extends ConsumerWidget {
               set((x) => x.copyWith(logoPng: b64));
               toast(context, l.logoSaved);
             },
-            icon: const Icon(Icons.image_outlined),
+            icon: const Icon(Icons.image_rounded),
             label: Text(l.chooseFile),
           ),
           if (s.logoPng.isNotEmpty) TextButton(key: const ValueKey('shop-logo-remove'), onPressed: () => set((x) => x.copyWith(logoPng: '')), child: Text(l.logoRemove)),
@@ -116,11 +116,11 @@ class ShopProfileScreen extends ConsumerWidget {
       title: l.navShop,
       subtitle: l.shopProfileSubtitle,
       actions: [
-        OutlinedButton.icon(key: const ValueKey('shop-settings'), onPressed: () => context.push('/settings'), icon: const Icon(Icons.settings_outlined), label: Text(l.navSettings)),
+        OutlinedButton.icon(key: const ValueKey('shop-settings'), onPressed: () => context.push('/settings'), icon: const Icon(Icons.settings_rounded), label: Text(l.navSettings)),
         OutlinedButton.icon(key: const ValueKey('shop-signout'), onPressed: () async {
           final ok = await confirmDialog(context, title: l.signOutConfirmTitle, message: l.signOutConfirmText, confirmLabel: l.signOut, danger: true);
           if (ok && context.mounted) context.go('/signin');
-        }, icon: const Icon(Icons.logout), label: Text(l.signOut)),
+        }, icon: const Icon(Icons.logout_rounded), label: Text(l.signOut)),
       ],
       child: context.isDesktop
           ? SingleChildScrollView(

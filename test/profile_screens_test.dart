@@ -37,9 +37,9 @@ void main() {
       final s = sample();
       await app(tester, '/credit');
       expect(find.text('Add credit customer'), findsOneWidget);
-      expect(find.text('Settle fully'), findsWidgets);
+      expect(find.text('Clear full balance'), findsWidgets);
       expect(find.text('Receive payment'), findsWidgets);
-      expect(find.byIcon(Icons.add_card_outlined), findsWidgets);
+      expect(find.byIcon(Icons.add_card_rounded), findsWidgets);
       expect(s.c.name, isNotEmpty);
     });
 
@@ -49,7 +49,7 @@ void main() {
       final before = c.read(creditProvider)[s.c.id]!.balance;
       await tester.tap(find.byKey(const ValueKey('settleFully')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Settle ${s.c.name} fully'), findsOneWidget);
+      expect(find.textContaining('Clear the full balance of ${s.c.name}'), findsOneWidget);
       await tester.tap(find.text('UPI'));
       await tester.enterText(find.byKey(const ValueKey('settleNote')), 'Paid at the counter');
       await tester.tap(find.byKey(const ValueKey('settleConfirm')));
@@ -198,7 +198,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('cust-account-open')));
       await tester.pumpAndSettle();
       expect(find.text('Pay dealer'), findsOneWidget, reason: 'the account status page');
-      expect(find.text('Settle fully'), findsOneWidget);
+      expect(find.text('Clear full balance'), findsOneWidget);
     });
 
     testWidgets('profile: balance we owe, started, last payment, last purchase, next payment due, ledger; no reminder or sharing buttons', (tester) async {

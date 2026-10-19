@@ -66,8 +66,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     final lastBk = ref.watch(backupControllerProvider).last;
     final backup = SectionCard(title: l.setBackup, child: Column(children: [
-      row(l.lastBackup, lastBk == null ? l.noBackupYet : l.lastBackupValue(formatDateTime(lastBk)), FilledButton.icon(key: const ValueKey('openBackups'), onPressed: () => context.go('/backups'), icon: const Icon(Icons.save_alt), label: Text(l.navBackups))),
-      row(l.restore, l.restoreHelp, OutlinedButton.icon(key: const ValueKey('openRestore'), onPressed: () => context.go('/restore'), icon: const Icon(Icons.restore), label: Text(l.restoreTitle))),
+      row(l.lastBackup, lastBk == null ? l.noBackupYet : l.lastBackupValue(formatDateTime(lastBk)), FilledButton.icon(key: const ValueKey('openBackups'), onPressed: () => context.go('/backups'), icon: const Icon(Icons.save_alt_rounded), label: Text(l.navBackups))),
+      row(l.restore, l.restoreHelp, OutlinedButton.icon(key: const ValueKey('openRestore'), onPressed: () => context.go('/restore'), icon: const Icon(Icons.restore_rounded), label: Text(l.restoreTitle))),
     ]));
 
     final sync = SectionCard(title: l.setSync, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -77,7 +77,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           set((x) => x.copyWith(sync: SyncState.syncing));
           await Future<void>.delayed(const Duration(milliseconds: 600));
           if (mounted) set((x) => x.copyWith(sync: SyncState.synced));
-        }, icon: const Icon(Icons.sync), label: Text(l.syncNow)),
+        }, icon: const Icon(Icons.sync_rounded), label: Text(l.syncNow)),
       ])),
       if (s.sync == SyncState.paused) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.syncPausedHelp, style: th.bodyMedium)),
       row(l.quotaTitle, l.quotaHelp, Text(l.quotaValue('3'), style: th.titleSmall)),
@@ -105,7 +105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final cards = [look, anim, printing, sounds, backup, sync, security, people, demo];
     return PageFrame(
       title: l.navSettings,
-      actions: [if (context.canPop()) TextButton.icon(key: const ValueKey('settings-back'), onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back), label: Text(l.back))],
+      actions: [if (context.canPop()) TextButton.icon(key: const ValueKey('settings-back'), onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded), label: Text(l.back))],
       child: context.isDesktop
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
@@ -200,25 +200,25 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     final damaged = health == FileHealth.damaged;
     final last = info?.lastFullCheck ?? info?.lastSelfCheck;
     final cards = [
-      item(damaged ? Icons.error_outline : Icons.verified_outlined, damaged ? c.danger : c.success, l.healthIntegrity, damaged ? l.healthDamaged : (problems.isEmpty ? l.healthOk : l.healthProblemsFound(problems.length.toString())),
+      item(damaged ? Icons.error_outline_rounded : Icons.verified_rounded, damaged ? c.danger : c.success, l.healthIntegrity, damaged ? l.healthDamaged : (problems.isEmpty ? l.healthOk : l.healthProblemsFound(problems.length.toString())),
           help: last == null ? l.healthNeverChecked : l.healthIntegrityHelp(formatDateTime(last)),
-          action: OutlinedButton.icon(key: const ValueKey('checkNow'), onPressed: _checking ? null : () => _checkNow(l), icon: _checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.search), label: Text(l.checkNow))),
-      item(Icons.save_alt, backupColor(ref, c), l.lastBackup, bk == null ? l.noBackupYet : formatDateTime(bk), help: l.backupsSubtitle, action: OutlinedButton(key: const ValueKey('healthBackups'), onPressed: () => context.go('/backups'), child: Text(l.healthBackupLink))),
-      item(Icons.storage_outlined, info?.freeBytes != null && info!.freeBytes! < 500 * 1024 * 1024 ? c.warning : c.primary, l.freeDisk, info?.freeBytes == null ? l.healthUnknown : _size(info!.freeBytes!), help: l.freeDiskHelp),
-      item(Icons.cloud_upload_outlined, (info?.pendingUploads ?? 0) > 0 ? c.warning : c.success, l.syncBacklog, l.syncBacklogValue('${info?.pendingUploads ?? 0}'), help: l.syncBacklogHelp),
-      item(Icons.inventory_outlined, problems.isEmpty ? c.success : c.warning, l.healthTotals, problems.isEmpty ? l.healthTotalsOk : l.healthProblemsFound(problems.length.toString()), help: l.healthTotalsHelp, action: OutlinedButton(key: const ValueKey('rebuildTotals'), onPressed: () => _rebuild(l), child: Text(l.rebuildTotals))),
-      item(Icons.fact_check_outlined, c.primary, l.healthCountsTitle, counts == null ? l.healthUnknown : l.healthCountsLine('${counts.products}', '${counts.customers}', '${counts.dealers}', '${counts.bills}'),
+          action: OutlinedButton.icon(key: const ValueKey('checkNow'), onPressed: _checking ? null : () => _checkNow(l), icon: _checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.search_rounded), label: Text(l.checkNow))),
+      item(Icons.save_alt_rounded, backupColor(ref, c), l.lastBackup, bk == null ? l.noBackupYet : formatDateTime(bk), help: l.backupsSubtitle, action: OutlinedButton(key: const ValueKey('healthBackups'), onPressed: () => context.go('/backups'), child: Text(l.healthBackupLink))),
+      item(Icons.storage_rounded, info?.freeBytes != null && info!.freeBytes! < 500 * 1024 * 1024 ? c.warning : c.primary, l.freeDisk, info?.freeBytes == null ? l.healthUnknown : _size(info!.freeBytes!), help: l.freeDiskHelp),
+      item(Icons.cloud_upload_rounded, (info?.pendingUploads ?? 0) > 0 ? c.warning : c.success, l.syncBacklog, l.syncBacklogValue('${info?.pendingUploads ?? 0}'), help: l.syncBacklogHelp),
+      item(Icons.inventory_rounded, problems.isEmpty ? c.success : c.warning, l.healthTotals, problems.isEmpty ? l.healthTotalsOk : l.healthProblemsFound(problems.length.toString()), help: l.healthTotalsHelp, action: OutlinedButton(key: const ValueKey('rebuildTotals'), onPressed: () => _rebuild(l), child: Text(l.rebuildTotals))),
+      item(Icons.fact_check_rounded, c.primary, l.healthCountsTitle, counts == null ? l.healthUnknown : l.healthCountsLine('${counts.products}', '${counts.customers}', '${counts.dealers}', '${counts.bills}'),
           help: [if (counts?.lastBill != null) l.healthLastBill(formatDate(counts!.lastBill!)), if (counts?.importedFromErp1 != null) l.healthImportedFrom(formatDate(counts!.importedFromErp1!))].join('. ')),
-      item(Icons.account_balance_outlined, (sv?.negatives.isNotEmpty ?? false) ? c.warning : c.primary, l.healthStockValue, sv == null ? l.healthUnknown : '₹ ${formatPaise(sv.shownTotal)}', help: sv == null ? null : '${ruleCaption(l, sv)}. ${l.healthStockValueHelp(sv.negatives.length.toString(), sv.unpricedProducts.toString())}', action: Wrap(spacing: 8, runSpacing: 8, children: [OutlinedButton(key: const ValueKey('stockValueDetails'), onPressed: () => showStockValueSheet(context, ref), child: Text(l.stockValueTitle)), if (fixCount > 0) FilledButton(key: const ValueKey('fixThese'), onPressed: () => context.go('/fix'), child: Text(l.fixLink('$fixCount')))])),
-      item(Icons.memory, c.primary, l.databaseSize, info?.fileBytes == null ? l.healthUnknown : _size(info!.fileBytes!), help: l.databaseSizeHelp('1,000,000')),
+      item(Icons.account_balance_rounded, (sv?.negatives.isNotEmpty ?? false) ? c.warning : c.primary, l.healthStockValue, sv == null ? l.healthUnknown : '₹ ${formatPaise(sv.shownTotal)}', help: sv == null ? null : '${ruleCaption(l, sv)}. ${l.healthStockValueHelp(sv.negatives.length.toString(), sv.unpricedProducts.toString())}', action: Wrap(spacing: 8, runSpacing: 8, children: [OutlinedButton(key: const ValueKey('stockValueDetails'), onPressed: () => showStockValueSheet(context, ref), child: Text(l.stockValueTitle)), if (fixCount > 0) FilledButton(key: const ValueKey('fixThese'), onPressed: () => context.go('/fix'), child: Text(l.fixLink('$fixCount')))])),
+      item(Icons.memory_rounded, c.primary, l.databaseSize, info?.fileBytes == null ? l.healthUnknown : _size(info!.fileBytes!), help: l.databaseSizeHelp('1,000,000')),
     ];
     final attention = SectionCard(
       title: l.needsAttention,
       child: problems.isEmpty && (info?.needAttention ?? 0) == 0 && !damaged
-          ? Row(children: [Icon(Icons.check_circle_outline, color: c.success), const SizedBox(width: 8), Expanded(child: Text(l.nothingNeedsAttention))])
+          ? Row(children: [Icon(Icons.check_circle_outline_rounded, color: c.success), const SizedBox(width: 8), Expanded(child: Text(l.nothingNeedsAttention))])
           : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              for (final p in problems.take(8)) Padding(padding: const EdgeInsets.only(bottom: 6), child: StatusBadge(p, kind: BadgeKind.danger, icon: Icons.error_outline)),
-              if ((info?.needAttention ?? 0) > 0) StatusBadge(l.syncAttention('${info!.needAttention}'), kind: BadgeKind.danger, icon: Icons.error_outline),
+              for (final p in problems.take(8)) Padding(padding: const EdgeInsets.only(bottom: 6), child: StatusBadge(p, kind: BadgeKind.danger, icon: Icons.error_outline_rounded)),
+              if ((info?.needAttention ?? 0) > 0) StatusBadge(l.syncAttention('${info!.needAttention}'), kind: BadgeKind.danger, icon: Icons.error_outline_rounded),
               const SizedBox(height: 8),
               Text(l.attentionHelp2, style: th.bodyMedium),
             ]),
@@ -233,7 +233,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
           if (swapRes != null) ...[
             SectionCard(
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(swapRes.ok ? Icons.check_circle_outline : Icons.error_outline, color: swapRes.ok ? c.success : c.danger),
+                Icon(swapRes.ok ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded, color: swapRes.ok ? c.success : c.danger),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(swapRes.ok
@@ -314,12 +314,12 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(l.aboutText, style: th.bodyLarge),
           const SizedBox(height: 12),
-          StatusBadge(l.aboutPrototype, kind: BadgeKind.warning, icon: Icons.science_outlined),
+          StatusBadge(l.aboutPrototype, kind: BadgeKind.warning, icon: Icons.science_rounded),
         ])),
         const SizedBox(height: 12),
         SectionCard(title: l.aboutPrivacy, child: Text(l.aboutPrivacyText, style: th.bodyMedium)),
         const SizedBox(height: 12),
-        OutlinedButton.icon(onPressed: () => showLicensePage(context: context, applicationName: l.appName, applicationVersion: '2.0.0-preview.1'), icon: const Icon(Icons.description_outlined), label: Text(l.aboutLicenses)),
+        OutlinedButton.icon(onPressed: () => showLicensePage(context: context, applicationName: l.appName, applicationVersion: '2.0.0-preview.1'), icon: const Icon(Icons.description_rounded), label: Text(l.aboutLicenses)),
       ])))),
     );
   }
@@ -342,7 +342,7 @@ class MoreScreen extends StatelessWidget {
               minTileHeight: 52,
               leading: Icon(g.items[i].icon, color: context.c.primary),
               title: Text(g.items[i].label(l), style: th.titleSmall),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => context.go(g.items[i].path),
             ),
           ],

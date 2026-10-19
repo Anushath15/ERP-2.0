@@ -108,11 +108,11 @@ Future<void> showBillPopup(BuildContext context, WidgetRef ref, BillRow b, {Stri
         ref.read(printDocProvider.notifier).set(PrintDoc(extraDiscountBp: d.extraDiscountBp, mode: DocMode.invoice, number: b.number, date: b.at, customer: custName(b), customerPhone: cust?.phone ?? '', customerGstin: cust?.gstin ?? '', lines: lines, calc: calc, pay: pay, receivedPaise: d.received, changePaise: d.change, advanceKeptPaise: d.advanceKept, backTo: backTo ?? '/sales?open=${Uri.encodeQueryComponent(b.id)}'));
         unawaited(context.push('/print'));
       },
-      icon: const Icon(Icons.print_outlined),
+      icon: const Icon(Icons.print_rounded),
       label: Text(l.printAgain),
     ),
     if (!cancelledNow)
-      OutlinedButton.icon(key: const ValueKey('bill-return-items'), onPressed: () { Navigator.of(ctx, rootNavigator: true).pop(); context.go('/sales-returns/bill/${b.id}'); }, icon: const Icon(Icons.assignment_return_outlined), label: Text(l.returnItems)),
+      OutlinedButton.icon(key: const ValueKey('bill-return-items'), onPressed: () { Navigator.of(ctx, rootNavigator: true).pop(); context.go('/sales-returns/bill/${b.id}'); }, icon: const Icon(Icons.assignment_return_rounded), label: Text(l.returnItems)),
     if (!cancelledNow)
       OutlinedButton.icon(
         style: OutlinedButton.styleFrom(foregroundColor: context.c.danger),
@@ -131,7 +131,7 @@ Future<void> showBillPopup(BuildContext context, WidgetRef ref, BillRow b, {Stri
             }
           }
         },
-        icon: const Icon(Icons.block),
+        icon: const Icon(Icons.block_rounded),
         label: Text(l.cancelBill),
       ),
   ]));
@@ -168,9 +168,9 @@ class SalesRegisterScreen extends ConsumerWidget {
       addLabel: l.navNewBill,
       onAdd: () => context.go('/bill'),
       stats: [
-        StatCard(label: l.statTodaySales, value: '₹ ${formatPaise(todayTotal)}', icon: Icons.trending_up, tone: context.c.success),
-        StatCard(label: l.statBillsToday, value: stats.today.bills.toString(), icon: Icons.receipt_long_outlined),
-        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(due)}', icon: Icons.south_west, tone: context.c.warning),
+        StatCard(label: l.statTodaySales, value: '₹ ${formatPaise(todayTotal)}', icon: Icons.trending_up_rounded, tone: context.c.success),
+        StatCard(label: l.statBillsToday, value: stats.today.bills.toString(), icon: Icons.receipt_long_rounded),
+        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(due)}', icon: Icons.south_west_rounded, tone: context.c.warning),
       ],
       filters: [
         FilterSpec<BillRow>(l.statusPaid, (_) => true),
@@ -216,7 +216,7 @@ class EstimationsScreen extends ConsumerWidget {
     final products = ref.watch(productsProvider);
     final customers = ref.watch(customersProvider);
     final th = Theme.of(context).textTheme;
-    Widget status(EstimationDoc e) => e.convertedTo != null ? StatusBadge(l.statusConverted, kind: BadgeKind.success, icon: Icons.check) : (e.editedOn != null ? StatusBadge(l.statusEdited, kind: BadgeKind.info, icon: Icons.edit_outlined) : StatusBadge(l.statusOpen, kind: BadgeKind.neutral));
+    Widget status(EstimationDoc e) => e.convertedTo != null ? StatusBadge(l.statusConverted, kind: BadgeKind.success, icon: Icons.check_rounded) : (e.editedOn != null ? StatusBadge(l.statusEdited, kind: BadgeKind.info, icon: Icons.edit_rounded) : StatusBadge(l.statusOpen, kind: BadgeKind.neutral));
 
     Future<List<CartLine>> cartLines(EstimationDoc e) async {
       final ls = await ref.read(appDataProvider).estimations.lines(e.number);
@@ -234,7 +234,7 @@ class EstimationsScreen extends ConsumerWidget {
           if (e.editedOn != null) KeyValue(l.rcEditedOn, formatDate(e.editedOn!)),
           KeyValue(l.statItems, '${e.lines}'),
           KeyValue(l.grandTotal, '₹ ${formatPaise(e.totalPaise)}', bold: true),
-          if (converted) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(l.convertedTo(e.convertedTo!), kind: BadgeKind.success, icon: Icons.check)),
+          if (converted) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(l.convertedTo(e.convertedTo!), kind: BadgeKind.success, icon: Icons.check_rounded)),
           const SizedBox(height: 8),
           Text(l.estimateNoStock, style: th.bodySmall),
         ], actions: [
@@ -247,7 +247,7 @@ class EstimationsScreen extends ConsumerWidget {
               ref.read(printDocProvider.notifier).set(PrintDoc(mode: DocMode.estimation, number: e.number, date: e.date, editedOn: e.editedOn, customer: e.customer.isEmpty ? l.walkInCustomer : e.customer, customerPhone: estCust?.phone ?? '', lines: lines, calc: calcBill(lines, inclusive: inclusive, extraDiscountPaise: e.extraDiscountPaise, extraDiscountBp: e.extraDiscountBp), pay: PayMode.cash, extraDiscountBp: e.extraDiscountBp, backTo: '/estimates?open=${Uri.encodeQueryComponent(e.number)}'));
               if (context.mounted) unawaited(context.push('/print'));
             },
-            icon: const Icon(Icons.print_outlined),
+            icon: const Icon(Icons.print_rounded),
             label: Text(l.print),
           ),
           OutlinedButton.icon(
@@ -256,7 +256,7 @@ class EstimationsScreen extends ConsumerWidget {
               await ref.read(cartProvider(DocMode.estimation).notifier).loadForEdit(e, products, customers);
               if (context.mounted) context.go('/estimate');
             },
-            icon: const Icon(Icons.edit_outlined),
+            icon: const Icon(Icons.edit_rounded),
             label: Text(l.edit),
           ),
           OutlinedButton.icon(
@@ -267,7 +267,7 @@ class EstimationsScreen extends ConsumerWidget {
               await ref.read(estimationsProvider.notifier).save(lines: ls, totalPaise: e.totalPaise, customerName: e.customer, customerId: custId, at: ref.read(clockProvider), extraDiscountPaise: e.extraDiscountPaise, extraDiscountBp: e.extraDiscountBp);
               if (context.mounted) toast(context, l.duplicated);
             },
-            icon: const Icon(Icons.copy_outlined),
+            icon: const Icon(Icons.copy_rounded),
             label: Text(l.duplicate),
           ),
           FilledButton.icon(
@@ -296,7 +296,7 @@ class EstimationsScreen extends ConsumerWidget {
                     await ref.read(estimationsProvider.notifier).reload();
                     if (context.mounted) toast(context, l.convertedToast(e.number, bill.number));
                   },
-            icon: const Icon(Icons.receipt_long_outlined),
+            icon: const Icon(Icons.receipt_long_rounded),
             label: Text(l.convertToInvoice),
           ),
           OutlinedButton.icon(
@@ -311,7 +311,7 @@ class EstimationsScreen extends ConsumerWidget {
                 if (context.mounted) toast(context, l.deleted);
               }
             },
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(Icons.delete_outline_rounded),
             label: Text(l.delete),
           ),
         ]);

@@ -38,8 +38,8 @@ seeAll | See all
 navDashboard | Home
 navNewBill | New bill
 navNewEstimate | New estimate
-navSavedEstimates | Saved estimates
-navSalesRegister | Sales register
+navSavedEstimates | All estimates
+navSalesRegister | All bills
 navSalesReturns | Sales returns
 navDelivery | Delivery
 navProducts | Products
@@ -47,10 +47,10 @@ navCategories | Categories
 navInventory | Stock left
 navPurchases | Purchases
 navPurchaseReturns | Purchase returns
-navAdjustments | Stock changes
+navAdjustments | Fix stock
 navCustomers | Customers
 navDealers | Dealers
-navCredit | Money to collect
+navCredit | Credit & Dues
 navStaff | Staff
 navExpenses | Expenses
 navClosing | Daily closing
@@ -60,7 +60,7 @@ navWarranty | Warranty
 navNotifications | Notifications
 navImport | Import old data
 navSettings | Settings
-navHealth | Database health
+navHealth | Data check
 navHelp | Help
 navAbout | About
 navBill | Bill
@@ -476,15 +476,15 @@ helpFaq | Questions
 faq1q | What if the internet stops?
 faq1a | Nothing changes. You can keep billing. Everything is saved on this computer and is copied online later.
 faq2q | I sold something that shows zero stock. Is that a problem?
-faq2a | No. The program shows a warning but lets you sell. Fix the stock later in Stock changes.
+faq2a | No. The program shows a warning but lets you sell. Fix the stock later in Fix stock.
 faq3q | How do I cancel a bill?
-faq3a | Open the bill in Sales register and press Cancel bill. Only the owner can do this. The bill stays in your records.
+faq3a | Open the bill in All bills and press Cancel bill. Only the owner can do this. The bill stays in your records.
 faq4q | How do I change a saved estimate?
-faq4a | Open Saved estimates, tap the estimate and press Edit. Its number and date stay the same.
+faq4a | Open All estimates, tap the estimate and press Edit. Its number and date stay the same.
 faq5q | How do I take a backup?
 faq5a | Open Settings, then Backup, then press Back up now. You can copy the file to a USB drive.
 helpWrong | If something looks wrong
-helpWrongText | Do not worry. Your bills are saved. Open Database health to check. Then tell your helper what you see on the screen.
+helpWrongText | Do not worry. Your bills are saved. Open Data check to check. Then tell your helper what you see on the screen.
 aboutVersion | Version {version}
 aboutText | A fast shop program for billing, estimates, stock, purchases, customers and reports. It works without internet.
 aboutPrototype | Preview with sample data. Nothing you type is saved.
@@ -768,13 +768,13 @@ profNextPay | Next payment due
 profWeOweBalance | We owe
 profAdvanceWith | Paid ahead to the dealer
 profNothingDue | Nothing due
-settleFully | Settle fully
-settleTitle | Settle {name} fully
+settleFully | Clear full balance
+settleTitle | Clear the full balance of {name}
 settleText | Record the whole balance of {amount} as received. Choose how it was paid.
 settleTextDealer | Record the whole balance of {amount} as paid to {name}. Choose how it was paid.
 settleNote | Reason or note (kept with the entry)
-settleConfirm | Settle {amount}
-settleDone | {amount} settled for {name}
+settleConfirm | Clear {amount}
+settleDone | {amount} cleared for {name}
 settleDoneDealer | {amount} paid to {name}
 settleUndo | Undo
 settleUndone | Taken back
@@ -1157,7 +1157,7 @@ custReturnedLabel | Gave back
 custReturnedHint | {n} returns
 custBillsTitle | Their bills
 custNoBills | No bills for this customer yet.
-custBillsCapped | Showing the newest {n} bills. Use the Sales register to search all of them.
+custBillsCapped | Showing the newest {n} bills. Use All bills to search all of them.
 retReturned | Given back so far
 signOutConfirmTitle | Sign out?
 signOutConfirmText | You will need to sign in again to use the program.

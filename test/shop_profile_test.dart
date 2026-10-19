@@ -17,7 +17,7 @@ void main() {
     for (final t in ['Shop details', 'Shop name', 'Owner name', 'Address', 'Phone', 'GSTIN', 'UPI ID (shown in the message)', 'Bank details', 'Bill footer message', 'Invoice number prefix', 'Show on estimate']) {
       expect(find.text(t), findsWidgets, reason: t);
     }
-    expect(find.byIcon(Icons.storefront_outlined), findsWidgets, reason: 'sidebar entry');
+    expect(find.byIcon(Icons.storefront_rounded), findsWidgets, reason: 'sidebar entry');
   });
 
   testWidgets('editing the shop name changes the name in the header at once', (tester) async {

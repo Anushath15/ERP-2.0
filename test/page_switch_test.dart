@@ -27,7 +27,7 @@ void main() {
         final old = find.byType(DashboardScreen).evaluate().isNotEmpty;
         final fresh = find.byType(SalesRegisterScreen).evaluate().isNotEmpty;
         if (old && fresh) bothSeen.add(ms);
-        if (ms == 0) firstFrameHasContent = fresh && find.text('Sales register').evaluate().isNotEmpty && !old;
+        if (ms == 0) firstFrameHasContent = fresh && find.text('All bills').evaluate().isNotEmpty && !old;
       }
       expect(bothSeen, isEmpty, reason: '${level.name}: old and new page were both present at ms $bothSeen');
       expect(firstFrameHasContent, isTrue, reason: '${level.name}: the new page shows its content (title) in its first frame and the old page is not there');

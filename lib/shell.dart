@@ -41,7 +41,7 @@ class AppShell extends ConsumerWidget {
         child: Scaffold(
           appBar: AppBar(
             titleSpacing: 12,
-            leading: location == '/' || idx >= 0 || location == '/more' ? null : IconButton(icon: const Icon(Icons.arrow_back), tooltip: l.back, onPressed: () => context.canPop() ? context.pop() : context.go('/')),
+            leading: location == '/' || idx >= 0 || location == '/more' ? null : IconButton(icon: const Icon(Icons.arrow_back_rounded), tooltip: l.back, onPressed: () => context.canPop() ? context.pop() : context.go('/')),
             title: Text(location == '/more' ? l.navMore : (navFor(location)?.label(l) ?? l.appName), maxLines: 1, overflow: TextOverflow.ellipsis),
             actions: const [SyncChip(compact: true), SizedBox(width: 8)],
           ),
@@ -53,11 +53,11 @@ class AppShell extends ConsumerWidget {
                   selectedIndex: idx >= 0 ? idx : 4,
                   onDestinationSelected: (i) => context.go(i < 4 ? phoneTabs[i] : '/more'),
                   destinations: [
-                    NavigationDestination(icon: const Icon(Icons.space_dashboard_outlined), label: l.navDashboard),
-                    NavigationDestination(icon: const Icon(Icons.point_of_sale), label: l.navBill),
-                    NavigationDestination(icon: const Icon(Icons.inventory_2_outlined), label: l.navProducts),
-                    NavigationDestination(icon: const Icon(Icons.people_outline), label: l.navCustomers),
-                    NavigationDestination(icon: const Icon(Icons.apps), label: l.navMore),
+                    NavigationDestination(icon: const Icon(Icons.space_dashboard_rounded), label: l.navDashboard),
+                    NavigationDestination(icon: const Icon(Icons.point_of_sale_rounded), label: l.navBill),
+                    NavigationDestination(icon: const Icon(Icons.inventory_2_rounded), label: l.navProducts),
+                    NavigationDestination(icon: const Icon(Icons.people_outline_rounded), label: l.navCustomers),
+                    NavigationDestination(icon: const Icon(Icons.apps_rounded), label: l.navMore),
                   ],
                 ),
         ),
@@ -190,23 +190,23 @@ class TopBar extends ConsumerWidget {
         IconButton(
           tooltip: l.toggleMenu,
           onPressed: () => ref.read(navExpandedProvider.notifier).toggle(ref.read(navExpandedProvider) ?? context.isDesktop),
-          icon: const Icon(Icons.menu),
+          icon: const Icon(Icons.menu_rounded),
         ),
         Expanded(child: Text(ref.watch(shopProvider).name.isEmpty ? l.appName : ref.watch(shopProvider).name, style: th.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
         SyncChip(compact: context.isPhone),
         const SizedBox(width: 8),
-        IconButton(tooltip: l.textSmaller, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.down(x.textScale))), icon: const Icon(Icons.text_decrease)),
-        IconButton(tooltip: l.textLarger, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.up(x.textScale))), icon: const Icon(Icons.text_increase)),
+        IconButton(tooltip: l.textSmaller, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.down(x.textScale))), icon: const Icon(Icons.text_decrease_rounded)),
+        IconButton(tooltip: l.textLarger, onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(textScale: TextZoom.up(x.textScale))), icon: const Icon(Icons.text_increase_rounded)),
         IconButton(
           tooltip: dark ? l.themeLight : l.themeDark,
           onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(theme: dark ? ThemeMode.light : ThemeMode.dark)),
-          icon: Icon(dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+          icon: Icon(dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
         ),
         IconButton(
           key: const ValueKey('topbar-profile'),
           tooltip: l.navShop,
           onPressed: () => context.go('/shop'),
-          icon: const Icon(Icons.account_circle_outlined),
+          icon: const Icon(Icons.account_circle_rounded),
         ),
 
       ]),
@@ -224,11 +224,11 @@ class SyncChip extends ConsumerWidget {
     final st = ref.watch(settingsProvider).sync;
     final now = ref.watch(clockProvider);
     final (label, kind, icon) = switch (st) {
-      SyncState.synced => (l.syncSynced, BadgeKind.success, Icons.cloud_done_outlined),
-      SyncState.syncing => (l.syncSyncing, BadgeKind.info, Icons.sync),
-      SyncState.offline => (l.syncOffline, BadgeKind.warning, Icons.cloud_off_outlined),
-      SyncState.attention => (l.syncAttention('1'), BadgeKind.danger, Icons.error_outline),
-      SyncState.paused => (l.syncPaused, BadgeKind.warning, Icons.pause_circle_outline),
+      SyncState.synced => (l.syncSynced, BadgeKind.success, Icons.cloud_done_rounded),
+      SyncState.syncing => (l.syncSyncing, BadgeKind.info, Icons.sync_rounded),
+      SyncState.offline => (l.syncOffline, BadgeKind.warning, Icons.cloud_off_rounded),
+      SyncState.attention => (l.syncAttention('1'), BadgeKind.danger, Icons.error_outline_rounded),
+      SyncState.paused => (l.syncPaused, BadgeKind.warning, Icons.pause_circle_outline_rounded),
     };
     final tip = l.lastSyncedAt(formatTime(now.subtract(const Duration(minutes: 4))));
     return Semantics(

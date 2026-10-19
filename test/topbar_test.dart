@@ -13,7 +13,7 @@ void main() {
     await app(tester);
     final profile = tester.getTopRight(find.byKey(const ValueKey('topbar-profile')));
     expect(profile.dx, greaterThan(1600 - 40), reason: 'the profile icon is in the right corner');
-    final xs = [for (final i in [Icons.text_decrease, Icons.text_increase, Icons.light_mode_outlined]) tester.getCenter(find.byIcon(i)).dx];
+    final xs = [for (final i in [Icons.text_decrease_rounded, Icons.text_increase_rounded, Icons.light_mode_rounded]) tester.getCenter(find.byIcon(i)).dx];
     expect(xs[0] < xs[1] && xs[1] < xs[2], isTrue);
     expect(xs[2], lessThan(profile.dx));
     expect(xs[0], greaterThan(1600 - 320), reason: 'all icons are grouped on the right, not in the middle');

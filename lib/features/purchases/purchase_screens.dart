@@ -88,7 +88,7 @@ Future<void> showPurchasePopup(BuildContext context, WidgetRef ref, PurchaseRow 
     if (row.received)
       OutlinedButton.icon(
         key: const ValueKey('pur-return-items'),
-        icon: const Icon(Icons.assignment_return_outlined),
+        icon: const Icon(Icons.assignment_return_rounded),
         label: Text(l.pretReturnItems),
         onPressed: () {
           Navigator.of(context, rootNavigator: true).pop();
@@ -98,7 +98,7 @@ Future<void> showPurchasePopup(BuildContext context, WidgetRef ref, PurchaseRow 
     if (!row.received)
       FilledButton.icon(
         key: const ValueKey('pur-mark-received'),
-        icon: const Icon(Icons.inventory_outlined),
+        icon: const Icon(Icons.inventory_rounded),
         label: Text(l.markReceived),
         onPressed: () async {
           Navigator.of(context, rootNavigator: true).pop();
@@ -264,7 +264,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
         key: const ValueKey('pur-picker'),
         controller: ctl,
         focusNode: focus,
-        decoration: InputDecoration(labelText: s.purAddItem, hintText: s.purSearchHint, prefixIcon: const Icon(Icons.search)),
+        decoration: InputDecoration(labelText: s.purAddItem, hintText: s.purSearchHint, prefixIcon: const Icon(Icons.search_rounded)),
         onSubmitted: (_) => submit(),
       ),
       optionsViewBuilder: (ctx, onSelected, options) => Align(
@@ -300,7 +300,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
             IconButton(key: ValueKey('pur-remove-${x.product.id}'), tooltip: s.delete, onPressed: () => setState(() {
               _lines.remove(x);
               x.dispose();
-            }), icon: const Icon(Icons.close, size: 18)),
+            }), icon: const Icon(Icons.close_rounded, size: 18)),
           ]),
           const SizedBox(height: 4),
           Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -366,7 +366,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
     return PageFrame(
       title: s.purFormTitle,
       subtitle: s.purFormHint,
-      actions: [TextButton.icon(onPressed: () => context.go('/purchases'), icon: const Icon(Icons.arrow_back), label: Text(s.back))],
+      actions: [TextButton.icon(onPressed: () => context.go('/purchases'), icon: const Icon(Icons.arrow_back_rounded), label: Text(s.back))],
       child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
         SectionCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -443,7 +443,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
           child: FilledButton.icon(
             key: const ValueKey('pur-save'),
             onPressed: _busy ? null : () => _save(s),
-            icon: _busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.check),
+            icon: _busy ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.check_rounded),
             label: Text(s.purSave),
           ),
         ),

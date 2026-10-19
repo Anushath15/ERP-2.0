@@ -86,7 +86,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final Customer? cust = _customer ? customers.where((x) => x.id == widget.partyId).firstOrNull : null;
     final Rec? deal = _customer ? null : dealers.where((x) => x.id == widget.partyId).firstOrNull;
     if (cust == null && deal == null) {
-      return PageFrame(title: _customer ? l.navCustomers : l.navDealers, child: EmptyState(icon: Icons.person_off_outlined, title: _customer ? l.nothingFound : l.dealerGone, action: FilledButton(onPressed: () => context.go(_customer ? '/customers' : '/dealers'), child: Text(l.back))));
+      return PageFrame(title: _customer ? l.navCustomers : l.navDealers, child: EmptyState(icon: Icons.person_off_rounded, title: _customer ? l.nothingFound : l.dealerGone, action: FilledButton(onPressed: () => context.go(_customer ? '/customers' : '/dealers'), child: Text(l.back))));
     }
     final name = cust?.name ?? deal!.s('name');
     final phone = cust?.phone ?? deal!.s('phone');
@@ -124,15 +124,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 3 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
       final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
       final cards = <Widget>[
-        if (_customer) stat(bal < 0 ? l.custAdvance : l.custBalance, '₹ ${formatPaise(bal.abs())}', bal < 0 ? Icons.savings_outlined : Icons.south_west, tone: bal < 0 ? c.success : (bal > 0 ? c.warning : null))
-        else stat(bal < 0 ? l.profAdvanceWith : l.profWeOweBalance, '₹ ${formatPaise(bal.abs())}', bal < 0 ? Icons.savings_outlined : Icons.north_east, tone: bal < 0 ? c.success : (bal > 0 ? c.danger : null)),
-        stat(l.statOverdue, '₹ ${formatPaise(overdue)}', Icons.schedule, tone: overdue > 0 ? c.danger : null),
-        if (_customer) stat(l.profCreditStart, acct.creditStart == null ? l.profNothingDue : formatDate(acct.creditStart!), Icons.flag_outlined) else stat(l.profAccountStarted, first == null ? l.profNone : formatDate(first), Icons.flag_outlined),
-        stat(_customer ? l.profNextDue : l.profNextPay, due == null ? l.profNothingDue : (isOverdue ? l.profOverdueSince(formatDate(due)) : formatDate(due)), Icons.event_outlined, tone: isOverdue ? c.danger : null),
-        stat(l.custLastPayment, amountOn(acct.lastPayment), Icons.payments_outlined),
-        stat(_customer ? l.profLastCredit : l.profLastPurchase, amountOn(acct.lastCredit), Icons.add_card_outlined),
-        if (_customer) stat(l.custLimit, '₹ ${formatPaise(limit)}', Icons.speed, tone: bal > limit ? c.danger : null, hint: l.limitUsed(usedPct.toString())),
-        if (_customer) StatCard(label: l.custReminders, value: '${reminders.length}', icon: Icons.chat_outlined, hint: reminders.isEmpty ? l.notReminded : remindedText(l, reminders.length, reminders.first.at)),
+        if (_customer) stat(bal < 0 ? l.custAdvance : l.custBalance, '₹ ${formatPaise(bal.abs())}', bal < 0 ? Icons.savings_rounded : Icons.south_west_rounded, tone: bal < 0 ? c.success : (bal > 0 ? c.warning : null))
+        else stat(bal < 0 ? l.profAdvanceWith : l.profWeOweBalance, '₹ ${formatPaise(bal.abs())}', bal < 0 ? Icons.savings_rounded : Icons.north_east_rounded, tone: bal < 0 ? c.success : (bal > 0 ? c.danger : null)),
+        stat(l.statOverdue, '₹ ${formatPaise(overdue)}', Icons.schedule_rounded, tone: overdue > 0 ? c.danger : null),
+        if (_customer) stat(l.profCreditStart, acct.creditStart == null ? l.profNothingDue : formatDate(acct.creditStart!), Icons.flag_rounded) else stat(l.profAccountStarted, first == null ? l.profNone : formatDate(first), Icons.flag_rounded),
+        stat(_customer ? l.profNextDue : l.profNextPay, due == null ? l.profNothingDue : (isOverdue ? l.profOverdueSince(formatDate(due)) : formatDate(due)), Icons.event_rounded, tone: isOverdue ? c.danger : null),
+        stat(l.custLastPayment, amountOn(acct.lastPayment), Icons.payments_rounded),
+        stat(_customer ? l.profLastCredit : l.profLastPurchase, amountOn(acct.lastCredit), Icons.add_card_rounded),
+        if (_customer) stat(l.custLimit, '₹ ${formatPaise(limit)}', Icons.speed_rounded, tone: bal > limit ? c.danger : null, hint: l.limitUsed(usedPct.toString())),
+        if (_customer) StatCard(label: l.custReminders, value: '${reminders.length}', icon: Icons.chat_rounded, hint: reminders.isEmpty ? l.notReminded : remindedText(l, reminders.length, reminders.first.at)),
       ];
       return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
     });
@@ -140,7 +140,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final waNumber = phone.isEmpty ? l.custNoNumber : (normalizePhone(phone, defaultCountry: shop.countryCode) == null ? phone : prettyPhone(normalizePhone(phone, defaultCountry: shop.countryCode)!));
     final details = SectionCard(
       title: l.profDetails,
-      trailing: TextButton.icon(key: const ValueKey('editParty'), onPressed: () => showEditParty(context, party), icon: const Icon(Icons.edit_outlined, size: 18), label: Text(l.editParty)),
+      trailing: TextButton.icon(key: const ValueKey('editParty'), onPressed: () => showEditParty(context, party), icon: const Icon(Icons.edit_rounded, size: 18), label: Text(l.editParty)),
       child: Column(children: [
         KeyValue(l.fieldName, name),
         KeyValue(l.fieldPhone, phone.isEmpty ? l.custNoNumber : phone),
@@ -161,7 +161,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     final actions = Wrap(spacing: 8, runSpacing: 8, children: [
-      if (hasAccount && bal > 0) FilledButton.icon(key: const ValueKey('settleFully'), onPressed: () => showSettleFully(context, party), icon: const Icon(Icons.done_all), label: Text(l.settleFully)),
+      if (hasAccount && bal > 0) FilledButton.icon(key: const ValueKey('settleFully'), onPressed: () => showSettleFully(context, party), icon: const Icon(Icons.done_all_rounded), label: Text(l.settleFully)),
       if (hasAccount)
         OutlinedButton.icon(
         key: const ValueKey('receiveOrPay'),
@@ -171,14 +171,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             toastAction(context, _customer ? l.recvDone(formatPaise(rec.amountPaise, symbol: true), name) : l.payDealerDone(formatPaise(rec.amountPaise, symbol: true), name), l.printReceipt, () => openReceiptPreview(context, ref, rec), seconds: 6);
           }
         },
-        icon: const Icon(Icons.payments_outlined),
+        icon: const Icon(Icons.payments_rounded),
         label: Text(_customer ? l.receivePayment : l.payDealer),
       ),
-      if (_customer) OutlinedButton.icon(key: const ValueKey('addCredit'), onPressed: () => showAddCredit(context, cust!), icon: const Icon(Icons.add_card_outlined), label: Text(l.addCredit)) else OutlinedButton.icon(key: const ValueKey('addAdjustment'), onPressed: () => showAddAdjustment(context, party), icon: const Icon(Icons.tune), label: Text(l.addAccountAdjustment)),
-      if (_customer && hasAccount) Tooltip(message: settings.sync == SyncState.offline ? canOpenWhatsapp(online: false, digits: null).reason! : l.remindersTooltip, child: OutlinedButton.icon(onPressed: bal > 0 ? () => remindCustomer(context, cust!) : null, icon: const Icon(Icons.chat_outlined), label: Text(l.actRemind))),
-      if (_customer && hasAccount) OutlinedButton.icon(onPressed: () => context.go('/customers/${widget.partyId}/statement'), icon: const Icon(Icons.description_outlined), label: Text(l.actStatement)),
-      if (hasAccount) OutlinedButton.icon(key: const ValueKey('downloadStatement'), onPressed: downloadStatement, icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(l.downloadStatement)),
-      if (_customer && bal > 0) OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: c.danger), onPressed: () => showWriteOff(context, ref, cust!), icon: const Icon(Icons.remove_circle_outline), label: Text(l.writeOff)),
+      if (_customer) OutlinedButton.icon(key: const ValueKey('addCredit'), onPressed: () => showAddCredit(context, cust!), icon: const Icon(Icons.add_card_rounded), label: Text(l.addCredit)) else OutlinedButton.icon(key: const ValueKey('addAdjustment'), onPressed: () => showAddAdjustment(context, party), icon: const Icon(Icons.tune_rounded), label: Text(l.addAccountAdjustment)),
+      if (_customer && hasAccount) Tooltip(message: settings.sync == SyncState.offline ? canOpenWhatsapp(online: false, digits: null).reason! : l.remindersTooltip, child: OutlinedButton.icon(onPressed: bal > 0 ? () => remindCustomer(context, cust!) : null, icon: const Icon(Icons.chat_rounded), label: Text(l.actRemind))),
+      if (_customer && hasAccount) OutlinedButton.icon(onPressed: () => context.go('/customers/${widget.partyId}/statement'), icon: const Icon(Icons.description_rounded), label: Text(l.actStatement)),
+      if (hasAccount) OutlinedButton.icon(key: const ValueKey('downloadStatement'), onPressed: downloadStatement, icon: const Icon(Icons.picture_as_pdf_rounded), label: Text(l.downloadStatement)),
+      if (_customer && bal > 0) OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: c.danger), onPressed: () => showWriteOff(context, ref, cust!), icon: const Icon(Icons.remove_circle_outline_rounded), label: Text(l.writeOff)),
     ]);
 
     final ageChips = Wrap(spacing: 8, runSpacing: 8, children: [
@@ -212,11 +212,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
             final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
             final cards = <Widget>[
-              StatCard(key: const ValueKey('cust-bought'), label: l.custBought, value: '₹ ${formatPaise(summary.boughtPaise)}', icon: Icons.shopping_bag_outlined, tone: c.success, hint: l.custBoughtHint),
-              StatCard(key: const ValueKey('cust-bills'), label: l.custBillsCount, value: '${summary.bills}', icon: Icons.receipt_long_outlined, hint: summary.cancelledBills > 0 ? l.custBillsCancelledHint('${summary.cancelledBills}') : null),
-              StatCard(key: const ValueKey('cust-profit'), label: l.custProfit, value: '₹ ${formatPaise(summary.profitPaise)}', icon: Icons.savings_outlined, tone: summary.profitPaise < 0 ? c.danger : c.success, hint: l.profitEstimate),
-              StatCard(key: const ValueKey('cust-last-bill'), label: l.custLastBill, value: summary.lastBillAt == null ? l.profNone : formatDate(summary.lastBillAt!), icon: Icons.event_outlined),
-              if (summary.returns > 0) StatCard(key: const ValueKey('cust-returned'), label: l.custReturnedLabel, value: '₹ ${formatPaise(summary.returnedPaise)}', icon: Icons.assignment_return_outlined, tone: c.warning, hint: l.custReturnedHint('${summary.returns}')),
+              StatCard(key: const ValueKey('cust-bought'), label: l.custBought, value: '₹ ${formatPaise(summary.boughtPaise)}', icon: Icons.shopping_bag_rounded, tone: c.success, hint: l.custBoughtHint),
+              StatCard(key: const ValueKey('cust-bills'), label: l.custBillsCount, value: '${summary.bills}', icon: Icons.receipt_long_rounded, hint: summary.cancelledBills > 0 ? l.custBillsCancelledHint('${summary.cancelledBills}') : null),
+              StatCard(key: const ValueKey('cust-profit'), label: l.custProfit, value: '₹ ${formatPaise(summary.profitPaise)}', icon: Icons.savings_rounded, tone: summary.profitPaise < 0 ? c.danger : c.success, hint: l.profitEstimate),
+              StatCard(key: const ValueKey('cust-last-bill'), label: l.custLastBill, value: summary.lastBillAt == null ? l.profNone : formatDate(summary.lastBillAt!), icon: Icons.event_rounded),
+              if (summary.returns > 0) StatCard(key: const ValueKey('cust-returned'), label: l.custReturnedLabel, value: '₹ ${formatPaise(summary.returnedPaise)}', icon: Icons.assignment_return_rounded, tone: c.warning, hint: l.custReturnedHint('${summary.returns}')),
             ];
             return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
           });
@@ -245,7 +245,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       StatusBadge(statusInfo(billStatus(b), l).$1, kind: statusInfo(billStatus(b), l).$2),
                       const SizedBox(width: 12),
                       SizedBox(width: 110, child: Text('₹ ${formatPaise(b.totalPaise)}', textAlign: TextAlign.right, style: th.titleSmall)),
-                      const Icon(Icons.chevron_right, size: 20),
+                      const Icon(Icons.chevron_right_rounded, size: 20),
                     ]),
                   ),
                 ),
@@ -263,9 +263,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 3 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
             final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
             final cards = <Widget>[
-              StatCard(key: const ValueKey('dealer-bought'), label: l.dealerBought, value: '₹ ${formatPaise(dsum.boughtPaise)}', icon: Icons.shopping_cart_checkout, tone: c.success, hint: l.dealerPaidHint(formatPaise(dsum.paidPaise, symbol: true))),
-              StatCard(key: const ValueKey('dealer-purchases'), label: l.dealerPurchasesCount, value: '${dsum.purchases}', icon: Icons.receipt_long_outlined, hint: dsum.pending > 0 ? l.dealerPendingHint('${dsum.pending}') : null),
-              StatCard(key: const ValueKey('dealer-last'), label: l.dealerLastPurchase, value: dsum.lastAt == null ? l.profNone : formatDate(dsum.lastAt!), icon: Icons.event_outlined),
+              StatCard(key: const ValueKey('dealer-bought'), label: l.dealerBought, value: '₹ ${formatPaise(dsum.boughtPaise)}', icon: Icons.shopping_cart_checkout_rounded, tone: c.success, hint: l.dealerPaidHint(formatPaise(dsum.paidPaise, symbol: true))),
+              StatCard(key: const ValueKey('dealer-purchases'), label: l.dealerPurchasesCount, value: '${dsum.purchases}', icon: Icons.receipt_long_rounded, hint: dsum.pending > 0 ? l.dealerPendingHint('${dsum.pending}') : null),
+              StatCard(key: const ValueKey('dealer-last'), label: l.dealerLastPurchase, value: dsum.lastAt == null ? l.profNone : formatDate(dsum.lastAt!), icon: Icons.event_rounded),
             ];
             return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
           });
@@ -293,7 +293,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       StatusBadge(p.received ? l.statusReceived : l.statusPending, kind: p.received ? BadgeKind.success : BadgeKind.warning),
                       const SizedBox(width: 12),
                       SizedBox(width: 110, child: Text('₹ ${formatPaise(p.totalPaise)}', textAlign: TextAlign.right, style: th.titleSmall)),
-                      const Icon(Icons.chevron_right, size: 20),
+                      const Icon(Icons.chevron_right_rounded, size: 20),
                     ]),
                   ),
                 ),
@@ -314,7 +314,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(4),
                 child: Row(children: [
-                  Icon(bal < 0 ? Icons.savings_outlined : Icons.south_west, color: bal < 0 ? c.success : (bal > 0 ? c.warning : c.textMuted)),
+                  Icon(bal < 0 ? Icons.savings_rounded : Icons.south_west_rounded, color: bal < 0 ? c.success : (bal > 0 ? c.warning : c.textMuted)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -322,7 +322,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Text(bal == 0 ? '₹ 0.00' : '₹ ${formatPaise(bal.abs())}', key: const ValueKey('cust-account-amount'), style: th.titleLarge?.copyWith(color: bal > 0 ? c.warning : (bal < 0 ? c.success : null))),
                     ]),
                   ),
-                  FilledButton.icon(key: const ValueKey('cust-account-open'), onPressed: () => context.push(accountPath), icon: const Icon(Icons.account_balance_wallet_outlined), label: Text(l.acctStatusButton)),
+                  FilledButton.icon(key: const ValueKey('cust-account-open'), onPressed: () => context.push(accountPath), icon: const Icon(Icons.account_balance_wallet_rounded), label: Text(l.acctStatusButton)),
                 ]),
               ),
             ),
@@ -331,11 +331,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ? (cust == null
             ? null
             : Wrap(spacing: 8, runSpacing: 8, children: [
-                OutlinedButton.icon(key: const ValueKey('addCredit'), onPressed: () => showAddCredit(context, cust), icon: const Icon(Icons.add_card_outlined), label: Text(l.addCredit)),
+                OutlinedButton.icon(key: const ValueKey('addCredit'), onPressed: () => showAddCredit(context, cust), icon: const Icon(Icons.add_card_rounded), label: Text(l.addCredit)),
               ]))
         : Wrap(spacing: 8, runSpacing: 8, children: [
-            FilledButton.icon(key: const ValueKey('dealer-add-purchase'), onPressed: () => context.go('/purchases/new?dealer=${Uri.encodeQueryComponent(widget.partyId)}'), icon: const Icon(Icons.add_shopping_cart), label: Text(l.dealerAddPurchase)),
-            OutlinedButton.icon(key: const ValueKey('addAdjustment'), onPressed: () => showAddAdjustment(context, party), icon: const Icon(Icons.tune), label: Text(l.addAccountAdjustment)),
+            FilledButton.icon(key: const ValueKey('dealer-add-purchase'), onPressed: () => context.go('/purchases/new?dealer=${Uri.encodeQueryComponent(widget.partyId)}'), icon: const Icon(Icons.add_shopping_cart_rounded), label: Text(l.dealerAddPurchase)),
+            OutlinedButton.icon(key: const ValueKey('addAdjustment'), onPressed: () => showAddAdjustment(context, party), icon: const Icon(Icons.tune_rounded), label: Text(l.addAccountAdjustment)),
           ]);
 
     final phoneLayout = context.isPhone;
@@ -344,7 +344,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ChoiceChip(key: ValueKey('range${e.$1}'), label: Text(e.$2), selected: _range == e.$1, onSelected: (_) => setState(() => _range = e.$1)),
           ChoiceChip(
             key: const ValueKey('range3'),
-            avatar: const Icon(Icons.date_range, size: 18),
+            avatar: const Icon(Icons.date_range_rounded, size: 18),
             label: Text(_range == 3 && _picked != null ? '${formatDate(_picked!.start)} - ${formatDate(_picked!.end)}' : l.rangePick),
             selected: _range == 3,
             onSelected: (_) async {
@@ -361,7 +361,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     Widget reverseButton(LedgerEntry e) => gone.contains(e.id)
         ? StatusBadge(l.reversedBadge, kind: BadgeKind.neutral)
-        : (isReversible(e) ? IconButton(key: ValueKey('reverse-${e.id}'), tooltip: l.reverse, visualDensity: VisualDensity.compact, onPressed: () => showReverseEntry(context, party, e), icon: const Icon(Icons.undo, size: 18)) : const SizedBox(width: 40));
+        : (isReversible(e) ? IconButton(key: ValueKey('reverse-${e.id}'), tooltip: l.reverse, visualDensity: VisualDensity.compact, onPressed: () => showReverseEntry(context, party, e), icon: const Icon(Icons.undo_rounded, size: 18)) : const SizedBox(width: 40));
     String kindText(LedgerEntry e) => '${ledgerKindLabel(l, e.kind, dealer: !_customer)}${e.billNo == null ? '' : '  ·  ${e.billNo}'}';
 
     final ledgerCard = SectionCard(
@@ -409,14 +409,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ? null
         : SectionCard(
             title: l.sectionReminders,
-            trailing: Tooltip(message: l.remindersTooltip, child: const Icon(Icons.info_outline, size: 20)),
+            trailing: Tooltip(message: l.remindersTooltip, child: const Icon(Icons.info_outline_rounded, size: 20)),
             child: reminders.isEmpty
                 ? Text(l.noRemindersYet, style: th.bodyMedium)
                 : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     for (final r in reminders)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 5),
-                        child: Row(children: [const Icon(Icons.chat_outlined, size: 18), const SizedBox(width: 8), Expanded(child: Text(l.reminderLine('${formatDate(r.at)} ${formatTime(r.at)}', formatPaise(r.amountDuePaise, symbol: true)), style: th.bodyMedium)), Text(r.by, style: th.bodySmall)]),
+                        child: Row(children: [const Icon(Icons.chat_rounded, size: 18), const SizedBox(width: 8), Expanded(child: Text(l.reminderLine('${formatDate(r.at)} ${formatTime(r.at)}', formatPaise(r.amountDuePaise, symbol: true)), style: th.bodyMedium)), Text(r.by, style: th.bodySmall)]),
                       ),
                   ]),
           );
@@ -452,9 +452,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       subtitle: widget.accountView ? (_customer ? l.sectionLedger : l.dealerLedgerTitle) : '${phone.isEmpty ? l.custNoNumber : phone}  ·  $city',
       actions: [
         if (widget.accountView)
-          TextButton.icon(key: const ValueKey('account-back'), onPressed: () => context.canPop() ? context.pop() : context.go(_customer ? '/customers/${widget.partyId}' : '/dealers/${widget.partyId}'), icon: const Icon(Icons.arrow_back), label: Text(_customer ? l.acctBack : l.acctBackDealer))
+          TextButton.icon(key: const ValueKey('account-back'), onPressed: () => context.canPop() ? context.pop() : context.go(_customer ? '/customers/${widget.partyId}' : '/dealers/${widget.partyId}'), icon: const Icon(Icons.arrow_back_rounded), label: Text(_customer ? l.acctBack : l.acctBackDealer))
         else
-          TextButton.icon(onPressed: () => context.go(_customer ? '/customers' : '/dealers'), icon: const Icon(Icons.arrow_back), label: Text(_customer ? l.navCustomers : l.navDealers)),
+          TextButton.icon(onPressed: () => context.go(_customer ? '/customers' : '/dealers'), icon: const Icon(Icons.arrow_back_rounded), label: Text(_customer ? l.navCustomers : l.navDealers)),
       ],
       child: OpenOnce(
         key: ValueKey('open-bill-${widget.openBillId ?? ''}'),

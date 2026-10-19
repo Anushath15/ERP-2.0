@@ -72,7 +72,7 @@ class DataListScreen<T> extends StatefulWidget {
     this.stats = const [],
     this.emptyTitle,
     this.emptyText,
-    this.emptyIcon = Icons.inbox_outlined,
+    this.emptyIcon = Icons.inbox_rounded,
     this.searchHint,
     this.sorts = const [],
   });
@@ -248,7 +248,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
 
     final addBtn = widget.onAdd == null
         ? null
-        : FilledButton.icon(onPressed: widget.onAdd, icon: const Icon(Icons.add), label: Text(widget.addLabel ?? l.addNew));
+        : FilledButton.icon(onPressed: widget.onAdd, icon: const Icon(Icons.add_rounded), label: Text(widget.addLabel ?? l.addNew));
 
     // On a very small screen with very big text the summary cards would push the list out of the window: they wait until there is room.
     final tiny = MediaQuery.sizeOf(context).height / context.textFactor < 380;
@@ -267,7 +267,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
           const SizedBox(width: 8),
           PopupMenuButton<int>(
             tooltip: l.sortBy,
-            icon: const Icon(Icons.sort),
+            icon: const Icon(Icons.sort_rounded),
             onSelected: (v) {
               setState(() => _sort = v);
               if (widget.source != null) unawaited(_reload());

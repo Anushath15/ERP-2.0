@@ -66,7 +66,7 @@ void main() {
     testWidgets('totals, rows, filters, and a reminder badge per row', (tester) async {
       final s = sample(reminded: true);
       final c = await app(tester, '/credit');
-      expect(find.text('Money to collect'), findsWidgets);
+      expect(find.text('Credit & Dues'), findsWidgets);
       expect(find.text('Overdue'), findsWidgets);
       expect(find.text('Advances we hold'), findsOneWidget);
       expect(find.textContaining('Reminded'), findsWidgets);
@@ -88,8 +88,8 @@ void main() {
       sample();
       final c = await app(tester, '/credit');
       expect(find.text('Receive payment'), findsWidgets);
-      expect(find.byIcon(Icons.chat_outlined), findsWidgets);
-      expect(find.byIcon(Icons.description_outlined), findsWidgets);
+      expect(find.byIcon(Icons.chat_rounded), findsWidgets);
+      expect(find.byIcon(Icons.description_rounded), findsWidgets);
       c.read(settingsProvider.notifier).set((x) => x.copyWith(sync: SyncState.offline));
       await tester.pumpAndSettle();
       expect(find.byTooltip('Remind on WhatsApp: Needs internet; you are offline'), findsWidgets);
@@ -101,7 +101,7 @@ void main() {
       final s = sample(reminded: true);
       await app(tester, '/customers/${s.c.id}/account', size: const ScreenSpec('tall', 1920, 3600));
       expect(find.text(s.c.name), findsWidgets);
-      expect(find.text('Money to collect'), findsWidgets);
+      expect(find.text('Credit & Dues'), findsWidgets);
       expect(find.text('Credit limit'), findsWidgets);
       expect(find.text('Last payment'), findsOneWidget);
       expect(find.text('Bills still to pay'), findsOneWidget);

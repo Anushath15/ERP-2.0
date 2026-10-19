@@ -68,7 +68,7 @@ final shots = <Shot>[
   const Shot('dashboard', 'Dashboard (Home)', '/'),
   Shot('billing', 'POS billing (bill with 8 lines, one out of stock)', '/bill', setup: (t, c) => fill(t, c, DocMode.invoice)),
   Shot('estimate', 'New estimate', '/estimate', setup: (t, c) => fill(t, c, DocMode.estimation)),
-  const Shot('saved-estimates', 'Saved estimates', '/estimates'),
+  const Shot('saved-estimates', 'All estimates', '/estimates'),
   const Shot('sales-register', 'Sales register (20,000 bills)', '/sales'),
   const Shot('sales-returns', 'Sales returns', '/sales-returns'),
   const Shot('delivery', 'Delivery', '/delivery'),
@@ -90,7 +90,7 @@ final shots = <Shot>[
   const Shot('warranty', 'Warranty', '/warranty'),
   const Shot('notifications', 'Notifications', '/notifications'),
   const Shot('settings', 'Settings', '/settings'),
-  const Shot('database-health', 'Database health', '/health'),
+  const Shot('database-health', 'Data check', '/health'),
   const Shot('help', 'Help', '/help'),
   const Shot('about', 'About', '/about'),
   const Shot('more-menu', 'More (phone menu)', '/more', phoneOnly: true),
@@ -101,7 +101,7 @@ final shots = <Shot>[
   // dialogs and sheets
   Shot('dlg-quick-add-product', 'Dialog: add a product from the bill (bill stays untouched)', '/bill', setup: (t, c) async {
     await fill(t, c, DocMode.invoice);
-    await t.tap(find.byIcon(Icons.add).first);
+    await t.tap(find.byIcon(Icons.add_rounded).first);
     await t.pumpAndSettle();
   }),
   Shot('dlg-no-product-found', 'Product search with no match: + Add row', '/bill', setup: (t, c) async {
@@ -112,10 +112,10 @@ final shots = <Shot>[
     await fill(t, c, DocMode.invoice);
     final seg = find.byType(SlideSegments<int>);
     if (seg.evaluate().isNotEmpty) {
-      await t.tap(find.descendant(of: seg, matching: find.byIcon(Icons.receipt_long_outlined)));
+      await t.tap(find.descendant(of: seg, matching: find.byIcon(Icons.receipt_long_rounded)));
       await t.pumpAndSettle();
     }
-    await t.tap(find.byIcon(Icons.person_outline).first);
+    await t.tap(find.byIcon(Icons.person_outline_rounded).first);
     await t.pumpAndSettle();
   }),
   Shot('dlg-bill-detail', 'Bill details with Print again / Return / Cancel (owner only)', '/sales', setup: (t, c) async {

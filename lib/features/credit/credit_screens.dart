@@ -58,7 +58,7 @@ Widget reminderBadge(BuildContext context, int count, DateTime? last) {
   final l = tr(context);
   return Tooltip(
     message: l.remindersTooltip,
-    child: StatusBadge(remindedText(l, count, last), kind: count == 0 ? BadgeKind.neutral : BadgeKind.info, icon: count == 0 ? null : Icons.chat_outlined),
+    child: StatusBadge(remindedText(l, count, last), kind: count == 0 ? BadgeKind.neutral : BadgeKind.info, icon: count == 0 ? null : Icons.chat_rounded),
   );
 }
 
@@ -81,9 +81,9 @@ class CreditScreen extends ConsumerWidget {
       final wa = IconButton(
         tooltip: online ? l.actRemind : '${l.actRemind}: ${canOpenWhatsapp(online: false, digits: null).reason}',
         onPressed: r.balance > 0 ? () => remindCustomer(ctx, r.customer) : null,
-        icon: const Icon(Icons.chat_outlined),
+        icon: const Icon(Icons.chat_rounded),
       );
-      final stmt = IconButton(tooltip: l.actStatement, onPressed: () => ctx.go('/customers/${r.customer.id}/statement'), icon: const Icon(Icons.description_outlined));
+      final stmt = IconButton(tooltip: l.actStatement, onPressed: () => ctx.go('/customers/${r.customer.id}/statement'), icon: const Icon(Icons.description_rounded));
       final recv = FilledButton.tonal(
         onPressed: () async {
           final rec = await showReceivePayment(ctx, r.customer);
@@ -96,7 +96,7 @@ class CreditScreen extends ConsumerWidget {
       final settle = r.balance > 0
           ? OutlinedButton(key: ValueKey('settle-${r.customer.id}'), onPressed: () => showSettleFully(ctx, PartyRef(r.customer.id, r.customer.name, PartyKind.customer)), child: Text(l.settleFully))
           : const SizedBox.shrink();
-      final addCredit = IconButton(key: ValueKey('addCredit-${r.customer.id}'), tooltip: l.addCredit, onPressed: () => showAddCredit(ctx, r.customer), icon: const Icon(Icons.add_card_outlined));
+      final addCredit = IconButton(key: ValueKey('addCredit-${r.customer.id}'), tooltip: l.addCredit, onPressed: () => showAddCredit(ctx, r.customer), icon: const Icon(Icons.add_card_rounded));
       return FittedBox(fit: BoxFit.scaleDown, alignment: compact ? Alignment.centerLeft : Alignment.centerRight, child: Row(mainAxisSize: MainAxisSize.min, children: [settle, if (r.balance > 0) const SizedBox(width: 6), recv, addCredit, wa, stmt]));
     }
 
@@ -107,10 +107,10 @@ class CreditScreen extends ConsumerWidget {
       searchText: (r) => '${r.customer.name} ${r.customer.phone}',
       searchHint: l.searchCustomerHint,
       stats: [
-        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(notifier.totalToCollect)}', icon: Icons.south_west, tone: context.c.warning),
-        StatCard(label: l.statOverdue, value: '₹ ${formatPaise(overdue)}', icon: Icons.schedule, tone: context.c.danger),
-        StatCard(label: l.statCustomersOwing, value: owing.length.toString(), icon: Icons.people_outline),
-        StatCard(label: l.statAdvances, value: '₹ ${formatPaise(notifier.totalAdvances)}', icon: Icons.savings_outlined, tone: context.c.success),
+        StatCard(label: l.statToCollect, value: '₹ ${formatPaise(notifier.totalToCollect)}', icon: Icons.south_west_rounded, tone: context.c.warning),
+        StatCard(label: l.statOverdue, value: '₹ ${formatPaise(overdue)}', icon: Icons.schedule_rounded, tone: context.c.danger),
+        StatCard(label: l.statCustomersOwing, value: owing.length.toString(), icon: Icons.people_outline_rounded),
+        StatCard(label: l.statAdvances, value: '₹ ${formatPaise(notifier.totalAdvances)}', icon: Icons.savings_rounded, tone: context.c.success),
       ],
       filters: [
         FilterSpec(l.filterOverdue, (r) => r.overdue > 0),
@@ -133,7 +133,7 @@ class CreditScreen extends ConsumerWidget {
       phoneSubtitle: (r) => r.overdue > 0 ? '${r.customer.phone.isEmpty ? l.custNoNumber : r.customer.phone}  ·  ${l.statOverdue}: ${formatPaise(r.overdue, symbol: true)}' : (r.customer.phone.isEmpty ? l.custNoNumber : r.customer.phone),
       phoneActions: (c, r) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [reminderBadge(c, r.reminders, r.lastReminded), const SizedBox(height: 6), actions(c, r, compact: true)]),
       emptyTitle: l.nobodyOwes,
-      emptyIcon: Icons.celebration_outlined,
+      emptyIcon: Icons.celebration_rounded,
     );
   }
 }
@@ -157,12 +157,12 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
     final now = ref.watch(clockProvider);
     final customer = ref.watch(customersProvider).where((x) => x.id == widget.customerId).firstOrNull;
     final acct = ref.watch(creditProvider)[widget.customerId] ?? const CreditAccount();
-    if (customer == null) return PageFrame(title: l.statementTitle, child: EmptyState(icon: Icons.person_off_outlined, title: l.nothingFound));
+    if (customer == null) return PageFrame(title: l.statementTitle, child: EmptyState(icon: Icons.person_off_rounded, title: l.nothingFound));
     final from = switch (_range) { 0 => DateTime(now.year, now.month, 1), 1 => DateTime(now.year, now.month - 2, 1), _ => DateTime(2000) };
     final st = buildStatement(entries: acct.ledger, from: from, to: now);
     final phone = context.isPhone;
     final actions = [
-      FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print), label: Text(l.print)),
+      FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print_rounded), label: Text(l.print)),
       OutlinedButton.icon(
         key: const ValueKey('statementPdf'),
         onPressed: () async {
@@ -171,7 +171,7 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
           final where = await ref.read(fileSaverProvider).save('Statement ${customer.name} $stamp.pdf', bytes);
           if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
         },
-        icon: const Icon(Icons.picture_as_pdf_outlined),
+        icon: const Icon(Icons.picture_as_pdf_rounded),
         label: Text(l.saveAsPdf),
       ),
       TextButton(onPressed: () => context.go('/customers/${widget.customerId}'), child: Text(l.back)),
@@ -305,8 +305,8 @@ class PaymentReceiptScreen extends ConsumerWidget {
     return PageFrame(
       title: l.printReceipt,
       actions: [
-        FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print), label: Text(l.print)),
-        OutlinedButton.icon(onPressed: () => toast(context, l.pdfNotConnected), icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(l.saveAsPdf)),
+        FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print_rounded), label: Text(l.print)),
+        OutlinedButton.icon(onPressed: () => toast(context, l.pdfNotConnected), icon: const Icon(Icons.picture_as_pdf_rounded), label: Text(l.saveAsPdf)),
         if (context.canPop()) TextButton(onPressed: () => context.pop(), child: Text(l.back)),
       ],
       child: Container(width: double.infinity, decoration: BoxDecoration(color: c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.m)), child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Center(child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: paper)))),

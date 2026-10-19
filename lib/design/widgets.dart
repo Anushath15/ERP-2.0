@@ -133,7 +133,7 @@ class SearchField extends StatelessWidget {
         onChanged: onChanged,
         onSubmitted: onSubmitted,
         textInputAction: TextInputAction.search,
-        decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: hint),
+        decoration: InputDecoration(prefixIcon: const Icon(Icons.search_rounded), hintText: hint),
       );
 }
 
