@@ -22,14 +22,14 @@ class TemplatePaper extends StatelessWidget {
     final m = PrintMetrics.of(size);
     final a5 = paper == PaperSize.a5;
     // small rows, so that many products fit on one page (paper is not wasted)
-    final fs = (a5 ? m.row - 3.0 : m.row - 1.5).clamp(6.0, 12.0).toDouble();
+    final fs = (a5 ? m.row - 3.5 : m.row - 2.0).clamp(6.0, 12.0).toDouble();
     final margin = paperMarginPt(paper);
     TextStyle st({bool b = false, double? size}) => TextStyle(fontFamily: 'Inter', color: c.onPaper, fontSize: size ?? fs, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
     Widget txt(String s, {bool b = false, double? size, TextAlign? align, Key? key}) => Text(s, key: key, style: st(b: b, size: size), textAlign: align);
     final line = BorderSide(color: c.onPaper, width: 0.6);
     final thin = BorderSide(color: c.onPaper, width: 0.4);
     final border = TableBorder(left: line, right: line, top: line, bottom: line, horizontalInside: thin, verticalInside: thin);
-    Widget cell(String s, {bool b = false, TextAlign align = TextAlign.left, Key? key}) => Padding(padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1.5), child: txt(s, b: b, align: align, key: key));
+    Widget cell(String s, {bool b = false, TextAlign align = TextAlign.left, Key? key}) => Padding(padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0.8), child: txt(s, b: b, align: align, key: key));
     final shade = c.onPaper.withValues(alpha: 0.08);
     final logo = t.showShop ? logoBytes(shop.logoPng) : null;
 

@@ -196,7 +196,6 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
   final accountRx = RegExp(r'^(a\s*[/\\]?\s*c|acc(ount)?)\b(?!\s*name)', caseSensitive: false);
   final ifscRx = RegExp(r'ifsc', caseSensitive: false);
   final bankUp = [for (final b in bankParts) if (accountRx.hasMatch(b) || ifscRx.hasMatch(b)) b];
-  final bankDown = [for (final b in bankParts) if (!(accountRx.hasMatch(b) || ifscRx.hasMatch(b))) b];
   final shopLeft = est
       ? const <String>[]
       : [
@@ -243,7 +242,7 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
     gstHead: [l.tplSalesAmt, l.tplCgst, l.tplSgst, l.tplIgst, l.tplNetAmt],
     gstRows: gstRows,
     words: rupeesInWords(c.grandTotal),
-    bankLines: est ? const [] : bankDown,
+    bankLines: const [], // the bank name is not printed at the bottom (account no and IFSC are beside the GST number)
     forShop: est ? '' : l.tplFor(shop.name.toUpperCase()),
     signatory: est ? '' : l.tplSignatory,
     note: est ? '' : (shop.billFooter.trim().isEmpty ? '' : shop.billFooter.trim()),

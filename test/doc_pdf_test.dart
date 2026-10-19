@@ -47,9 +47,9 @@ int pages(Uint8List pdf) => RegExp(r'/Type\s*/Page(?![a-z])').allMatches(latin1.
 PrintDoc estimate() => samplePrintDoc(products, now, mode: DocMode.estimation);
 PrintDoc invoice() => samplePrintDoc(products, now);
 
-PrintDoc bigInvoice(int lines) {
+PrintDoc bigInvoice(int lines, {DocMode mode = DocMode.invoice}) {
   final ls = [for (var i = 0; i < lines; i++) CartLine(product: products[(i * 13) % products.length], qtyMilli: 1000 * (1 + i % 4))];
-  return PrintDoc(mode: DocMode.invoice, number: 'A-020002', date: now, customer: 'Murugan Electricals', lines: ls, calc: calcBill(ls), pay: PayMode.cash);
+  return PrintDoc(mode: mode, number: 'A-020002', date: now, customer: 'Murugan Electricals', lines: ls, calc: calcBill(ls), pay: PayMode.cash);
 }
 
 void main() {
@@ -99,6 +99,13 @@ void main() {
       }
     });
 
+    test('the shop rule: 41 products on one A4 sheet and 20 on one A5 sheet, bill and estimate, at the default text size', () async {
+      for (final mode in [DocMode.invoice, DocMode.estimation]) {
+        expect(pages(await make(bigInvoice(41, mode: mode), PaperSize.a4, PrintTextSize.small, 'a4_41_${mode.name}')), 1, reason: 'A4 ${mode.name}');
+        expect(pages(await make(bigInvoice(20, mode: mode), PaperSize.a5, PrintTextSize.small, 'a5_20_${mode.name}')), 1, reason: 'A5 ${mode.name}');
+      }
+    });
+
     test('many products on one paper: 30 items fit one A4 page at the default size, 45 on two at most', () async {
       expect(pages(await make(bigInvoice(30), PaperSize.a4, PrintTextSize.small, 'thirty_a4_small')), 1);
       expect(pages(await make(bigInvoice(45), PaperSize.a4, PrintTextSize.small, 'fortyfive_a4_small')), lessThanOrEqualTo(2));
@@ -113,9 +120,9 @@ void main() {
   });
 
   group('print text size', () {
-    test('Small is the default: 8 pt text and the 13 pt shop name on an A4 bill (the shop template, small so that many items fit)', () async {
+    test('Small is the default: 7.5 pt text and the 13 pt shop name on an A4 bill (the shop template, small so that many items fit)', () async {
       final sizes = fontSizes(await make(invoice(), PaperSize.a4, PrintTextSize.small, 'invoice_a4_small'));
-      expect(sizes, containsAll([8.0, 13.0]));
+      expect(sizes, containsAll([7.5, 13.0]));
       expect(sizes.reduce((a, b) => a > b ? a : b), lessThanOrEqualTo(13.0), reason: 'nothing bigger than the shop name');
     });
 
@@ -126,7 +133,7 @@ void main() {
       for (final size in PrintTextSize.values) {
         final used = fontSizes(await make(invoice(), PaperSize.a4, size, 'invoice_a4_${size.name}'));
         final m = PrintMetrics.of(size);
-        expect(used, containsAll([(m.row - 1.5).clamp(6.0, 12.0), m.shop + 1]), reason: size.name);
+        expect(used, containsAll([(m.row - 2.0).clamp(6.0, 12.0), m.shop + 1]), reason: size.name);
         expect(used.every((x) => x <= m.shop + 1.01), isTrue, reason: '${size.name}: sizes $used');
       }
     });

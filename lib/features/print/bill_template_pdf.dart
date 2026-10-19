@@ -18,12 +18,12 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
   final m = PrintMetrics.of(size);
   final a5 = paper == PaperSize.a5;
   // small rows, so that many products fit on one page (paper is not wasted)
-  final fs = (a5 ? m.row - 3.0 : m.row - 1.5).clamp(6.0, 12.0).toDouble();
+  final fs = (a5 ? m.row - 3.5 : m.row - 2.0).clamp(6.0, 12.0).toDouble();
   final margin = paperMarginPt(paper);
   pw.TextStyle st({bool b = false, double? size}) => pw.TextStyle(font: b ? bold : font, fontSize: size ?? fs, lineSpacing: 1.3);
   pw.Widget txt(String s, {bool b = false, double? size, pw.TextAlign? align}) => pw.Text(s, style: st(b: b, size: size), textAlign: align);
   const border = pw.TableBorder(left: pw.BorderSide(width: 0.6), right: pw.BorderSide(width: 0.6), top: pw.BorderSide(width: 0.6), bottom: pw.BorderSide(width: 0.6), horizontalInside: pw.BorderSide(width: 0.4), verticalInside: pw.BorderSide(width: 0.4));
-  pw.Widget cell(String s, {bool b = false, pw.TextAlign align = pw.TextAlign.left}) => pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 1.5), child: txt(s, b: b, align: align));
+  pw.Widget cell(String s, {bool b = false, pw.TextAlign align = pw.TextAlign.left}) => pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 0.8), child: txt(s, b: b, align: align));
   pw.TableRow totalRow(String label, {String qty = '', String mid = '', required String amount, bool b = false, bool shaded = false}) => pw.TableRow(
         decoration: shaded ? const pw.BoxDecoration(color: PdfColors.grey200) : null,
         children: [

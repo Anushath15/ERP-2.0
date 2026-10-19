@@ -41,6 +41,7 @@ void main() {
     await app(tester, '/preview/a4');
     expect(find.byKey(const ValueKey('paperHeading')), findsOneWidget, reason: 'TAX INVOICE, underlined, at the top');
     expect(find.text('TAX INVOICE'), findsOneWidget);
+    expect(find.text('Sample Bank'), findsNothing, reason: 'the bank name is not printed at the bottom of the invoice');
     expect(find.byKey(const ValueKey('paperTo0')), findsOneWidget, reason: 'the customer phone under the name');
     expect(find.text('Phone  94430 12345'), findsOneWidget);
     expect(find.text('GST  33ABCDE1234F1Z5'), findsOneWidget, reason: 'the customer GST number under the phone, when there is one');
