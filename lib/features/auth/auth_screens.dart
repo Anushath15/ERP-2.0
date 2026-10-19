@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/cloud/auth_api.dart';
+import '../../core/cloud/auth_controller.dart';
+import '../../core/cloud/cloud_config.dart';
 import '../../core/logo_image.dart';
 import '../../core/validators.dart';
 import '../shop/shop_profile_screen.dart' show ShopLogo, logoPickerProvider;
@@ -48,6 +51,21 @@ class _AuthFrame extends ConsumerWidget {
 
 Widget _logo(BuildContext context) => const AppLogo(size: 72);
 
+/// What went wrong with a sign-in step, in plain words.
+String authMessage(Strings l, AuthFailure f) => switch (f.problem) {
+      AuthProblem.wrongLogin => l.authWrongLogin,
+      AuthProblem.notConfirmed => l.authNotConfirmed,
+      AuthProblem.userExists => l.authUserExists,
+      AuthProblem.weakPassword => l.authWeakPassword,
+      AuthProblem.rateLimited => l.authRateLimited,
+      AuthProblem.network => l.authNetwork,
+      AuthProblem.notMember => l.authNotMember(f.email),
+      AuthProblem.googleOff => l.authGoogleOff,
+      AuthProblem.cancelled => l.authGoogleCancelled,
+      AuthProblem.timedOut => l.authGoogleTimedOut,
+      AuthProblem.other => l.authOther,
+    };
+
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
   @override
@@ -60,6 +78,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _show = false;
   bool _create = false;
   String? _error;
+  String? _info;
   final _shake = GlobalKey<ShakeState>();
 
   @override
@@ -69,17 +88,54 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     super.dispose();
   }
 
-  void _go() {
-    final l = tr(context);
-    void fail(String msg) {
-      setState(() => _error = msg); // the message is shown right beside the fields
-      _shake.currentState?.shake();
-      playSoundIn(context, SoundKind.error);
-    }
+  void _fail(String msg) {
+    setState(() {
+      _error = msg; // the message is shown right beside the fields
+      _info = null;
+    });
+    _shake.currentState?.shake();
+    playSoundIn(context, SoundKind.error);
+  }
 
-    if (!_email.text.contains('@')) return fail(l.errEmail);
-    if (_pass.text.length < 6) return fail(l.errPassword);
-    setState(() => _error = null);
+  Future<void> _go() async {
+    final l = tr(context);
+    if (!_email.text.contains('@')) return _fail(l.errEmail);
+    if (_pass.text.length < 6) return _fail(l.errPassword);
+    setState(() {
+      _error = null;
+      _info = null;
+    });
+    if (!ref.read(cloudConfigProvider).configured) return context.go(_create ? '/wizard' : '/'); // no cloud in this build: the old preview
+    final auth = ref.read(authProvider.notifier);
+    if (_create) {
+      final r = await auth.createAccount(_email.text, _pass.text);
+      if (!mounted) return;
+      if (r.failure != null) return _fail(authMessage(l, r.failure!));
+      if (r.needsConfirm) {
+        setState(() {
+          _create = false;
+          _info = l.authAccountCreated(_email.text.trim());
+        });
+        return;
+      }
+      return context.go('/wizard');
+    }
+    final f = await auth.signIn(_email.text, _pass.text);
+    if (!mounted) return;
+    if (f != null) return _fail(authMessage(l, f));
+    context.go('/');
+  }
+
+  Future<void> _google() async {
+    final l = tr(context);
+    if (!ref.read(cloudConfigProvider).configured) return context.go(_create ? '/wizard' : '/'); // no cloud in this build: the old preview
+    setState(() {
+      _error = null;
+      _info = l.authGoogleWait;
+    });
+    final f = await ref.read(authProvider.notifier).google();
+    if (!mounted) return;
+    if (f != null) return _fail(authMessage(l, f));
     context.go(_create ? '/wizard' : '/');
   }
 
@@ -87,6 +143,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget build(BuildContext context) {
     final l = tr(context);
     final th = Theme.of(context).textTheme;
+    final busy = ref.watch(authProvider.select((a) => a.busy));
     return _AuthFrame(
       child: Shake(
         key: _shake,
@@ -101,7 +158,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             Text(_create ? l.createAccountHelp : l.signInHelp, style: th.bodySmall, textAlign: TextAlign.center),
             const SizedBox(height: 20),
             FilledButton.icon(
-              onPressed: () => context.go(_create ? '/wizard' : '/'),
+              key: const ValueKey('googleSignIn'),
+              onPressed: busy ? null : _google,
               style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF1F1F1F), minimumSize: const Size(0, 52)),
               icon: const Text('G', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Color(0xFF4285F4))),
               label: Text(l.continueWithGoogle),
@@ -114,12 +172,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             TextField(
               controller: _pass,
               obscureText: !_show,
-              onSubmitted: (_) => _go(),
+              onSubmitted: (_) => busy ? null : _go(),
               decoration: InputDecoration(labelText: l.fieldPassword, prefixIcon: const Icon(Icons.lock_outline_rounded), suffixIcon: IconButton(tooltip: _show ? l.hidePassword : l.showPassword, onPressed: () => setState(() => _show = !_show), icon: Icon(_show ? Icons.visibility_off_rounded : Icons.visibility_rounded))),
             ),
             if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: StatusBadge(_error!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded)),
+            if (_info != null) Padding(padding: const EdgeInsets.only(top: 10), child: StatusBadge(_info!, kind: BadgeKind.info, icon: Icons.info_outline_rounded)),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _go, style: FilledButton.styleFrom(minimumSize: const Size(0, 52)), child: Text(_create ? l.createAccount : l.signIn)),
+            FilledButton(key: const ValueKey('signInButton'), onPressed: busy ? null : _go, style: FilledButton.styleFrom(minimumSize: const Size(0, 52)), child: busy ? Text(l.authBusy) : Text(_create ? l.createAccount : l.signIn)),
             const SizedBox(height: 6),
             if (!_create) TextButton(onPressed: () => context.go('/forgot'), child: Text(l.forgotPassword)),
             TextButton(onPressed: () => setState(() { _create = !_create; _error = null; }), child: Text(_create ? l.haveAccount : l.firstTimeCreate)),
@@ -141,6 +200,7 @@ class ForgotScreen extends ConsumerStatefulWidget {
 class _ForgotScreenState extends ConsumerState<ForgotScreen> {
   final _email = TextEditingController();
   bool _sent = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -166,7 +226,26 @@ class _ForgotScreenState extends ConsumerState<ForgotScreen> {
             if (!_sent) ...[
               TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l.fieldEmail, prefixIcon: const Icon(Icons.mail_outline_rounded))),
               const SizedBox(height: 16),
-              FilledButton(onPressed: () => setState(() => _sent = true), style: FilledButton.styleFrom(minimumSize: const Size(0, 52)), child: Text(l.sendResetLink)),
+              if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusBadge(_error!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded)),
+              FilledButton(
+                key: const ValueKey('sendReset'),
+                onPressed: ref.watch(authProvider.select((a) => a.busy))
+                    ? null
+                    : () async {
+                        if (!_email.text.contains('@')) return setState(() => _error = l.errEmail);
+                        if (ref.read(cloudConfigProvider).configured) {
+                          final f = await ref.read(authProvider.notifier).sendResetLink(_email.text);
+                          if (!mounted) return;
+                          if (f != null) return setState(() => _error = authMessage(l, f));
+                        }
+                        setState(() {
+                          _error = null;
+                          _sent = true;
+                        });
+                      },
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 52)),
+                child: Text(l.sendResetLink),
+              ),
             ] else ...[
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.mark_email_read_rounded, color: context.c.success), const SizedBox(width: 10), Expanded(child: Text(l.resetSent(_email.text.isEmpty ? 'owner@example.com' : _email.text), style: th.bodyLarge))]),
               const SizedBox(height: 8),

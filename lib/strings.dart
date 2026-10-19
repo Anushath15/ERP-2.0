@@ -1303,4 +1303,19 @@ class Strings {
   String get printTestBody => 'If you can read this and the frame is complete, the printer is ready.';
   String get printersNone => 'No printer found';
   String get printersRefresh => 'Look for printers again';
+  String get authWrongLogin => 'Wrong email or password.';
+  String get authNotConfirmed => 'Please open the link we sent to your email first, then sign in.';
+  String get authNetwork => 'Could not reach the internet. Check the connection and try again.';
+  String get authUserExists => 'This email already has an account. Press Sign in instead.';
+  String get authWeakPassword => 'Choose a stronger password (at least 6 letters or numbers).';
+  String get authRateLimited => 'Too many tries. Wait a minute and try again.';
+  String get authOther => 'Sign-in did not work. Please try again.';
+  String authNotMember(String email) => 'You signed in as ${email}, but this account has no access to the shop yet. Ask the owner to add it.';
+  String get authGoogleOff => 'Google sign-in is not switched on yet. Use your email and password for now.';
+  String get authGoogleWait => 'Finish the sign-in in the browser window that opened. Come back here when it says you are signed in.';
+  String get authGoogleCancelled => 'The sign-in was not completed. Press the Google button to try again.';
+  String get authGoogleTimedOut => 'The sign-in took too long and was stopped. Press the Google button to try again.';
+  String authAccountCreated(String email) => 'We sent a link to ${email}. Open it, then press Sign in.';
+  String get authBusy => 'Please wait...';
+  String authSignedInAs(String email) => 'Signed in as ${email}';
 }

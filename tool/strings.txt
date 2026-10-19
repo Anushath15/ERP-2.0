@@ -1343,3 +1343,18 @@ printTestTitle | Printer test page
 printTestBody | If you can read this and the frame is complete, the printer is ready.
 printersNone | No printer found
 printersRefresh | Look for printers again
+authWrongLogin | Wrong email or password.
+authNotConfirmed | Please open the link we sent to your email first, then sign in.
+authNetwork | Could not reach the internet. Check the connection and try again.
+authUserExists | This email already has an account. Press Sign in instead.
+authWeakPassword | Choose a stronger password (at least 6 letters or numbers).
+authRateLimited | Too many tries. Wait a minute and try again.
+authOther | Sign-in did not work. Please try again.
+authNotMember | You signed in as {email}, but this account has no access to the shop yet. Ask the owner to add it.
+authGoogleOff | Google sign-in is not switched on yet. Use your email and password for now.
+authGoogleWait | Finish the sign-in in the browser window that opened. Come back here when it says you are signed in.
+authGoogleCancelled | The sign-in was not completed. Press the Google button to try again.
+authGoogleTimedOut | The sign-in took too long and was stopped. Press the Google button to try again.
+authAccountCreated | We sent a link to {email}. Open it, then press Sign in.
+authBusy | Please wait...
+authSignedInAs | Signed in as {email}

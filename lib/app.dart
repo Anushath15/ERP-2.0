@@ -21,6 +21,8 @@ import 'fake/data_providers.dart';
 import 'fake/health.dart';
 import 'fake/store.dart';
 import 'router.dart';
+import 'core/cloud/auth_controller.dart';
+import 'core/cloud/cloud_config.dart';
 
 class ErpApp extends ConsumerStatefulWidget {
   const ErpApp({super.key, this.initialLocation = '/', this.router, this.dbLocation, this.runChecks = false});
@@ -41,13 +43,28 @@ class ErpApp extends ConsumerStatefulWidget {
 class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
   FrameGuard? _guard;
   final _clock = Stopwatch()..start();
-  late final GoRouter _router = widget.router ?? buildRouter(initialLocation: widget.initialLocation);
+  final _gateTick = ValueNotifier<int>(0);
+  late final GoRouter _router = widget.router ?? buildRouter(initialLocation: widget.initialLocation, gate: _gate, gateChanges: _gateTick);
+
+  /// Where the shop's cloud sign-in sends a person. Only when this build has a cloud address: otherwise the program is local-only and
+  /// opens as before. Signed out: only the sign-in pages. Signed in: not the sign-in page.
+  String? _gate(String location) {
+    if (!ref.read(cloudConfigProvider).configured) return null;
+    const open = {'/signin', '/forgot', '/wizard'};
+    return switch (ref.read(authProvider).status) {
+      AuthStatus.loading => null,
+      AuthStatus.signedOut => open.contains(location) ? null : '/signin',
+      AuthStatus.signedIn => location == '/signin' ? '/' : null,
+    };
+  }
 
   @override
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_onKey);
     WidgetsBinding.instance.addObserver(this);
+    ref.listenManual(authProvider, (_, __) => _gateTick.value++);
+    Future.microtask(() => mounted ? ref.read(authProvider.notifier).restore() : null); // the kept sign-in of this computer, if any (not inside the build)
     // Build the (sample) credit data right after the first frame, while nobody is waiting, so the first visit to a credit page is not the slow frame.
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -131,6 +148,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
   void dispose() {
     _diskTimer?.cancel();
     _exitListener?.dispose();
+    _gateTick.dispose();
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     if (!kDebugMode) SchedulerBinding.instance.removeTimingsCallback(_onTimings);
@@ -172,6 +190,9 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       themeMode: s.theme,
       builder: (context, child) {
         if (ref.watch(fileHealthProvider) == FileHealth.damaged) return DamagedFileScreen(details: ref.watch(damageDetailsProvider));
+        if (ref.watch(cloudConfigProvider).configured && ref.watch(authProvider.select((a) => a.status)) == AuthStatus.loading) {
+          return const ColoredBox(color: Colors.black, child: Center(child: CircularProgressIndicator())); // the kept sign-in is being renewed (a second or two at most)
+        }
         // Our text size is multiplied with the operating system's own text size, never replacing it.
         final mq = MediaQuery.of(context);
         return MediaQuery(

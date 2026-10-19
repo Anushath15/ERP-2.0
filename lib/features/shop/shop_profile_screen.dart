@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import '../../core/cloud/auth_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/logo_image.dart';
@@ -119,7 +120,9 @@ class ShopProfileScreen extends ConsumerWidget {
         OutlinedButton.icon(key: const ValueKey('shop-settings'), onPressed: () => context.push('/settings'), icon: const Icon(Icons.settings_rounded), label: Text(l.navSettings)),
         OutlinedButton.icon(key: const ValueKey('shop-signout'), onPressed: () async {
           final ok = await confirmDialog(context, title: l.signOutConfirmTitle, message: l.signOutConfirmText, confirmLabel: l.signOut, danger: true);
-          if (ok && context.mounted) context.go('/signin');
+          if (!ok) return;
+          await ref.read(authProvider.notifier).signOut();
+          if (context.mounted) context.go('/signin');
         }, icon: const Icon(Icons.logout_rounded), label: Text(l.signOut)),
       ],
       child: context.isDesktop

@@ -27,10 +27,12 @@ import 'shell.dart';
 
 Page<void> _p(BuildContext c, GoRouterState s, Widget w, {LocalKey? key}) => motionPage(c, key ?? s.pageKey, w);
 
-GoRouter buildRouter({String initialLocation = '/'}) {
+GoRouter buildRouter({String initialLocation = '/', String? Function(String location)? gate, Listenable? gateChanges}) {
   final shellKey = GlobalKey<NavigatorState>();
   return GoRouter(
     initialLocation: initialLocation,
+    refreshListenable: gateChanges,
+    redirect: gate == null ? null : (context, state) => gate(state.uri.path),
     routes: [
       GoRoute(path: '/signin', builder: (c, s) => const SignInScreen()),
       GoRoute(path: '/forgot', builder: (c, s) => const ForgotScreen()),
