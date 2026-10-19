@@ -1415,3 +1415,32 @@ tgWrongPassword | Wrong password, or the file is damaged.
 tgNotLocked | This is not a locked ASK ERP backup file.
 tgDamaged | The file is damaged.
 wizSeriesMine | This computer already has the letter {letter}. It stays the same, because the bills made here carry it.
+lockSet | Set a PIN
+lockSetNote | The PIN is 4 to 8 digits. The program asks for it when it opens and after some minutes without use. You will be shown a recovery code: write it on paper.
+lockChange | Change PIN
+lockOff | Turn off
+lockNow | Lock now
+lockNever | Only when I press Lock
+lockAfterMinutes | Lock after {n} minutes
+lockOnStatus | PIN lock is on. The program asks for the PIN when it opens, and after some minutes without use.
+lockOffStatus | PIN lock is off. Anyone at this computer can open the program.
+lockScreenTitle | ASK ERP 2.0 is locked
+lockPinField | PIN
+lockUnlock | Unlock
+lockWrong | Wrong PIN.
+lockWait | Too many wrong tries. Try again in {s} seconds.
+lockForgot | Forgot the PIN?
+lockRecoveryTitle | Recovery code
+lockRecoveryAsk | Type the recovery code you wrote on paper, and choose a new PIN.
+lockRecoveryField | Recovery code
+lockNewPin | New PIN
+lockResetBtn | Set the new PIN
+lockRecoveryBad | That recovery code is not right.
+lockRecoveryShow | Your recovery code
+lockRecoveryHelp | Write this code on paper and keep it safe. If you forget the PIN, it is the only way back in. It is shown only once.
+lockWritten | I have written it down
+lockPinBad | The PIN is 4 to 8 digits.
+lockPinSame | The two PINs are different.
+lockCurrentPin | Type the current PIN
+lockRepeat | Type the PIN again
+lockCurrentWrong | The current PIN is not right.

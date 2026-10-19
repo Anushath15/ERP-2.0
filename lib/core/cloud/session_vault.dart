@@ -22,3 +22,6 @@ final sessionVaultProvider = Provider<SessionVault>((ref) => impl.createVault(Me
 
 /// The same kind of protected file, for the Telegram backup settings (bot token, channel and backup password): `telegram.bin`.
 final telegramVaultProvider = Provider<SessionVault>((ref) => impl.createVault(MemorySessionVault.new, file: 'telegram.bin'));
+
+/// The same kind of protected file, for the PIN lock (the PIN's hash, the recovery code's hash, the wrong-try count): `lock.bin`.
+final lockVaultProvider = Provider<SessionVault>((ref) => impl.createVault(MemorySessionVault.new, file: 'lock.bin'));

@@ -14,7 +14,7 @@ import 'widgets.dart';
 enum FieldType { text, number, money, multiline, dropdown, choice, combo, date, phone, email }
 
 class FieldSpec {
-  const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check, this.kind, this.suffix});
+  const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check, this.kind, this.suffix, this.obscure = false, this.digits});
   final String key, label;
   final FieldType type;
   final List<(String, String)> options; // (value, label)
@@ -31,6 +31,12 @@ class FieldSpec {
 
   /// A button inside the field, at its end (for example "make a barcode"); it can fill the field through its controller.
   final Widget Function(TextEditingController controller)? suffix;
+
+  /// Hide what is typed (a PIN).
+  final bool obscure;
+
+  /// Digits only, at most this many (a PIN).
+  final int? digits;
 
   TextKind get textKind => kind ?? switch (type) { FieldType.multiline => TextKind.note, FieldType.phone => TextKind.phone, FieldType.email => TextKind.email, _ => TextKind.name };
 }
@@ -181,7 +187,7 @@ class _FormBodyState extends State<_FormBody> {
       case FieldType.email:
         return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: f.label, hintText: f.hint), validator: validate);
       case FieldType.text:
-        return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, inputFormatters: [safeInput(f.textKind)], decoration: InputDecoration(labelText: f.label, hintText: f.hint, suffixIcon: f.suffix?.call(_ctl[f.key]!)), validator: validate, textInputAction: TextInputAction.next);
+        return TextFormField(controller: _ctl[f.key], autofocus: f.autofocus, obscureText: f.obscure, keyboardType: f.digits != null ? TextInputType.number : null, inputFormatters: f.digits != null ? [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(f.digits)] : [safeInput(f.textKind)], decoration: InputDecoration(labelText: f.label, hintText: f.hint, suffixIcon: f.suffix?.call(_ctl[f.key]!)), validator: validate, textInputAction: TextInputAction.next);
     }
   }
 

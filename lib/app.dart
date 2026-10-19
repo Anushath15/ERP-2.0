@@ -24,6 +24,8 @@ import 'fake/store.dart';
 import 'router.dart';
 import 'core/cloud/auth_controller.dart';
 import 'core/cloud/cloud_config.dart';
+import 'core/lock/pin_lock.dart';
+import 'features/lock/lock_screen.dart';
 
 class ErpApp extends ConsumerStatefulWidget {
   const ErpApp({super.key, this.initialLocation = '/', this.router, this.dbLocation, this.runChecks = false});
@@ -162,6 +164,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
 
   /// Ctrl+Plus, Ctrl+Minus and Ctrl+0 change the text size from anywhere (no clash with F-keys, Ctrl+S, Ctrl+Shift+N).
   bool _onKey(KeyEvent e) {
+    if (e is KeyDownEvent) ref.read(pinLockProvider.notifier).touch(); // a key press means the program is in use
     if (e is! KeyDownEvent || !HardwareKeyboard.instance.isControlPressed) return false;
     final k = e.logicalKey;
     final n = ref.read(settingsProvider.notifier);
@@ -200,13 +203,21 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
         }
         // Our text size is multiplied with the operating system's own text size, never replacing it.
         final mq = MediaQuery.of(context);
+        final locked = ref.watch(pinLockProvider.select((x) => x.locked));
         return MediaQuery(
           data: mq.copyWith(textScaler: TextScaler.linear(mq.textScaler.scale(1) * s.textScale)),
-          child: Stack(children: [
-            MotionScope(motion: Motion(level), child: child ?? const SizedBox.shrink()),
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) => ref.read(pinLockProvider.notifier).touch(),
+            onPointerSignal: (_) => ref.read(pinLockProvider.notifier).touch(),
+            child: Stack(children: [
+            // while locked nothing under the lock screen can be clicked, focused, typed into or read by a screen reader
+            ExcludeSemantics(excluding: locked, child: ExcludeFocus(excluding: locked, child: IgnorePointer(ignoring: locked, child: MotionScope(motion: Motion(level), child: child ?? const SizedBox.shrink())))),
+            if (locked) const Positioned.fill(child: LockOverlay()),
             if (ref.watch(backupControllerProvider.select((x) => x.closing)))
               Positioned.fill(child: Material(color: Colors.black54, child: Center(child: Card(child: Padding(padding: const EdgeInsets.all(24), child: Text(const Strings().backupClosing, style: Theme.of(context).textTheme.titleMedium)))))),
           ]),
+          ),
         );
       },
     );

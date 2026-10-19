@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/date_fmt.dart';
 import '../../core/printer_service.dart';
+import '../lock/lock_screen.dart';
 import '../print/print_action.dart';
 import '../print/test_page_pdf.dart';
 import '../../core/responsive.dart';
@@ -39,8 +40,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _pin = false;
-
   @override
   Widget build(BuildContext context) {
     final l = tr(context);
@@ -97,7 +96,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ]));
 
     final security = SectionCard(title: l.setSecurity, child: Column(children: [
-      row(l.setPin, l.setPinHelp, Switch(value: _pin, onChanged: (v) => setState(() => _pin = v))),
+      const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: AppLockCard()),
       row(l.signOutEverywhere, l.signOutEverywhereHelp, OutlinedButton(onPressed: () => toast(context, l.demoOnly), child: Text(l.changePassword))),
     ]));
 

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/date_fmt.dart';
+import 'core/lock/pin_lock.dart';
 import 'core/responsive.dart';
 import 'design/effects.dart';
 import 'design/motion.dart';
@@ -202,6 +203,8 @@ class TopBar extends ConsumerWidget {
           onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(theme: dark ? ThemeMode.light : ThemeMode.dark)),
           icon: Icon(dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
         ),
+        if (ref.watch(pinLockProvider.select((x) => x.enabled)))
+          IconButton(key: const ValueKey('topbar-lock'), tooltip: l.lockNow, onPressed: ref.read(pinLockProvider.notifier).lock, icon: const Icon(Icons.lock_rounded)),
         IconButton(
           key: const ValueKey('topbar-profile'),
           tooltip: l.navShop,
