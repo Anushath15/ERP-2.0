@@ -157,7 +157,7 @@ class Strings {
   String get keyFill100 => 'Preview only: fill the bill with 100 sample lines';
   String get addProductShortcut => 'Add a new product (Ctrl+Shift+N)';
   String get noProductFound => 'No product found.';
-  String addNamed(String name) => '+ Add ${name}';
+  String addNamed(String name) => 'Add ${name}';
   String get saveAndAddToBill => 'Save and add to bill';
   String productAdded(String name) => '${name} was added';
   String productsSubtitle(String count) => '${count} products';

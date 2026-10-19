@@ -51,7 +51,7 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'zzzzz');
     await tester.pumpAndSettle();
     expect(find.text('No product found.'), findsOneWidget);
-    expect(find.text('+ Add zzzzz'), findsOneWidget);
+    expect(find.text('Add zzzzz'), findsOneWidget);
     await expectLater(find.byType(ErpApp), matchesGoldenFile('goldens/screens/billing_no_product.png'));
   });
 

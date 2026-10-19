@@ -158,7 +158,7 @@ editProduct | Change product
 keyFill100 | Preview only: fill the bill with 100 sample lines
 addProductShortcut | Add a new product (Ctrl+Shift+N)
 noProductFound | No product found.
-addNamed | + Add {name}
+addNamed | Add {name}
 saveAndAddToBill | Save and add to bill
 productAdded | {name} was added
 productsSubtitle | {count} products
