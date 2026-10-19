@@ -20,6 +20,6 @@ jobs:
           URL: ${{ vars.SUPABASE_URL }}
           KEY: ${{ vars.SUPABASE_ANON_KEY }}
         run: |
-          test -n "$URL" || { echo "SUPABASE_URL variable is not set yet"; exit 0; }
+          test -n "$URL" && test -n "$KEY" || { echo "::error::SUPABASE_URL / SUPABASE_ANON_KEY variables are not set: the project will pause after a week"; exit 1; }
           curl --fail --silent --show-error -X POST "$URL/rest/v1/rpc/ping" \
             -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}'
