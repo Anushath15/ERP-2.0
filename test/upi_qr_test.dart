@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:erp2/core/data_mode.dart';
 import 'package:erp2/demo/seed.dart';
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/domain/upi.dart';
 import 'package:erp2/domain_lite/bill_calc.dart';
+import 'package:erp2/fake/data_providers.dart' show AppModeNotifier, appModeProvider;
 import 'package:erp2/fake/models.dart';
 import 'package:erp2/fake/shop_profile.dart';
 import 'package:erp2/fake/store.dart';
@@ -20,6 +22,11 @@ import 'helpers.dart';
 // What these tests prove: the UPI payment link carries the right id, shop and amount; a QR code with the amount still due is on the bill
 // (A4/A5 and roll paper, on screen and in the PDF) only when something is due; and the counter can show the QR full size.
 // What they do NOT prove: that a phone's UPI app accepts the code (scan one printout with a real phone once).
+class _DemoMode extends AppModeNotifier {
+  @override
+  DataMode build() => DataMode.demo;
+}
+
 void main() {
   const l = Strings();
   final now = DateTime(2026, 10, 13, 17, 30);
@@ -28,7 +35,7 @@ void main() {
   group('the UPI link', () {
     test('id, shop, amount in rupees with two decimals, note: all encoded', () {
       final u = upiPayUri(upiId: 'senthil@okbank', payeeName: 'Senthil Enterprises', amountPaise: 761950, note: 'A-020001')!;
-      expect(u, 'upi://pay?pa=senthil%40okbank&pn=Senthil%20Enterprises&am=7619.50&cu=INR&tn=A-020001');
+      expect(u, 'upi://pay?pa=senthil@okbank&pn=Senthil%20Enterprises&am=7619.50&cu=INR&tn=A-020001');
       expect(Uri.parse(u).queryParameters, {'pa': 'senthil@okbank', 'pn': 'Senthil Enterprises', 'am': '7619.50', 'cu': 'INR', 'tn': 'A-020001'});
     });
 
@@ -80,7 +87,7 @@ void main() {
 
     test('roll paper gets the same QR', () {
       final lay = buildPrintLayout(doc: bill(receivedPaise: 1000), shop: ShopProfile.sample, l: l);
-      expect(lay.upiData, startsWith('upi://pay?pa=senthil%40okbank'));
+      expect(lay.upiData, startsWith('upi://pay?pa=senthil@okbank'));
       expect(lay.upiLabel, startsWith('Scan to pay'));
     });
 
@@ -127,6 +134,17 @@ void main() {
       expect(find.byKey(const ValueKey('upiQrBig')), findsOneWidget);
       expect(find.byKey(const ValueKey('upiQrAmount')), findsOneWidget);
       expect(tester.widget<Text>(find.byKey(const ValueKey('upiQrAmount'))).data, startsWith('₹ 1'));
+    });
+
+    testWidgets('in demo mode the QR dialog says the code is made up and cannot receive money', (tester) async {
+      final c = await pumpApp(tester, size: desktop1366, location: '/bill', motion: MotionLevel.off, followSystemMotion: false, extraOverrides: [appModeProvider.overrideWith(_DemoMode.new)]);
+      final cart = c.read(cartProvider(DocMode.invoice).notifier);
+      cart.add(c.read(productsProvider)[5]);
+      cart.setPay(PayMode.upi);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('showUpiQr')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('upiDemoWarn')), findsOneWidget);
     });
 
     testWidgets('no UPI id in Shop profile: the button says what to do instead of showing a broken code', (tester) async {

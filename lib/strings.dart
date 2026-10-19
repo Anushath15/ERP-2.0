@@ -1404,4 +1404,5 @@ class Strings {
   String get lockCurrentPin => 'Type the current PIN';
   String get lockRepeat => 'Type the PIN again';
   String get lockCurrentWrong => 'The current PIN is not right.';
+  String get upiDemoWarn => 'Demo mode: this QR uses a made-up UPI id, so it cannot receive money. Turn Demo mode off in Settings and type the real UPI id in Shop profile.';
 }

@@ -19,5 +19,7 @@ String? upiPayUri({required String upiId, required String payeeName, required in
   final rupees = '${amountPaise ~/ 100}.${(amountPaise % 100).toString().padLeft(2, '0')}';
   final pn = _plain(payeeName, 40);
   final tn = _plain(note, 40);
-  return 'upi://pay?pa=${Uri.encodeComponent(upiId.trim())}${pn.isEmpty ? '' : '&pn=${Uri.encodeComponent(pn)}'}&am=$rupees&cu=INR${tn.isEmpty ? '' : '&tn=${Uri.encodeComponent(tn)}'}';
+  // The id is written as it is, with its @: only letters, digits . _ - and one @ can get here (checked above), and the UPI apps expect
+  // `pa=name@bank`, which is how bank and shop QR codes are normally written.
+  return 'upi://pay?pa=${upiId.trim()}${pn.isEmpty ? '' : '&pn=${Uri.encodeComponent(pn)}'}&am=$rupees&cu=INR${tn.isEmpty ? '' : '&tn=${Uri.encodeComponent(tn)}'}';
 }

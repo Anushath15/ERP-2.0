@@ -24,7 +24,9 @@ import '../../design/form_sheet.dart';
 import '../../design/segments.dart';
 import '../../design/text_zoom.dart';
 import '../../design/tokens.dart';
+import '../../core/data_mode.dart';
 import '../../design/widgets.dart';
+import '../../fake/data_providers.dart' show appModeProvider;
 import '../../fake/models.dart';
 import '../../fake/store.dart';
 import '../../fake/shop_profile.dart';
@@ -113,6 +115,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           Text('₹ ${formatPaise(pay)}', key: const ValueKey('upiQrAmount'), style: Theme.of(ctx).textTheme.headlineSmall),
           const SizedBox(height: 6),
           Text(l.upiQrHelp, textAlign: TextAlign.center, style: Theme.of(ctx).textTheme.bodySmall),
+          if (ref.read(appModeProvider) == DataMode.demo) Padding(padding: const EdgeInsets.only(top: 10), child: StatusBadge(l.upiDemoWarn, key: const ValueKey('upiDemoWarn'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded)),
         ]),
         actions: [FilledButton(onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(), child: Text(l.close))],
       ),

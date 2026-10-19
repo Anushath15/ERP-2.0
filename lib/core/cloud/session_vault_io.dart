@@ -8,6 +8,8 @@ import 'session_vault.dart';
 
 /// `%LOCALAPPDATA%\ASK ERP 2.0\session.bin` (macOS / Linux: the same folder the shop data lives in, one level up from `data`).
 SessionVault createVault(SessionVault Function() fallback, {String file = 'session.bin'}) {
+  // Automatic tests must never read or change this computer's real protected files (the PIN lock would lock every test out): they get a memory copy.
+  if (Platform.environment.containsKey('FLUTTER_TEST')) return fallback();
   final env = Platform.environment;
   String? base;
   if (Platform.isWindows && env['LOCALAPPDATA'] != null) base = '${env['LOCALAPPDATA']}\\ASK ERP 2.0';
