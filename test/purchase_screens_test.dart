@@ -74,6 +74,7 @@ void main() {
     final expected = sellingPriceKeepingMargin(oldCost: product.costPaise, newCost: newCost, oldSell: product.pricePaise);
     expect(expected, greaterThan(product.pricePaise), reason: 'dearer stock raises the price');
     expect(find.byKey(ValueKey('pur-sell-${product.id}')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(ValueKey('pur-cost-${product.id}'))).data, contains(formatPaise(product.costPaise, symbol: true)), reason: 'the old buying price is shown above the selling price');
     expect(tester.widget<Text>(find.byKey(ValueKey('pur-sell-${product.id}'))).data, contains(formatPaise(expected, symbol: true)));
     await tester.ensureVisible(find.byKey(const ValueKey('pur-save')));
     await tester.tap(find.byKey(const ValueKey('pur-save')));

@@ -334,11 +334,20 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
                 final now = sellingPriceKeepingMargin(oldCost: x.product.costPaise, newCost: rateEx, oldSell: x.product.pricePaise);
                 final changed = now != x.product.pricePaise;
                 final above = x.product.mrpPaise > 0 && now > x.product.mrpPaise;
-                return Text(
-                  key: ValueKey('pur-sell-${x.product.id}'),
-                  '${changed ? s.purSellChange(m(x.product.pricePaise), m(now)) : s.purSellSame(m(x.product.pricePaise))}${above ? '  ·  ${s.purSellAboveMrp(m(x.product.mrpPaise))}' : ''}',
-                  style: th.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: above ? context.c.warning : (changed ? context.c.info : null)),
-                );
+                final bold = th.bodySmall?.copyWith(fontWeight: FontWeight.w600);
+                return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                  // the old buying price first, then what the selling price becomes
+                  Text(
+                    key: ValueKey('pur-cost-${x.product.id}'),
+                    rateEx != x.product.costPaise ? s.purCostChange(m(x.product.costPaise), m(rateEx)) : s.purCostSame(m(x.product.costPaise)),
+                    style: bold,
+                  ),
+                  Text(
+                    key: ValueKey('pur-sell-${x.product.id}'),
+                    '${changed ? s.purSellChange(m(x.product.pricePaise), m(now)) : s.purSellSame(m(x.product.pricePaise))}${above ? '  ·  ${s.purSellAboveMrp(m(x.product.mrpPaise))}' : ''}',
+                    style: bold?.copyWith(color: above ? context.c.warning : (changed ? context.c.info : null)),
+                  ),
+                ]);
               }(),
           ]),
           if (_dealer != null) _RateHints(key: ValueKey('hints-${x.product.id}-$_dealer-$rateEx'), productId: x.product.id, dealerId: _dealer!, ratePaise: rateEx),

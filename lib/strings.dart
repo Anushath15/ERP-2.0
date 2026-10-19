@@ -1290,4 +1290,6 @@ class Strings {
   String purSellChange(String was, String now) => 'Selling price ${was} → ${now} (same margin)';
   String purSellSame(String price) => 'Selling price stays ${price}';
   String purSellAboveMrp(String mrp) => 'above the MRP ${mrp}';
+  String purCostChange(String was, String now) => 'Buying price ${was} → ${now}';
+  String purCostSame(String price) => 'Buying price stays ${price}';
 }

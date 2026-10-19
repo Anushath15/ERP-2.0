@@ -1330,3 +1330,5 @@ gstEditNote | Printed under the customer name on the tax invoice. Leave empty to
 purSellChange | Selling price {was} → {now} (same margin)
 purSellSame | Selling price stays {price}
 purSellAboveMrp | above the MRP {mrp}
+purCostChange | Buying price {was} → {now}
+purCostSame | Buying price stays {price}
