@@ -14,7 +14,7 @@ void main() {
   testWidgets('Shop profile is its own page in the sidebar with all the shop details', (tester) async {
     await app(tester, '/shop', size: const ScreenSpec('tall', 1920, 2400));
     expect(find.text('Shop profile'), findsWidgets);
-    for (final t in ['Shop details', 'Shop name', 'Owner name', 'Address', 'Phone', 'GSTIN', 'UPI ID (shown in the message)', 'Bank details', 'Bill footer message', 'Invoice number prefix', 'Show on estimate']) {
+    for (final t in ['Shop details', 'Shop name', 'Owner name', 'Address', 'Phone', 'GSTIN', 'UPI ID (shown in the message)', 'Bank name', 'Account number', 'IFSC code', 'Bill footer message', 'Invoice number prefix', 'Show on estimate']) {
       expect(find.text(t), findsWidgets, reason: t);
     }
     expect(find.byIcon(Icons.storefront_rounded), findsWidgets, reason: 'sidebar entry');

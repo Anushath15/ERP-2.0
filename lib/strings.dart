@@ -1409,4 +1409,12 @@ class Strings {
   String get shopQrAlways => 'Print my UPI QR on every bill';
   String get shopQrAlwaysHelp => 'A bill with money still due always gets a QR with that amount. A paid bill gets a QR with no amount, for later payments.';
   String upiHandleWarn(String handle) => 'The ending @${handle} is not a UPI ending I know. Check it in your UPI app and copy the ID exactly (for example @oksbi, @okhdfcbank, @ybl). With a wrong ID the QR cannot be paid.';
+  String get shopBankName => 'Bank name';
+  String get shopBankHolder => 'Name on the account (optional)';
+  String get shopBankAccount => 'Account number';
+  String get shopBankIfsc => 'IFSC code';
+  String get errIfsc => 'The IFSC code has 11 characters: 4 letters, a zero, then 6 letters or digits (for example SBIN0003780).';
+  String get errAccount => 'The account number is 6 to 18 digits, with no spaces or letters.';
+  String get tplAcNo => 'A/c';
+  String get tplIfscLabel => 'IFSC';
 }

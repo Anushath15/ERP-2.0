@@ -199,11 +199,6 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
   ];
 
   final beforeRound = c.grandTotal - c.roundOff;
-  // the bank details are free text: the account number and the IFSC code go up beside the GST number, the rest stays at the bottom
-  final bankParts = [for (final b in shop.bankDetails.split(RegExp(r'[\r\n,]+'))) if (b.trim().isNotEmpty) b.trim()];
-  final accountRx = RegExp(r'^(a\s*[/\\]?\s*c|acc(ount)?)\b(?!\s*name)', caseSensitive: false);
-  final ifscRx = RegExp(r'ifsc', caseSensitive: false);
-  final bankUp = [for (final b in bankParts) if (accountRx.hasMatch(b) || ifscRx.hasMatch(b)) b];
   final shopLeft = est
       ? const <String>[]
       : [
@@ -216,7 +211,8 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
       ? const <String>[]
       : [
           if (shop.gstin.trim().isNotEmpty) '${l.tplGstNo}  ${shop.gstin.trim()}',
-          ...bankUp,
+          if (shop.bankAccount.trim().isNotEmpty) '${l.tplAcNo} ${shop.bankAccount.trim()}',
+          if (shop.bankIfsc.trim().isNotEmpty) '${l.tplIfscLabel} ${shop.bankIfsc.trim().toUpperCase()}',
         ];
   final status = est ? '' : (doc.balancePaise > 0 ? ((doc.receivedPaise ?? 0) <= 0 ? l.tplCreditBill : l.tplPartPaid) : l.tplPaid);
 

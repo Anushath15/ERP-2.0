@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import '../../domain/bank.dart';
 import '../../domain/upi.dart';
 import '../../core/cloud/auth_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -80,10 +81,15 @@ class ShopProfileScreen extends ConsumerWidget {
           field('email', l.fieldEmail, s.email, (v) => set((x) => x.copyWith(email: v)), type: TextInputType.emailAddress, kind: TextKind.email),
           field('gstin', 'GSTIN', s.gstin, (v) => set((x) => x.copyWith(gstin: v)), kind: TextKind.gstin),
           field('upi', l.setUpi, s.upiId, (v) => set((x) => x.copyWith(upiId: v)), kind: TextKind.upi),
-          field('bank', l.shopBank, s.bankDetails, (v) => set((x) => x.copyWith(bankDetails: v)), lines: 2, kind: TextKind.address),
+          field('bankName', l.shopBankName, s.bankName, (v) => set((x) => x.copyWith(bankName: v)), kind: TextKind.name),
+          field('bankHolder', l.shopBankHolder, s.bankHolder, (v) => set((x) => x.copyWith(bankHolder: v)), kind: TextKind.name),
+          field('bankAccount', l.shopBankAccount, s.bankAccount, (v) => set((x) => x.copyWith(bankAccount: v.replaceAll(RegExp(r'[\s-]'), ''))), type: TextInputType.number),
+          field('bankIfsc', l.shopBankIfsc, s.bankIfsc, (v) => set((x) => x.copyWith(bankIfsc: v.trim().toUpperCase()))),
           field('footer', l.shopFooter, s.billFooter, (v) => set((x) => x.copyWith(billFooter: v)), lines: 2, kind: TextKind.address),
           field('prefix', l.shopPrefix, s.invoicePrefix, (v) => set((x) => x.copyWith(invoicePrefix: v.trim())), hint: 'SE-', kind: TextKind.town),
         ]),
+        if (s.bankAccount.trim().isNotEmpty && !validAccount(s.bankAccount)) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(l.errAccount, key: const ValueKey('bankAccountWarn'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded)),
+        if (s.bankIfsc.trim().isNotEmpty && !validIfsc(s.bankIfsc)) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(l.errIfsc, key: const ValueKey('bankIfscWarn'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded)),
         if (unknownUpiHandle(s.upiId) != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(l.upiHandleWarn(unknownUpiHandle(s.upiId)!), key: const ValueKey('upiHandleWarn'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded)),
         SwitchListTile(key: const ValueKey('shop-qr-always'), contentPadding: EdgeInsets.zero, title: Text(l.shopQrAlways), subtitle: Text(l.shopQrAlwaysHelp), value: s.qrOnEveryBill, onChanged: (v) => set((x) => x.copyWith(qrOnEveryBill: v))),
       ]),

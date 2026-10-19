@@ -2,6 +2,7 @@
 /// per-device preferences (text size, theme, printer...) live in AppSettings and never sync.
 library;
 
+import '../domain/bank.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/credit/reminder.dart';
@@ -40,7 +41,10 @@ class ShopProfile {
     this.phone = '',
     this.gstin = '',
     this.upiId = '',
-    this.bankDetails = '',
+    this.bankName = '',
+    this.bankHolder = '',
+    this.bankAccount = '',
+    this.bankIfsc = '',
     this.billFooter = 'Thank you. Visit again.',
     this.invoicePrefix = '',
     this.pricesIncludeGst = true,
@@ -65,11 +69,13 @@ class ShopProfile {
     phone: '98765 43210',
     gstin: '33AAAAA0000A1Z5',
     upiId: 'senthil@okbank',
-    bankDetails: 'Sample Bank, A/c 0000000000, IFSC SAMP0000000',
+    bankName: 'Sample Bank',
+    bankAccount: '0000000000',
+    bankIfsc: 'SAMP0000000',
     openingCashPaise: 500000,
   );
 
-  final String name, ownerName, address, phone, gstin, upiId, bankDetails, billFooter, invoicePrefix;
+  final String name, ownerName, address, phone, gstin, upiId, bankName, bankHolder, bankAccount, bankIfsc, billFooter, invoicePrefix;
 
   /// Printed in the shop block of the bill.
   final String email;
@@ -100,7 +106,10 @@ class ShopProfile {
         'phone': phone,
         'gstin': gstin,
         'upiId': upiId,
-        'bankDetails': bankDetails,
+        'bankName': bankName,
+        'bankHolder': bankHolder,
+        'bankAccount': bankAccount,
+        'bankIfsc': bankIfsc,
         'billFooter': billFooter,
         'invoicePrefix': invoicePrefix,
         'pricesIncludeGst': pricesIncludeGst,
@@ -121,6 +130,10 @@ class ShopProfile {
   static ShopProfile fromJson(Object? j, {ShopProfile base = const ShopProfile()}) {
     final m = j is Map ? j : const {};
     String str(String k, String d) => m[k] is String ? m[k] as String : d;
+    // The bank details used to be one text. Data saved that way (or imported from ERP 1) is split into name, account number and IFSC code once.
+    final newBank = m.containsKey('bankName') || m.containsKey('bankAccount') || m.containsKey('bankIfsc');
+    final legacy = !newBank && m['bankDetails'] is String ? parseBankDetails(m['bankDetails'] as String) : null;
+    final bank = (name: legacy?.name ?? str('bankName', base.bankName), account: legacy?.account ?? str('bankAccount', base.bankAccount), ifsc: legacy?.ifsc ?? str('bankIfsc', base.bankIfsc));
     return ShopProfile(
       name: str('name', base.name),
       ownerName: str('ownerName', base.ownerName),
@@ -129,7 +142,10 @@ class ShopProfile {
       phone: str('phone', base.phone),
       gstin: str('gstin', base.gstin),
       upiId: str('upiId', base.upiId),
-      bankDetails: str('bankDetails', base.bankDetails),
+      bankName: bank.name,
+      bankHolder: str('bankHolder', base.bankHolder),
+      bankAccount: bank.account,
+      bankIfsc: bank.ifsc,
       billFooter: str('billFooter', base.billFooter),
       invoicePrefix: str('invoicePrefix', base.invoicePrefix),
       pricesIncludeGst: m['pricesIncludeGst'] is bool ? m['pricesIncludeGst'] as bool : base.pricesIncludeGst,
@@ -157,7 +173,10 @@ class ShopProfile {
     String? phone,
     String? gstin,
     String? upiId,
-    String? bankDetails,
+    String? bankName,
+    String? bankHolder,
+    String? bankAccount,
+    String? bankIfsc,
     String? billFooter,
     String? invoicePrefix,
     bool? pricesIncludeGst,
@@ -181,7 +200,10 @@ class ShopProfile {
         phone: phone ?? this.phone,
         gstin: gstin ?? this.gstin,
         upiId: upiId ?? this.upiId,
-        bankDetails: bankDetails ?? this.bankDetails,
+        bankName: bankName ?? this.bankName,
+        bankHolder: bankHolder ?? this.bankHolder,
+        bankAccount: bankAccount ?? this.bankAccount,
+        bankIfsc: bankIfsc ?? this.bankIfsc,
         billFooter: billFooter ?? this.billFooter,
         invoicePrefix: invoicePrefix ?? this.invoicePrefix,
         pricesIncludeGst: pricesIncludeGst ?? this.pricesIncludeGst,
