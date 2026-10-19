@@ -1,12 +1,13 @@
 import 'dart:async';
 import '../repo/product_codes.dart';
+import '../sync/sync_triggers.dart';
 import 'package:drift/drift.dart';
 
 part 'app_database.g.dart';
 
 /// The schema version this build of the app understands. Raise it ONLY together with a numbered migration in
 /// [AppDatabase.migrations], a new schema dump (`dart run drift_dev schema dump ...`) and a migration test.
-const currentSchemaVersion = 8;
+const currentSchemaVersion = 9;
 
 /// The database file was made by a NEWER version of the app. It is never opened (an old app could damage it).
 class DatabaseTooNewException implements Exception {
@@ -87,7 +88,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 8; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
+  int get schemaVersion => 9; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
 
   /// Numbered migrations: key = the version the step produces. Every step runs inside the upgrade transaction; the caller
   /// makes a backup first (see DatabaseOpener) and a failed step leaves the old file untouched.
@@ -253,6 +254,15 @@ class AppDatabase extends _$AppDatabase {
       await db.customStatement("CREATE TRIGGER products_fts_au AFTER UPDATE OF name, barcode, code, brand, category ON products BEGIN\n  INSERT INTO product_fts(product_fts, rowid, name, barcode, code, brand, category) VALUES ('delete', old.rowid, old.name, old.barcode, old.code, old.brand, old.category);\n  INSERT INTO product_fts(rowid, name, barcode, code, brand, category) VALUES (new.rowid, new.name, new.barcode, new.code, new.brand, new.category);\nEND");
       await db.customStatement("INSERT INTO product_fts(product_fts) VALUES('rebuild')");
     },
+    // 9: the cloud sync. Documents without their own hlc column get a version stamp table; queued rows get the table names the sync uses
+    // (the capture triggers are made every time the database opens, see sync_triggers.dart).
+    9: (m, db) async {
+      await db.customStatement('CREATE TABLE sync_rev (coll TEXT NOT NULL, doc_id TEXT NOT NULL, hlc TEXT NOT NULL, PRIMARY KEY (coll, doc_id))');
+      for (final e in syncCollRenames.entries) {
+        await db.customStatement('UPDATE OR IGNORE outbox SET coll = ? WHERE coll = ?', [e.value, e.key]);
+        await db.customStatement('DELETE FROM outbox WHERE coll = ?', [e.key]);
+      }
+    },
   };
 
   @override
@@ -268,6 +278,7 @@ class AppDatabase extends _$AppDatabase {
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
+          await ensureSyncTriggers(this);
           if (native) {
             await customStatement('PRAGMA busy_timeout = $busyTimeoutMs');
             await customStatement('PRAGMA journal_mode = WAL');

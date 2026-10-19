@@ -39,7 +39,7 @@ void main() {
     expect(await stock(), 6000);
     expect(await d.ledger.balanceOf('d1'), 59000 - 23600);
     expect((await d.ledger.account('d1')).ledger.last.kind, LedgerKind.returnCredit);
-    expect((await d.db.rows("SELECT * FROM outbox WHERE coll = 'purchaseReturns'")).length, 1);
+    expect((await d.db.rows("SELECT * FROM outbox WHERE coll = 'purchase_returns'")).length, 1);
     expect((await view(p.id)).lines.single.remainingMilli, 6000);
     await clean();
   });

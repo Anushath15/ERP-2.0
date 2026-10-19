@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'core/cloud/sync_controller.dart';
 import 'core/date_fmt.dart';
 import 'core/lock/pin_lock.dart';
 import 'core/responsive.dart';
@@ -224,16 +225,17 @@ class SyncChip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
-    final st = ref.watch(settingsProvider).sync;
+    final st = effectiveSyncState(ref);
     final now = ref.watch(clockProvider);
+    final cloud = ref.watch(syncProvider);
     final (label, kind, icon) = switch (st) {
       SyncState.synced => (l.syncSynced, BadgeKind.success, Icons.cloud_done_rounded),
       SyncState.syncing => (l.syncSyncing, BadgeKind.info, Icons.sync_rounded),
       SyncState.offline => (l.syncOffline, BadgeKind.warning, Icons.cloud_off_rounded),
-      SyncState.attention => (l.syncAttention('1'), BadgeKind.danger, Icons.error_outline_rounded),
+      SyncState.attention => (cloud.phase == SyncPhase.signedOut ? l.syncSignedOut : l.syncAttention(cloud.active ? '${cloud.attention == 0 ? 1 : cloud.attention}' : '1'), BadgeKind.danger, Icons.error_outline_rounded),
       SyncState.paused => (l.syncPaused, BadgeKind.warning, Icons.pause_circle_outline_rounded),
     };
-    final tip = l.lastSyncedAt(formatTime(now.subtract(const Duration(minutes: 4))));
+    final tip = cloud.active ? (cloud.last == null ? l.syncNever : l.lastSyncedAt(formatTime(cloud.last!))) : l.lastSyncedAt(formatTime(now.subtract(const Duration(minutes: 4))));
     return Semantics(
       label: '$label. $tip',
       button: true,

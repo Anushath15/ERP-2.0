@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'db/app_database.dart';
 import 'hlc.dart';
+import 'sync/sync_triggers.dart';
 
 /// Who is working: the person's name for the audit columns ("by"), and their role (the UI hides what the role may not do; the
 /// Firestore rules are the real gate).
@@ -67,6 +68,7 @@ Variable _v(Object? a) {
 /// Puts (or re-puts) a document in the upload queue. Editing the same document again before it is sent replaces the pending
 /// row, so one document is uploaded once. Must be called inside the same transaction as the change itself.
 Future<void> enqueue(DataContext cx, DatabaseConnectionUser tx, String coll, String docId, {String op = 'set', int holdMs = 0}) async {
+  coll = syncColl(coll);
   final now = cx.nowMs();
   await tx.exec(
     'INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at) VALUES (?,?,?,?,?,?,?,?) '

@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/cloud/cloud_config.dart';
+import '../../core/cloud/sync_controller.dart';
 import '../../core/date_fmt.dart';
 import '../../core/printer_service.dart';
 import '../lock/lock_screen.dart';
@@ -47,6 +50,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final set = ref.read(settingsProvider.notifier).set;
     final th = Theme.of(context).textTheme;
     final now = ref.watch(clockProvider);
+    final cloud = ref.watch(syncProvider);
 
     Widget row(String title, String? help, Widget trailing) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -75,17 +79,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ]));
 
     final sync = SectionCard(title: l.setSync, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      row(l.syncStatusNow, l.lastSyncedAt(formatTime(now.subtract(const Duration(minutes: 4)))), Wrap(spacing: 8, children: [
+      row(l.syncStatusNow, cloud.active ? (cloud.last == null ? l.syncNever : l.lastSyncedAt(formatTime(cloud.last!))) : l.lastSyncedAt(formatTime(now.subtract(const Duration(minutes: 4)))), Wrap(spacing: 8, children: [
         const SyncChipInline(),
-        FilledButton.icon(onPressed: s.sync == SyncState.offline || s.sync == SyncState.paused ? null : () async {
+        if (cloud.active) FilledButton.icon(key: const ValueKey('syncNow'), onPressed: cloud.phase == SyncPhase.syncing ? null : () => unawaited(ref.read(syncProvider.notifier).syncNow()), icon: const Icon(Icons.sync_rounded), label: Text(l.syncNow))
+        else FilledButton.icon(onPressed: s.sync == SyncState.offline || s.sync == SyncState.paused ? null : () async {
           set((x) => x.copyWith(sync: SyncState.syncing));
           await Future<void>.delayed(const Duration(milliseconds: 600));
           if (mounted) set((x) => x.copyWith(sync: SyncState.synced));
         }, icon: const Icon(Icons.sync_rounded), label: Text(l.syncNow)),
       ])),
-      if (s.sync == SyncState.paused) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.syncPausedHelp, style: th.bodyMedium)),
+      if (cloud.active) ...[
+        Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(cloud.pending == 0 ? l.syncNothingWaiting : l.syncWaiting('${cloud.pending}'), key: const ValueKey('syncWaiting'), style: th.bodyMedium)),
+        if (cloud.problem.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.syncProblemLine(cloud.problem), style: th.bodySmall)),
+        Text(l.syncOnHelp, style: th.bodySmall),
+      ] else if (ref.watch(cloudConfigProvider).configured)
+        Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.syncCloudOff, style: th.bodyMedium)),
+      if (!cloud.active && s.sync == SyncState.paused) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.syncPausedHelp, style: th.bodyMedium)),
       row(l.quotaTitle, l.quotaHelp, Text(l.quotaValue('3'), style: th.titleSmall)),
       ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: 0.03, minHeight: 8, color: context.c.success, backgroundColor: context.c.surfaceAlt)),
+      if (!cloud.active) ...[
       const Divider(height: 24),
       Text(l.demoControls, style: th.labelSmall),
       const SizedBox(height: 6),
@@ -93,6 +105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         for (final e in [(SyncState.synced, l.syncSynced), (SyncState.syncing, l.syncSyncing), (SyncState.offline, l.syncOffline), (SyncState.attention, l.syncAttention('1')), (SyncState.paused, l.syncPaused)])
           ChoiceChip(label: Text(e.$2), selected: s.sync == e.$1, onSelected: (_) => set((x) => x.copyWith(sync: e.$1))),
       ]),
+      ],
     ]));
 
     final security = SectionCard(title: l.setSecurity, child: Column(children: [
@@ -129,7 +142,7 @@ class SyncChipInline extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
-    final st = ref.watch(settingsProvider).sync;
+    final st = effectiveSyncState(ref);
     final (label, kind) = switch (st) { SyncState.synced => (l.syncSynced, BadgeKind.success), SyncState.syncing => (l.syncSyncing, BadgeKind.info), SyncState.offline => (l.syncOffline, BadgeKind.warning), SyncState.attention => (l.syncAttention('1'), BadgeKind.danger), SyncState.paused => (l.syncPaused, BadgeKind.warning) };
     return StatusBadge(label, kind: kind);
   }

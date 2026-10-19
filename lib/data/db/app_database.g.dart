@@ -20133,6 +20133,265 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
   }
 }
 
+class SyncRev extends Table with TableInfo<SyncRev, DbSyncRev> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  SyncRev(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _collMeta = const VerificationMeta('coll');
+  late final GeneratedColumn<String> coll = GeneratedColumn<String>(
+    'coll',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _docIdMeta = const VerificationMeta('docId');
+  late final GeneratedColumn<String> docId = GeneratedColumn<String>(
+    'doc_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [coll, docId, hlc];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_rev';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DbSyncRev> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('coll')) {
+      context.handle(
+        _collMeta,
+        coll.isAcceptableOrUnknown(data['coll']!, _collMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_collMeta);
+    }
+    if (data.containsKey('doc_id')) {
+      context.handle(
+        _docIdMeta,
+        docId.isAcceptableOrUnknown(data['doc_id']!, _docIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_docIdMeta);
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(
+        _hlcMeta,
+        hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hlcMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {coll, docId};
+  @override
+  DbSyncRev map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbSyncRev(
+      coll: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coll'],
+      )!,
+      docId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}doc_id'],
+      )!,
+      hlc: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hlc'],
+      )!,
+    );
+  }
+
+  @override
+  SyncRev createAlias(String alias) {
+    return SyncRev(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const ['PRIMARY KEY(coll, doc_id)'];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class DbSyncRev extends DataClass implements Insertable<DbSyncRev> {
+  final String coll;
+  final String docId;
+  final String hlc;
+  const DbSyncRev({required this.coll, required this.docId, required this.hlc});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['coll'] = Variable<String>(coll);
+    map['doc_id'] = Variable<String>(docId);
+    map['hlc'] = Variable<String>(hlc);
+    return map;
+  }
+
+  SyncRevCompanion toCompanion(bool nullToAbsent) {
+    return SyncRevCompanion(
+      coll: Value(coll),
+      docId: Value(docId),
+      hlc: Value(hlc),
+    );
+  }
+
+  factory DbSyncRev.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbSyncRev(
+      coll: serializer.fromJson<String>(json['coll']),
+      docId: serializer.fromJson<String>(json['doc_id']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'coll': serializer.toJson<String>(coll),
+      'doc_id': serializer.toJson<String>(docId),
+      'hlc': serializer.toJson<String>(hlc),
+    };
+  }
+
+  DbSyncRev copyWith({String? coll, String? docId, String? hlc}) => DbSyncRev(
+    coll: coll ?? this.coll,
+    docId: docId ?? this.docId,
+    hlc: hlc ?? this.hlc,
+  );
+  DbSyncRev copyWithCompanion(SyncRevCompanion data) {
+    return DbSyncRev(
+      coll: data.coll.present ? data.coll.value : this.coll,
+      docId: data.docId.present ? data.docId.value : this.docId,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbSyncRev(')
+          ..write('coll: $coll, ')
+          ..write('docId: $docId, ')
+          ..write('hlc: $hlc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(coll, docId, hlc);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbSyncRev &&
+          other.coll == this.coll &&
+          other.docId == this.docId &&
+          other.hlc == this.hlc);
+}
+
+class SyncRevCompanion extends UpdateCompanion<DbSyncRev> {
+  final Value<String> coll;
+  final Value<String> docId;
+  final Value<String> hlc;
+  final Value<int> rowid;
+  const SyncRevCompanion({
+    this.coll = const Value.absent(),
+    this.docId = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncRevCompanion.insert({
+    required String coll,
+    required String docId,
+    required String hlc,
+    this.rowid = const Value.absent(),
+  }) : coll = Value(coll),
+       docId = Value(docId),
+       hlc = Value(hlc);
+  static Insertable<DbSyncRev> custom({
+    Expression<String>? coll,
+    Expression<String>? docId,
+    Expression<String>? hlc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (coll != null) 'coll': coll,
+      if (docId != null) 'doc_id': docId,
+      if (hlc != null) 'hlc': hlc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncRevCompanion copyWith({
+    Value<String>? coll,
+    Value<String>? docId,
+    Value<String>? hlc,
+    Value<int>? rowid,
+  }) {
+    return SyncRevCompanion(
+      coll: coll ?? this.coll,
+      docId: docId ?? this.docId,
+      hlc: hlc ?? this.hlc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (coll.present) {
+      map['coll'] = Variable<String>(coll.value);
+    }
+    if (docId.present) {
+      map['doc_id'] = Variable<String>(docId.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncRevCompanion(')
+          ..write('coll: $coll, ')
+          ..write('docId: $docId, ')
+          ..write('hlc: $hlc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class SyncMeta extends Table with TableInfo<SyncMeta, DbSyncMeta> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -21230,6 +21489,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'outbox_state',
     'CREATE INDEX outbox_state ON outbox (state, seq)',
   );
+  late final SyncRev syncRev = SyncRev(this);
   late final SyncMeta syncMeta = SyncMeta(this);
   late final Audit audit = Audit(this);
   late final Index auditAt = Index(
@@ -21334,6 +21594,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     outbox,
     outboxDoc,
     outboxState,
+    syncRev,
     syncMeta,
     audit,
     auditAt,
@@ -35674,6 +35935,166 @@ typedef $OutboxProcessedTableManager =
       DbOutbox,
       PrefetchHooks Function()
     >;
+typedef $SyncRevCreateCompanionBuilder = SyncRevCompanion Function({
+  required String coll,
+  required String docId,
+  required String hlc,
+  Value<int> rowid,
+});
+typedef $SyncRevUpdateCompanionBuilder = SyncRevCompanion Function({
+  Value<String> coll,
+  Value<String> docId,
+  Value<String> hlc,
+  Value<int> rowid,
+});
+
+class $SyncRevFilterComposer extends Composer<_$AppDatabase, SyncRev> {
+  $SyncRevFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get coll => $composableBuilder(
+    column: $table.coll,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get docId => $composableBuilder(
+    column: $table.docId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $SyncRevOrderingComposer extends Composer<_$AppDatabase, SyncRev> {
+  $SyncRevOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get coll => $composableBuilder(
+    column: $table.coll,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get docId => $composableBuilder(
+    column: $table.docId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $SyncRevAnnotationComposer extends Composer<_$AppDatabase, SyncRev> {
+  $SyncRevAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get coll =>
+      $composableBuilder(column: $table.coll, builder: (column) => column);
+
+  GeneratedColumn<String> get docId =>
+      $composableBuilder(column: $table.docId, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => column);
+}
+
+class $SyncRevTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          SyncRev,
+          DbSyncRev,
+          $SyncRevFilterComposer,
+          $SyncRevOrderingComposer,
+          $SyncRevAnnotationComposer,
+          $SyncRevCreateCompanionBuilder,
+          $SyncRevUpdateCompanionBuilder,
+          (DbSyncRev, BaseReferences<_$AppDatabase, SyncRev, DbSyncRev>),
+          DbSyncRev,
+          PrefetchHooks Function()
+        > {
+  $SyncRevTableManager(_$AppDatabase db, SyncRev table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $SyncRevFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $SyncRevOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $SyncRevAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> coll = const Value.absent(),
+                Value<String> docId = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncRevCompanion(
+                coll: coll,
+                docId: docId,
+                hlc: hlc,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String coll,
+                required String docId,
+                required String hlc,
+                Value<int> rowid = const Value.absent(),
+              }) => SyncRevCompanion.insert(
+                coll: coll,
+                docId: docId,
+                hlc: hlc,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<SyncRev, DbSyncRev>(table),
+                  BaseReferences<_$AppDatabase, SyncRev, DbSyncRev>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $SyncRevProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      SyncRev,
+      DbSyncRev,
+      $SyncRevFilterComposer,
+      $SyncRevOrderingComposer,
+      $SyncRevAnnotationComposer,
+      $SyncRevCreateCompanionBuilder,
+      $SyncRevUpdateCompanionBuilder,
+      (DbSyncRev, BaseReferences<_$AppDatabase, SyncRev, DbSyncRev>),
+      DbSyncRev,
+      PrefetchHooks Function()
+    >;
 typedef $SyncMetaCreateCompanionBuilder = SyncMetaCompanion Function({
   required String name,
   required String value,
@@ -36156,6 +36577,7 @@ class $AppDatabaseManager {
       $RemindersTableManager(_db, _db.reminders);
   $RecordsTableManager get records => $RecordsTableManager(_db, _db.records);
   $OutboxTableManager get outbox => $OutboxTableManager(_db, _db.outbox);
+  $SyncRevTableManager get syncRev => $SyncRevTableManager(_db, _db.syncRev);
   $SyncMetaTableManager get syncMeta =>
       $SyncMetaTableManager(_db, _db.syncMeta);
   $AuditTableManager get audit => $AuditTableManager(_db, _db.audit);

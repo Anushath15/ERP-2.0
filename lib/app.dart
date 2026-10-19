@@ -24,6 +24,7 @@ import 'fake/store.dart';
 import 'router.dart';
 import 'core/cloud/auth_controller.dart';
 import 'core/cloud/cloud_config.dart';
+import 'core/cloud/sync_controller.dart';
 import 'core/lock/pin_lock.dart';
 import 'features/lock/lock_screen.dart';
 
@@ -66,7 +67,10 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     super.initState();
     HardwareKeyboard.instance.addHandler(_onKey);
     WidgetsBinding.instance.addObserver(this);
-    ref.listenManual(authProvider, (_, _) => _gateTick.value++);
+    ref.listenManual(authProvider, (_, _) {
+      _gateTick.value++;
+      if (widget.runChecks) ref.read(syncProvider.notifier).refreshWiring();
+    });
     Future.microtask(() => mounted ? ref.read(telegramBackupProvider) : null); // starts watching for finished backups to send to Telegram
     Future.microtask(() => mounted ? ref.read(authProvider.notifier).restore() : null); // the kept sign-in of this computer, if any (not inside the build)
     // Build the (sample) credit data right after the first frame, while nobody is waiting, so the first visit to a credit page is not the slow frame.
@@ -130,6 +134,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     unawaited(ref.read(diskLevelProvider.notifier).refresh());
     _diskTimer = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(ref.read(diskLevelProvider.notifier).refresh()));
     unawaited(ref.read(backupControllerProvider.notifier).start());
+    ref.read(syncProvider.notifier).refreshWiring(); // the cloud sync, once this computer is signed in to the shop's cloud account
   }
 
   Timer? _diskTimer;

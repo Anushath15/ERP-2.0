@@ -523,6 +523,15 @@ CREATE TABLE outbox (
 CREATE UNIQUE INDEX outbox_doc ON outbox(coll, doc_id);
 CREATE INDEX outbox_state ON outbox(state, seq);
 
+-- The version stamp (hlc) of every synced document that has no hlc column of its own: what was last pushed or applied, so a pulled
+-- copy that is not newer is ignored (last writer wins).
+CREATE TABLE sync_rev (
+  coll TEXT NOT NULL,
+  doc_id TEXT NOT NULL,
+  hlc TEXT NOT NULL,
+  PRIMARY KEY (coll, doc_id)
+) AS DbSyncRev;
+
 CREATE TABLE sync_meta (
   name TEXT NOT NULL PRIMARY KEY,
   value TEXT NOT NULL

@@ -1457,3 +1457,12 @@ errIfsc | The IFSC code has 11 characters: 4 letters, a zero, then 6 letters or 
 errAccount | The account number is 6 to 18 digits, with no spaces or letters.
 tplAcNo | A/c
 tplIfscLabel | IFSC
+syncNewData | Another computer saved new bills or changes. Reload to see them here.
+syncReload | Reload
+syncNever | Not synced yet
+syncWaiting | {n} changes waiting to be sent
+syncNothingWaiting | Everything is sent
+syncSignedOut | Sign in again to sync
+syncProblemLine | Last problem: {why}
+syncCloudOff | Cloud sync is off: this program has no cloud address, or you are not signed in. Everything is saved on this computer.
+syncOnHelp | Bills and changes are sent to your shop cloud every few seconds and changes from other computers come back. With no internet, everything waits on this computer and goes later.

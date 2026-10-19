@@ -287,7 +287,7 @@ void main() {
       // ERP 1 says 8 in stock now; the sale of 2 is a movement; opening is 10 so that the total is 8
       expect(p.openingStock['P1'], 10000);
       expect(await d.db.scalarInt("SELECT qty_milli FROM stock_cache WHERE product_id = 'e1-prod-P1'"), 8000);
-      expect(await d.db.scalarInt('SELECT COUNT(*) FROM outbox'), 0, reason: 'nothing is queued for upload by an import');
+      expect(await d.db.scalarInt('SELECT COUNT(*) FROM outbox'), greaterThan(0), reason: 'what an import brings in is queued, so it reaches the cloud copy and the other computers once sync is on');
     });
   });
 

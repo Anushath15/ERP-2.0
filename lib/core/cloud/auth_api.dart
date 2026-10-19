@@ -127,6 +127,18 @@ class AuthApi {
     }
   }
 
+  /// The id of the shop this person belongs to (their first active membership), or null when there is none.
+  Future<String?> shopIdOf(String accessToken) async {
+    final r = await _send(() => _http.get(Uri.parse('${config.base}/rest/v1/shop_members?select=shop_id&active=eq.true&limit=1'), headers: _headers(accessToken)));
+    if (r.statusCode != 200) throw _fail(r);
+    try {
+      final j = jsonDecode(utf8.decode(r.bodyBytes));
+      return j is List && j.isNotEmpty && j.first is Map ? '${(j.first as Map)['shop_id']}' : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Ends the session on the server (best effort: signing out here must work with no internet too).
   Future<void> signOut(String accessToken) async {
     try {

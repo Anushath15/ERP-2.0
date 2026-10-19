@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/cloud/sync_controller.dart';
 import '../../core/data_mode.dart';
 import '../../data/platform/disk_space.dart';
 import '../../design/tokens.dart';
@@ -23,6 +24,7 @@ class ProblemBanner extends ConsumerWidget {
     final disk = ref.watch(diskLevelProvider);
     final demo = ref.watch(appModeProvider) == DataMode.demo;
     final selfCheck = ref.watch(selfCheckProblemsProvider);
+    final sync = ref.watch(syncProvider);
     final c = context.c;
     final bk = ref.watch(backupControllerProvider);
     final now = DateTime.now();
@@ -31,6 +33,7 @@ class ProblemBanner extends ConsumerWidget {
     final items = <(String, Color, VoidCallback?, String?)>[
       if (error != null) (error, c.danger, () => ref.read(writeErrorProvider.notifier).set(null), null),
       if (demo) (l.demoBanner, c.info, () => unawaited(ref.read(modeSwitcherProvider)(DataMode.real)), l.demoLeave),
+      if (sync.newFromCloud) (l.syncNewData, c.info, () => unawaited(ref.read(modeSwitcherProvider)(DataMode.real)), l.syncReload),
       if (selfCheck.isNotEmpty) (l.selfCheckBanner(selfCheck.length.toString()), c.warning, () => ref.read(selfCheckProblemsProvider.notifier).set(const []), null),
       if (disk == DiskLevel.low) (l.diskLowBanner, c.warning, null, null),
       if (disk == DiskLevel.full) (l.diskFullBanner, c.danger, null, null),

@@ -6,6 +6,12 @@ import 'session_vault.dart';
 
 enum AuthStatus { loading, signedOut, signedIn }
 
+/// What the sync needs to talk to the cloud: a valid access token and the shop it belongs to.
+class SyncCredentials {
+  const SyncCredentials(this.token, this.shopId);
+  final String token, shopId;
+}
+
 class AuthState {
   const AuthState({this.status = AuthStatus.signedOut, this.email = '', this.busy = false});
   final AuthStatus status;
@@ -25,7 +31,8 @@ final authApiProvider = Provider<AuthApi>((ref) => AuthApi(ref.watch(cloudConfig
 ///    session, asks again. With no internet the kept sign-in is trusted, so the shop keeps working offline.
 ///  * Without a cloud address in the build ([CloudConfig.configured] false) nothing here is used: the program works on this computer only.
 class AuthController extends Notifier<AuthState> {
-  String _access = '';
+  String _access = '', _refresh = '', _shopId = '';
+  DateTime _expires = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   AuthState build() => ref.watch(cloudConfigProvider).configured ? const AuthState(status: AuthStatus.loading) : const AuthState();
@@ -54,6 +61,7 @@ class AuthController extends Notifier<AuthState> {
       state = AuthState(status: AuthStatus.signedIn, email: s.email.isEmpty ? email : s.email);
     } on AuthFailure catch (e) {
       if (e.problem == AuthProblem.network) {
+        _refresh = refresh;
         state = AuthState(status: AuthStatus.signedIn, email: email); // no internet: the shop keeps working
       } else {
         _vault.write(null); // the cloud cancelled this sign-in (password changed, access removed...)
@@ -64,6 +72,8 @@ class AuthController extends Notifier<AuthState> {
 
   void _keep(AuthSession s, {String fallbackEmail = ''}) {
     _access = s.accessToken;
+    _refresh = s.refreshToken;
+    _expires = s.expiresAt;
     _vault.write(jsonEncode({'refresh': s.refreshToken, 'email': s.email.isEmpty ? fallbackEmail : s.email}));
   }
 
@@ -121,10 +131,34 @@ class AuthController extends Notifier<AuthState> {
         return null;
       });
 
+  /// A valid token for the sync, refreshed when it is about to run out, and the shop id. Null when signed out. Throws [AuthFailure]
+  /// (network) when there is no internet; a cancelled sign-in signs this computer out.
+  Future<SyncCredentials?> credentials() async {
+    if (state.status != AuthStatus.signedIn || _refresh.isEmpty) return null;
+    if (_access.isEmpty || _expires.difference(DateTime.now()) < const Duration(minutes: 2)) {
+      try {
+        _keep(await _api.refresh(_refresh), fallbackEmail: state.email);
+      } on AuthFailure catch (e) {
+        if (e.problem == AuthProblem.network) rethrow;
+        _access = '';
+        _vault.write(null);
+        state = const AuthState();
+        return null;
+      }
+    }
+    if (_shopId.isEmpty) _shopId = await _api.shopIdOf(_access) ?? '';
+    return _shopId.isEmpty ? null : SyncCredentials(_access, _shopId);
+  }
+
+  /// Forget the token so the next [credentials] call asks for a new one (the cloud said the old one is no good).
+  void expireToken() => _expires = DateTime.fromMillisecondsSinceEpoch(0);
+
   /// Sign out of this computer: forgets the kept sign-in (the next start asks again). Works with no internet.
   Future<void> signOut() async {
     final token = _access;
     _access = '';
+    _refresh = '';
+    _shopId = '';
     _vault.write(null);
     state = const AuthState();
     if (token.isNotEmpty) await _api.signOut(token);

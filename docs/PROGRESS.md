@@ -116,3 +116,5 @@ Sales returns from a bill; popup fixes; top bar; product form (GST toggles, mini
 Also built 2026-10-17 (evening): purchase returns to dealers (schema 6), MRP, a discount on the whole bill with the owner-only profit line, sold/sales/profit per product on Stock left (schema 7). All the database tests (110) pass; the screen tests of the older pages and the screenshots are still to be updated.
 
 **Search, phones, UPI (2026-10-19):** product search also finds code, brand and category (schema 8, with fallback and a self-check); the program finds its own private folder on Android/iOS (no more start-up crash; untested on a real device); a UPI QR code with the amount still due is printed on bills with money due (A4/A5/roll, screen and PDF) and shown full size at the counter when UPI is chosen.
+
+14. **Gate 2E built 2026-10-19 (not yet run against the real Supabase):** change capture by triggers, push/pull engine, HTTP client, status in the badge and Settings, migration 0002. See docs/supabase-sync-design.md. Decision 2 above (movements and ledger rows derived locally) is replaced: all raw rows travel and only the summaries are rebuilt.

@@ -1417,4 +1417,13 @@ class Strings {
   String get errAccount => 'The account number is 6 to 18 digits, with no spaces or letters.';
   String get tplAcNo => 'A/c';
   String get tplIfscLabel => 'IFSC';
+  String get syncNewData => 'Another computer saved new bills or changes. Reload to see them here.';
+  String get syncReload => 'Reload';
+  String get syncNever => 'Not synced yet';
+  String syncWaiting(String n) => '${n} changes waiting to be sent';
+  String get syncNothingWaiting => 'Everything is sent';
+  String get syncSignedOut => 'Sign in again to sync';
+  String syncProblemLine(String why) => 'Last problem: ${why}';
+  String get syncCloudOff => 'Cloud sync is off: this program has no cloud address, or you are not signed in. Everything is saved on this computer.';
+  String get syncOnHelp => 'Bills and changes are sent to your shop cloud every few seconds and changes from other computers come back. With no internet, everything waits on this computer and goes later.';
 }

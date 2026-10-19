@@ -60,7 +60,7 @@ void main() {
     expect(retDay.read<int>('cash_paise'), -9000);
     expect(retDay.read<int>('bills'), 0);
     expect((await view(s.id)).lines.single.remainingMilli, 3000);
-    expect((await d.db.rows('SELECT * FROM outbox WHERE coll = ?', ['salesReturns'])).length, 1);
+    expect((await d.db.rows('SELECT * FROM outbox WHERE coll = ?', ['sales_returns'])).length, 1);
     await clean();
   });
 
