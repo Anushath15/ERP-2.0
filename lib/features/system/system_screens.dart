@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/date_fmt.dart';
+import '../../core/printer_service.dart';
+import '../print/print_action.dart';
+import '../print/test_page_pdf.dart';
 import '../../core/responsive.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../design/app_logo.dart';
+import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
@@ -57,7 +61,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final printing = SectionCard(title: l.setPrinting, child: Column(children: [
       row(l.setPaper, l.setPaperHelp, SegmentedButton<PaperSize>(showSelectedIcon: false, segments: [ButtonSegment(value: PaperSize.a4, label: Text(l.paperA4)), ButtonSegment(value: PaperSize.a5, label: Text(l.paperA5)), ButtonSegment(value: PaperSize.mm80, label: Text(l.paper80)), ButtonSegment(value: PaperSize.mm58, label: Text(l.paper58))], selected: {s.paper}, onSelectionChanged: (v) => set((x) => x.copyWith(paper: v.first)))),
       row(l.setPrintSize, l.setPrintSizeHelp, SegmentedButton<PrintTextSize>(key: const ValueKey('printSize'), showSelectedIcon: false, segments: [ButtonSegment(value: PrintTextSize.smaller, label: Text(l.printSmaller)), ButtonSegment(value: PrintTextSize.small, label: Text(l.printSmall)), ButtonSegment(value: PrintTextSize.normal, label: Text(l.printNormal))], selected: {s.printSize}, onSelectionChanged: (v) => set((x) => x.copyWith(printSize: v.first)))),
-      row(l.setPrinter, l.setPrinterHelp, const SizedBox.shrink()),
+      row(l.setPrinter, l.setPrinterHelp, const PrinterPicker()),
     ]));
 
     const look = AppearanceCard();
@@ -355,4 +359,57 @@ class MoreScreen extends StatelessWidget {
 Color backupColor(WidgetRef ref, AppColors c) {
   final f = freshnessOf(ref.read(backupControllerProvider).last, DateTime.now());
   return switch (f) { BackupFreshness.fresh => c.success, BackupFreshness.amber => c.warning, BackupFreshness.red => c.danger };
+}
+
+
+/// Choose the printer once: the computer's default printer, or one of the printers Windows lists; plus a test page.
+class PrinterPicker extends ConsumerStatefulWidget {
+  const PrinterPicker({super.key});
+  @override
+  ConsumerState<PrinterPicker> createState() => _PrinterPickerState();
+}
+
+class _PrinterPickerState extends ConsumerState<PrinterPicker> {
+  late Future<List<PrinterInfo>> _list = ref.read(printerServiceProvider).printers();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = tr(context);
+    final name = ref.watch(settingsProvider).printerName;
+    return FutureBuilder<List<PrinterInfo>>(
+      future: _list,
+      builder: (context, snap) {
+        final all = snap.data ?? const <PrinterInfo>[];
+        final known = all.any((p) => p.name == name);
+        return Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+          if (snap.connectionState == ConnectionState.done && all.isEmpty)
+            Text(l.printersNone, key: const ValueKey('printersNone'), style: Theme.of(context).textTheme.bodySmall)
+          else
+            DropdownButton<String>(
+              key: const ValueKey('printerPicker'),
+              isExpanded: true,
+              value: known ? name : '',
+              items: [
+                DropdownMenuItem(value: '', child: Text(l.printDefault, overflow: TextOverflow.ellipsis)),
+                for (final p in all) DropdownMenuItem(value: p.name, child: Text(p.name, overflow: TextOverflow.ellipsis)),
+              ],
+              onChanged: (v) => ref.read(settingsProvider.notifier).set((x) => x.copyWith(printerName: v ?? '')),
+            ),
+          const SizedBox(height: 6),
+          Wrap(spacing: 8, runSpacing: 4, alignment: WrapAlignment.end, children: [
+            TextButton.icon(key: const ValueKey('printersRefresh'), onPressed: () => setState(() => _list = ref.read(printerServiceProvider).printers()), icon: const Icon(Icons.refresh_rounded), label: Text(l.printersRefresh)),
+            OutlinedButton.icon(
+              key: const ValueKey('printTest'),
+              onPressed: () async {
+                final bytes = await buildTestPagePdf(shopName: ref.read(shopProvider).name, now: ref.read(clockProvider), printerName: name, l: l);
+                if (context.mounted) await printPdfNow(context, ref, bytes, l.printTestTitle);
+              },
+              icon: const Icon(Icons.print_rounded),
+              label: Text(l.printTest),
+            ),
+          ]),
+        ]);
+      },
+    );
+  }
 }

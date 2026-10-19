@@ -14,6 +14,7 @@ import '../billing/cart.dart';
 import 'bill_template.dart';
 import 'bill_template_paper.dart';
 import 'doc_pdf.dart';
+import 'print_action.dart';
 import 'print_layout.dart';
 
 /// A sample document so the preview works from the menu too (no bill needed).
@@ -73,7 +74,16 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
       ),
     ]);
     final actions = [
-      FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print_rounded), label: Text(l.print)),
+      FilledButton.icon(
+        key: const ValueKey('printNow'),
+        onPressed: () async {
+          final bytes = await buildDocPdf(doc: doc!, paper: _paper, shop: ref.read(shopProvider), size: settings.printSize, l: l);
+          final kind = doc!.mode == DocMode.estimation ? l.rcEstimate : l.rcTaxInvoice;
+          if (context.mounted) await printPdfNow(context, ref, bytes, '$kind ${doc.number}');
+        },
+        icon: const Icon(Icons.print_rounded),
+        label: Text(l.print),
+      ),
       OutlinedButton.icon(
         key: const ValueKey('printSavePdf'),
         onPressed: () async {

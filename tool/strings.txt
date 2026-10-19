@@ -408,7 +408,7 @@ setPrinting | Printing
 setPaper | Paper size
 setPaperHelp | Saved only on this computer
 setPrinter | Printer
-setPrinterHelp | Check how your paper will look
+setPrinterHelp | Choose the printer once. The Print button sends the bill straight to it
 setLook | How it looks
 deviceOnlyNote | Colours, text size and printer are saved only on this device.
 setBackup | Backup
@@ -1332,3 +1332,14 @@ purSellSame | Selling price stays {price}
 purSellAboveMrp | above the MRP {mrp}
 purCostChange | Buying price {was} → {now}
 purCostSame | Buying price stays {price}
+printSending | Sending to the printer...
+printSent | Sent to {printer}
+printSentBrowser | The print window is open
+printNoPrinter | No printer found. Connect a printer in Windows, then press Print again.
+printFailed | Could not print. Check that the printer is on and connected.
+printDefault | Default printer (Windows)
+printTest | Test print
+printTestTitle | Printer test page
+printTestBody | If you can read this and the frame is complete, the printer is ready.
+printersNone | No printer found
+printersRefresh | Look for printers again

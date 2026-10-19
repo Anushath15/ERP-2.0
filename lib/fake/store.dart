@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart' show ThemeMode;
 import '../core/device_store.dart';
+import '../core/validators.dart' show cleanText;
 import '../domain/credit/reminder.dart';
 import '../design/motion_level.dart';
 import '../design/tokens.dart' show Accent, DensityMode, FontChoice;
@@ -223,6 +224,7 @@ class AppSettings {
     this.soundVolume = 0.7,
     this.paper = PaperSize.a4,
     this.printSize = PrintTextSize.small,
+    this.printerName = '',
     this.sync = SyncState.synced,
     this.firstRunDone = true,
     this.signedIn = true,
@@ -239,6 +241,9 @@ class AppSettings {
   final double soundVolume;
   final PaperSize paper;
   final PrintTextSize printSize;
+
+  /// The printer this computer prints bills on (as Windows names it); empty = the computer's default printer.
+  final String printerName;
   final bool firstRunDone, signedIn;
   final SyncState sync;
 
@@ -259,6 +264,7 @@ class AppSettings {
     double? soundVolume,
     PaperSize? paper,
     PrintTextSize? printSize,
+    String? printerName,
     bool? pricesIncludeGst,
     CreditLimitMode? creditLimitMode,
     ReminderTone? reminderTone,
@@ -291,6 +297,7 @@ class AppSettings {
         soundVolume: soundVolume ?? this.soundVolume,
         paper: paper ?? this.paper,
         printSize: printSize ?? this.printSize,
+        printerName: printerName ?? this.printerName,
         sync: sync ?? this.sync,
         firstRunDone: firstRunDone ?? this.firstRunDone,
         signedIn: signedIn ?? this.signedIn,
@@ -313,6 +320,7 @@ class AppSettings {
         'soundVolume': soundVolume,
         'paper': paper.name,
         'printSize': printSize.name,
+        'printerName': printerName,
       };
 
   /// SECURITY: tolerant and strict at once. Unknown keys are ignored; wrong types, unknown names and out-of-range or non-finite numbers
@@ -321,6 +329,11 @@ class AppSettings {
     T pick<T extends Enum>(List<T> values, Object? name, T fallback) => values.firstWhere((v) => v.name == name, orElse: () => fallback);
     double num_(Object? v, double min, double max, double fallback) => v is num && v.isFinite && v >= min && v <= max ? v.toDouble() : fallback; // out of range or not a number: the default
     bool bool_(Object? v, bool fallback) => v is bool ? v : fallback;
+    String name_(Object? v, String fallback) {
+      if (v is! String) return fallback;
+      final t = cleanText(v); // no control characters, no line breaks
+      return t.length > 120 ? t.substring(0, 120) : t;
+    }
     const d = AppSettings();
     return AppSettings(
       theme: pick(ThemeMode.values, j['theme'], d.theme),
@@ -339,6 +352,7 @@ class AppSettings {
       soundVolume: num_(j['soundVolume'], 0, 1, d.soundVolume),
       paper: pick(PaperSize.values, j['paper'], d.paper),
       printSize: pick(PrintTextSize.values, j['printSize'], d.printSize),
+      printerName: name_(j['printerName'], d.printerName),
     );
   }
 }

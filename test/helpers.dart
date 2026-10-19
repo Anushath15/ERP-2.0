@@ -7,6 +7,7 @@ import 'package:erp2/app.dart';
 import 'package:erp2/core/device_store.dart';
 import 'package:erp2/core/file_saver.dart';
 import 'package:erp2/core/link_launcher.dart';
+import 'package:erp2/core/printer_service.dart';
 import 'package:erp2/domain/credit/reminder.dart' show LinkPlatform;
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/fake/store.dart';
@@ -65,6 +66,7 @@ Future<ProviderContainer> pumpApp(
   bool? followSystemMotion,
   List<Override> extraOverrides = const [],
   DemoCounts counts = testShopCounts,
+  PrinterService? printer,
 }) async {
   tester.view.physicalSize = Size(size.w, size.h);
   tester.view.devicePixelRatio = 1.0;
@@ -75,7 +77,7 @@ Future<ProviderContainer> pumpApp(
   }))!;
   await tester.pumpWidget(ProviderScope(
     key: UniqueKey(),
-    overrides: [clockProvider.overrideWithValue(fixedNow), appDataProvider.overrideWithValue(shop), bootstrapProvider.overrideWithValue(boot), deviceStoreProvider.overrideWithValue(store ?? MemoryDeviceStore()), ...extraOverrides],
+    overrides: [clockProvider.overrideWithValue(fixedNow), appDataProvider.overrideWithValue(shop), bootstrapProvider.overrideWithValue(boot), deviceStoreProvider.overrideWithValue(store ?? MemoryDeviceStore()), printerServiceProvider.overrideWithValue(printer ?? FakePrinter()), ...extraOverrides],
     child: ErpApp(initialLocation: location),
   ));
   final container = ProviderScope.containerOf(tester.element(find.byType(ErpApp)));
@@ -107,5 +109,22 @@ class FakeSaver implements FileSaver {
   Future<String?> save(String fileName, Uint8List bytes) async {
     saved[fileName] = bytes;
     return 'Downloads/$fileName';
+  }
+}
+
+/// A stand-in for printers: remembers what would have been printed and to which printer, never touches a real printer.
+class FakePrinter implements PrinterService {
+  FakePrinter({this.list = const [PrinterInfo(name: 'HP LaserJet A4', isDefault: true), PrinterInfo(name: 'Epson Receipt', isDefault: false)], this.status = PrintStatus.sent});
+  final List<PrinterInfo> list;
+  PrintStatus status;
+  final jobs = <({String name, String printer, Uint8List bytes})>[];
+  @override
+  Future<List<PrinterInfo>> printers() async => list;
+  @override
+  Future<PrintOutcome> printPdf(Uint8List bytes, {required String jobName, String printerName = ''}) async {
+    final target = list.where((p) => p.name == printerName).firstOrNull ?? list.where((p) => p.isDefault).firstOrNull;
+    if (status == PrintStatus.sent && target == null) return const PrintOutcome(PrintStatus.noPrinter);
+    if (status == PrintStatus.sent) jobs.add((name: jobName, printer: target!.name, bytes: bytes));
+    return PrintOutcome(status, printer: target?.name ?? '');
   }
 }

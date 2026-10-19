@@ -399,7 +399,7 @@ class Strings {
   String get setPaper => 'Paper size';
   String get setPaperHelp => 'Saved only on this computer';
   String get setPrinter => 'Printer';
-  String get setPrinterHelp => 'Check how your paper will look';
+  String get setPrinterHelp => 'Choose the printer once. The Print button sends the bill straight to it';
   String get setLook => 'How it looks';
   String get deviceOnlyNote => 'Colours, text size and printer are saved only on this device.';
   String get setBackup => 'Backup';
@@ -1292,4 +1292,15 @@ class Strings {
   String purSellAboveMrp(String mrp) => 'above the MRP ${mrp}';
   String purCostChange(String was, String now) => 'Buying price ${was} → ${now}';
   String purCostSame(String price) => 'Buying price stays ${price}';
+  String get printSending => 'Sending to the printer...';
+  String printSent(String printer) => 'Sent to ${printer}';
+  String get printSentBrowser => 'The print window is open';
+  String get printNoPrinter => 'No printer found. Connect a printer in Windows, then press Print again.';
+  String get printFailed => 'Could not print. Check that the printer is on and connected.';
+  String get printDefault => 'Default printer (Windows)';
+  String get printTest => 'Test print';
+  String get printTestTitle => 'Printer test page';
+  String get printTestBody => 'If you can read this and the frame is complete, the printer is ready.';
+  String get printersNone => 'No printer found';
+  String get printersRefresh => 'Look for printers again';
 }

@@ -19,6 +19,7 @@ import '../../strings.dart';
 import 'credit_dialogs.dart';
 import 'party_dialogs.dart';
 import 'statement_pdf.dart';
+import '../print/print_action.dart';
 
 /// One line of the Credit and Dues list.
 class CreditRow {
@@ -162,7 +163,15 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
     final st = buildStatement(entries: acct.ledger, from: from, to: now);
     final phone = context.isPhone;
     final actions = [
-      FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print_rounded), label: Text(l.print)),
+      FilledButton.icon(
+        key: const ValueKey('statementPrint'),
+        onPressed: () async {
+          final bytes = await buildStatementPdf(statement: st, customer: customer, shopName: ref.read(shopProvider).name, shopPhone: ref.read(shopProvider).phone, today: now, l: l);
+          if (context.mounted) await printPdfNow(context, ref, bytes, '${l.statementTitle} ${customer.name}');
+        },
+        icon: const Icon(Icons.print_rounded),
+        label: Text(l.print),
+      ),
       OutlinedButton.icon(
         key: const ValueKey('statementPdf'),
         onPressed: () async {
