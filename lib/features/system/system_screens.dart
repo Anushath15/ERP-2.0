@@ -17,6 +17,7 @@ import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
+import 'lan_card.dart';
 import 'security_card.dart';
 import '../../data/db/integrity.dart';
 import '../../data/repo/rebuild.dart';
@@ -119,7 +120,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final ok = await confirmDialog(context, title: v ? l.setDemoSwitchTitle : l.setDemoLeaveTitle, message: v ? l.setDemoSwitchText : l.setDemoLeaveText, confirmLabel: v ? l.setDemoOn : l.setDemoLeaveTitle.replaceAll('?', ''));
       if (ok) await ref.read(modeSwitcherProvider)(v ? DataMode.demo : DataMode.real);
     })));
-    final cards = [look, anim, printing, sounds, backup, sync, security, people, demo];
+    const lan = LanCard();
+    final cards = [look, anim, printing, sounds, backup, sync, lan, security, people, demo];
     return PageFrame(
       title: l.navSettings,
       actions: [if (context.canPop()) TextButton.icon(key: const ValueKey('settings-back'), onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded), label: Text(l.back))],
@@ -129,7 +131,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Expanded(child: Column(children: [for (final c in [printing, security, people, backup, demo]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
-                Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync, lan]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),
             )
           : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in cards) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),

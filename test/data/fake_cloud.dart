@@ -34,6 +34,9 @@ class _Client implements SyncApi {
   final String device;
 
   @override
+  bool get canPull => true;
+
+  @override
   Future<void> push(List<SyncDoc> docs) async {
     if (cloud.offline) throw const SyncOffline('no internet');
     cloud._push(device, docs);

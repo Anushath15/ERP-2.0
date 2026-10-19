@@ -7,7 +7,7 @@ part 'app_database.g.dart';
 
 /// The schema version this build of the app understands. Raise it ONLY together with a numbered migration in
 /// [AppDatabase.migrations], a new schema dump (`dart run drift_dev schema dump ...`) and a migration test.
-const currentSchemaVersion = 9;
+const currentSchemaVersion = 10;
 
 /// The database file was made by a NEWER version of the app. It is never opened (an old app could damage it).
 class DatabaseTooNewException implements Exception {
@@ -88,7 +88,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 9; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
+  int get schemaVersion => 10; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
 
   /// Numbered migrations: key = the version the step produces. Every step runs inside the upgrade transaction; the caller
   /// makes a backup first (see DatabaseOpener) and a failed step leaves the old file untouched.
@@ -262,6 +262,14 @@ class AppDatabase extends _$AppDatabase {
         await db.customStatement('UPDATE OR IGNORE outbox SET coll = ? WHERE coll = ?', [e.value, e.key]);
         await db.customStatement('DELETE FROM outbox WHERE coll = ?', [e.key]);
       }
+    },
+    // 10: changes can also be sent straight to the other counters of the shop (shop Wi-Fi). Each destination has its own upload queue
+    // (`chan`): the cloud's rows keep chan 'cloud'.
+    10: (m, db) async {
+      await db.customStatement("ALTER TABLE outbox ADD COLUMN chan TEXT NOT NULL DEFAULT 'cloud'");
+      await db.customStatement('DROP INDEX outbox_doc');
+      await db.customStatement('CREATE UNIQUE INDEX outbox_doc ON outbox(chan, coll, doc_id)');
+      await db.customStatement("CREATE TABLE lan_peers (chan TEXT NOT NULL PRIMARY KEY, host TEXT NOT NULL, port INTEGER NOT NULL, device_id TEXT NOT NULL, name TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL)");
     },
   };
 

@@ -71,8 +71,8 @@ Future<void> enqueue(DataContext cx, DatabaseConnectionUser tx, String coll, Str
   coll = syncColl(coll);
   final now = cx.nowMs();
   await tx.exec(
-    'INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at) VALUES (?,?,?,?,?,?,?,?) '
-    "ON CONFLICT(coll, doc_id) DO UPDATE SET op = excluded.op, stamp = excluded.stamp, state = 'pending', attempts = 0, last_error = NULL, hold_until = excluded.hold_until",
+    "INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at, chan) VALUES (?,?,?,?,?,?,?,?,'cloud') "
+    "ON CONFLICT(chan, coll, doc_id) DO UPDATE SET op = excluded.op, stamp = excluded.stamp, state = 'pending', attempts = 0, last_error = NULL, hold_until = excluded.hold_until",
     [coll, docId, op, cx.hlc.next(), 'pending', 0, holdMs == 0 ? 0 : now + holdMs, now],
   );
 }

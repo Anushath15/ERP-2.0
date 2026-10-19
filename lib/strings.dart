@@ -1426,4 +1426,26 @@ class Strings {
   String syncProblemLine(String why) => 'Last problem: ${why}';
   String get syncCloudOff => 'Cloud sync is off: this program has no cloud address, or you are not signed in. Everything is saved on this computer.';
   String get syncOnHelp => 'Bills and changes are sent to your shop cloud every few seconds and changes from other computers come back. With no internet, everything waits on this computer and goes later.';
+  String get lanTitle => 'Counter link (no internet needed)';
+  String get lanHelp => 'Billing counters of the same shop send each other their bills and changes over the shop Wi-Fi, even when the internet is down. Switch it on in every counter, then link them once.';
+  String get lanOn => 'Link my counters';
+  String get lanAddress => 'This computer\'s address';
+  String get lanKeyLabel => 'Shop key';
+  String get lanKeyHelp => 'Every counter must have the same key. On the second counter, type the key shown on the first one before linking.';
+  String get lanCopy => 'Copy';
+  String get lanOtherAddress => 'Other counter\'s address (like 192.168.1.5)';
+  String get lanLink => 'Link';
+  String get lanLinked => 'Linked counters';
+  String get lanNone => 'No counter linked yet';
+  String get lanRemove => 'Unlink';
+  String get lanOk => 'Connected';
+  String get lanPeerDown => 'Not reachable now. Changes wait here and are sent when it is back.';
+  String get lanErrWrongKey => 'That counter has a different key. Use the same key on both.';
+  String get lanErrUnreachable => 'Cannot reach that counter. Check it is switched on, the program is open, "Link my counters" is on, and it is on the same Wi-Fi.';
+  String get lanErrBad => 'Type the address like 192.168.1.5';
+  String get lanErrSelf => 'That is this computer\'s own address.';
+  String get lanErrKeyBad => 'The key is 64 letters and digits (0-9, a-f), like the one shown on the first counter.';
+  String get lanFirewall => 'If Windows asks to allow the program on the network, choose Allow (private network).';
+  String get lanStartFailed => 'The counter link could not start. Another program may be using the network port, or Windows blocked it.';
+  String get lanKeyLocked => 'Unlink the counters first to change the key.';
 }

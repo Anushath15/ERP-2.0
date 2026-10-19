@@ -19664,6 +19664,16 @@ class Outbox extends Table with TableInfo<Outbox, DbOutbox> {
     requiredDuringInsert: true,
     $customConstraints: 'NOT NULL',
   );
+  static const VerificationMeta _chanMeta = const VerificationMeta('chan');
+  late final GeneratedColumn<String> chan = GeneratedColumn<String>(
+    'chan',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'cloud\'',
+    defaultValue: const CustomExpression('\'cloud\''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     seq,
@@ -19676,6 +19686,7 @@ class Outbox extends Table with TableInfo<Outbox, DbOutbox> {
     lastError,
     holdUntil,
     createdAt,
+    chan,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -19752,6 +19763,12 @@ class Outbox extends Table with TableInfo<Outbox, DbOutbox> {
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('chan')) {
+      context.handle(
+        _chanMeta,
+        chan.isAcceptableOrUnknown(data['chan']!, _chanMeta),
+      );
+    }
     return context;
   }
 
@@ -19801,6 +19818,10 @@ class Outbox extends Table with TableInfo<Outbox, DbOutbox> {
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
       )!,
+      chan: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chan'],
+      )!,
     );
   }
 
@@ -19824,6 +19845,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
   final String? lastError;
   final int holdUntil;
   final int createdAt;
+  final String chan;
   const DbOutbox({
     required this.seq,
     required this.coll,
@@ -19835,6 +19857,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
     this.lastError,
     required this.holdUntil,
     required this.createdAt,
+    required this.chan,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -19851,6 +19874,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
     }
     map['hold_until'] = Variable<int>(holdUntil);
     map['created_at'] = Variable<int>(createdAt);
+    map['chan'] = Variable<String>(chan);
     return map;
   }
 
@@ -19868,6 +19892,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
           : Value(lastError),
       holdUntil: Value(holdUntil),
       createdAt: Value(createdAt),
+      chan: Value(chan),
     );
   }
 
@@ -19887,6 +19912,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
       lastError: serializer.fromJson<String?>(json['last_error']),
       holdUntil: serializer.fromJson<int>(json['hold_until']),
       createdAt: serializer.fromJson<int>(json['created_at']),
+      chan: serializer.fromJson<String>(json['chan']),
     );
   }
   @override
@@ -19903,6 +19929,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
       'last_error': serializer.toJson<String?>(lastError),
       'hold_until': serializer.toJson<int>(holdUntil),
       'created_at': serializer.toJson<int>(createdAt),
+      'chan': serializer.toJson<String>(chan),
     };
   }
 
@@ -19917,6 +19944,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
     Value<String?> lastError = const Value.absent(),
     int? holdUntil,
     int? createdAt,
+    String? chan,
   }) => DbOutbox(
     seq: seq ?? this.seq,
     coll: coll ?? this.coll,
@@ -19928,6 +19956,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
     lastError: lastError.present ? lastError.value : this.lastError,
     holdUntil: holdUntil ?? this.holdUntil,
     createdAt: createdAt ?? this.createdAt,
+    chan: chan ?? this.chan,
   );
   DbOutbox copyWithCompanion(OutboxCompanion data) {
     return DbOutbox(
@@ -19941,6 +19970,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
       lastError: data.lastError.present ? data.lastError.value : this.lastError,
       holdUntil: data.holdUntil.present ? data.holdUntil.value : this.holdUntil,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      chan: data.chan.present ? data.chan.value : this.chan,
     );
   }
 
@@ -19956,7 +19986,8 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
           ..write('attempts: $attempts, ')
           ..write('lastError: $lastError, ')
           ..write('holdUntil: $holdUntil, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('chan: $chan')
           ..write(')'))
         .toString();
   }
@@ -19973,6 +20004,7 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
     lastError,
     holdUntil,
     createdAt,
+    chan,
   );
   @override
   bool operator ==(Object other) =>
@@ -19987,7 +20019,8 @@ class DbOutbox extends DataClass implements Insertable<DbOutbox> {
           other.attempts == this.attempts &&
           other.lastError == this.lastError &&
           other.holdUntil == this.holdUntil &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.chan == this.chan);
 }
 
 class OutboxCompanion extends UpdateCompanion<DbOutbox> {
@@ -20001,6 +20034,7 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
   final Value<String?> lastError;
   final Value<int> holdUntil;
   final Value<int> createdAt;
+  final Value<String> chan;
   const OutboxCompanion({
     this.seq = const Value.absent(),
     this.coll = const Value.absent(),
@@ -20012,6 +20046,7 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
     this.lastError = const Value.absent(),
     this.holdUntil = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.chan = const Value.absent(),
   });
   OutboxCompanion.insert({
     this.seq = const Value.absent(),
@@ -20024,6 +20059,7 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
     this.lastError = const Value.absent(),
     this.holdUntil = const Value.absent(),
     required int createdAt,
+    this.chan = const Value.absent(),
   }) : coll = Value(coll),
        docId = Value(docId),
        createdAt = Value(createdAt);
@@ -20038,6 +20074,7 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
     Expression<String>? lastError,
     Expression<int>? holdUntil,
     Expression<int>? createdAt,
+    Expression<String>? chan,
   }) {
     return RawValuesInsertable({
       if (seq != null) 'seq': seq,
@@ -20050,6 +20087,7 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
       if (lastError != null) 'last_error': lastError,
       if (holdUntil != null) 'hold_until': holdUntil,
       if (createdAt != null) 'created_at': createdAt,
+      if (chan != null) 'chan': chan,
     });
   }
 
@@ -20064,6 +20102,7 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
     Value<String?>? lastError,
     Value<int>? holdUntil,
     Value<int>? createdAt,
+    Value<String>? chan,
   }) {
     return OutboxCompanion(
       seq: seq ?? this.seq,
@@ -20076,6 +20115,7 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
       lastError: lastError ?? this.lastError,
       holdUntil: holdUntil ?? this.holdUntil,
       createdAt: createdAt ?? this.createdAt,
+      chan: chan ?? this.chan,
     );
   }
 
@@ -20112,6 +20152,9 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
+    if (chan.present) {
+      map['chan'] = Variable<String>(chan.value);
+    }
     return map;
   }
 
@@ -20127,7 +20170,8 @@ class OutboxCompanion extends UpdateCompanion<DbOutbox> {
           ..write('attempts: $attempts, ')
           ..write('lastError: $lastError, ')
           ..write('holdUntil: $holdUntil, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('chan: $chan')
           ..write(')'))
         .toString();
   }
@@ -20386,6 +20430,412 @@ class SyncRevCompanion extends UpdateCompanion<DbSyncRev> {
           ..write('coll: $coll, ')
           ..write('docId: $docId, ')
           ..write('hlc: $hlc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class LanPeers extends Table with TableInfo<LanPeers, DbLanPeer> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  LanPeers(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chanMeta = const VerificationMeta('chan');
+  late final GeneratedColumn<String> chan = GeneratedColumn<String>(
+    'chan',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY',
+  );
+  static const VerificationMeta _hostMeta = const VerificationMeta('host');
+  late final GeneratedColumn<String> host = GeneratedColumn<String>(
+    'host',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _portMeta = const VerificationMeta('port');
+  late final GeneratedColumn<int> port = GeneratedColumn<int>(
+    'port',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    chan,
+    host,
+    port,
+    deviceId,
+    name,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'lan_peers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DbLanPeer> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chan')) {
+      context.handle(
+        _chanMeta,
+        chan.isAcceptableOrUnknown(data['chan']!, _chanMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chanMeta);
+    }
+    if (data.containsKey('host')) {
+      context.handle(
+        _hostMeta,
+        host.isAcceptableOrUnknown(data['host']!, _hostMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hostMeta);
+    }
+    if (data.containsKey('port')) {
+      context.handle(
+        _portMeta,
+        port.isAcceptableOrUnknown(data['port']!, _portMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_portMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chan};
+  @override
+  DbLanPeer map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DbLanPeer(
+      chan: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chan'],
+      )!,
+      host: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}host'],
+      )!,
+      port: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}port'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  LanPeers createAlias(String alias) {
+    return LanPeers(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class DbLanPeer extends DataClass implements Insertable<DbLanPeer> {
+  final String chan;
+  final String host;
+  final int port;
+  final String deviceId;
+  final String name;
+  final int createdAt;
+  const DbLanPeer({
+    required this.chan,
+    required this.host,
+    required this.port,
+    required this.deviceId,
+    required this.name,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chan'] = Variable<String>(chan);
+    map['host'] = Variable<String>(host);
+    map['port'] = Variable<int>(port);
+    map['device_id'] = Variable<String>(deviceId);
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  LanPeersCompanion toCompanion(bool nullToAbsent) {
+    return LanPeersCompanion(
+      chan: Value(chan),
+      host: Value(host),
+      port: Value(port),
+      deviceId: Value(deviceId),
+      name: Value(name),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory DbLanPeer.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DbLanPeer(
+      chan: serializer.fromJson<String>(json['chan']),
+      host: serializer.fromJson<String>(json['host']),
+      port: serializer.fromJson<int>(json['port']),
+      deviceId: serializer.fromJson<String>(json['device_id']),
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<int>(json['created_at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chan': serializer.toJson<String>(chan),
+      'host': serializer.toJson<String>(host),
+      'port': serializer.toJson<int>(port),
+      'device_id': serializer.toJson<String>(deviceId),
+      'name': serializer.toJson<String>(name),
+      'created_at': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  DbLanPeer copyWith({
+    String? chan,
+    String? host,
+    int? port,
+    String? deviceId,
+    String? name,
+    int? createdAt,
+  }) => DbLanPeer(
+    chan: chan ?? this.chan,
+    host: host ?? this.host,
+    port: port ?? this.port,
+    deviceId: deviceId ?? this.deviceId,
+    name: name ?? this.name,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  DbLanPeer copyWithCompanion(LanPeersCompanion data) {
+    return DbLanPeer(
+      chan: data.chan.present ? data.chan.value : this.chan,
+      host: data.host.present ? data.host.value : this.host,
+      port: data.port.present ? data.port.value : this.port,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DbLanPeer(')
+          ..write('chan: $chan, ')
+          ..write('host: $host, ')
+          ..write('port: $port, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(chan, host, port, deviceId, name, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DbLanPeer &&
+          other.chan == this.chan &&
+          other.host == this.host &&
+          other.port == this.port &&
+          other.deviceId == this.deviceId &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt);
+}
+
+class LanPeersCompanion extends UpdateCompanion<DbLanPeer> {
+  final Value<String> chan;
+  final Value<String> host;
+  final Value<int> port;
+  final Value<String> deviceId;
+  final Value<String> name;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const LanPeersCompanion({
+    this.chan = const Value.absent(),
+    this.host = const Value.absent(),
+    this.port = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LanPeersCompanion.insert({
+    required String chan,
+    required String host,
+    required int port,
+    required String deviceId,
+    this.name = const Value.absent(),
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : chan = Value(chan),
+       host = Value(host),
+       port = Value(port),
+       deviceId = Value(deviceId),
+       createdAt = Value(createdAt);
+  static Insertable<DbLanPeer> custom({
+    Expression<String>? chan,
+    Expression<String>? host,
+    Expression<int>? port,
+    Expression<String>? deviceId,
+    Expression<String>? name,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chan != null) 'chan': chan,
+      if (host != null) 'host': host,
+      if (port != null) 'port': port,
+      if (deviceId != null) 'device_id': deviceId,
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LanPeersCompanion copyWith({
+    Value<String>? chan,
+    Value<String>? host,
+    Value<int>? port,
+    Value<String>? deviceId,
+    Value<String>? name,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return LanPeersCompanion(
+      chan: chan ?? this.chan,
+      host: host ?? this.host,
+      port: port ?? this.port,
+      deviceId: deviceId ?? this.deviceId,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chan.present) {
+      map['chan'] = Variable<String>(chan.value);
+    }
+    if (host.present) {
+      map['host'] = Variable<String>(host.value);
+    }
+    if (port.present) {
+      map['port'] = Variable<int>(port.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LanPeersCompanion(')
+          ..write('chan: $chan, ')
+          ..write('host: $host, ')
+          ..write('port: $port, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -21483,13 +21933,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Outbox outbox = Outbox(this);
   late final Index outboxDoc = Index(
     'outbox_doc',
-    'CREATE UNIQUE INDEX outbox_doc ON outbox (coll, doc_id)',
+    'CREATE UNIQUE INDEX outbox_doc ON outbox (chan, coll, doc_id)',
   );
   late final Index outboxState = Index(
     'outbox_state',
     'CREATE INDEX outbox_state ON outbox (state, seq)',
   );
   late final SyncRev syncRev = SyncRev(this);
+  late final LanPeers lanPeers = LanPeers(this);
   late final SyncMeta syncMeta = SyncMeta(this);
   late final Audit audit = Audit(this);
   late final Index auditAt = Index(
@@ -21595,6 +22046,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     outboxDoc,
     outboxState,
     syncRev,
+    lanPeers,
     syncMeta,
     audit,
     auditAt,
@@ -35663,6 +36115,7 @@ typedef $OutboxCreateCompanionBuilder = OutboxCompanion Function({
   Value<String?> lastError,
   Value<int> holdUntil,
   required int createdAt,
+  Value<String> chan,
 });
 typedef $OutboxUpdateCompanionBuilder = OutboxCompanion Function({
   Value<int> seq,
@@ -35675,6 +36128,7 @@ typedef $OutboxUpdateCompanionBuilder = OutboxCompanion Function({
   Value<String?> lastError,
   Value<int> holdUntil,
   Value<int> createdAt,
+  Value<String> chan,
 });
 
 class $OutboxFilterComposer extends Composer<_$AppDatabase, Outbox> {
@@ -35732,6 +36186,11 @@ class $OutboxFilterComposer extends Composer<_$AppDatabase, Outbox> {
 
   ColumnFilters<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chan => $composableBuilder(
+    column: $table.chan,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -35793,6 +36252,11 @@ class $OutboxOrderingComposer extends Composer<_$AppDatabase, Outbox> {
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get chan => $composableBuilder(
+    column: $table.chan,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $OutboxAnnotationComposer extends Composer<_$AppDatabase, Outbox> {
@@ -35832,6 +36296,9 @@ class $OutboxAnnotationComposer extends Composer<_$AppDatabase, Outbox> {
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get chan =>
+      $composableBuilder(column: $table.chan, builder: (column) => column);
 }
 
 class $OutboxTableManager
@@ -35872,6 +36339,7 @@ class $OutboxTableManager
                 Value<String?> lastError = const Value.absent(),
                 Value<int> holdUntil = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
+                Value<String> chan = const Value.absent(),
               }) => OutboxCompanion(
                 seq: seq,
                 coll: coll,
@@ -35883,6 +36351,7 @@ class $OutboxTableManager
                 lastError: lastError,
                 holdUntil: holdUntil,
                 createdAt: createdAt,
+                chan: chan,
               ),
           createCompanionCallback:
               ({
@@ -35896,6 +36365,7 @@ class $OutboxTableManager
                 Value<String?> lastError = const Value.absent(),
                 Value<int> holdUntil = const Value.absent(),
                 required int createdAt,
+                Value<String> chan = const Value.absent(),
               }) => OutboxCompanion.insert(
                 seq: seq,
                 coll: coll,
@@ -35907,6 +36377,7 @@ class $OutboxTableManager
                 lastError: lastError,
                 holdUntil: holdUntil,
                 createdAt: createdAt,
+                chan: chan,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -36093,6 +36564,223 @@ typedef $SyncRevProcessedTableManager =
       $SyncRevUpdateCompanionBuilder,
       (DbSyncRev, BaseReferences<_$AppDatabase, SyncRev, DbSyncRev>),
       DbSyncRev,
+      PrefetchHooks Function()
+    >;
+typedef $LanPeersCreateCompanionBuilder = LanPeersCompanion Function({
+  required String chan,
+  required String host,
+  required int port,
+  required String deviceId,
+  Value<String> name,
+  required int createdAt,
+  Value<int> rowid,
+});
+typedef $LanPeersUpdateCompanionBuilder = LanPeersCompanion Function({
+  Value<String> chan,
+  Value<String> host,
+  Value<int> port,
+  Value<String> deviceId,
+  Value<String> name,
+  Value<int> createdAt,
+  Value<int> rowid,
+});
+
+class $LanPeersFilterComposer extends Composer<_$AppDatabase, LanPeers> {
+  $LanPeersFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chan => $composableBuilder(
+    column: $table.chan,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get host => $composableBuilder(
+    column: $table.host,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get port => $composableBuilder(
+    column: $table.port,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $LanPeersOrderingComposer extends Composer<_$AppDatabase, LanPeers> {
+  $LanPeersOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chan => $composableBuilder(
+    column: $table.chan,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get host => $composableBuilder(
+    column: $table.host,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get port => $composableBuilder(
+    column: $table.port,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $LanPeersAnnotationComposer extends Composer<_$AppDatabase, LanPeers> {
+  $LanPeersAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chan =>
+      $composableBuilder(column: $table.chan, builder: (column) => column);
+
+  GeneratedColumn<String> get host =>
+      $composableBuilder(column: $table.host, builder: (column) => column);
+
+  GeneratedColumn<int> get port =>
+      $composableBuilder(column: $table.port, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $LanPeersTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          LanPeers,
+          DbLanPeer,
+          $LanPeersFilterComposer,
+          $LanPeersOrderingComposer,
+          $LanPeersAnnotationComposer,
+          $LanPeersCreateCompanionBuilder,
+          $LanPeersUpdateCompanionBuilder,
+          (DbLanPeer, BaseReferences<_$AppDatabase, LanPeers, DbLanPeer>),
+          DbLanPeer,
+          PrefetchHooks Function()
+        > {
+  $LanPeersTableManager(_$AppDatabase db, LanPeers table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $LanPeersFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $LanPeersOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $LanPeersAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> chan = const Value.absent(),
+                Value<String> host = const Value.absent(),
+                Value<int> port = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LanPeersCompanion(
+                chan: chan,
+                host: host,
+                port: port,
+                deviceId: deviceId,
+                name: name,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String chan,
+                required String host,
+                required int port,
+                required String deviceId,
+                Value<String> name = const Value.absent(),
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LanPeersCompanion.insert(
+                chan: chan,
+                host: host,
+                port: port,
+                deviceId: deviceId,
+                name: name,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<LanPeers, DbLanPeer>(table),
+                  BaseReferences<_$AppDatabase, LanPeers, DbLanPeer>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $LanPeersProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      LanPeers,
+      DbLanPeer,
+      $LanPeersFilterComposer,
+      $LanPeersOrderingComposer,
+      $LanPeersAnnotationComposer,
+      $LanPeersCreateCompanionBuilder,
+      $LanPeersUpdateCompanionBuilder,
+      (DbLanPeer, BaseReferences<_$AppDatabase, LanPeers, DbLanPeer>),
+      DbLanPeer,
       PrefetchHooks Function()
     >;
 typedef $SyncMetaCreateCompanionBuilder = SyncMetaCompanion Function({
@@ -36578,6 +37266,8 @@ class $AppDatabaseManager {
   $RecordsTableManager get records => $RecordsTableManager(_db, _db.records);
   $OutboxTableManager get outbox => $OutboxTableManager(_db, _db.outbox);
   $SyncRevTableManager get syncRev => $SyncRevTableManager(_db, _db.syncRev);
+  $LanPeersTableManager get lanPeers =>
+      $LanPeersTableManager(_db, _db.lanPeers);
   $SyncMetaTableManager get syncMeta =>
       $SyncMetaTableManager(_db, _db.syncMeta);
   $AuditTableManager get audit => $AuditTableManager(_db, _db.audit);

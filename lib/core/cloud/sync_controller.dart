@@ -90,6 +90,9 @@ class SyncController extends Notifier<SyncStatus> {
     }
   }
 
+  /// Another counter (over the shop Wi-Fi) changed data: the lists on screen are older than the database.
+  void markNewData() => state = state.copyWith(newFromCloud: true);
+
   void stop() {
     _timer?.cancel();
     _timer = null;

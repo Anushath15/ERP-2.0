@@ -112,7 +112,7 @@ class LedgerRepo {
     await tx.exec('DELETE FROM ledger_entries WHERE id = ?', [id]);
     await tx.exec('UPDATE ledger_entries SET running_paise = running_paise - ? WHERE party_id = ? AND (at > ? OR (at = ? AND rowid > ?))', [amt, party, at, at, rowid]);
     await tx.exec('UPDATE party_balance SET balance_paise = balance_paise - ?, entry_count = entry_count - 1 WHERE party_id = ?', [amt, party]);
-    await tx.exec('DELETE FROM outbox WHERE coll = ? AND doc_id = ?', ['ledgerEntries', id]);
+    await tx.exec('DELETE FROM outbox WHERE coll = ? AND doc_id = ?', ['ledger_entries', id]);
   }
 
   /// Adds or updates one bill-wise due.

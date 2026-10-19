@@ -19,8 +19,11 @@ class SyncResult {
 ///    A document this computer has changed and not yet sent is left alone (the local change is sent next and, being newer, wins).
 ///  * After new documents arrive the totals (stock, balances, day totals) are rebuilt from the raw rows, because only raw rows travel.
 class SyncEngine {
-  SyncEngine(this.cx, this.api, {this.batch = 100, this.pullLimit = 300, this.onChanged});
+  SyncEngine(this.cx, this.api, {this.chan = 'cloud', this.batch = 100, this.pullLimit = 300, this.onChanged});
   final DataContext cx;
+
+  /// Which upload queue this engine sends: 'cloud', or 'lan-' plus the other computer's id for one other counter on the shop Wi-Fi.
+  final String chan;
   final SyncApi api;
   final int batch, pullLimit;
 
@@ -33,22 +36,24 @@ class SyncEngine {
   Future<SyncResult> run() async {
     await backfillOnce();
     final pushed = await push();
+    if (!api.canPull) return SyncResult(pushed: pushed);
     final pulled = await pull();
     return SyncResult(pushed: pushed, pulled: pulled.$1, applied: pulled.$2, skipped: pulled.$3);
   }
 
   /// The first time: every document already in the database is queued, so the cloud copy gets what the shop had before sync was on.
   Future<void> backfillOnce() async {
-    final done = await cx.db.row("SELECT value FROM sync_meta WHERE name = 'backfilled'");
+    final doneKey = chan == 'cloud' ? 'backfilled' : 'backfilled:$chan';
+    final done = await cx.db.row('SELECT value FROM sync_meta WHERE name = ?', [doneKey]);
     if (done != null) return;
     final now = cx.nowMs();
     await cx.db.transaction(() async {
       for (final t in syncTables) {
-        await cx.db.exec("INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at) SELECT '${t.name}', id, 'set', '', 'pending', 0, 0, ? FROM ${t.name} WHERE true ON CONFLICT(coll, doc_id) DO NOTHING", [now]);
+        await cx.db.exec("INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at, chan) SELECT '${t.name}', id, 'set', '', 'pending', 0, 0, ?, ? FROM ${t.name} WHERE true ON CONFLICT(chan, coll, doc_id) DO NOTHING", [now, chan]);
       }
       final names = sharedSettingNames.map((n) => "'$n'").join(',');
-      await cx.db.exec("INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at) SELECT '$settingsColl', name, 'set', '', 'pending', 0, 0, ? FROM kv WHERE name IN ($names) AND true ON CONFLICT(coll, doc_id) DO NOTHING", [now]);
-      await cx.db.exec("INSERT INTO sync_meta(name, value) VALUES ('backfilled', '1') ON CONFLICT(name) DO UPDATE SET value = excluded.value");
+      await cx.db.exec("INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at, chan) SELECT '$settingsColl', name, 'set', '', 'pending', 0, 0, ?, ? FROM kv WHERE name IN ($names) AND true ON CONFLICT(chan, coll, doc_id) DO NOTHING", [now, chan]);
+      await cx.db.exec("INSERT INTO sync_meta(name, value) VALUES (?, '1') ON CONFLICT(name) DO UPDATE SET value = excluded.value", [doneKey]);
     });
   }
 
@@ -57,7 +62,7 @@ class SyncEngine {
   Future<int> push() async {
     var sent = 0;
     while (true) {
-      final due = await cx.db.rows("SELECT seq, coll, doc_id, stamp FROM outbox WHERE state = 'pending' AND hold_until <= ? ORDER BY seq LIMIT ?", [cx.nowMs(), batch]);
+      final due = await cx.db.rows("SELECT seq, coll, doc_id, stamp FROM outbox WHERE chan = ? AND state = 'pending' AND hold_until <= ? ORDER BY seq LIMIT ?", [chan, cx.nowMs(), batch]);
       if (due.isEmpty) return sent;
       final entries = <_Entry>[];
       for (final r in due) {
@@ -141,7 +146,19 @@ class SyncEngine {
     return (read, applied, skipped);
   }
 
-  Future<(int, int)> _applyPage(List<PulledDoc> docs) async {
+  /// Documents sent to this computer by another counter over the shop Wi-Fi: applied exactly like pulled ones (no position to save).
+  /// Returns how many were applied.
+  Future<int> applyIncoming(List<PulledDoc> docs) async {
+    if (docs.isEmpty) return 0;
+    final r = await _applyPage(docs, saveCursor: false);
+    if (r.$1 > 0) {
+      await rebuildSummaries(cx.db);
+      onChanged?.call();
+    }
+    return r.$1;
+  }
+
+  Future<(int, int)> _applyPage(List<PulledDoc> docs, {bool saveCursor = true}) async {
     var applied = 0, skipped = 0;
     await cx.db.transaction(() async {
       await cx.db.exec("INSERT INTO sync_meta(name, value) VALUES ('$applyingFlag', '1') ON CONFLICT(name) DO UPDATE SET value = '1'");
@@ -157,7 +174,7 @@ class SyncEngine {
         }
       }
       await cx.db.exec("DELETE FROM sync_meta WHERE name = '$applyingFlag'");
-      await cx.db.exec("INSERT INTO sync_meta(name, value) VALUES ('pull_cursor', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value", ['${docs.last.seq}']);
+      if (saveCursor) await cx.db.exec("INSERT INTO sync_meta(name, value) VALUES ('pull_cursor', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value", ['${docs.last.seq}']);
     });
     return (applied, skipped);
   }

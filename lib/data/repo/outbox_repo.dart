@@ -6,7 +6,7 @@ class OutboxRepo {
   final DataContext cx;
 
   Future<({int pending, int attention})> counts() async => (
-        pending: await cx.db.scalarInt("SELECT COUNT(*) FROM outbox WHERE state = 'pending'"),
-        attention: await cx.db.scalarInt("SELECT COUNT(*) FROM outbox WHERE state = 'attention'"),
+        pending: await cx.db.scalarInt("SELECT COUNT(*) FROM outbox WHERE chan = 'cloud' AND state = 'pending'"),
+        attention: await cx.db.scalarInt("SELECT COUNT(*) FROM outbox WHERE chan = 'cloud' AND state = 'attention'"),
       );
 }

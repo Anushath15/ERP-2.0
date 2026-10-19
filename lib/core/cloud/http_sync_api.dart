@@ -51,6 +51,9 @@ class HttpSyncApi implements SyncApi {
   }
 
   @override
+  bool get canPull => true;
+
+  @override
   Future<void> push(List<SyncDoc> docs) async {
     await _rpc('push_docs', {'p_device': deviceId, 'p_docs': [for (final d in docs) d.toJson()]});
   }

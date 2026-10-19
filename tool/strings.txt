@@ -1466,3 +1466,25 @@ syncSignedOut | Sign in again to sync
 syncProblemLine | Last problem: {why}
 syncCloudOff | Cloud sync is off: this program has no cloud address, or you are not signed in. Everything is saved on this computer.
 syncOnHelp | Bills and changes are sent to your shop cloud every few seconds and changes from other computers come back. With no internet, everything waits on this computer and goes later.
+lanTitle | Counter link (no internet needed)
+lanHelp | Billing counters of the same shop send each other their bills and changes over the shop Wi-Fi, even when the internet is down. Switch it on in every counter, then link them once.
+lanOn | Link my counters
+lanAddress | This computer's address
+lanKeyLabel | Shop key
+lanKeyHelp | Every counter must have the same key. On the second counter, type the key shown on the first one before linking.
+lanCopy | Copy
+lanOtherAddress | Other counter's address (like 192.168.1.5)
+lanLink | Link
+lanLinked | Linked counters
+lanNone | No counter linked yet
+lanRemove | Unlink
+lanOk | Connected
+lanPeerDown | Not reachable now. Changes wait here and are sent when it is back.
+lanErrWrongKey | That counter has a different key. Use the same key on both.
+lanErrUnreachable | Cannot reach that counter. Check it is switched on, the program is open, "Link my counters" is on, and it is on the same Wi-Fi.
+lanErrBad | Type the address like 192.168.1.5
+lanErrSelf | That is this computer's own address.
+lanErrKeyBad | The key is 64 letters and digits (0-9, a-f), like the one shown on the first counter.
+lanFirewall | If Windows asks to allow the program on the network, choose Allow (private network).
+lanStartFailed | The counter link could not start. Another program may be using the network port, or Windows blocked it.
+lanKeyLocked | Unlink the counters first to change the key.

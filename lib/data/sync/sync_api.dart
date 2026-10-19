@@ -20,6 +20,9 @@ abstract class SyncApi {
   /// Sends up to 100 documents in one all-or-nothing call.
   Future<void> push(List<SyncDoc> docs);
 
+  /// False for a destination that only receives (another counter on the shop Wi-Fi): nothing is pulled from it.
+  bool get canPull => true;
+
   /// Documents with a position after [after], oldest first, at most [limit].
   Future<List<PulledDoc>> pull(int after, int limit);
 }

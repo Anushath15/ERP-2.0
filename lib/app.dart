@@ -25,6 +25,8 @@ import 'router.dart';
 import 'core/cloud/auth_controller.dart';
 import 'core/cloud/cloud_config.dart';
 import 'core/cloud/sync_controller.dart';
+import 'core/lan/lan_controller.dart';
+import 'core/window_chrome.dart';
 import 'core/lock/pin_lock.dart';
 import 'features/lock/lock_screen.dart';
 
@@ -134,6 +136,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     unawaited(ref.read(diskLevelProvider.notifier).refresh());
     _diskTimer = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(ref.read(diskLevelProvider.notifier).refresh()));
     unawaited(ref.read(backupControllerProvider.notifier).start());
+    unawaited(ref.read(lanProvider.notifier).init()); // the counter link over the shop Wi-Fi, if it was switched on
     ref.read(syncProvider.notifier).refreshWiring(); // the cloud sync, once this computer is signed in to the shop's cloud account
   }
 
@@ -217,7 +220,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
             onPointerSignal: (_) => ref.read(pinLockProvider.notifier).touch(),
             child: Stack(children: [
             // while locked nothing under the lock screen can be clicked, focused, typed into or read by a screen reader
-            ExcludeSemantics(excluding: locked, child: ExcludeFocus(excluding: locked, child: IgnorePointer(ignoring: locked, child: MotionScope(motion: Motion(level), child: child ?? const SizedBox.shrink())))),
+            ExcludeSemantics(excluding: locked, child: ExcludeFocus(excluding: locked, child: IgnorePointer(ignoring: locked, child: MotionScope(motion: Motion(level), child: WindowChromeSync(child: child ?? const SizedBox.shrink()))))),
             if (locked) const Positioned.fill(child: LockOverlay()),
             if (ref.watch(backupControllerProvider.select((x) => x.closing)))
               Positioned.fill(child: Material(color: Colors.black54, child: Center(child: Card(child: Padding(padding: const EdgeInsets.all(24), child: Text(const Strings().backupClosing, style: Theme.of(context).textTheme.titleMedium)))))),
