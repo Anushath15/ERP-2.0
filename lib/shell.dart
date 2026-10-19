@@ -205,7 +205,7 @@ class TopBar extends ConsumerWidget {
           icon: Icon(dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
         ),
         if (ref.watch(pinLockProvider.select((x) => x.enabled)))
-          IconButton(key: const ValueKey('topbar-lock'), tooltip: l.lockNow, onPressed: ref.read(pinLockProvider.notifier).lock, icon: const Icon(Icons.lock_rounded)),
+          IconButton(key: const ValueKey('topbar-lock'), tooltip: l.lockNow, onPressed: ref.read(pinLockProvider.notifier).lock, icon: Icon(Icons.lock_outline_rounded, color: context.c.text)),
         IconButton(
           key: const ValueKey('topbar-profile'),
           tooltip: l.navShop,
