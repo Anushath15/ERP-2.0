@@ -42,8 +42,11 @@ PayMode payModeOf(int i) => PayMode.values[i.clamp(0, PayMode.values.length - 1)
 /// The sales register reads the bills page by page from the database (never all of them at once).
 final billSourceProvider = Provider<PagedSource<BillRow>>((ref) {
   final repo = ref.watch(appDataProvider).bills;
-  // the page read at start-up is only good until the first new bill: after that the list reads from the database
-  final fresh = ref.read(statsProvider).billCount == ref.read(bootstrapProvider).stats.billCount;
+  // The page read at start-up is only good until anything changes (a new bill, a payment, a cancellation, a return): the figures are read
+  // again after each of those, which makes a new source, and from then on the list reads from the database. (This used to look at the bill
+  // count only once, so a register opened before a sale could show the old list, even empty, when it was opened again.)
+  final stats = ref.watch(statsProvider);
+  final fresh = identical(stats, ref.read(bootstrapProvider).stats);
   final first = ref.read(bootstrapProvider).firstBills;
   return PagedSource<BillRow>(
     initial: fresh ? PageResult(first, first.length < 50 ? null : BillRepo.cursorOf(first.last)) : null,

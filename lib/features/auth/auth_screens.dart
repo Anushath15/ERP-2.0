@@ -198,9 +198,9 @@ class _ForgotScreenState extends ConsumerState<ForgotScreen> {
             Text(l.forgotHelp, style: th.bodySmall, textAlign: TextAlign.center),
             const SizedBox(height: 18),
             if (!_sent) ...[
-              TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l.fieldEmail, prefixIcon: const Icon(Icons.mail_outline_rounded))),
+              Semantics(container: true, child: TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l.fieldEmail, prefixIcon: const Icon(Icons.mail_outline_rounded)))),
               const SizedBox(height: 16),
-              if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: StatusBadge(_error!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded)),
+              if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: Semantics(container: true, liveRegion: true, label: _error, child: StatusBadge(_error!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded))),
               FilledButton(
                 key: const ValueKey('sendReset'),
                 onPressed: ref.watch(authProvider.select((a) => a.busy))
@@ -350,6 +350,13 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
       case 3:
         final free = ref.watch(freeSeriesProvider);
         final letters = free.value ?? const <String>[];
+        // a computer that already has its letter (its old bills carry it) keeps it: shown chosen, the others greyed out
+        final mine = ref.watch(mySeriesProvider).value;
+        if (mine != null && _letter != mine) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _letter = mine);
+          });
+        }
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(l.wizNumberingHelp, style: th.bodyMedium),
           const SizedBox(height: 12),
@@ -357,7 +364,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
           const SizedBox(height: 16),
           Text(l.wizSeriesLabel, style: th.titleSmall),
           const SizedBox(height: 4),
-          Text(l.wizSeriesHelp, style: th.bodySmall),
+          Text(mine != null ? l.wizSeriesMine(mine) : l.wizSeriesHelp, key: const ValueKey('wizSeriesHelp'), style: th.bodySmall),
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final x in SeriesRegistry.letters)
@@ -365,7 +372,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
                 key: ValueKey('series-$x'),
                 label: Text(x),
                 selected: _letter == x,
-                onSelected: letters.contains(x) ? (_) => setState(() => _letter = x) : null,
+                onSelected: mine != null ? null : (letters.contains(x) ? (_) => setState(() => _letter = x) : null),
               ),
           ]),
           const SizedBox(height: 8),
@@ -442,6 +449,12 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
     );
   }
 }
+
+/// This computer's own letter, if it already has one.
+final mySeriesProvider = FutureProvider<String?>((ref) {
+  final d = ref.watch(appDataProvider);
+  return SeriesRegistry(d.settings, d.cx.deviceId).mine();
+});
 
 /// The series letters nobody in this shop has taken yet.
 final freeSeriesProvider = FutureProvider<List<String>>((ref) {

@@ -67,6 +67,29 @@ void main() {
     expect(tester(t, 'series-A').onSelected, isNull, reason: 'greyed out');
     expect(tester(t, 'series-C').onSelected, isNotNull);
   });
+
+  testWidgets('a computer that already has its letter keeps it: the set-up shows it chosen, the others are greyed out, and Finish works (it used to fail with "already has the letter")', (t) async {
+    final c = await pumpApp(t, size: desktop1366, location: '/wizard', motion: MotionLevel.off, followSystemMotion: false);
+    final d = c.read(appDataProvider);
+    await SeriesRegistry(d.settings, d.cx.deviceId).claim('A');
+    c.invalidate(freeSeriesProvider);
+    c.invalidate(mySeriesProvider);
+    await next(t); // welcome
+    await next(t); // shop
+    await next(t); // gst
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('wizSeriesHelp')), findsOneWidget);
+    expect(find.textContaining('already has the letter A'), findsOneWidget);
+    expect(tester(t, 'series-A').selected, isTrue);
+    expect(tester(t, 'series-C').onSelected, isNull, reason: 'another letter cannot be chosen');
+    await next(t); // numbering
+    await next(t); // logo
+    await next(t); // printer
+    await t.tap(find.byKey(const ValueKey('wizFinish')));
+    await t.pumpAndSettle();
+    expect(find.textContaining('already has the letter'), findsNothing, reason: 'no error: the same letter is kept');
+    expect(await SeriesRegistry(d.settings, d.cx.deviceId).mine(), 'A');
+  });
 }
 
 ChoiceChip tester(WidgetTester t, String key) => t.widget<ChoiceChip>(find.byKey(ValueKey(key)));

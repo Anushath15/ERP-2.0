@@ -1414,3 +1414,4 @@ tgOpen | Open
 tgWrongPassword | Wrong password, or the file is damaged.
 tgNotLocked | This is not a locked ASK ERP backup file.
 tgDamaged | The file is damaged.
+wizSeriesMine | This computer already has the letter {letter}. It stays the same, because the bills made here carry it.

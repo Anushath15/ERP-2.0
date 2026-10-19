@@ -1374,4 +1374,5 @@ class Strings {
   String get tgWrongPassword => 'Wrong password, or the file is damaged.';
   String get tgNotLocked => 'This is not a locked ASK ERP backup file.';
   String get tgDamaged => 'The file is damaged.';
+  String wizSeriesMine(String letter) => 'This computer already has the letter ${letter}. It stays the same, because the bills made here carry it.';
 }

@@ -9,7 +9,9 @@ class CloudConfig {
 
   final String url, key;
 
-  bool get configured => url.startsWith('https://') && key.isNotEmpty;
+  /// A real cloud address is https. A plain http address is accepted ONLY on this computer itself (127.0.0.1 / localhost), which is how a
+  /// pretend cloud is used to try the sign-in screens without touching the real one.
+  bool get configured => key.isNotEmpty && (url.startsWith('https://') || url.startsWith('http://127.0.0.1') || url.startsWith('http://localhost'));
 
   /// The address without a trailing slash.
   String get base => url.endsWith('/') ? url.substring(0, url.length - 1) : url;
