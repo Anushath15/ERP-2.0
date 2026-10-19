@@ -10,14 +10,16 @@ grant usage on schema auth, public to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 \i ../migrations/0001_sync.sql
 \i ../migrations/0002_sync_names.sql
+\i ../migrations/0003_owner_only_actions.sql
 grant select on all tables in schema public to authenticated, anon;  -- Supabase grants these by default; RLS does the filtering
 
-insert into auth.users values ('00000000-0000-0000-0000-00000000000a'), ('00000000-0000-0000-0000-00000000000b'),
+insert into auth.users values ('00000000-0000-0000-0000-00000000000a'), ('00000000-0000-0000-0000-00000000000b'), ('00000000-0000-0000-0000-00000000000d'),
   ('00000000-0000-0000-0000-00000000000c');
 insert into shops (id, name) values ('11111111-1111-1111-1111-111111111111', 'Shop'), ('22222222-2222-2222-2222-222222222222', 'Other');
 insert into shop_members values
   ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000a', 'owner', true),
-  ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000b', 'cashier', true);
+  ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000b', 'cashier', true),
+  ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000d', 'manager', true);
 
 create function pg_temp.expect_fail(sql text, msg text) returns void language plpgsql as $$
 begin
@@ -95,4 +97,33 @@ select push_docs('11111111-1111-1111-1111-111111111111', 'B', '[{"coll":"bills",
 select push_docs('11111111-1111-1111-1111-111111111111', 'A', '[{"coll":"bills","id":"bb","data":{"paid":1},"hlc":"0001-0001-A"}]');
 select pg_temp.check((select data->>'paid' from sync_docs where id = 'bb') = '5', 'bills follow last-writer-wins');
 
+-- owner-only actions (docs/threat-model.md): cancel a bill, write off a due, shop settings
+set role authenticated;
+set test.uid = '00000000-0000-0000-0000-00000000000a';
+select push_docs('11111111-1111-1111-1111-111111111111', 'A', '[{"coll":"bills","id":"bc","data":{"cancelled":0},"hlc":"0001-0000-A"}]');
+do $$ declare r text; u text; begin
+  foreach u in array array['00000000-0000-0000-0000-00000000000b','00000000-0000-0000-0000-00000000000d'] loop
+    perform set_config('test.uid', u, false);
+    foreach r in array array['bill_cancellations','settings'] loop
+      begin
+        perform push_docs('11111111-1111-1111-1111-111111111111', 'X', jsonb_build_array(jsonb_build_object('coll', r, 'id', 'z1', 'data', '{}'::jsonb, 'hlc', '5')));
+        raise exception 'NOT BLOCKED: % by %', r, u;
+      exception when insufficient_privilege then null; end;
+    end loop;
+    begin
+      perform push_docs('11111111-1111-1111-1111-111111111111', 'X', '[{"coll":"ledger_entries","id":"w1","data":{"kind":"writeOff"},"hlc":"5"}]');
+      raise exception 'NOT BLOCKED: write-off by %', u;
+    exception when insufficient_privilege then null; end;
+    begin
+      perform push_docs('11111111-1111-1111-1111-111111111111', 'X', '[{"coll":"bills","id":"bc","data":{"cancelled":1},"hlc":"9"}]');
+      raise exception 'NOT BLOCKED: bill cancelled flag by %', u;
+    exception when insufficient_privilege then null; end;
+    -- ordinary work still goes through
+    perform push_docs('11111111-1111-1111-1111-111111111111', 'X', jsonb_build_array(jsonb_build_object('coll', 'ledger_entries', 'id', 'pay-' || u, 'data', '{"kind":"payment"}'::jsonb, 'hlc', '5')));
+  end loop;
+  raise notice 'ok: cashier and manager cannot cancel bills, write off dues or change settings; payments still work';
+end $$;
+set test.uid = '00000000-0000-0000-0000-00000000000a';
+select push_docs('11111111-1111-1111-1111-111111111111', 'A', '[{"coll":"bill_cancellations","id":"bcx","data":{},"hlc":"6"},{"coll":"ledger_entries","id":"w2","data":{"kind":"writeOff"},"hlc":"6"},{"coll":"settings","id":"shop.profile","data":{},"hlc":"6"},{"coll":"bills","id":"bc","data":{"cancelled":1},"hlc":"10"}]');
+select pg_temp.check((select data->>'cancelled' from sync_docs where id = 'bc') = '1', 'the owner can cancel a bill, write off a due and change settings');
 reset role;
