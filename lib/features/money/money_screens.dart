@@ -226,43 +226,6 @@ class PurchaseReturnsScreen extends ConsumerWidget {
   }
 }
 
-class DeliveryScreen extends ConsumerWidget {
-  const DeliveryScreen({super.key});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = tr(context);
-    final items = ref.watch(recsProvider('delivery'));
-    final th = Theme.of(context).textTheme;
-    (String, BadgeKind) st(String s) => switch (s) { 'pending' => (l.deliveryPending, BadgeKind.warning), 'out' => (l.deliveryOut, BadgeKind.info), _ => (l.statusDelivered, BadgeKind.success) };
-    Widget badge(Rec r) {
-      final (t, k) = st(r.s('status'));
-      return StatusBadge(t, kind: k);
-    }
-
-    return DataListScreen<Rec>(
-      title: l.navDelivery,
-      subtitle: l.deliverySubtitle,
-      items: items,
-      searchText: (r) => '${r.s('bill')} ${r.s('customer')} ${r.s('address')}',
-      filters: [FilterSpec(l.deliveryPending, (r) => r.s('status') == 'pending'), FilterSpec(l.deliveryOut, (r) => r.s('status') == 'out'), FilterSpec(l.statusDelivered, (r) => r.s('status') == 'delivered')],
-      columns: [
-        ColumnSpec(l.colBillNo, (c, r) => Cell(r.s('bill'), bold: true), width: 110),
-        ColumnSpec(l.colDate, (c, r) => Cell(_d(r, 'date'), muted: true), width: 100),
-        ColumnSpec(l.colCustomer, (c, r) => Cell(r.s('customer')), flex: 3),
-        ColumnSpec(l.fieldAddress, (c, r) => Cell(r.s('address'), muted: true), flex: 4),
-        ColumnSpec(l.colStatus, (c, r) => badge(r), width: 130),
-      ],
-      phoneTitle: (c, r) => Text(r.s('customer'), style: th.titleSmall),
-      phoneSubtitle: (r) => '${r.s('bill')}\n${r.s('address')}',
-      phoneTrailing: (c, r) => badge(r),
-      onTap: (ctx, r) => showDetail(ctx, title: r.s('bill'), subtitle: r.s('customer'), body: [KeyValue(l.fieldAddress, r.s('address')), KeyValue(l.colStatus, st(r.s('status')).$1, bold: true)], actions: [
-        if (r.s('status') == 'pending') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'out'})); Navigator.of(ctx, rootNavigator: true).pop(); toast(context, l.saved); }, icon: const Icon(Icons.local_shipping_rounded), label: Text(l.markOut)),
-        if (r.s('status') == 'out') FilledButton.icon(onPressed: () { ref.read(recsProvider('delivery').notifier).replace(r.with_({'status': 'delivered'})); Navigator.of(ctx, rootNavigator: true).pop(); toast(context, l.saved); }, icon: const Icon(Icons.check_rounded), label: Text(l.markDelivered)),
-      ]),
-    );
-  }
-}
-
 class ExpensesScreen extends ConsumerWidget {
   const ExpensesScreen({super.key});
   @override

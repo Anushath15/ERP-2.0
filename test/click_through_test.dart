@@ -9,7 +9,7 @@ import 'helpers.dart';
 // controls that only answer "preview / not connected", and fails on any crash or layout error.
 // Run:  CLICK=1 flutter test test/click_through_test.dart        (slow: a few minutes)
 const routes = [
-  '/', '/bill', '/estimate', '/estimates', '/sales', '/sales-returns', '/delivery', '/products', '/categories', '/backups', '/restore', '/fix',
+  '/', '/bill', '/estimate', '/estimates', '/sales', '/sales-returns', '/products', '/categories', '/backups', '/restore', '/fix',
   '/inventory', '/purchases', '/purchase-returns', '/adjustments', '/customers', '/dealers', '/credit', '/staff', '/expenses', '/closing',
   '/reports', '/export', '/import', '/warranty', '/notifications', '/shop', '/settings', '/health', '/help', '/about', '/more',
   '/print', '/preview/payment',

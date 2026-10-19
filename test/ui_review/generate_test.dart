@@ -71,7 +71,6 @@ final shots = <Shot>[
   const Shot('saved-estimates', 'All estimates', '/estimates'),
   const Shot('sales-register', 'Sales register (20,000 bills)', '/sales'),
   const Shot('sales-returns', 'Sales returns', '/sales-returns'),
-  const Shot('delivery', 'Delivery', '/delivery'),
   const Shot('products', 'Products (757)', '/products'),
   const Shot('categories', 'Categories', '/categories'),
   const Shot('inventory', 'Stock left (Inventory)', '/inventory'),

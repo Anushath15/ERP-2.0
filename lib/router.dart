@@ -46,7 +46,6 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           GoRoute(path: '/sales', pageBuilder: (c, s) => _p(c, s, SalesRegisterScreen(openBillId: s.uri.queryParameters['open']))),
           GoRoute(path: '/sales-returns', pageBuilder: (c, s) => _p(c, s, const SalesReturnsScreen())),
           GoRoute(path: '/sales-returns/bill/:id', pageBuilder: (c, s) => _p(c, s, ReturnFromBillScreen(billId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
-          GoRoute(path: '/delivery', pageBuilder: (c, s) => _p(c, s, const DeliveryScreen())),
           GoRoute(path: '/products', pageBuilder: (c, s) => _p(c, s, ProductsScreen(autoAdd: s.uri.queryParameters['add'] == '1'), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/categories', pageBuilder: (c, s) => _p(c, s, const CategoriesScreen())),
           GoRoute(path: '/backups', pageBuilder: (c, s) => _p(c, s, const BackupsScreen())),

@@ -23,7 +23,6 @@ final navGroups = <NavGroup>[
     NavItem('/estimates', Icons.folder_open_rounded, (l) => l.navSavedEstimates),
     NavItem('/sales', Icons.list_alt_rounded, (l) => l.navSalesRegister),
     NavItem('/sales-returns', Icons.keyboard_return_rounded, (l) => l.navSalesReturns),
-    NavItem('/delivery', Icons.local_shipping_rounded, (l) => l.navDelivery),
   ]),
   NavGroup((l) => l.groupStock, [
     NavItem('/products', Icons.inventory_2_rounded, (l) => l.navProducts),
