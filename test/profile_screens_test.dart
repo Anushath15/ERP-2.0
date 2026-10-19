@@ -69,6 +69,7 @@ void main() {
       await tester.tap(find.text('Add credit customer'));
       await tester.pumpAndSettle();
       await tester.enterText(find.widgetWithText(TextFormField, 'Name').last, 'Old Debt Traders');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Phone').last, '9876501234');
       await tester.enterText(find.widgetWithText(TextFormField, 'Amount owed now').last, '2500');
       await tester.tap(find.text('Save').last);
       await tester.pumpAndSettle();

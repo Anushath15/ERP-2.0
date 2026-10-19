@@ -1282,4 +1282,9 @@ class Strings {
   String get tplEstimateNote => 'This is an estimate, not a bill. Prices may change.';
   String get tplTaxInvoice => 'TAX INVOICE';
   String get fieldGstinOptional => 'GST number (optional)';
+  String get gstAddForBill => 'Customer wants GST? Add their GST number';
+  String gstOnBill(String gstin) => 'GST on bill: ${gstin}';
+  String get gstPickCustomer => 'Customer wants a GST bill? Choose the customer first';
+  String get gstEditTitle => 'Customer GST number';
+  String get gstEditNote => 'Printed under the customer name on the tax invoice. Leave empty to remove it.';
 }

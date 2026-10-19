@@ -97,7 +97,7 @@ Future<void> showAddCreditCustomer(BuildContext context) async {
   final container = ProviderScope.containerOf(context);
   final v = await showFormSheet(context, title: l.addCreditCustomerTitle, saveLabel: l.save, note: l.creditStartHelp, fields: [
     FieldSpec('name', l.fieldName, required: true, autofocus: true),
-    FieldSpec('phone', l.fieldPhone, type: FieldType.phone, hint: '98765 43210', check: (x) => normalizePhone(x) == null ? l.errPhone : null),
+    FieldSpec('phone', l.fieldPhone, type: FieldType.phone, hint: '98765 43210', required: true, check: (x) => normalizePhone(x) == null ? l.errPhone : null),
     FieldSpec('city', l.fieldCity),
     FieldSpec('address', l.fieldAddress),
     FieldSpec('gstin', l.fieldGstinOptional, kind: TextKind.gstin),

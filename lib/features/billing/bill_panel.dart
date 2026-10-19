@@ -15,13 +15,16 @@ import 'cart.dart';
 
 /// Header of the bill: customer + number/date, plus the "editing" bar for saved estimations.
 class BillHeader extends StatelessWidget {
-  const BillHeader({super.key, required this.mode, required this.cart, required this.number, required this.date, required this.onPickCustomer, this.balance = 0});
+  const BillHeader({super.key, required this.mode, required this.cart, required this.number, required this.date, required this.onPickCustomer, this.onEditGst, this.balance = 0});
   final int balance; // the customer's credit balance now (negative = advance)
   final DocMode mode;
   final CartState cart;
   final String number;
   final DateTime date;
   final VoidCallback onPickCustomer;
+
+  /// Opens the customer's GST number (a tax invoice prints it). Null on an estimate: it carries no GST.
+  final VoidCallback? onEditGst;
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +50,22 @@ class BillHeader extends StatelessWidget {
             onPressed: onPickCustomer,
             style: OutlinedButton.styleFrom(alignment: Alignment.centerLeft, minimumSize: const Size(0, Sizes.touch)),
             icon: const Icon(Icons.person_outline),
-            label: Text(cust?.name ?? l.walkInCustomer, maxLines: 2, overflow: TextOverflow.fade),
+            label: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Text(cust?.name ?? l.walkInCustomer, maxLines: 2, overflow: TextOverflow.fade),
+              if (onEditGst != null && cust != null && cust.gstin.isNotEmpty) Text(l.gstOnBill(cust.gstin), key: const ValueKey('bill-gst-text'), style: th.bodySmall),
+            ]),
           ),
         ),
+        // GST number of the customer for the tax invoice: an icon beside the customer (no extra height on the bill screen)
+        if (onEditGst != null) ...[
+          const SizedBox(width: 6),
+          IconButton.outlined(
+            key: const ValueKey('bill-gst'),
+            tooltip: cust == null ? l.gstPickCustomer : (cust.gstin.isEmpty ? l.gstAddForBill : l.gstEditTitle),
+            onPressed: cust == null ? onPickCustomer : onEditGst,
+            icon: Icon(cust != null && cust.gstin.isNotEmpty ? Icons.receipt_long : Icons.receipt_long_outlined),
+          ),
+        ],
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(number, style: th.titleSmall),

@@ -1322,3 +1322,8 @@ tplEstimateNote | This is an estimate, not a bill. Prices may change.
 fieldEmail | E-mail
 tplTaxInvoice | TAX INVOICE
 fieldGstinOptional | GST number (optional)
+gstAddForBill | Customer wants GST? Add their GST number
+gstOnBill | GST on bill: {gstin}
+gstPickCustomer | Customer wants a GST bill? Choose the customer first
+gstEditTitle | Customer GST number
+gstEditNote | Printed under the customer name on the tax invoice. Leave empty to remove it.

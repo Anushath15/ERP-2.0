@@ -102,7 +102,7 @@ void main() {
     expect(c.read(creditProvider).containsKey('t1'), isFalse);
   });
 
-  testWidgets('walk-in on credit: Add new customer needs only a name and then the bill saves on credit', (tester) async {
+  testWidgets('walk-in on credit: Add new customer needs a name and a phone number and then the bill saves on credit', (tester) async {
     final c = await billing(tester, named: false);
     await tester.tap(find.text('Credit'));
     await tester.pumpAndSettle();
@@ -111,6 +111,7 @@ void main() {
     await tester.tap(find.text('Add new customer'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Name').last, 'Only A Name');
+    await tester.enterText(find.widgetWithText(TextField, 'Phone').last, '9876501234');
     await tester.tap(find.text('Save').last);
     await tester.pumpAndSettle();
     final created = c.read(customersProvider).firstWhere((x) => x.name == 'Only A Name');

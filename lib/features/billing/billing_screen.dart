@@ -73,6 +73,21 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     if (c != null) ref.read(cartProvider(mode).notifier).setCustomer(c.id == '__walkin' ? null : c);
   }
 
+  /// The customer asked for a GST bill: type their GST number here, it is saved on the customer (so next time it is already there)
+  /// and printed on this tax invoice.
+  Future<void> _editGst() async {
+    final cust = ref.read(cartProvider(mode)).customer;
+    if (cust == null) return;
+    final l = tr(context);
+    final v = await showFormSheet(context, title: l.gstEditTitle, saveLabel: l.save, note: l.gstEditNote, fields: [
+      FieldSpec('gstin', 'GSTIN', initial: cust.gstin, kind: TextKind.gstin, autofocus: true),
+    ]);
+    if (v == null || !mounted) return;
+    final updated = cust.copyWith(gstin: v['gstin'] ?? '');
+    ref.read(customersProvider.notifier).update(updated);
+    ref.read(cartProvider(mode).notifier).setCustomer(updated);
+  }
+
   String _number() {
     final cart = ref.read(cartProvider(mode));
     if (cart.editingNumber != null) return cart.editingNumber!;
@@ -273,7 +288,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           child: _phoneTab == 0
               ? Padding(padding: const EdgeInsets.fromLTRB(10, 4, 10, 8), child: picker)
               : Column(children: [
-                  Padding(padding: const EdgeInsets.fromLTRB(10, 4, 10, 6), child: BillHeader(mode: mode, cart: cart, number: number, date: date, onPickCustomer: _pickCustomer, balance: cart.customer == null ? 0 : (ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0))),
+                  Padding(padding: const EdgeInsets.fromLTRB(10, 4, 10, 6), child: BillHeader(mode: mode, cart: cart, number: number, date: date, onPickCustomer: _pickCustomer, onEditGst: mode == DocMode.invoice ? _editGst : null, balance: cart.customer == null ? 0 : (ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0))),
                   Expanded(child: lines()),
                 ]),
         ),
@@ -284,7 +299,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final right = Container(
         decoration: BoxDecoration(border: Border(left: BorderSide(color: context.c.border.withValues(alpha: 0.6)))),
         child: Column(children: [
-          Padding(padding: const EdgeInsets.fromLTRB(14, 12, 14, 8), child: BillHeader(mode: mode, cart: cart, number: number, date: date, onPickCustomer: _pickCustomer, balance: cart.customer == null ? 0 : (ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0))),
+          Padding(padding: const EdgeInsets.fromLTRB(14, 12, 14, 8), child: BillHeader(mode: mode, cart: cart, number: number, date: date, onPickCustomer: _pickCustomer, onEditGst: mode == DocMode.invoice ? _editGst : null, balance: cart.customer == null ? 0 : (ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0))),
           Divider(height: 1, color: context.c.border.withValues(alpha: 0.6)),
           Expanded(child: lines()),
           footer,
@@ -314,7 +329,7 @@ Future<Map<String, String>?> showQuickCustomer(BuildContext context) {
   final l = tr(context);
   return showFormSheet(context, title: l.addCustomer, saveLabel: l.save, fields: [
     FieldSpec('name', l.fieldName, required: true, autofocus: true),
-    FieldSpec('phone', l.fieldPhone, type: FieldType.phone, hint: '98765 43210', check: (v) => normalizePhone(v) == null ? l.errPhone : null),
+    FieldSpec('phone', l.fieldPhone, type: FieldType.phone, hint: '98765 43210', required: true, check: (v) => normalizePhone(v) == null ? l.errPhone : null),
     FieldSpec('city', l.fieldCity),
     FieldSpec('gstin', l.fieldGstinOptional, kind: TextKind.gstin),
   ]);
