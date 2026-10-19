@@ -1173,7 +1173,7 @@ class Strings {
   String get purPaidPart => 'Part paid';
   String get purPaidNone => 'On credit';
   String get purPaidAmount => 'Amount paid now';
-  String get purUpdateCost => 'Use these rates as the buying price of the products';
+  String get purUpdateCost => 'Use these rates as the buying price, and move the selling price to keep my margin';
   String get purSave => 'Save purchase';
   String get purNoItems => 'Add at least one item.';
   String get purNeedDealer => 'Choose a dealer first. If there is none, add one on the Dealers page.';
@@ -1287,4 +1287,7 @@ class Strings {
   String get gstPickCustomer => 'Customer wants a GST bill? Choose the customer first';
   String get gstEditTitle => 'Customer GST number';
   String get gstEditNote => 'Printed under the customer name on the tax invoice. Leave empty to remove it.';
+  String purSellChange(String was, String now) => 'Selling price ${was} → ${now} (same margin)';
+  String purSellSame(String price) => 'Selling price stays ${price}';
+  String purSellAboveMrp(String mrp) => 'above the MRP ${mrp}';
 }

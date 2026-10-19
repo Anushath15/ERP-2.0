@@ -12,6 +12,7 @@ import '../../core/money.dart';
 import '../../domain/credit/account.dart';
 import '../context.dart';
 import '../db/app_database.dart';
+import '../../domain/margin.dart';
 import '../ids.dart';
 import 'ledger_repo.dart';
 
@@ -175,6 +176,13 @@ class PurchaseRepo {
         if (before != rate) {
           await _db.exec('UPDATE products SET cost_paise = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [rate, cx.nowMs(), cx.hlc.next(), cx.deviceId, pid]);
           await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), 'cost', 'product', pid, 'cost', '$before', '$rate', cx.actor.name, cx.nowMs(), cx.deviceId]);
+          // the selling price follows by the same ratio, so the margin stays what it was
+          final oldSell = await _db.scalarInt('SELECT price_paise FROM products WHERE id = ?', [pid]);
+          final newSell = sellingPriceKeepingMargin(oldCost: before, newCost: rate, oldSell: oldSell);
+          if (newSell != oldSell) {
+            await _db.exec('UPDATE products SET price_paise = ? WHERE id = ?', [newSell, pid]);
+            await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), 'price', 'product', pid, 'price', '$oldSell', '$newSell', cx.actor.name, cx.nowMs(), cx.deviceId]);
+          }
           await enqueue(cx, _db, 'products', pid);
         }
       }

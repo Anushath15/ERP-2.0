@@ -8,6 +8,7 @@ import 'package:erp2/fake/store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:erp2/domain/margin.dart';
 import 'package:go_router/go_router.dart';
 import 'helpers.dart';
 
@@ -55,6 +56,31 @@ void main() {
     expect(saved.single.received, isTrue);
     expect((await tester.runAsync(() => c.read(appDataProvider).catalog.product(product.id)))!.stockMilli, stockBefore + 5000);
     expect(find.text(saved.single.number), findsWidgets, reason: 'back on the list');
+  });
+
+  testWidgets('the form shows the new selling price (margin kept) as the rate is typed, and receiving applies it to the product', (tester) async {
+    final c = await app(tester);
+    final product = c.read(productsProvider).firstWhere((p) => p.costPaise > 0 && p.pricePaise > 0);
+    await tester.tap(find.text('Add purchase').first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('pur-picker')), product.name.substring(0, 4));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('pur-option-${product.id}')).first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(ValueKey('pur-qty-${product.id}')), '2');
+    final newCost = product.costPaise + product.costPaise ~/ 5 + 100; // dearer
+    await tester.enterText(find.byKey(ValueKey('pur-rate-${product.id}')), (newCost / 100).toStringAsFixed(2));
+    await tester.pump();
+    final expected = sellingPriceKeepingMargin(oldCost: product.costPaise, newCost: newCost, oldSell: product.pricePaise);
+    expect(expected, greaterThan(product.pricePaise), reason: 'dearer stock raises the price');
+    expect(find.byKey(ValueKey('pur-sell-${product.id}')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(ValueKey('pur-sell-${product.id}'))).data, contains(formatPaise(expected, symbol: true)));
+    await tester.ensureVisible(find.byKey(const ValueKey('pur-save')));
+    await tester.tap(find.byKey(const ValueKey('pur-save')));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 600)));
+    await tester.pumpAndSettle();
+    expect((await tester.runAsync(() => c.read(appDataProvider).catalog.product(product.id)))!.pricePaise, expected);
+    expect(c.read(productsProvider).firstWhere((p) => p.id == product.id).pricePaise, expected, reason: 'the product list on screen shows it too');
   });
 
   testWidgets('saving with no item, a missing rate or too much paid is refused with the reason', (tester) async {

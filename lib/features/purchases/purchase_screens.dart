@@ -12,6 +12,7 @@ import '../../design/detail_sheet.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../domain/gst_price.dart';
+import '../../domain/margin.dart';
 import '../../domain/models.dart';
 import '../../fake/actions.dart';
 import '../../fake/data_providers.dart';
@@ -327,6 +328,18 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
             ),
             Text('GST ${x.product.gstBp ~/ 100}%', style: th.bodySmall),
             if (i != null) Text(m(i.total), style: th.titleSmall),
+            // what the selling price becomes when this purchase is received (the margin on the old buying price is kept)
+            if (_updateCost && rateEx > 0 && x.product.costPaise > 0 && x.product.pricePaise > 0)
+              () {
+                final now = sellingPriceKeepingMargin(oldCost: x.product.costPaise, newCost: rateEx, oldSell: x.product.pricePaise);
+                final changed = now != x.product.pricePaise;
+                final above = x.product.mrpPaise > 0 && now > x.product.mrpPaise;
+                return Text(
+                  key: ValueKey('pur-sell-${x.product.id}'),
+                  '${changed ? s.purSellChange(m(x.product.pricePaise), m(now)) : s.purSellSame(m(x.product.pricePaise))}${above ? '  ·  ${s.purSellAboveMrp(m(x.product.mrpPaise))}' : ''}',
+                  style: th.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: above ? context.c.warning : (changed ? context.c.info : null)),
+                );
+              }(),
           ]),
           if (_dealer != null) _RateHints(key: ValueKey('hints-${x.product.id}-$_dealer-$rateEx'), productId: x.product.id, dealerId: _dealer!, ratePaise: rateEx),
         ]),

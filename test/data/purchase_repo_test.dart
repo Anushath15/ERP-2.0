@@ -72,7 +72,7 @@ void main() {
     expect(l.lastBefore!.dealerName, 'Pandian');
     expect(l.cheaper!.dealerName, 'Pandian');
     expect(l.cheaper!.ratePaise, 5200);
-    expect(l.sellingPaise, 9000, reason: 'the selling price the shop marked');
+    expect(l.sellingPaise, 8700, reason: 'the selling price the shop marked, moved with the buying price (60 -> 52 -> 58) keeping the margin');
     final first = (await d.purchases.detail((await d.purchases.idOfNumber('PUR-00001'))!))!;
     expect(first.lines.single.lastBefore, isNull);
     expect(first.lines.single.cheaper!.dealerName, 'Pandian', reason: 'another dealer sold it cheaper later: still worth knowing');

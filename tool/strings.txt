@@ -1209,7 +1209,7 @@ purPaidFull | Paid in full
 purPaidPart | Part paid
 purPaidNone | On credit
 purPaidAmount | Amount paid now
-purUpdateCost | Use these rates as the buying price of the products
+purUpdateCost | Use these rates as the buying price, and move the selling price to keep my margin
 purSave | Save purchase
 purNoItems | Add at least one item.
 purNeedDealer | Choose a dealer first. If there is none, add one on the Dealers page.
@@ -1327,3 +1327,6 @@ gstOnBill | GST on bill: {gstin}
 gstPickCustomer | Customer wants a GST bill? Choose the customer first
 gstEditTitle | Customer GST number
 gstEditNote | Printed under the customer name on the tax invoice. Leave empty to remove it.
+purSellChange | Selling price {was} → {now} (same margin)
+purSellSame | Selling price stays {price}
+purSellAboveMrp | above the MRP {mrp}
