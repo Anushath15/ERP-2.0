@@ -159,7 +159,7 @@ PrintLayout buildPrintLayout({required PrintDoc doc, required ShopProfile shop, 
   }
 
   // the QR code asks for exactly what is still due (never for a paid bill, so nobody pays twice)
-  final upi = est ? null : upiPayUri(upiId: shop.upiId, payeeName: shop.name, amountPaise: doc.balancePaise, note: doc.number);
+  final upi = est ? null : upiPayUri(upiId: shop.upiId, payeeName: shop.name, amountPaise: doc.balancePaise, note: doc.number, openAmount: shop.qrOnEveryBill);
 
   return PrintLayout(
     estimate: est,
@@ -174,7 +174,7 @@ PrintLayout buildPrintLayout({required PrintDoc doc, required ShopProfile shop, 
     paidInFull: paidInFull,
     grandTotalPaise: c.grandTotal,
     upiData: upi ?? '',
-    upiLabel: upi == null ? '' : l.upiScanToPay('₹ ${formatPaise(doc.balancePaise)}'),
+    upiLabel: upi == null ? '' : (doc.balancePaise > 0 ? l.upiScanToPay('₹ ${formatPaise(doc.balancePaise)}') : l.upiPayAnytime),
   );
 }
 

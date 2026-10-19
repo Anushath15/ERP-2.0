@@ -45,6 +45,22 @@ void main() {
       expect(upiPayUri(upiId: 'a.b@upi', payeeName: '', amountPaise: 12345)!, isNot(contains('pn=')));
     });
 
+    test('a link with no amount (the shop QR) has no am; zero is still refused unless asked', () {
+      expect(upiPayUri(upiId: 'ab@oksbi', payeeName: 'Shop', amountPaise: 0), isNull);
+      final u = upiPayUri(upiId: 'ab@oksbi', payeeName: 'Shop', amountPaise: 0, openAmount: true)!;
+      expect(u, 'upi://pay?pa=ab@oksbi&pn=Shop&cu=INR');
+    });
+
+    test('a typing mistake in the ending is flagged (okbsbi for oksbi); usual endings and empty are not', () {
+      expect(unknownUpiHandle('senthil601129-4@okbsbi'), 'okbsbi');
+      expect(unknownUpiHandle('senthil601129-4@oksbi'), isNull);
+      expect(unknownUpiHandle('9876543210@ybl'), isNull);
+      expect(unknownUpiHandle('Name@OKHDFCBANK'), isNull);
+      expect(unknownUpiHandle(''), isNull);
+      expect(unknownUpiHandle('noatsign'), isNull);
+      expect(unknownUpiHandle('name@'), isNull);
+    });
+
     test('nothing to pay or no usable UPI id: no link', () {
       expect(upiPayUri(upiId: 'senthil@okbank', payeeName: 'S', amountPaise: 0), isNull);
       expect(upiPayUri(upiId: 'senthil@okbank', payeeName: 'S', amountPaise: -5), isNull);
@@ -75,14 +91,23 @@ void main() {
       expect(t.upiLabel, contains('₹'));
     });
 
-    test('paid in full (even by UPI), an estimate, or a shop with no UPI id: no QR', () {
+    test('a paid bill: the shop QR with NO amount (for later payments), so nobody is asked to pay twice; the switch can turn it off', () {
       final full = bill(receivedPaise: 99999999, pay: PayMode.upi);
-      expect(buildBillTemplate(doc: full, shop: ShopProfile.sample, l: l).upiData, isEmpty, reason: 'already paid: nobody can pay twice');
-      expect(buildPrintLayout(doc: full, shop: ShopProfile.sample, l: l).upiData, isEmpty);
+      final t = buildBillTemplate(doc: full, shop: ShopProfile.sample, l: l);
+      expect(Uri.parse(t.upiData).queryParameters.containsKey('am'), isFalse, reason: 'no amount: already paid');
+      expect(t.upiLabel, 'Pay us on UPI');
+      expect(buildPrintLayout(doc: full, shop: ShopProfile.sample, l: l).upiData, isNotEmpty);
+      final off = ShopProfile.sample.copyWith(qrOnEveryBill: false);
+      expect(buildBillTemplate(doc: full, shop: off, l: l).upiData, isEmpty, reason: 'switched off: a paid bill has no QR');
+      expect(buildBillTemplate(doc: bill(receivedPaise: 1000), shop: off, l: l).upiData, isNotEmpty, reason: 'money still due: always the QR with the amount');
+    });
+
+    test('an estimate or a shop with no UPI id: no QR', () {
       final est = samplePrintDoc(products, now, mode: DocMode.estimation);
       expect(buildBillTemplate(doc: est, shop: ShopProfile.sample, l: l).upiData, isEmpty);
       final noUpi = ShopProfile.sample.copyWith(upiId: '');
       expect(buildBillTemplate(doc: bill(receivedPaise: 1000), shop: noUpi, l: l).upiData, isEmpty);
+      expect(buildBillTemplate(doc: bill(receivedPaise: 99999999), shop: noUpi, l: l).upiData, isEmpty);
     });
 
     test('roll paper gets the same QR', () {
@@ -101,7 +126,7 @@ void main() {
       }
     });
 
-    testWidgets('on screen: A4 and roll show the QR and its caption; a paid bill shows none', (tester) async {
+    testWidgets('on screen: A4 and roll show the QR and its caption; a paid bill shows the QR without an amount', (tester) async {
       final c = await pumpApp(tester, size: desktop1366, location: '/print', motion: MotionLevel.off, followSystemMotion: false);
       expect(find.byKey(const ValueKey('paperUpiQr')), findsOneWidget, reason: 'the sample bill is part paid');
       expect(find.byKey(const ValueKey('paperUpi')), findsOneWidget);
@@ -113,7 +138,8 @@ void main() {
       expect(find.byKey(const ValueKey('paperUpiQr')), findsOneWidget);
       c.read(printDocProvider.notifier).set(bill(receivedPaise: 99999999));
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('paperUpiQr')), findsNothing);
+      expect(find.byKey(const ValueKey('paperUpiQr')), findsOneWidget);
+      expect(find.text('Pay us on UPI'), findsOneWidget);
     });
   });
 
@@ -159,5 +185,20 @@ void main() {
       expect(find.byKey(const ValueKey('upiQrBig')), findsNothing);
       expect(find.textContaining('Add the shop UPI id'), findsOneWidget);
     });
+  });
+
+  testWidgets('Shop profile: a wrong-looking UPI ending is flagged; the QR-on-every-bill switch works', (tester) async {
+    final c = await pumpApp(tester, size: const ScreenSpec('tall', 1366, 2600), location: '/shop', motion: MotionLevel.off, followSystemMotion: false);
+    c.read(shopProvider.notifier).set((x) => x.copyWith(upiId: 'senthil601129-4@okbsbi'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('upiHandleWarn')), findsOneWidget);
+    c.read(shopProvider.notifier).set((x) => x.copyWith(upiId: 'senthil601129-4@oksbi'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('upiHandleWarn')), findsNothing);
+    expect(c.read(shopProvider).qrOnEveryBill, isTrue);
+    await tester.ensureVisible(find.byKey(const ValueKey('shop-qr-always')));
+    await tester.tap(find.byKey(const ValueKey('shop-qr-always')));
+    await tester.pumpAndSettle();
+    expect(c.read(shopProvider).qrOnEveryBill, isFalse);
   });
 }

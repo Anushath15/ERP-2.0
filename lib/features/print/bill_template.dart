@@ -221,8 +221,9 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
   final status = est ? '' : (doc.balancePaise > 0 ? ((doc.receivedPaise ?? 0) <= 0 ? l.tplCreditBill : l.tplPartPaid) : l.tplPaid);
 
   // the QR code asks for exactly what is still due (never for a bill that is already paid, so nobody pays twice)
+  // Money still due: the QR asks for exactly that. A paid bill (when the shop wants a QR on every bill): the shop's QR with no amount.
   final due = est ? 0 : doc.balancePaise;
-  final upi = upiPayUri(upiId: shop.upiId, payeeName: shop.name, amountPaise: due, note: doc.number);
+  final upi = upiPayUri(upiId: shop.upiId, payeeName: shop.name, amountPaise: due, note: doc.number, openAmount: !est && shop.qrOnEveryBill);
 
   return BillTemplate(
     estimate: est,
@@ -255,7 +256,7 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
     gstRows: gstRows,
     words: rupeesInWords(c.grandTotal),
     upiData: upi ?? '',
-    upiLabel: upi == null ? '' : l.upiScanToPay('₹ ${formatPaise(due)}'),
+    upiLabel: upi == null ? '' : (due > 0 ? l.upiScanToPay('₹ ${formatPaise(due)}') : l.upiPayAnytime),
     upiAnyApp: l.upiAnyApp,
     bankLines: const [], // the bank name is not printed at the bottom (account no and IFSC are beside the GST number)
     forShop: est ? '' : l.tplFor(shop.name.toUpperCase()),

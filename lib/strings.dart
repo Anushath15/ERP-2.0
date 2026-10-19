@@ -1405,4 +1405,8 @@ class Strings {
   String get lockRepeat => 'Type the PIN again';
   String get lockCurrentWrong => 'The current PIN is not right.';
   String get upiDemoWarn => 'Demo mode: this QR uses a made-up UPI id, so it cannot receive money. Turn Demo mode off in Settings and type the real UPI id in Shop profile.';
+  String get upiPayAnytime => 'Pay us on UPI';
+  String get shopQrAlways => 'Print my UPI QR on every bill';
+  String get shopQrAlwaysHelp => 'A bill with money still due always gets a QR with that amount. A paid bill gets a QR with no amount, for later payments.';
+  String upiHandleWarn(String handle) => 'The ending @${handle} is not a UPI ending I know. Check it in your UPI app and copy the ID exactly (for example @oksbi, @okhdfcbank, @ybl). With a wrong ID the QR cannot be paid.';
 }

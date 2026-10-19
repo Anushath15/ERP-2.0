@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import '../../domain/upi.dart';
 import '../../core/cloud/auth_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -83,6 +84,8 @@ class ShopProfileScreen extends ConsumerWidget {
           field('footer', l.shopFooter, s.billFooter, (v) => set((x) => x.copyWith(billFooter: v)), lines: 2, kind: TextKind.address),
           field('prefix', l.shopPrefix, s.invoicePrefix, (v) => set((x) => x.copyWith(invoicePrefix: v.trim())), hint: 'SE-', kind: TextKind.town),
         ]),
+        if (unknownUpiHandle(s.upiId) != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(l.upiHandleWarn(unknownUpiHandle(s.upiId)!), key: const ValueKey('upiHandleWarn'), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded)),
+        SwitchListTile(key: const ValueKey('shop-qr-always'), contentPadding: EdgeInsets.zero, title: Text(l.shopQrAlways), subtitle: Text(l.shopQrAlwaysHelp), value: s.qrOnEveryBill, onChanged: (v) => set((x) => x.copyWith(qrOnEveryBill: v))),
       ]),
     );
 
