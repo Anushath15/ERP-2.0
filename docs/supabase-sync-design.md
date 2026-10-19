@@ -23,11 +23,10 @@ Files: `supabase/migrations/0001_sync.sql` (tested on a throwaway local PostgreS
 ## Scope (owner decision 2026-10-17)
 For now **only the owner's father's shop**. One shop row, two Owners, no public sign-up, no premium plan. Selling to other shops is a later decision (the tables already carry `shop_id`, so it stays possible).
 
-## Sign-in (Gate 2D): Google, once, stays signed in
-- Supabase Auth with the **Google** provider. The owner signs in with Google one time on each computer.
-- The session (refresh token) is kept in this computer's protected storage and renewed quietly. **Opening the program never asks for sign-in again.** It asks only after the owner presses **Sign out**, or if Google/Supabase cancels the session (password change, access removed).
-- Billing never waits for sign-in: the shop database is local and opens offline. Sign-in is needed only to sync, so a lapsed session shows a calm "Sign in to sync" note and billing carries on.
-- Only the two shop addresses get access: new Google users have no `shop_members` row, so row-level security shows them nothing.
+## Sign-in (Gate 2D): e-mail and password, once, stays signed in
+- Supabase Auth with **e-mail and password** (no Google sign-in: decided). The owner signs in one time on each computer.
+- The session (refresh token) is kept encrypted for this Windows user (DPAPI) in this computer's own folder and renewed quietly. **Opening the program never asks for sign-in again**; with no internet the kept sign-in is trusted. It asks only after **Sign out**, or if the cloud cancels the session.
+- Only the shop's member addresses get access: a new account has no `shop_members` row, so the program signs it straight out and row-level security shows it nothing.
 
 ## Open before Gate 2E
 1. Run the migration on a throwaway local Postgres and write the SQL tests (cashier blocked, revoked device blocked, re-send is a no-op, older hlc loses, 101 docs refused).

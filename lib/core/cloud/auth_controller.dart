@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../link_launcher.dart';
 import 'auth_api.dart';
 import 'cloud_config.dart';
-import 'google_flow.dart';
 import 'session_vault.dart';
 
 enum AuthStatus { loading, signedOut, signedIn }
@@ -22,7 +20,7 @@ class AuthState {
 final authApiProvider = Provider<AuthApi>((ref) => AuthApi(ref.watch(cloudConfigProvider)));
 
 /// Signing in to the shop's cloud account, once per computer.
-///  * Email + password, or Google. Only people in the shop's member list get in (everyone else is signed straight out again).
+///  * Email + password. Only people in the shop's member list get in (everyone else is signed straight out again).
 ///  * The session is kept (encrypted) on this computer: opening the program never asks again. Only Sign out, or the cloud cancelling the
 ///    session, asks again. With no internet the kept sign-in is trusted, so the shop keeps working offline.
 ///  * Without a cloud address in the build ([CloudConfig.configured] false) nothing here is used: the program works on this computer only.
@@ -117,11 +115,6 @@ class AuthController extends Notifier<AuthState> {
     });
     return (failure: failure, needsConfirm: needs);
   }
-
-  Future<AuthFailure?> google() => _run(() async {
-        if (!await _api.googleEnabled()) return const AuthFailure(AuthProblem.googleOff);
-        return _finish(await ref.read(googleFlowProvider).run(_api, ref.read(linkLauncherProvider)));
-      });
 
   Future<AuthFailure?> sendResetLink(String email) => _run(() async {
         await _api.sendResetLink(email.trim());

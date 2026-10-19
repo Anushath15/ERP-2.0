@@ -1,17 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
 import 'package:erp2/core/cloud/auth_api.dart';
 import 'package:erp2/core/cloud/auth_controller.dart';
 import 'package:erp2/core/cloud/cloud_config.dart';
-import 'package:erp2/core/cloud/google_flow.dart';
-import 'package:erp2/core/cloud/google_flow_io.dart';
 import 'package:erp2/core/cloud/session_vault.dart';
 import 'package:erp2/core/cloud/session_vault_io.dart';
-import 'package:erp2/core/link_launcher.dart';
 import 'package:erp2/design/motion_level.dart';
-import 'package:erp2/domain/credit/reminder.dart' show LinkPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,10 +14,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'helpers.dart';
 
-// What these tests prove: the sign-in logic (email + password, Google through the browser, the kept sign-in, who is let in, sign out) against
-// a pretend cloud, and the screens that use it.
-// What they do NOT prove: that the real Supabase project accepts these calls, or that Google is set up there. Google needs the owner's one-time
-// setup (docs/OWNER-SETUP.md, section 6); until then the program says so in plain words.
+// What these tests prove: the sign-in logic (email + password, the kept sign-in, who is let in, sign out) against a pretend cloud,
+// and the screens that use it.
+// What they do NOT prove: that the real Supabase project accepts these calls.
 const config = CloudConfig(url: 'https://example.supabase.co', key: 'sb_publishable_test');
 
 http.Response json(int code, Object body) => http.Response(jsonEncode(body), code, headers: {'content-type': 'application/json'});
@@ -31,8 +25,8 @@ Map<String, Object?> sessionBody(String email, {String refresh = 'r1'}) => {'acc
 
 /// A pretend cloud: answers by path. [member] is whether the person is on the shop's member list.
 class FakeCloud {
-  FakeCloud({this.member = true, this.googleOn = true});
-  bool member, googleOn;
+  FakeCloud({this.member = true});
+  bool member;
   final calls = <String>[];
   final bodies = <String, Map<String, Object?>>{};
   Object? passwordError;
@@ -50,16 +44,12 @@ class FakeCloud {
             return passwordError == null ? json(200, sessionBody(bodies[key]!['email'] as String)) : json(400, passwordError!);
           case 'POST /auth/v1/token?refresh_token':
             return refreshStatus == 200 ? json(200, sessionBody('owner@gmail.com', refresh: 'r2')) : json(refreshStatus, {'error_code': 'refresh_token_not_found'});
-          case 'POST /auth/v1/token?pkce':
-            return json(200, sessionBody('owner@gmail.com', refresh: 'g1'));
           case 'POST /auth/v1/signup':
             return json(200, {'id': 'u9', 'email': bodies[key]!['email'], 'identities': [{'id': 'i'}]});
           case 'POST /auth/v1/recover':
             return json(200, {});
           case 'POST /auth/v1/logout':
             return http.Response('', 204);
-          case 'GET /auth/v1/settings':
-            return json(200, {'external': {'google': googleOn, 'email': true}});
           case 'GET /rest/v1/shop_members':
             expect(req.headers['Authorization'], startsWith('Bearer a-'), reason: 'the membership check is made as the person, not as the app');
             return json(200, member ? [{'shop_id': 's1'}] : []);
@@ -68,51 +58,11 @@ class FakeCloud {
       });
 }
 
-class FakeBrowser implements LinkLauncher {
-  FakeBrowser(this.onOpen);
-  final Future<void> Function(Uri url) onOpen;
-  final opened = <Uri>[];
-  @override
-  LinkPlatform get platform => LinkPlatform.windows;
-  @override
-  Future<bool> open(String url) async {
-    opened.add(Uri.parse(url));
-    // the "browser" comes back to the program a moment later, like a real one
-    Future<void>.delayed(const Duration(milliseconds: 20), () => onOpen(Uri.parse(url)));
-    return true;
-  }
-}
-
-/// A tiny browser: one GET over a plain socket (the test framework replaces the normal HTTP client, so it cannot be used here).
-Future<int> hit(Uri u) async {
-  final socket = await Socket.connect(u.host, u.port);
-  try {
-    final target = u.hasQuery ? '${u.path}?${u.query}' : u.path;
-    socket.write('GET $target HTTP/1.1\r\nHost: ${u.host}:${u.port}\r\nConnection: close\r\n\r\n');
-    await socket.flush();
-    final text = await socket.cast<List<int>>().transform(utf8.decoder).join();
-    return int.parse(text.split(' ')[1]);
-  } finally {
-    socket.destroy();
-  }
-}
-
-class FakeGoogle implements GoogleFlow {
-  FakeGoogle({this.failure});
-  AuthFailure? failure;
-  @override
-  Future<AuthSession> run(AuthApi api, LinkLauncher launcher, {Duration timeout = const Duration(minutes: 3)}) async {
-    if (failure != null) throw failure!;
-    return api.exchangeCode('code', 'verifier');
-  }
-}
-
-ProviderContainer container(FakeCloud cloud, {SessionVault? vault, GoogleFlow? google, CloudConfig cfg = config}) {
+ProviderContainer container(FakeCloud cloud, {SessionVault? vault, CloudConfig cfg = config}) {
   final c = ProviderContainer(overrides: [
     cloudConfigProvider.overrideWithValue(cfg),
     authApiProvider.overrideWithValue(AuthApi(cfg, client: cloud.client)),
     sessionVaultProvider.overrideWithValue(vault ?? MemorySessionVault()),
-    googleFlowProvider.overrideWithValue(google ?? FakeGoogle()),
   ]);
   addTearDown(c.dispose);
   return c;
@@ -135,7 +85,6 @@ void main() {
     test('no internet: a network failure, never a crash', () async {
       final cloud = FakeCloud()..offline = true;
       await expectLater(api(cloud).signInWithPassword('a@b.com', 'x'), throwsA(isA<AuthFailure>().having((e) => e.problem, 'problem', AuthProblem.network)));
-      expect(await api(cloud).googleEnabled().then((_) => 'no', onError: (_) => 'failure'), 'failure');
     });
 
     test('sign up: the usual answer is "open the e-mailed link"; an existing address is recognised', () async {
@@ -146,59 +95,16 @@ void main() {
       await expectLater(dup.signUp('old@gmail.com', 'secret1'), throwsA(isA<AuthFailure>().having((e) => e.problem, 'problem', AuthProblem.userExists)));
     });
 
-    test('Google settings, the membership check and the Google address', () async {
-      final cloud = FakeCloud(googleOn: false, member: false);
-      expect(await api(cloud).googleEnabled(), isFalse);
-      cloud.googleOn = true;
-      expect(await api(cloud).googleEnabled(), isTrue);
+    test('the membership check', () async {
+      final cloud = FakeCloud(member: false);
       expect(await api(cloud).isShopMember('a-x'), isFalse);
       cloud.member = true;
       expect(await api(cloud).isShopMember('a-x'), isTrue);
-      final u = api(cloud).googleUrl(redirectTo: 'http://127.0.0.1:5000/callback', challenge: 'abc');
-      expect(u.path, '/auth/v1/authorize');
-      expect(u.queryParameters, {'provider': 'google', 'redirect_to': 'http://127.0.0.1:5000/callback', 'code_challenge': 'abc', 'code_challenge_method': 's256'});
     });
 
     test('a cancelled session (refresh refused) is told apart from no internet', () async {
       final cloud = FakeCloud()..refreshStatus = 400;
       await expectLater(api(cloud).refresh('old'), throwsA(isA<AuthFailure>().having((e) => e.problem, 'problem', AuthProblem.wrongLogin)));
-    });
-  });
-
-  group('Google through the browser (loopback)', () {
-    test('the PKCE challenge is the SHA-256 of the secret, URL-safe, no padding', () {
-      final p = newPkce();
-      expect(p.verifier.length, greaterThanOrEqualTo(43));
-      expect(p.challenge, base64Url.encode(sha256.convert(ascii.encode(p.verifier)).bytes).replaceAll('=', ''));
-      expect(p.challenge, isNot(contains('=')));
-      expect(newPkce().verifier, isNot(p.verifier));
-    });
-
-    test('the browser comes back with a code: it is exchanged together with the secret, and the listener closes', () async {
-      final cloud = FakeCloud();
-      final api = AuthApi(config, client: cloud.client);
-      late Uri redirect;
-      final browser = FakeBrowser((url) async {
-        redirect = Uri.parse(url.queryParameters['redirect_to']!);
-        expect(redirect.host, '127.0.0.1');
-        expect(await hit(redirect.replace(path: '/favicon.ico')), 404, reason: 'anything but the callback is refused');
-        expect(await hit(redirect.replace(queryParameters: {'code': 'abc123'})), 200);
-      });
-      final s = await LoopbackGoogleFlow().run(api, browser);
-      expect(s.refreshToken, 'g1');
-      final sent = cloud.bodies['POST /auth/v1/token?pkce']!;
-      expect(sent['auth_code'], 'abc123');
-      final challenge = browser.opened.single.queryParameters['code_challenge'];
-      expect(base64Url.encode(sha256.convert(ascii.encode(sent['code_verifier'] as String)).bytes).replaceAll('=', ''), challenge, reason: 'the secret that is sent matches the challenge the browser got');
-      await expectLater(hit(redirect), throwsA(isA<SocketException>()), reason: 'the listener is closed after one answer');
-    });
-
-    test('the person says no in the browser: cancelled; nobody comes back: timed out', () async {
-      final api = AuthApi(config, client: FakeCloud().client);
-      final denied = FakeBrowser((url) async => hit(Uri.parse(url.queryParameters['redirect_to']!).replace(queryParameters: {'error': 'access_denied', 'error_description': 'no'})));
-      await expectLater(LoopbackGoogleFlow().run(api, denied), throwsA(isA<AuthFailure>().having((e) => e.problem, 'problem', AuthProblem.cancelled)));
-      final silent = FakeBrowser((_) async {});
-      await expectLater(LoopbackGoogleFlow().run(api, silent, timeout: const Duration(milliseconds: 300)), throwsA(isA<AuthFailure>().having((e) => e.problem, 'problem', AuthProblem.timedOut)));
     });
   });
 
@@ -249,15 +155,6 @@ void main() {
       expect(vault.read(), isNull, reason: 'a person with no access keeps nothing on this computer');
     });
 
-    test('Google: not switched on in the cloud is said so; switched on, a member gets in', () async {
-      final cloud = FakeCloud(googleOn: false);
-      final c = container(cloud);
-      expect((await c.read(authProvider.notifier).google())!.problem, AuthProblem.googleOff);
-      cloud.googleOn = true;
-      expect(await c.read(authProvider.notifier).google(), isNull);
-      expect((c.read(authProvider).status, c.read(authProvider).email), (AuthStatus.signedIn, 'owner@gmail.com'));
-    });
-
     test('starting the program: the kept sign-in is renewed; with no internet it is trusted; if the cloud cancelled it, the person must sign in again', () async {
       final cloud = FakeCloud();
       final vault = MemorySessionVault(jsonEncode({'refresh': 'r1', 'email': 'owner@gmail.com'}));
@@ -300,13 +197,12 @@ void main() {
   });
 
   group('screens', () {
-    Future<(ProviderContainer, FakeCloud)> signIn(WidgetTester t, {FakeCloud? cloud, GoogleFlow? google}) async {
+    Future<(ProviderContainer, FakeCloud)> signIn(WidgetTester t, {FakeCloud? cloud}) async {
       final fake = cloud ?? FakeCloud();
       final c = await pumpApp(t, size: desktop1366, location: '/signin', motion: MotionLevel.off, followSystemMotion: false, extraOverrides: [
         cloudConfigProvider.overrideWithValue(config),
         authApiProvider.overrideWithValue(AuthApi(config, client: fake.client)),
         sessionVaultProvider.overrideWithValue(MemorySessionVault()),
-        googleFlowProvider.overrideWithValue(google ?? FakeGoogle()),
       ]);
       return (c, fake);
     }
@@ -314,6 +210,7 @@ void main() {
     testWidgets('signed out, any page leads to the sign-in screen; a wrong password says so; the right one opens the program', (tester) async {
       final (c, cloud) = await signIn(tester);
       expect(find.byKey(const ValueKey('signInButton')), findsOneWidget);
+      expect(find.textContaining('Google'), findsNothing, reason: 'there is no Google sign-in');
       cloud.passwordError = {'error_code': 'invalid_credentials'};
       await tester.enterText(find.byType(TextField).at(0), 'owner@gmail.com');
       await tester.enterText(find.byType(TextField).at(1), 'wrong-pass');
@@ -337,18 +234,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('stranger@gmail.com, but this account has no access'), findsOneWidget);
       expect(c.read(authProvider).status, AuthStatus.signedOut);
-    });
-
-    testWidgets('Continue with Google: not switched on says so in plain words; switched on, signs in', (tester) async {
-      final cloud = FakeCloud(googleOn: false);
-      final (c, _) = await signIn(tester, cloud: cloud);
-      await tester.tap(find.byKey(const ValueKey('googleSignIn')));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Google sign-in is not switched on yet'), findsOneWidget);
-      cloud.googleOn = true;
-      await tester.tap(find.byKey(const ValueKey('googleSignIn')));
-      await tester.pumpAndSettle();
-      expect(c.read(authProvider).status, AuthStatus.signedIn);
     });
 
     testWidgets('create account: the screen explains the e-mailed link and goes back to Sign in', (tester) async {

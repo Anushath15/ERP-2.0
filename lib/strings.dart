@@ -484,8 +484,6 @@ class Strings {
   String get signInHelp => 'Use the account you made for the shop';
   String get createAccountTitle => 'Make your shop account';
   String get createAccountHelp => 'The first account becomes the owner';
-  String get continueWithGoogle => 'Continue with Google';
-  String get orWithEmail => 'or use email';
   String get signIn => 'Sign in';
   String get createAccount => 'Make account';
   String get forgotPassword => 'Forgot your password?';
@@ -839,7 +837,7 @@ class Strings {
   String get secRevokeConfirm => 'Stop device';
   String get secSignIns => 'Last sign-ins';
   String get secTwoStep => 'Two-step verification';
-  String get secTwoStepHelp => 'Turn on two-step verification for every Google account that signs in here. The program cannot check this for you, so please check it yourself.';
+  String get secTwoStepHelp => 'Turn on two-step verification for the email account you sign in with. The program cannot check this for you, so please check it yourself.';
   String get secTwoStepOpen => 'Open Google settings';
   String get secTwoStepFail => 'Could not open the page. Visit myaccount.google.com and search for 2-Step Verification.';
   String get saveFailedTitle => 'The bill could not be saved';
@@ -1311,10 +1309,6 @@ class Strings {
   String get authRateLimited => 'Too many tries. Wait a minute and try again.';
   String get authOther => 'Sign-in did not work. Please try again.';
   String authNotMember(String email) => 'You signed in as ${email}, but this account has no access to the shop yet. Ask the owner to add it.';
-  String get authGoogleOff => 'Google sign-in is not switched on yet. Use your email and password for now.';
-  String get authGoogleWait => 'Finish the sign-in in the browser window that opened. Come back here when it says you are signed in.';
-  String get authGoogleCancelled => 'The sign-in was not completed. Press the Google button to try again.';
-  String get authGoogleTimedOut => 'The sign-in took too long and was stopped. Press the Google button to try again.';
   String authAccountCreated(String email) => 'We sent a link to ${email}. Open it, then press Sign in.';
   String get authBusy => 'Please wait...';
   String authSignedInAs(String email) => 'Signed in as ${email}';

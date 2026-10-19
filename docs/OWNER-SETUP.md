@@ -65,11 +65,9 @@ Do these yourself (I cannot create accounts, organisations or passwords for you)
 3. When the project is ready: **Project Settings > API**. Send me only the **Project URL** and the **anon / publishable** key (both are meant to be public). Never send the `service_role` or secret key.
 4. **Authentication > Sign In / Providers**: keep **Email** on. Switch **Confirm email** on.
 5. **SQL Editor**: I will tell you when `supabase/migrations/0001_sync.sql` has been tested; paste and Run it only then.
-6. (Later, before the first sign-in) **Google sign-in**: Google Cloud console > new project `ask-erp-2-login` > APIs & Services > OAuth consent screen (External, app name `ASK ERP 2.0`, your e-mail) > Credentials > Create OAuth client ID (Web). Authorised redirect URI: `https://qksovlwyxpxahszjqdkz.supabase.co/auth/v1/callback`. Then Supabase > Authentication > Sign In / Providers > Google: paste the client ID and secret there (never in chat). I will give the desktop and Android details when Gate 2D starts.
-6b. **Gate 2D, sign-in in the program (built).** What is needed from you, once:
-   - **Google:** finish step 6 above (the Google Cloud OAuth client; its client ID and secret go into Supabase only). Then in Supabase > **Authentication > URL Configuration > Redirect URLs** add `http://127.0.0.1:*/**` (the program listens on this computer for the browser to come back).
+6. (Decided: there is NO Google sign-in. The program signs in with e-mail and password only.)
+6b. **Sign-in in the program (built, e-mail and password).** What is needed from you, once:
    - **Build with the cloud address:** `flutter build windows --dart-define-from-file=supabase/config.local.json`. Without it the program opens as before, with no sign-in (local only).
-   - **First sign-in:** press "Continue with Google" (or make the account with e-mail and password and open the link it sends). The program will say "this account has no access to the shop yet" until you run `supabase/seed_shop.example.sql` once with the two shop e-mails. After that: sign in once per computer; opening the program never asks again; only **Sign out** (Shop profile) asks again.
-   - Until Google is switched on in Supabase, the Google button says so in plain words; e-mail and password already work.
+   - **First sign-in:** make the account with e-mail and password (**First time? Make the shop account**) and open the link it sends. The program will say "this account has no access to the shop yet" until you run `supabase/seed_shop.example.sql` once with the two shop e-mails. After that: sign in once per computer; opening the program never asks again; only **Sign out** (Shop profile) asks again.
 7. Add the same two addresses as members of the organisation (Organization settings > Team) so one person can never lock you out.
 Keep-alive: the free plan pauses an unused project after about a week; see docs/supabase-sync-design.md.

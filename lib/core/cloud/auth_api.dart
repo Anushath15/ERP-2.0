@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'cloud_config.dart';
 
 /// Why a sign-in step failed, in the words the screen needs (never a stack trace, never the server's own text).
-enum AuthProblem { wrongLogin, notConfirmed, userExists, weakPassword, rateLimited, network, notMember, googleOff, cancelled, timedOut, other }
+enum AuthProblem { wrongLogin, notConfirmed, userExists, weakPassword, rateLimited, network, notMember, other }
 
 class AuthFailure implements Exception {
   const AuthFailure(this.problem, {this.email = ''});
@@ -112,28 +112,6 @@ class AuthApi {
     final r = await _send(() => _http.post(Uri.parse('${config.base}/auth/v1/token?grant_type=refresh_token'), headers: _headers(), body: jsonEncode({'refresh_token': refreshToken})));
     if (r.statusCode == 400 || r.statusCode == 401) throw const AuthFailure(AuthProblem.wrongLogin); // the session was cancelled
     return _needSession(r);
-  }
-
-  /// The one-time code that came back from the browser, plus the secret only this program knows (PKCE), for a session.
-  Future<AuthSession> exchangeCode(String code, String verifier) async {
-    final r = await _send(() => _http.post(Uri.parse('${config.base}/auth/v1/token?grant_type=pkce'), headers: _headers(), body: jsonEncode({'auth_code': code, 'code_verifier': verifier})));
-    return _needSession(r);
-  }
-
-  /// The browser address that starts "Continue with Google".
-  Uri googleUrl({required String redirectTo, required String challenge}) => Uri.parse('${config.base}/auth/v1/authorize').replace(queryParameters: {
-        'provider': 'google',
-        'redirect_to': redirectTo,
-        'code_challenge': challenge,
-        'code_challenge_method': 's256',
-      });
-
-  /// Is Google switched on in the cloud project? (Public settings of the project; no sign-in needed.)
-  Future<bool> googleEnabled() async {
-    final r = await _send(() => _http.get(Uri.parse('${config.base}/auth/v1/settings'), headers: _headers()));
-    if (r.statusCode != 200) return false;
-    final ext = _json(r)['external'];
-    return ext is Map && ext['google'] == true;
   }
 
   /// Does this signed-in person belong to the shop? (Row-level security shows a person only their own shop's rows, so

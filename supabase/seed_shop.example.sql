@@ -1,4 +1,4 @@
--- Run ONCE in Supabase > SQL Editor, after 0001_sync.sql and after both owners have signed in with Google once
+-- Run ONCE in Supabase > SQL Editor, after 0001_sync.sql and after both owners have made their account (e-mail + password) once
 -- (Authentication > Users must list both addresses). Replace the two e-mails, then press Run.
 with s as (insert into public.shops (name) values ('Senthil Enterprises') returning id)
 insert into public.shop_members (shop_id, user_id, role)

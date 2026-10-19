@@ -60,9 +60,6 @@ String authMessage(Strings l, AuthFailure f) => switch (f.problem) {
       AuthProblem.rateLimited => l.authRateLimited,
       AuthProblem.network => l.authNetwork,
       AuthProblem.notMember => l.authNotMember(f.email),
-      AuthProblem.googleOff => l.authGoogleOff,
-      AuthProblem.cancelled => l.authGoogleCancelled,
-      AuthProblem.timedOut => l.authGoogleTimedOut,
       AuthProblem.other => l.authOther,
     };
 
@@ -126,19 +123,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     context.go('/');
   }
 
-  Future<void> _google() async {
-    final l = tr(context);
-    if (!ref.read(cloudConfigProvider).configured) return context.go(_create ? '/wizard' : '/'); // no cloud in this build: the old preview
-    setState(() {
-      _error = null;
-      _info = l.authGoogleWait;
-    });
-    final f = await ref.read(authProvider.notifier).google();
-    if (!mounted) return;
-    if (f != null) return _fail(authMessage(l, f));
-    context.go(_create ? '/wizard' : '/');
-  }
-
   @override
   Widget build(BuildContext context) {
     final l = tr(context);
@@ -157,16 +141,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             const SizedBox(height: 4),
             Text(_create ? l.createAccountHelp : l.signInHelp, style: th.bodySmall, textAlign: TextAlign.center),
             const SizedBox(height: 20),
-            FilledButton.icon(
-              key: const ValueKey('googleSignIn'),
-              onPressed: busy ? null : _google,
-              style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF1F1F1F), minimumSize: const Size(0, 52)),
-              icon: const Text('G', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Color(0xFF4285F4))),
-              label: Text(l.continueWithGoogle),
-            ),
-            const SizedBox(height: 14),
-            Row(children: [const Expanded(child: Divider()), Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(l.orWithEmail, style: th.bodySmall)), const Expanded(child: Divider())]),
-            const SizedBox(height: 14),
             TextField(controller: _email, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.email], decoration: InputDecoration(labelText: l.fieldEmail, prefixIcon: const Icon(Icons.mail_outline_rounded))),
             const SizedBox(height: 12),
             TextField(
