@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,7 @@ import '../../fake/shop_profile.dart';
 import '../../strings.dart';
 import 'credit_dialogs.dart';
 import 'party_dialogs.dart';
+import 'receipt_pdf.dart';
 import 'statement_pdf.dart';
 import '../print/print_action.dart';
 
@@ -287,6 +289,7 @@ class PaymentReceiptScreen extends ConsumerWidget {
         PaymentReceipt(number: 'RCP-0041', customerId: 'c1', customerName: 'Murugan Electricals', amountPaise: 150000, mode: 'cash', at: now, note: '', allocations: const [Allocation('A-019804', 100000), Allocation('A-019821', 40000)], advancePaise: 10000, balanceAfter: -10000);
     TextStyle s({bool b = false, double size = 11}) => _paperStyle(context, b: b, size: size);
     String mode(String m) => switch (m) { 'upi' => l.payUpi, 'card' => l.payCard, _ => l.payCash };
+    Future<Uint8List> pdfBytes() => buildPaymentReceiptPdf(receipt: r, shopName: ref.read(shopProvider).name, shopPhone: ref.read(shopProvider).phone, paper: ref.read(settingsProvider).paper, l: l);
     final paper = Container(
       width: 302,
       color: c.paper,
@@ -314,8 +317,25 @@ class PaymentReceiptScreen extends ConsumerWidget {
     return PageFrame(
       title: l.printReceipt,
       actions: [
-        FilledButton.icon(onPressed: () => toast(context, l.printNotConnected), icon: const Icon(Icons.print_rounded), label: Text(l.print)),
-        OutlinedButton.icon(onPressed: () => toast(context, l.pdfNotConnected), icon: const Icon(Icons.picture_as_pdf_rounded), label: Text(l.saveAsPdf)),
+        FilledButton.icon(
+          key: const ValueKey('receiptPrint'),
+          onPressed: () async {
+            final bytes = await pdfBytes();
+            if (context.mounted) await printPdfNow(context, ref, bytes, '${l.rcPaymentReceipt} ${r.number}');
+          },
+          icon: const Icon(Icons.print_rounded),
+          label: Text(l.print),
+        ),
+        OutlinedButton.icon(
+          key: const ValueKey('receiptPdf'),
+          onPressed: () async {
+            final bytes = await pdfBytes();
+            final where = await ref.read(fileSaverProvider).save('Receipt ${r.number}.pdf'.replaceAll('/', '-'), bytes);
+            if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
+          },
+          icon: const Icon(Icons.picture_as_pdf_rounded),
+          label: Text(l.saveAsPdf),
+        ),
         if (context.canPop()) TextButton(onPressed: () => context.pop(), child: Text(l.back)),
       ],
       child: Container(width: double.infinity, decoration: BoxDecoration(color: c.surfaceAlt, borderRadius: BorderRadius.circular(Radii.m)), child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Center(child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: paper)))),
