@@ -1318,4 +1318,25 @@ class Strings {
   String get upiQrTitle => 'Scan to pay';
   String get upiQrHelp => 'Ask the customer to scan with any UPI app. The amount is already filled in.';
   String get upiNoId => 'Add the shop UPI id in Shop profile to show a QR code';
+  String get navLabels => 'Barcode labels';
+  String get labelsSubtitle => 'Print stickers for items that have no barcode: nails, nuts, pipe pieces';
+  String get labelsSize => 'Sticker size';
+  String get labelSize5025 => '50 x 25 mm roll';
+  String get labelSize3825 => '38 x 25 mm roll';
+  String get labelSizeSheet => 'A4 sticker sheet (3 x 7)';
+  String get labelsSearchHint => 'Search a product to add';
+  String get labelsNoBarcode => 'no barcode yet';
+  String get labelsWillMake => 'A barcode will be made when you print';
+  String labelsAddMissing(String n) => 'Add all ${n} products without a barcode';
+  String get labelsEmpty => 'Add the products you want stickers for';
+  String labelsTotal(String n) => '${n} stickers';
+  String labelsMadeCodes(String n) => 'Made a barcode for ${n} products';
+  String labelsSkipped(String n) => '${n} products were left out: their barcode has letters that cannot be printed as a barcode';
+  String get labelsNoneCan => 'Nothing to print: the barcodes of these products cannot be printed';
+  String labelsTooMany(String n) => 'That is too many stickers at once. The most is ${n}';
+  String get makeBarcode => 'Make a barcode';
+  String get barcodeHelp => 'Leave empty, or press the button to make one for a loose item';
+  String get setLabelPrinter => 'Sticker printer';
+  String get setLabelPrinterHelp => 'The printer for barcode stickers. Leave as it is to use the bill printer';
+  String get labelPrinterSame => 'Same as the bill printer';
 }

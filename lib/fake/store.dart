@@ -225,6 +225,7 @@ class AppSettings {
     this.paper = PaperSize.a4,
     this.printSize = PrintTextSize.small,
     this.printerName = '',
+    this.labelPrinterName = '',
     this.sync = SyncState.synced,
     this.firstRunDone = true,
     this.signedIn = true,
@@ -244,6 +245,9 @@ class AppSettings {
 
   /// The printer this computer prints bills on (as Windows names it); empty = the computer's default printer.
   final String printerName;
+
+  /// The printer for barcode stickers (a label printer); empty = the same printer as the bills.
+  final String labelPrinterName;
   final bool firstRunDone, signedIn;
   final SyncState sync;
 
@@ -265,6 +269,7 @@ class AppSettings {
     PaperSize? paper,
     PrintTextSize? printSize,
     String? printerName,
+    String? labelPrinterName,
     bool? pricesIncludeGst,
     CreditLimitMode? creditLimitMode,
     ReminderTone? reminderTone,
@@ -298,6 +303,7 @@ class AppSettings {
         paper: paper ?? this.paper,
         printSize: printSize ?? this.printSize,
         printerName: printerName ?? this.printerName,
+        labelPrinterName: labelPrinterName ?? this.labelPrinterName,
         sync: sync ?? this.sync,
         firstRunDone: firstRunDone ?? this.firstRunDone,
         signedIn: signedIn ?? this.signedIn,
@@ -321,6 +327,7 @@ class AppSettings {
         'paper': paper.name,
         'printSize': printSize.name,
         'printerName': printerName,
+        'labelPrinterName': labelPrinterName,
       };
 
   /// SECURITY: tolerant and strict at once. Unknown keys are ignored; wrong types, unknown names and out-of-range or non-finite numbers
@@ -353,6 +360,7 @@ class AppSettings {
       paper: pick(PaperSize.values, j['paper'], d.paper),
       printSize: pick(PrintTextSize.values, j['printSize'], d.printSize),
       printerName: name_(j['printerName'], d.printerName),
+      labelPrinterName: name_(j['labelPrinterName'], d.labelPrinterName),
     );
   }
 }

@@ -5,6 +5,7 @@ import '../../data/ids.dart';
 import '../../design/form_sheet.dart';
 import '../../design/widgets.dart';
 import '../../domain/gst_price.dart';
+import '../../fake/data_providers.dart';
 import '../../fake/models.dart';
 import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
@@ -47,7 +48,12 @@ Future<Product?> showProductForm(BuildContext context, {String initialName = '',
       FieldSpec('stock', l.fieldStockNow, type: FieldType.number, initial: p == null ? '' : formatQty(p.stockMilli), required: true),
       FieldSpec('minStock', l.fieldMinStock, type: FieldType.number, initial: p == null ? '' : formatQty(p.minStockMilli), required: true),
       FieldSpec('hsn', l.fieldHsn, initial: p?.hsn ?? '', check: (s) => RegExp(r'^\d{4,8}$').hasMatch(s) ? null : l.errHsn),
-      FieldSpec('barcode', l.fieldBarcode, initial: p?.barcode ?? ''),
+      FieldSpec('barcode', l.fieldBarcode, initial: p?.barcode ?? '', hint: l.barcodeHelp, suffix: (ctl) => IconButton(
+        key: const ValueKey('makeBarcode'),
+        tooltip: l.makeBarcode,
+        icon: const Icon(Icons.qr_code_2_rounded),
+        onPressed: () async => ctl.text = await box.read(appDataProvider).catalog.newBarcode(),
+      )),
     ],
   );
   if (v == null) return null;

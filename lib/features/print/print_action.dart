@@ -6,10 +6,12 @@ import '../../design/widgets.dart';
 import '../../fake/store.dart';
 
 /// The Print button: sends the PDF to the printer chosen in Settings (or the computer's default one) and says in plain words what happened.
-Future<void> printPdfNow(BuildContext context, WidgetRef ref, Uint8List bytes, String jobName) async {
+Future<void> printPdfNow(BuildContext context, WidgetRef ref, Uint8List bytes, String jobName, {bool forLabels = false}) async {
   final l = tr(context);
   toast(context, l.printSending);
-  final out = await ref.read(printerServiceProvider).printPdf(bytes, jobName: jobName, printerName: ref.read(settingsProvider).printerName);
+  final st = ref.read(settingsProvider);
+  final printer = forLabels && st.labelPrinterName.isNotEmpty ? st.labelPrinterName : st.printerName; // stickers go to the label printer when one is chosen
+  final out = await ref.read(printerServiceProvider).printPdf(bytes, jobName: jobName, printerName: printer);
   if (!context.mounted) return;
   toast(
     context,

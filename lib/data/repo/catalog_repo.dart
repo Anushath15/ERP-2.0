@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import '../../domain/models.dart';
 import '../context.dart';
 import '../db/app_database.dart';
+import '../../domain/barcode.dart';
 import '../ids.dart';
 import 'product_codes.dart';
 
@@ -50,6 +51,32 @@ class CatalogRepo {
     if (c.isEmpty) return null;
     final r = await _db.row("$_productSelect WHERE p.barcode = ? AND p.barcode <> '' AND p.deleted_at IS NULL", [c]);
     return r == null ? null : _product(r);
+  }
+
+  /// A new shop barcode (for a loose item with none): ten digits starting with 2, never one a product already has.
+  Future<String> newBarcode() => _db.transaction(_nextFreeBarcode);
+
+  Future<String> _nextFreeBarcode() async {
+    while (true) {
+      final code = shopBarcode(await nextCounter(_db, 'barcode'));
+      if (await _db.scalarInt('SELECT COUNT(*) FROM products WHERE barcode = ?', [code]) == 0) return code;
+    }
+  }
+
+  /// Gives each of these products that has no barcode one (a product that has one keeps it). Returns product id -> new barcode.
+  Future<Map<String, String>> assignBarcodes(Iterable<String> ids) {
+    return _db.transaction(() async {
+      final made = <String, String>{};
+      for (final id in ids.toSet()) {
+        final p = await _db.row("SELECT barcode FROM products WHERE id = ? AND deleted_at IS NULL", [id]);
+        if (p == null || p.read<String>('barcode').isNotEmpty) continue;
+        final code = await _nextFreeBarcode();
+        await _db.exec("UPDATE products SET barcode = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ? AND barcode = ''", [code, cx.nowMs(), cx.hlc.next(), cx.deviceId, id]);
+        await enqueue(cx, _db, 'products', id);
+        made[id] = code;
+      }
+      return made;
+    });
   }
 
   Future<int> productCount() => _db.scalarInt('SELECT COUNT(*) FROM products WHERE deleted_at IS NULL');

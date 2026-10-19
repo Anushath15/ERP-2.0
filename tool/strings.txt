@@ -1358,3 +1358,24 @@ upiShowQr | Show UPI QR
 upiQrTitle | Scan to pay
 upiQrHelp | Ask the customer to scan with any UPI app. The amount is already filled in.
 upiNoId | Add the shop UPI id in Shop profile to show a QR code
+navLabels | Barcode labels
+labelsSubtitle | Print stickers for items that have no barcode: nails, nuts, pipe pieces
+labelsSize | Sticker size
+labelSize5025 | 50 x 25 mm roll
+labelSize3825 | 38 x 25 mm roll
+labelSizeSheet | A4 sticker sheet (3 x 7)
+labelsSearchHint | Search a product to add
+labelsNoBarcode | no barcode yet
+labelsWillMake | A barcode will be made when you print
+labelsAddMissing | Add all {n} products without a barcode
+labelsEmpty | Add the products you want stickers for
+labelsTotal | {n} stickers
+labelsMadeCodes | Made a barcode for {n} products
+labelsSkipped | {n} products were left out: their barcode has letters that cannot be printed as a barcode
+labelsNoneCan | Nothing to print: the barcodes of these products cannot be printed
+labelsTooMany | That is too many stickers at once. The most is {n}
+makeBarcode | Make a barcode
+barcodeHelp | Leave empty, or press the button to make one for a loose item
+setLabelPrinter | Sticker printer
+setLabelPrinterHelp | The printer for barcode stickers. Leave as it is to use the bill printer
+labelPrinterSame | Same as the bill printer

@@ -11,7 +11,7 @@ final _dealerId = seedDealers().firstWhere((d) => d.i('balance') > 0).id;
 final _dueId = _credit.entries.firstWhere((e) => e.value.balance > 0 && e.value.bills.length > 1).key;
 
 final routes = <String>[
-  '/signin', '/forgot', '/wizard', '/', '/bill', '/estimate', '/estimates', '/sales', '/sales-returns', '/products', '/categories',
+  '/signin', '/forgot', '/wizard', '/', '/bill', '/estimate', '/estimates', '/sales', '/sales-returns', '/products', '/labels', '/categories',
   '/inventory', '/purchases', '/purchase-returns', '/adjustments', '/customers', '/dealers', '/credit', '/staff', '/expenses', '/closing', '/reports',
   '/export', '/import', '/warranty', '/notifications', '/settings', '/health', '/fix', '/backups', '/restore', '/help', '/about', '/more', '/preview/a4', '/preview/80',
   '/preview/58', '/preview/estimate', '/preview/payment', '/customers/$_dueId', '/customers/$_dueId/statement',

@@ -26,6 +26,7 @@ final navGroups = <NavGroup>[
   ]),
   NavGroup((l) => l.groupStock, [
     NavItem('/products', Icons.inventory_2_rounded, (l) => l.navProducts),
+    NavItem('/labels', Icons.sell_rounded, (l) => l.navLabels),
     NavItem('/categories', Icons.category_rounded, (l) => l.navCategories),
     NavItem('/inventory', Icons.inventory_rounded, (l) => l.navInventory),
     NavItem('/purchases', Icons.shopping_cart_rounded, (l) => l.navPurchases),

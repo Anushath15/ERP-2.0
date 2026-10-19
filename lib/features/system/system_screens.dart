@@ -62,6 +62,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       row(l.setPaper, l.setPaperHelp, SegmentedButton<PaperSize>(showSelectedIcon: false, segments: [ButtonSegment(value: PaperSize.a4, label: Text(l.paperA4)), ButtonSegment(value: PaperSize.a5, label: Text(l.paperA5)), ButtonSegment(value: PaperSize.mm80, label: Text(l.paper80)), ButtonSegment(value: PaperSize.mm58, label: Text(l.paper58))], selected: {s.paper}, onSelectionChanged: (v) => set((x) => x.copyWith(paper: v.first)))),
       row(l.setPrintSize, l.setPrintSizeHelp, SegmentedButton<PrintTextSize>(key: const ValueKey('printSize'), showSelectedIcon: false, segments: [ButtonSegment(value: PrintTextSize.smaller, label: Text(l.printSmaller)), ButtonSegment(value: PrintTextSize.small, label: Text(l.printSmall)), ButtonSegment(value: PrintTextSize.normal, label: Text(l.printNormal))], selected: {s.printSize}, onSelectionChanged: (v) => set((x) => x.copyWith(printSize: v.first)))),
       row(l.setPrinter, l.setPrinterHelp, const PrinterPicker()),
+      row(l.setLabelPrinter, l.setLabelPrinterHelp, const PrinterPicker(labels: true)),
     ]));
 
     const look = AppearanceCard();
@@ -364,7 +365,10 @@ Color backupColor(WidgetRef ref, AppColors c) {
 
 /// Choose the printer once: the computer's default printer, or one of the printers Windows lists; plus a test page.
 class PrinterPicker extends ConsumerStatefulWidget {
-  const PrinterPicker({super.key});
+  const PrinterPicker({super.key, this.labels = false});
+
+  /// The picker for the barcode sticker printer (empty = the bill printer).
+  final bool labels;
   @override
   ConsumerState<PrinterPicker> createState() => _PrinterPickerState();
 }
@@ -375,7 +379,8 @@ class _PrinterPickerState extends ConsumerState<PrinterPicker> {
   @override
   Widget build(BuildContext context) {
     final l = tr(context);
-    final name = ref.watch(settingsProvider).printerName;
+    final st = ref.watch(settingsProvider);
+    final name = widget.labels ? st.labelPrinterName : st.printerName;
     return FutureBuilder<List<PrinterInfo>>(
       future: _list,
       builder: (context, snap) {
@@ -386,19 +391,19 @@ class _PrinterPickerState extends ConsumerState<PrinterPicker> {
             Text(l.printersNone, key: const ValueKey('printersNone'), style: Theme.of(context).textTheme.bodySmall)
           else
             DropdownButton<String>(
-              key: const ValueKey('printerPicker'),
+              key: ValueKey(widget.labels ? 'labelPrinterPicker' : 'printerPicker'),
               isExpanded: true,
               value: known ? name : '',
               items: [
-                DropdownMenuItem(value: '', child: Text(l.printDefault, overflow: TextOverflow.ellipsis)),
+                DropdownMenuItem(value: '', child: Text(widget.labels ? l.labelPrinterSame : l.printDefault, overflow: TextOverflow.ellipsis)),
                 for (final p in all) DropdownMenuItem(value: p.name, child: Text(p.name, overflow: TextOverflow.ellipsis)),
               ],
-              onChanged: (v) => ref.read(settingsProvider.notifier).set((x) => x.copyWith(printerName: v ?? '')),
+              onChanged: (v) => ref.read(settingsProvider.notifier).set((x) => widget.labels ? x.copyWith(labelPrinterName: v ?? '') : x.copyWith(printerName: v ?? '')),
             ),
           const SizedBox(height: 6),
           Wrap(spacing: 8, runSpacing: 4, alignment: WrapAlignment.end, children: [
-            TextButton.icon(key: const ValueKey('printersRefresh'), onPressed: () => setState(() => _list = ref.read(printerServiceProvider).printers()), icon: const Icon(Icons.refresh_rounded), label: Text(l.printersRefresh)),
-            OutlinedButton.icon(
+            if (!widget.labels) TextButton.icon(key: const ValueKey('printersRefresh'), onPressed: () => setState(() => _list = ref.read(printerServiceProvider).printers()), icon: const Icon(Icons.refresh_rounded), label: Text(l.printersRefresh)),
+            if (!widget.labels) OutlinedButton.icon(
               key: const ValueKey('printTest'),
               onPressed: () async {
                 final bytes = await buildTestPagePdf(shopName: ref.read(shopProvider).name, now: ref.read(clockProvider), printerName: name, l: l);

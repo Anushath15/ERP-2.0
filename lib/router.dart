@@ -9,6 +9,7 @@ import 'features/credit/credit_screens.dart';
 import 'features/credit/profile_screen.dart';
 import 'fake/credit_store.dart' show PartyKind;
 import 'features/dashboard/dashboard_screen.dart';
+import 'features/labels/labels_screen.dart';
 import 'features/money/money_screens.dart';
 import 'features/people/people_screens.dart';
 import 'features/print/print_preview.dart';
@@ -44,6 +45,7 @@ GoRouter buildRouter({String initialLocation = '/', String? Function(String loca
           GoRoute(path: '/', pageBuilder: (c, s) => _p(c, s, const DashboardScreen())),
           GoRoute(path: '/bill', pageBuilder: (c, s) => _p(c, s, const BillingScreen(mode: DocMode.invoice))),
           GoRoute(path: '/estimate', pageBuilder: (c, s) => _p(c, s, const BillingScreen(mode: DocMode.estimation))),
+          GoRoute(path: '/labels', pageBuilder: (c, s) => _p(c, s, const LabelsScreen())),
           GoRoute(path: '/estimates', pageBuilder: (c, s) => _p(c, s, EstimationsScreen(openNumber: s.uri.queryParameters['open']))),
           GoRoute(path: '/sales', pageBuilder: (c, s) => _p(c, s, SalesRegisterScreen(openBillId: s.uri.queryParameters['open']))),
           GoRoute(path: '/sales-returns', pageBuilder: (c, s) => _p(c, s, const SalesReturnsScreen())),
