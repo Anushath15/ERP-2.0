@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'backup_crypto.dart';
 import 'backup_types.dart';
 
 /// The browser build keeps its data inside the browser; file backups need the desktop program.
@@ -10,3 +12,5 @@ Future<BackupInspection> inspectBackup(String path, {required String expectedSho
 Future<String> copyBackupTo(String source, String destFolder) async => throw BackupException('Backups need the Windows or Mac program.');
 Future<void> tryFolder(String path) async => throw BackupException('Backups need the Windows or Mac program.');
 bool runBackupWorkInline = false;
+Future<Uint8List> sealBackupFile(String path, String password, {int rounds = defaultRounds}) async => throw BackupException('Backups need the Windows or Mac program.');
+Future<String> openSealedBackupToTemp(String path, String password) async => throw BackupException('Backups need the Windows or Mac program.');

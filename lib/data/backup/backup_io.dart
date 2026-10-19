@@ -6,11 +6,13 @@ library;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 import '../db/app_database.dart';
 import '../platform/disk_space.dart';
+import 'backup_crypto.dart';
 import 'backup_types.dart';
 
 const bool backupSupported = true;
@@ -256,4 +258,25 @@ Future<void> tryFolder(String path) async {
   } on FileSystemException {
     throw BackupException('That folder cannot be written to. If it is on a pen drive or another drive, check that it is plugged in and not write-protected.');
   }
+}
+
+/// The backup file [path] compressed and locked with [password], ready to leave this computer (done away from the screen: locking takes a second or two).
+Future<Uint8List> sealBackupFile(String path, String password, {int rounds = defaultRounds}) {
+  Future<Uint8List> job() async => sealBackup(File(path).readAsBytesSync(), password, rounds: rounds);
+  return runBackupWorkInline ? job() : Isolate.run(job);
+}
+
+/// Opens a locked backup file and writes the plain backup to a new file in the computer's temp folder, named like the original without `.askbak`.
+/// Returns that path. Throws [SealException] (wrong password, damaged, not one of ours).
+Future<String> openSealedBackupToTemp(String path, String password) async {
+  final data = File(path).readAsBytesSync();
+  Future<Uint8List> job() async => openSealedBackup(data, password);
+  final plain = await (runBackupWorkInline ? job() : Isolate.run(job));
+  final dir = Directory.systemTemp.createTempSync('askerp-restore-');
+  var name = p.basename(path);
+  if (name.endsWith('.askbak')) name = name.substring(0, name.length - '.askbak'.length);
+  if (!name.endsWith('.sqlite')) name = '$name.sqlite';
+  final out = File(p.join(dir.path, name));
+  out.writeAsBytesSync(plain, flush: true);
+  return out.path;
 }

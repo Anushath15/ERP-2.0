@@ -6,17 +6,25 @@ import '../../core/data_mode.dart';
 import '../../core/date_fmt.dart';
 import '../../data/backup/backup.dart';
 import '../../data/importer/swap.dart';
+import '../../design/form_sheet.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../fake/backup_controller.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/health.dart';
 import '../../strings.dart';
+import 'telegram_card.dart';
 
 /// Asks the person for a folder / a backup file. Replaced in tests so no real dialog is needed.
 final folderPickerProvider = Provider<Future<String?> Function()>((ref) => () => getDirectoryPath());
 final backupFilePickerProvider = Provider<Future<String?> Function()>((ref) => () async {
       final f = await openFile(acceptedTypeGroups: const [XTypeGroup(label: 'ASK ERP backup', extensions: ['sqlite'])]);
+      return f?.path;
+    });
+
+/// Asks for a locked backup file (from Telegram). Replaced in tests.
+final sealedFilePickerProvider = Provider<Future<String?> Function()>((ref) => () async {
+      final f = await openFile(acceptedTypeGroups: const [XTypeGroup(label: 'Locked ASK ERP backup', extensions: ['askbak'])]);
       return f?.path;
     });
 
@@ -173,6 +181,8 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
           ]),
         ),
         const SizedBox(height: 12),
+        const TelegramBackupCard(),
+        const SizedBox(height: 12),
         SectionCard(
           title: l.backupYearlyTitle,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -229,6 +239,38 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
     final path = await ref.read(backupFilePickerProvider)();
     if (path == null) return;
     await _inspect(path, path.split(RegExp(r'[\\/]')).last);
+  }
+
+  /// A locked backup (the file from Telegram): ask for the backup password, open it into a plain backup file, then check it like any other.
+  Future<void> _chooseSealed() async {
+    final l = tr(context);
+    final path = await ref.read(sealedFilePickerProvider)();
+    if (path == null || !mounted) return;
+    final v = await showFormSheet(context, title: l.tgAskPasswordTitle, saveLabel: l.tgOpen, fields: [FieldSpec('password', l.tgPassword, required: true, autofocus: true)]);
+    if (v == null || !mounted) return;
+    setState(() {
+      _checking = true;
+      _inspection = null;
+      _message = null;
+    });
+    try {
+      final plain = await openSealedBackupToTemp(path, v['password']!);
+      if (!mounted) return;
+      await _inspect(plain, path.split(RegExp(r'[\\/]')).last.replaceAll(RegExp(r'\.askbak$'), ''));
+    } on SealException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _checking = false;
+        _message = switch (e.problem) { SealProblem.wrongPassword => l.tgWrongPassword, SealProblem.notSealed => l.tgNotLocked, SealProblem.damaged => l.tgDamaged };
+      });
+    } on BackupException catch (e) {
+      if (mounted) {
+        setState(() {
+          _checking = false;
+          _message = e.message;
+        });
+      }
+    }
   }
 
   String _problemText(Strings l, RestoreProblem p) => switch (p) {
@@ -322,6 +364,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
             if (restorable.isEmpty) Text(l.backupNone) else for (final b in restorable.take(20)) item(b),
             const SizedBox(height: 8),
             OutlinedButton.icon(key: const ValueKey('chooseBackupFile'), onPressed: _choose, icon: const Icon(Icons.folder_open_rounded), label: Text(l.restoreChooseFile)),
+            OutlinedButton.icon(key: const ValueKey('chooseSealedFile'), onPressed: _working ? null : _chooseSealed, icon: const Icon(Icons.lock_open_rounded), label: Text(l.tgOpenFile)),
           ]),
         ),
         const SizedBox(height: 12),

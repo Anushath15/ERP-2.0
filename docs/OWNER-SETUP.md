@@ -71,3 +71,12 @@ Do these yourself (I cannot create accounts, organisations or passwords for you)
    - **First sign-in:** make the account with e-mail and password (**First time? Make the shop account**) and open the link it sends. The program will say "this account has no access to the shop yet" until you run `supabase/seed_shop.example.sql` once with the two shop e-mails. After that: sign in once per computer; opening the program never asks again; only **Sign out** (Shop profile) asks again.
 7. Add the same two addresses as members of the organisation (Organization settings > Team) so one person can never lock you out.
 Keep-alive: the free plan pauses an unused project after about a week; see docs/supabase-sync-design.md.
+
+## 7. Locked backup copy in Telegram (free)
+Backups > **Backup to Telegram** sends a locked (AES-256) copy of the shop data to your own private channel every evening (from 8 PM, or when the program closes). It is an extra copy: keep the pen-drive / folder backups too.
+1. In Telegram open **@BotFather**, send `/newbot`, choose a name, and copy the **token** it gives you. Never post the token anywhere.
+2. Make a **private channel**. Channel settings > Administrators > Add your bot, and let it **post messages**.
+3. Post any message in the channel (for example "hello").
+4. In the program: Backups > Backup to Telegram > **Set up**. Paste the token, leave the channel empty (it is found by itself), and press **Make a password for me** (or type your own, at least 10 characters). **Write the password on paper and keep it safe: without it the backups cannot be opened, and nobody can recover it.** Press Connect: a test message arrives in the channel.
+5. **To restore from Telegram:** download the `.askbak` file from the channel, then Backups > Restore > **Open a locked backup (from Telegram)**, choose the file and type the password. It is checked and restored like any other backup.
+Files up to 50 MB can be sent (a shop file compresses to a few MB). Telegram is not a backup service: if the channel or the account is deleted the copies go with it.

@@ -19,3 +19,6 @@ class MemorySessionVault implements SessionVault {
 }
 
 final sessionVaultProvider = Provider<SessionVault>((ref) => impl.createVault(MemorySessionVault.new));
+
+/// The same kind of protected file, for the Telegram backup settings (bot token, channel and backup password): `telegram.bin`.
+final telegramVaultProvider = Provider<SessionVault>((ref) => impl.createVault(MemorySessionVault.new, file: 'telegram.bin'));

@@ -15,6 +15,7 @@ import 'features/credit/credit_screens.dart' show creditRowsProvider;
 import 'boot_root.dart' show DamagedFileScreen;
 import 'data/db/integrity.dart';
 import 'fake/backup_controller.dart';
+import 'fake/telegram_backup.dart';
 import 'strings.dart';
 import 'fake/credit_store.dart';
 import 'fake/data_providers.dart';
@@ -64,6 +65,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     HardwareKeyboard.instance.addHandler(_onKey);
     WidgetsBinding.instance.addObserver(this);
     ref.listenManual(authProvider, (_, _) => _gateTick.value++);
+    Future.microtask(() => mounted ? ref.read(telegramBackupProvider) : null); // starts watching for finished backups to send to Telegram
     Future.microtask(() => mounted ? ref.read(authProvider.notifier).restore() : null); // the kept sign-in of this computer, if any (not inside the build)
     // Build the (sample) credit data right after the first frame, while nobody is waiting, so the first visit to a credit page is not the slow frame.
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -77,6 +79,9 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       // closing the program makes one last backup when something was saved since the previous one
       _exitListener = AppLifecycleListener(onExitRequested: () async {
         await ref.read(backupControllerProvider.notifier).backupOnClose();
+        // the locked evening copy to Telegram, if it is due (given up after 45 seconds so closing is never stuck)
+        final file = ref.read(backupControllerProvider).lastFile;
+        if (file != null) await ref.read(telegramBackupProvider.notifier).afterLocalBackup(file).timeout(const Duration(seconds: 45), onTimeout: () {});
         return AppExitResponse.exit;
       });
     }

@@ -7,7 +7,7 @@ import '../app_paths_io.dart' show phoneBaseDir;
 import 'session_vault.dart';
 
 /// `%LOCALAPPDATA%\ASK ERP 2.0\session.bin` (macOS / Linux: the same folder the shop data lives in, one level up from `data`).
-SessionVault createVault(SessionVault Function() fallback) {
+SessionVault createVault(SessionVault Function() fallback, {String file = 'session.bin'}) {
   final env = Platform.environment;
   String? base;
   if (Platform.isWindows && env['LOCALAPPDATA'] != null) base = '${env['LOCALAPPDATA']}\\ASK ERP 2.0';
@@ -15,7 +15,7 @@ SessionVault createVault(SessionVault Function() fallback) {
   if (Platform.isLinux && env['HOME'] != null) base = '${env['HOME']}/.local/share/ASK ERP 2.0';
   base ??= phoneBaseDir();
   if (base == null) return fallback();
-  return FileSessionVault(File('$base${Platform.pathSeparator}session.bin'));
+  return FileSessionVault(File('$base${Platform.pathSeparator}$file'));
 }
 
 /// A small file. On Windows its content is encrypted with DPAPI for the signed-in Windows user: another Windows user, or a copy of the

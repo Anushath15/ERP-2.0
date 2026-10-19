@@ -6,7 +6,7 @@ library;
 import 'package:flutter/services.dart';
 import '../domain/credit/reminder.dart' show normalizePhone;
 
-enum TextKind { name, town, address, note, phone, gstin, upi, email, message }
+enum TextKind { name, town, address, note, phone, gstin, upi, email, message, token }
 
 enum TextProblem { tooLong, badChars, notGstin, notUpi, notPhone }
 
@@ -21,6 +21,7 @@ int maxLength(TextKind k) => switch (k) {
       TextKind.upi => 100,
       TextKind.email => 120,
       TextKind.message => 1500,
+      TextKind.token => 100,
     };
 
 bool allowsLineBreaks(TextKind k) => k == TextKind.note || k == TextKind.message || k == TextKind.address;

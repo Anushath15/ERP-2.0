@@ -1379,3 +1379,38 @@ barcodeHelp | Leave empty, or press the button to make one for a loose item
 setLabelPrinter | Sticker printer
 setLabelPrinterHelp | The printer for barcode stickers. Leave as it is to use the bill printer
 labelPrinterSame | Same as the bill printer
+tgTitle | Backup to Telegram
+tgHelp | A locked copy of your shop data goes to your own private Telegram channel every evening. Only you can open it, with your backup password. Keep the other backups too.
+tgSetup | Set up
+tgChange | Change
+tgSendNow | Send now
+tgForget | Turn off
+tgLast | Last sent: {when} ({size})
+tgNever | Nothing sent yet
+tgConnectedTo | Sending to {channel} (bot @{bot})
+tgFormTitle | Connect Telegram
+tgFormNote | 1. In Telegram, talk to @BotFather: /newbot, and copy the token. 2. Make a private channel and add your bot as an admin who can post. 3. Post any message in the channel. 4. Press Connect.
+tgToken | Bot token
+tgChannel | Channel (leave empty to find it by itself)
+tgPassword | Backup password
+tgPasswordMake | Make a password for me
+tgPasswordHelp | At least 10 characters. Write it on paper. Without it the backups cannot be opened and nobody can recover it.
+tgConnect | Connect
+tgConnectedOk | Connected. A test message was sent to the channel.
+tgSentOk | Sent to Telegram.
+tgBadToken | The bot token is not right. Copy it again from @BotFather.
+tgBadChannel | The channel was not found. Check the name or leave it empty.
+tgNotAdmin | The bot is not an admin of the channel. Add it as an admin who can post messages.
+tgTooBig | The backup is too big for Telegram (50 MB). Keep using the other backups.
+tgRateLimited | Telegram asked to wait. It will try again with the next backup.
+tgNetwork | Could not reach Telegram. Check the internet.
+tgNoMessage | Post any message in your channel first, then press Connect.
+tgNoBackup | No backup could be made to send.
+tgOther | Telegram did not accept it. Try again.
+tgPasswordShort | The password needs at least 10 characters.
+tgOpenFile | Open a locked backup (from Telegram)
+tgAskPasswordTitle | Backup password
+tgOpen | Open
+tgWrongPassword | Wrong password, or the file is damaged.
+tgNotLocked | This is not a locked ASK ERP backup file.
+tgDamaged | The file is damaged.
