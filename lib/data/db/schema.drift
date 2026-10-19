@@ -52,17 +52,17 @@ CREATE INDEX products_barcode ON products(barcode) WHERE barcode <> '';
 CREATE INDEX products_category ON products(category);
 CREATE UNIQUE INDEX products_old_id ON products(old_id) WHERE old_id IS NOT NULL;
 
--- Product search (native and web): FTS5 over name and barcode, prefix search, kept in step by triggers.
-CREATE VIRTUAL TABLE product_fts USING fts5(name, barcode, content='products', content_rowid='rowid', tokenize='unicode61 remove_diacritics 2', prefix='2 3');
+-- Product search (native and web): FTS5 over name, barcode, code, brand and category, prefix search, kept in step by triggers.
+CREATE VIRTUAL TABLE product_fts USING fts5(name, barcode, code, brand, category, content='products', content_rowid='rowid', tokenize='unicode61 remove_diacritics 2', prefix='2 3');
 CREATE TRIGGER products_fts_ai AFTER INSERT ON products BEGIN
-  INSERT INTO product_fts(rowid, name, barcode) VALUES (new.rowid, new.name, new.barcode);
+  INSERT INTO product_fts(rowid, name, barcode, code, brand, category) VALUES (new.rowid, new.name, new.barcode, new.code, new.brand, new.category);
 END;
 CREATE TRIGGER products_fts_ad AFTER DELETE ON products BEGIN
-  INSERT INTO product_fts(product_fts, rowid, name, barcode) VALUES ('delete', old.rowid, old.name, old.barcode);
+  INSERT INTO product_fts(product_fts, rowid, name, barcode, code, brand, category) VALUES ('delete', old.rowid, old.name, old.barcode, old.code, old.brand, old.category);
 END;
-CREATE TRIGGER products_fts_au AFTER UPDATE OF name, barcode ON products BEGIN
-  INSERT INTO product_fts(product_fts, rowid, name, barcode) VALUES ('delete', old.rowid, old.name, old.barcode);
-  INSERT INTO product_fts(rowid, name, barcode) VALUES (new.rowid, new.name, new.barcode);
+CREATE TRIGGER products_fts_au AFTER UPDATE OF name, barcode, code, brand, category ON products BEGIN
+  INSERT INTO product_fts(product_fts, rowid, name, barcode, code, brand, category) VALUES ('delete', old.rowid, old.name, old.barcode, old.code, old.brand, old.category);
+  INSERT INTO product_fts(rowid, name, barcode, code, brand, category) VALUES (new.rowid, new.name, new.barcode, new.code, new.brand, new.category);
 END;
 
 CREATE TABLE customers (

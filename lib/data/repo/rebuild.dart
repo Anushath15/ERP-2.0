@@ -11,6 +11,9 @@ Future<int> rebuildSummaries(AppDatabase db) {
       await db.exec(sql);
     }
 
+    // the product search index, built again from the products (the repair if search ever misses a product)
+    await run("INSERT INTO product_fts(product_fts) VALUES('rebuild')");
+
     // stock figure per product = sum of its movements (a product with none has 0)
     await run('DELETE FROM stock_cache');
     await run('INSERT INTO stock_cache(product_id, qty_milli) SELECT id, COALESCE((SELECT SUM(qty_milli) FROM stock_movements m WHERE m.product_id = products.id), 0) FROM products');

@@ -6,7 +6,7 @@ part 'app_database.g.dart';
 
 /// The schema version this build of the app understands. Raise it ONLY together with a numbered migration in
 /// [AppDatabase.migrations], a new schema dump (`dart run drift_dev schema dump ...`) and a migration test.
-const currentSchemaVersion = 7;
+const currentSchemaVersion = 8;
 
 /// The database file was made by a NEWER version of the app. It is never opened (an old app could damage it).
 class DatabaseTooNewException implements Exception {
@@ -87,7 +87,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 7; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
+  int get schemaVersion => 8; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
 
   /// Numbered migrations: key = the version the step produces. Every step runs inside the upgrade transaction; the caller
   /// makes a backup first (see DatabaseOpener) and a failed step leaves the old file untouched.
@@ -239,6 +239,19 @@ class AppDatabase extends _$AppDatabase {
       await db.customStatement('ALTER TABLE bills ADD COLUMN extra_discount_bp INTEGER NOT NULL DEFAULT 0');
       await db.customStatement('ALTER TABLE estimations ADD COLUMN extra_discount_paise INTEGER NOT NULL DEFAULT 0');
       await db.customStatement('ALTER TABLE estimations ADD COLUMN extra_discount_bp INTEGER NOT NULL DEFAULT 0');
+    },
+    // 8: product search also finds a product by its code, brand and category (it only knew name and barcode). The search index is built again
+    // from the products, so every existing product is findable by the new words at once.
+    8: (m, db) async {
+      await db.customStatement('DROP TRIGGER IF EXISTS products_fts_ai');
+      await db.customStatement('DROP TRIGGER IF EXISTS products_fts_ad');
+      await db.customStatement('DROP TRIGGER IF EXISTS products_fts_au');
+      await db.customStatement('DROP TABLE IF EXISTS product_fts');
+      await db.customStatement("CREATE VIRTUAL TABLE product_fts USING fts5(name, barcode, code, brand, category, content='products', content_rowid='rowid', tokenize='unicode61 remove_diacritics 2', prefix='2 3')");
+      await db.customStatement('CREATE TRIGGER products_fts_ai AFTER INSERT ON products BEGIN\n  INSERT INTO product_fts(rowid, name, barcode, code, brand, category) VALUES (new.rowid, new.name, new.barcode, new.code, new.brand, new.category);\nEND');
+      await db.customStatement("CREATE TRIGGER products_fts_ad AFTER DELETE ON products BEGIN\n  INSERT INTO product_fts(product_fts, rowid, name, barcode, code, brand, category) VALUES ('delete', old.rowid, old.name, old.barcode, old.code, old.brand, old.category);\nEND");
+      await db.customStatement("CREATE TRIGGER products_fts_au AFTER UPDATE OF name, barcode, code, brand, category ON products BEGIN\n  INSERT INTO product_fts(product_fts, rowid, name, barcode, code, brand, category) VALUES ('delete', old.rowid, old.name, old.barcode, old.code, old.brand, old.category);\n  INSERT INTO product_fts(rowid, name, barcode, code, brand, category) VALUES (new.rowid, new.name, new.barcode, new.code, new.brand, new.category);\nEND");
+      await db.customStatement("INSERT INTO product_fts(product_fts) VALUES('rebuild')");
     },
   };
 

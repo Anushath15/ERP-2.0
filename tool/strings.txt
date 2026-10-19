@@ -1352,3 +1352,9 @@ authNotMember | You signed in as {email}, but this account has no access to the 
 authAccountCreated | We sent a link to {email}. Open it, then press Sign in.
 authBusy | Please wait...
 authSignedInAs | Signed in as {email}
+upiScanToPay | Scan to pay {amount}
+upiAnyApp | Any UPI app
+upiShowQr | Show UPI QR
+upiQrTitle | Scan to pay
+upiQrHelp | Ask the customer to scan with any UPI app. The amount is already filled in.
+upiNoId | Add the shop UPI id in Shop profile to show a QR code

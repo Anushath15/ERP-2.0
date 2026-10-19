@@ -130,7 +130,15 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
     if (t.showShop) ...[
       pw.SizedBox(height: 10),
       pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.end, mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-        pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [for (final b in t.bankLines) txt(b)])),
+        pw.Expanded(
+          child: t.upiData.isEmpty
+              ? pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [for (final b in t.bankLines) txt(b)])
+              : pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+                  pw.BarcodeWidget(barcode: pw.Barcode.qrCode(errorCorrectLevel: pw.BarcodeQRCorrectionLevel.medium), data: t.upiData, width: 64, height: 64, drawText: false),
+                  pw.SizedBox(width: 8),
+                  pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [txt(t.upiLabel, b: true), txt(t.upiAnyApp)]),
+                ]),
+        ),
         pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [txt(t.forShop, b: true), pw.SizedBox(height: 34), txt(t.signatory)]),
       ]),
     ],

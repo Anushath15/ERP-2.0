@@ -1955,8 +1955,37 @@ class ProductFts extends Table
     requiredDuringInsert: true,
     $customConstraints: '',
   );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: '',
+  );
   @override
-  List<GeneratedColumn> get $columns => [name, barcode];
+  List<GeneratedColumn> get $columns => [name, barcode, code, brand, category];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1985,6 +2014,30 @@ class ProductFts extends Table
     } else if (isInserting) {
       context.missing(_barcodeMeta);
     }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_brandMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
     return context;
   }
 
@@ -2002,6 +2055,18 @@ class ProductFts extends Table
         DriftSqlType.string,
         data['${effectivePrefix}barcode'],
       )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
     );
   }
 
@@ -2014,23 +2079,41 @@ class ProductFts extends Table
   bool get dontWriteConstraints => true;
   @override
   String get moduleAndArgs =>
-      'fts5(name, barcode, content=\'products\', content_rowid=\'rowid\', tokenize=\'unicode61 remove_diacritics 2\', prefix=\'2 3\')';
+      'fts5(name, barcode, code, brand, category, content=\'products\', content_rowid=\'rowid\', tokenize=\'unicode61 remove_diacritics 2\', prefix=\'2 3\')';
 }
 
 class ProductFt extends DataClass implements Insertable<ProductFt> {
   final String name;
   final String barcode;
-  const ProductFt({required this.name, required this.barcode});
+  final String code;
+  final String brand;
+  final String category;
+  const ProductFt({
+    required this.name,
+    required this.barcode,
+    required this.code,
+    required this.brand,
+    required this.category,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['name'] = Variable<String>(name);
     map['barcode'] = Variable<String>(barcode);
+    map['code'] = Variable<String>(code);
+    map['brand'] = Variable<String>(brand);
+    map['category'] = Variable<String>(category);
     return map;
   }
 
   ProductFtsCompanion toCompanion(bool nullToAbsent) {
-    return ProductFtsCompanion(name: Value(name), barcode: Value(barcode));
+    return ProductFtsCompanion(
+      name: Value(name),
+      barcode: Value(barcode),
+      code: Value(code),
+      brand: Value(brand),
+      category: Value(category),
+    );
   }
 
   factory ProductFt.fromJson(
@@ -2041,6 +2124,9 @@ class ProductFt extends DataClass implements Insertable<ProductFt> {
     return ProductFt(
       name: serializer.fromJson<String>(json['name']),
       barcode: serializer.fromJson<String>(json['barcode']),
+      code: serializer.fromJson<String>(json['code']),
+      brand: serializer.fromJson<String>(json['brand']),
+      category: serializer.fromJson<String>(json['category']),
     );
   }
   @override
@@ -2049,15 +2135,32 @@ class ProductFt extends DataClass implements Insertable<ProductFt> {
     return <String, dynamic>{
       'name': serializer.toJson<String>(name),
       'barcode': serializer.toJson<String>(barcode),
+      'code': serializer.toJson<String>(code),
+      'brand': serializer.toJson<String>(brand),
+      'category': serializer.toJson<String>(category),
     };
   }
 
-  ProductFt copyWith({String? name, String? barcode}) =>
-      ProductFt(name: name ?? this.name, barcode: barcode ?? this.barcode);
+  ProductFt copyWith({
+    String? name,
+    String? barcode,
+    String? code,
+    String? brand,
+    String? category,
+  }) => ProductFt(
+    name: name ?? this.name,
+    barcode: barcode ?? this.barcode,
+    code: code ?? this.code,
+    brand: brand ?? this.brand,
+    category: category ?? this.category,
+  );
   ProductFt copyWithCompanion(ProductFtsCompanion data) {
     return ProductFt(
       name: data.name.present ? data.name.value : this.name,
       barcode: data.barcode.present ? data.barcode.value : this.barcode,
+      code: data.code.present ? data.code.value : this.code,
+      brand: data.brand.present ? data.brand.value : this.brand,
+      category: data.category.present ? data.category.value : this.category,
     );
   }
 
@@ -2065,44 +2168,68 @@ class ProductFt extends DataClass implements Insertable<ProductFt> {
   String toString() {
     return (StringBuffer('ProductFt(')
           ..write('name: $name, ')
-          ..write('barcode: $barcode')
+          ..write('barcode: $barcode, ')
+          ..write('code: $code, ')
+          ..write('brand: $brand, ')
+          ..write('category: $category')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(name, barcode);
+  int get hashCode => Object.hash(name, barcode, code, brand, category);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ProductFt &&
           other.name == this.name &&
-          other.barcode == this.barcode);
+          other.barcode == this.barcode &&
+          other.code == this.code &&
+          other.brand == this.brand &&
+          other.category == this.category);
 }
 
 class ProductFtsCompanion extends UpdateCompanion<ProductFt> {
   final Value<String> name;
   final Value<String> barcode;
+  final Value<String> code;
+  final Value<String> brand;
+  final Value<String> category;
   final Value<int> rowid;
   const ProductFtsCompanion({
     this.name = const Value.absent(),
     this.barcode = const Value.absent(),
+    this.code = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.category = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProductFtsCompanion.insert({
     required String name,
     required String barcode,
+    required String code,
+    required String brand,
+    required String category,
     this.rowid = const Value.absent(),
   }) : name = Value(name),
-       barcode = Value(barcode);
+       barcode = Value(barcode),
+       code = Value(code),
+       brand = Value(brand),
+       category = Value(category);
   static Insertable<ProductFt> custom({
     Expression<String>? name,
     Expression<String>? barcode,
+    Expression<String>? code,
+    Expression<String>? brand,
+    Expression<String>? category,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (name != null) 'name': name,
       if (barcode != null) 'barcode': barcode,
+      if (code != null) 'code': code,
+      if (brand != null) 'brand': brand,
+      if (category != null) 'category': category,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2110,11 +2237,17 @@ class ProductFtsCompanion extends UpdateCompanion<ProductFt> {
   ProductFtsCompanion copyWith({
     Value<String>? name,
     Value<String>? barcode,
+    Value<String>? code,
+    Value<String>? brand,
+    Value<String>? category,
     Value<int>? rowid,
   }) {
     return ProductFtsCompanion(
       name: name ?? this.name,
       barcode: barcode ?? this.barcode,
+      code: code ?? this.code,
+      brand: brand ?? this.brand,
+      category: category ?? this.category,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2128,6 +2261,15 @@ class ProductFtsCompanion extends UpdateCompanion<ProductFt> {
     if (barcode.present) {
       map['barcode'] = Variable<String>(barcode.value);
     }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2139,6 +2281,9 @@ class ProductFtsCompanion extends UpdateCompanion<ProductFt> {
     return (StringBuffer('ProductFtsCompanion(')
           ..write('name: $name, ')
           ..write('barcode: $barcode, ')
+          ..write('code: $code, ')
+          ..write('brand: $brand, ')
+          ..write('category: $category, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20827,15 +20972,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final ProductFts productFts = ProductFts(this);
   late final Trigger productsFtsAi = Trigger(
-    'CREATE TRIGGER products_fts_ai AFTER INSERT ON products BEGIN INSERT INTO product_fts ("rowid", name, barcode) VALUES (new."rowid", new.name, new.barcode);END',
+    'CREATE TRIGGER products_fts_ai AFTER INSERT ON products BEGIN INSERT INTO product_fts ("rowid", name, barcode, code, brand, category) VALUES (new."rowid", new.name, new.barcode, new.code, new.brand, new.category);END',
     'products_fts_ai',
   );
   late final Trigger productsFtsAd = Trigger(
-    'CREATE TRIGGER products_fts_ad AFTER DELETE ON products BEGIN INSERT INTO product_fts (product_fts, "rowid", name, barcode) VALUES (\'delete\', old."rowid", old.name, old.barcode);END',
+    'CREATE TRIGGER products_fts_ad AFTER DELETE ON products BEGIN INSERT INTO product_fts (product_fts, "rowid", name, barcode, code, brand, category) VALUES (\'delete\', old."rowid", old.name, old.barcode, old.code, old.brand, old.category);END',
     'products_fts_ad',
   );
   late final Trigger productsFtsAu = Trigger(
-    'CREATE TRIGGER products_fts_au AFTER UPDATE OF name, barcode ON products BEGIN INSERT INTO product_fts (product_fts, "rowid", name, barcode) VALUES (\'delete\', old."rowid", old.name, old.barcode);INSERT INTO product_fts ("rowid", name, barcode) VALUES (new."rowid", new.name, new.barcode);END',
+    'CREATE TRIGGER products_fts_au AFTER UPDATE OF name, barcode, code, brand, category ON products BEGIN INSERT INTO product_fts (product_fts, "rowid", name, barcode, code, brand, category) VALUES (\'delete\', old."rowid", old.name, old.barcode, old.code, old.brand, old.category);INSERT INTO product_fts ("rowid", name, barcode, code, brand, category) VALUES (new."rowid", new.name, new.barcode, new.code, new.brand, new.category);END',
     'products_fts_au',
   );
   late final Customers customers = Customers(this);
@@ -22823,11 +22968,17 @@ typedef $ProductsProcessedTableManager =
 typedef $ProductFtsCreateCompanionBuilder = ProductFtsCompanion Function({
   required String name,
   required String barcode,
+  required String code,
+  required String brand,
+  required String category,
   Value<int> rowid,
 });
 typedef $ProductFtsUpdateCompanionBuilder = ProductFtsCompanion Function({
   Value<String> name,
   Value<String> barcode,
+  Value<String> code,
+  Value<String> brand,
+  Value<String> category,
   Value<int> rowid,
 });
 
@@ -22846,6 +22997,21 @@ class $ProductFtsFilterComposer extends Composer<_$AppDatabase, ProductFts> {
 
   ColumnFilters<String> get barcode => $composableBuilder(
     column: $table.barcode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -22867,6 +23033,21 @@ class $ProductFtsOrderingComposer extends Composer<_$AppDatabase, ProductFts> {
     column: $table.barcode,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $ProductFtsAnnotationComposer
@@ -22883,6 +23064,15 @@ class $ProductFtsAnnotationComposer
 
   GeneratedColumn<String> get barcode =>
       $composableBuilder(column: $table.barcode, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
 }
 
 class $ProductFtsTableManager
@@ -22911,19 +23101,36 @@ class $ProductFtsTableManager
               $ProductFtsOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $ProductFtsAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> name = const Value.absent(),
-            Value<String> barcode = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) => ProductFtsCompanion(name: name, barcode: barcode, rowid: rowid),
+          updateCompanionCallback:
+              ({
+                Value<String> name = const Value.absent(),
+                Value<String> barcode = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<String> brand = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProductFtsCompanion(
+                name: name,
+                barcode: barcode,
+                code: code,
+                brand: brand,
+                category: category,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String name,
                 required String barcode,
+                required String code,
+                required String brand,
+                required String category,
                 Value<int> rowid = const Value.absent(),
               }) => ProductFtsCompanion.insert(
                 name: name,
                 barcode: barcode,
+                code: code,
+                brand: brand,
+                category: category,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -63,7 +63,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     super.initState();
     HardwareKeyboard.instance.addHandler(_onKey);
     WidgetsBinding.instance.addObserver(this);
-    ref.listenManual(authProvider, (_, __) => _gateTick.value++);
+    ref.listenManual(authProvider, (_, _) => _gateTick.value++);
     Future.microtask(() => mounted ? ref.read(authProvider.notifier).restore() : null); // the kept sign-in of this computer, if any (not inside the build)
     // Build the (sample) credit data right after the first frame, while nobody is waiting, so the first visit to a credit page is not the slow frame.
     SchedulerBinding.instance.addPostFrameCallback((_) {

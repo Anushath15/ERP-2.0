@@ -4,6 +4,7 @@ import '../../core/number_words.dart';
 import '../../fake/models.dart';
 import '../../fake/shop_profile.dart';
 import '../../strings.dart';
+import '../../domain/upi.dart';
 import '../billing/cart.dart';
 
 /// WHAT the A4 / A5 bill and estimate print, in the shop's own template (Senthil enterprises bill templet.docx): the shop block, who
@@ -47,6 +48,9 @@ class BillTemplate {
     required this.gstRows,
     required this.words,
     required this.bankLines,
+    required this.upiData,
+    required this.upiLabel,
+    required this.upiAnyApp,
     required this.forShop,
     required this.signatory,
     required this.note,
@@ -92,6 +96,9 @@ class BillTemplate {
   final List<TemplateGstRow> gstRows;
   final String words;
   final List<String> bankLines;
+
+  /// A UPI payment link (for the QR code) and its caption, only on a bill that still has money due; empty otherwise.
+  final String upiData, upiLabel, upiAnyApp;
   final String forShop, signatory;
   final String note;
 
@@ -133,6 +140,7 @@ class BillTemplate {
         balanceValue,
         words,
         ...bankLines,
+        upiLabel,
         forShop,
         signatory,
         note,
@@ -212,6 +220,10 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
         ];
   final status = est ? '' : (doc.balancePaise > 0 ? ((doc.receivedPaise ?? 0) <= 0 ? l.tplCreditBill : l.tplPartPaid) : l.tplPaid);
 
+  // the QR code asks for exactly what is still due (never for a bill that is already paid, so nobody pays twice)
+  final due = est ? 0 : doc.balancePaise;
+  final upi = upiPayUri(upiId: shop.upiId, payeeName: shop.name, amountPaise: due, note: doc.number);
+
   return BillTemplate(
     estimate: est,
     shopLeft: shopLeft,
@@ -242,6 +254,9 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
     gstHead: [l.tplSalesAmt, l.tplCgst, l.tplSgst, l.tplIgst, l.tplNetAmt],
     gstRows: gstRows,
     words: rupeesInWords(c.grandTotal),
+    upiData: upi ?? '',
+    upiLabel: upi == null ? '' : l.upiScanToPay('₹ ${formatPaise(due)}'),
+    upiAnyApp: l.upiAnyApp,
     bankLines: const [], // the bank name is not printed at the bottom (account no and IFSC are beside the GST number)
     forShop: est ? '' : l.tplFor(shop.name.toUpperCase()),
     signatory: est ? '' : l.tplSignatory,

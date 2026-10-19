@@ -1312,4 +1312,10 @@ class Strings {
   String authAccountCreated(String email) => 'We sent a link to ${email}. Open it, then press Sign in.';
   String get authBusy => 'Please wait...';
   String authSignedInAs(String email) => 'Signed in as ${email}';
+  String upiScanToPay(String amount) => 'Scan to pay ${amount}';
+  String get upiAnyApp => 'Any UPI app';
+  String get upiShowQr => 'Show UPI QR';
+  String get upiQrTitle => 'Scan to pay';
+  String get upiQrHelp => 'Ask the customer to scan with any UPI app. The amount is already filled in.';
+  String get upiNoId => 'Add the shop UPI id in Shop profile to show a QR code';
 }

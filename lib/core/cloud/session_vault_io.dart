@@ -3,6 +3,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
+import '../app_paths_io.dart' show phoneBaseDir;
 import 'session_vault.dart';
 
 /// `%LOCALAPPDATA%\ASK ERP 2.0\session.bin` (macOS / Linux: the same folder the shop data lives in, one level up from `data`).
@@ -12,6 +13,7 @@ SessionVault createVault(SessionVault Function() fallback) {
   if (Platform.isWindows && env['LOCALAPPDATA'] != null) base = '${env['LOCALAPPDATA']}\\ASK ERP 2.0';
   if (Platform.isMacOS && env['HOME'] != null) base = '${env['HOME']}/Library/Application Support/ASK ERP 2.0';
   if (Platform.isLinux && env['HOME'] != null) base = '${env['HOME']}/.local/share/ASK ERP 2.0';
+  base ??= phoneBaseDir();
   if (base == null) return fallback();
   return FileSessionVault(File('$base${Platform.pathSeparator}session.bin'));
 }

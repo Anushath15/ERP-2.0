@@ -312,7 +312,10 @@ class _QtyStepper extends StatelessWidget {
 /// With very large text the GST detail collapses into one short row and the buttons stack, but Grand total and the
 /// three buttons are always fully visible.
 class BillFooter extends StatelessWidget {
-  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, this.customerBalance, required this.onSave, required this.onSavePrint, required this.onClear});
+  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, this.customerBalance, this.onShowQr, required this.onSave, required this.onSavePrint, required this.onClear});
+
+  /// Shows the UPI QR code (set only while UPI is the chosen way to pay).
+  final VoidCallback? onShowQr;
   final DocMode mode;
   final CartState cart;
   final BillCalc calc;
@@ -363,7 +366,7 @@ class BillFooter extends StatelessWidget {
     ]));
 
     final Widget pay = invoice
-        ? PaymentArea(cart: cart, calc: calc, customerName: customerName, customerBalance: customerBalance, onPay: onPay, onReceived: onReceived, onKeepAdvance: onKeepAdvance)
+        ? PaymentArea(cart: cart, calc: calc, customerName: customerName, customerBalance: customerBalance, onPay: onPay, onReceived: onReceived, onKeepAdvance: onKeepAdvance, onShowQr: onShowQr)
         : Row(children: [Icon(Icons.info_outline_rounded, size: 18, color: c.textMuted), const SizedBox(width: 8), Expanded(child: Text(l.estimateNoStock, style: th.bodySmall))]);
 
     final saveLabel = invoice ? l.saveBill : l.saveEstimate;
@@ -412,7 +415,10 @@ class BillFooter extends StatelessWidget {
 /// happens to any balance or change, and the payment mode for the part that was received. Every row has a fixed height, so the
 /// footer never moves when the message changes.
 class PaymentArea extends StatefulWidget {
-  const PaymentArea({super.key, required this.cart, required this.calc, required this.customerName, this.customerBalance, required this.onPay, required this.onReceived, required this.onKeepAdvance});
+  const PaymentArea({super.key, required this.cart, required this.calc, required this.customerName, this.customerBalance, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.onShowQr});
+
+  /// Shows the UPI QR code for the amount being received (only while UPI is the chosen way to pay).
+  final VoidCallback? onShowQr;
   final CartState cart;
   final BillCalc calc;
   final String? customerName;
@@ -552,6 +558,7 @@ class _PaymentAreaState extends State<PaymentArea> {
               ),
             ),
             Tooltip(message: l.nothingReceived, child: IconButton(key: const ValueKey('nothingReceived'), onPressed: () => widget.onPay(PayMode.credit), icon: const Icon(Icons.schedule_rounded))),
+            if (widget.onShowQr != null) Tooltip(message: l.upiShowQr, child: IconButton(key: const ValueKey('showUpiQr'), onPressed: widget.onShowQr, icon: const Icon(Icons.qr_code_2_rounded))),
           ],
         ]),
       ),

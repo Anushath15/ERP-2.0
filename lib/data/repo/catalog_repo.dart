@@ -54,11 +54,30 @@ class CatalogRepo {
 
   Future<int> productCount() => _db.scalarInt('SELECT COUNT(*) FROM products WHERE deleted_at IS NULL');
 
-  /// Search as you type: every word is a prefix ("hav swi" finds HAVELLS ... SWITCH), or a barcode. Uses the FTS5 index.
+  /// Search as you type: every word is a prefix ("hav swi" finds HAVELLS ... SWITCH), or a barcode, a product code ("FAS-0045"), a brand or a
+  /// category. Uses the FTS5 index, best match first (a hit in the name beats a hit in the category). If the index cannot answer (damaged,
+  /// or a program without FTS5) the search still works, a little slower, by plain text matching: typing in the search box never fails.
   Future<List<Product>> searchProducts(String text, {int limit = 60}) async {
     final q = ftsQuery(text);
     if (q == null) return products(limit: limit);
-    final r = await _db.rows('$_productSelect JOIN product_fts f ON f.rowid = p.rowid WHERE product_fts MATCH ? AND p.deleted_at IS NULL ORDER BY rank LIMIT ?', [q, limit]);
+    try {
+      final r = await _db.rows('$_productSelect JOIN product_fts f ON f.rowid = p.rowid WHERE product_fts MATCH ? AND p.deleted_at IS NULL ORDER BY bm25(product_fts, 10.0, 8.0, 8.0, 4.0, 1.0), p.name COLLATE NOCASE LIMIT ?', [q, limit]);
+      return [for (final x in r) _product(x)];
+    } catch (_) {
+      return _searchProductsPlain(text, limit);
+    }
+  }
+
+  /// The slow way: each typed word (the first four) must appear in the name, barcode, code, brand or category. The statement is fixed text;
+  /// the words are only ever parameters (an empty slot matches everything).
+  Future<List<Product>> _searchProductsPlain(String text, int limit) async {
+    final words = text.toLowerCase().split(RegExp(r'[^\p{L}\p{N}]+', unicode: true)).where((w) => w.isNotEmpty).take(4).toList();
+    const slot = "AND (? = '' OR p.name LIKE ? ESCAPE '\\' OR p.barcode LIKE ? ESCAPE '\\' OR p.code LIKE ? ESCAPE '\\' OR p.brand LIKE ? ESCAPE '\\' OR p.category LIKE ? ESCAPE '\\') ";
+    final args = <Object>[
+      for (var i = 0; i < 4; i++) ...(i < words.length ? [words[i], ...List.filled(5, '%${_like(words[i])}%')] : ['', '', '', '', '', '']),
+      limit,
+    ];
+    final r = await _db.rows('$_productSelect WHERE p.deleted_at IS NULL $slot$slot$slot$slot ORDER BY p.name COLLATE NOCASE LIMIT ?', args);
     return [for (final x in r) _product(x)];
   }
 

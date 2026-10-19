@@ -95,7 +95,7 @@ const defaultUnits = ['pcs', 'kg', 'm', 'box', 'set', 'coil', 'tin', 'ltr'];
 /// the unit of the product being edited), each once, the starting ones first.
 List<String> unitNames(List<Rec> registry, List<Product> products, {String? keep}) {
   final seen = <String, String>{};
-  for (final n in [...defaultUnits, for (final r in registry) r.s('name'), for (final p in products) p.unit, if (keep != null) keep]) {
+  for (final n in [...defaultUnits, for (final r in registry) r.s('name'), for (final p in products) p.unit, ?keep]) {
     final t = n.trim();
     if (t.isNotEmpty) seen.putIfAbsent(t.toLowerCase(), () => t);
   }

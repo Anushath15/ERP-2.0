@@ -11,6 +11,7 @@ import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 import '../billing/cart.dart';
+import '../../design/qr_view.dart';
 import 'bill_template.dart';
 import 'bill_template_paper.dart';
 import 'doc_pdf.dart';
@@ -222,6 +223,11 @@ class Paper extends StatelessWidget {
           ]),
         ),
       ),
+      if (lay.upiData.isNotEmpty) ...[
+        SizedBox(height: roll ? 8 : 10),
+        Center(child: QrView(key: const ValueKey('paperUpiQr'), data: lay.upiData, size: paper == PaperSize.mm58 ? 92 : (roll ? 112 : 96))),
+        Center(child: Text(lay.upiLabel, style: s(b: true), key: const ValueKey('paperUpi'))),
+      ],
       SizedBox(height: roll ? 8 : 12),
       Center(child: Text(lay.note, style: s(), textAlign: TextAlign.center)),
     ]);

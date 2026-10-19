@@ -1,6 +1,8 @@
 import 'dart:async';
 import '../../core/validators.dart';
 import 'package:flutter/material.dart';
+import '../../design/qr_view.dart';
+import '../../domain/upi.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -86,6 +88,35 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final updated = cust.copyWith(gstin: v['gstin'] ?? '');
     ref.read(customersProvider.notifier).update(updated);
     ref.read(cartProvider(mode).notifier).setCustomer(updated);
+  }
+
+  /// The UPI QR code for what the customer is paying now (the amount typed in "Amount received", or the whole total), full size,
+  /// so the customer can scan it at the counter. The amount is already inside the code.
+  Future<void> _showUpiQr(BillCalc calc) async {
+    final l = tr(context);
+    final shop = ref.read(shopProvider);
+    final received = ref.read(cartProvider(mode)).receivedPaise;
+    final pay = received == null || received > calc.grandTotal ? calc.grandTotal : received;
+    final uri = upiPayUri(upiId: shop.upiId, payeeName: shop.name, amountPaise: pay, note: _number());
+    if (uri == null) {
+      toast(context, l.upiNoId);
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.upiQrTitle, textAlign: TextAlign.center),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          QrView(key: const ValueKey('upiQrBig'), data: uri, size: 260),
+          const SizedBox(height: 10),
+          Text('₹ ${formatPaise(pay)}', key: const ValueKey('upiQrAmount'), style: Theme.of(ctx).textTheme.headlineSmall),
+          const SizedBox(height: 6),
+          Text(l.upiQrHelp, textAlign: TextAlign.center, style: Theme.of(ctx).textTheme.bodySmall),
+        ]),
+        actions: [FilledButton(onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(), child: Text(l.close))],
+      ),
+    );
   }
 
   String _number() {
@@ -256,7 +287,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
     final discountBar = DiscountProfitBar(mode: mode, cart: cart, calc: calc, onAmount: notifier.setExtraDiscountAmount, onPercent: notifier.setExtraDiscountPercent);
     Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount, trailing: discountBar));
-    final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, customerBalance: cart.customer == null ? null : ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear);
+    final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, customerBalance: cart.customer == null ? null : ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0, onShowQr: mode == DocMode.invoice && cart.pay == PayMode.upi ? () => _showUpiQr(calc) : null, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear);
 
     final shortcuts = <ShortcutActivator, VoidCallback>{
       const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {

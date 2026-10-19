@@ -3,6 +3,7 @@ import '../../core/logo_image.dart';
 import '../../design/tokens.dart';
 import '../../fake/shop_profile.dart';
 import '../../fake/store.dart' show PaperSize, PrintTextSize;
+import '../../design/qr_view.dart';
 import 'bill_template.dart';
 import 'bill_template_pdf.dart' show templateColWidths;
 import 'print_layout.dart';
@@ -136,7 +137,15 @@ class TemplatePaper extends StatelessWidget {
       if (t.showShop) ...[
         const SizedBox(height: 10),
         Row(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [for (final b in t.bankLines) txt(b)])),
+          Expanded(
+            child: t.upiData.isEmpty
+                ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [for (final b in t.bankLines) txt(b)])
+                : Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                    QrView(key: const ValueKey('paperUpiQr'), data: t.upiData, size: 64),
+                    const SizedBox(width: 8),
+                    Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [txt(t.upiLabel, b: true, key: const ValueKey('paperUpi')), txt(t.upiAnyApp)])),
+                  ]),
+          ),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [txt(t.forShop, b: true), const SizedBox(height: 34), txt(t.signatory)]),
         ]),
       ],

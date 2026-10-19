@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'app_paths_io.dart' show phoneBaseDir;
 import 'device_store.dart';
 
 /// Settings in a small JSON file in the user's own data folder (not in the install folder, never synced).
@@ -14,7 +15,8 @@ String? _dir() {
   if (Platform.isWindows && env['APPDATA'] != null) return '${env['APPDATA']}\\SenthilERP2';
   if (Platform.isMacOS && env['HOME'] != null) return '${env['HOME']}/Library/Application Support/SenthilERP2';
   if (Platform.isLinux && env['HOME'] != null) return '${env['HOME']}/.config/SenthilERP2';
-  return null; // phones: the real per-device settings table arrives with the database (Phase 2)
+  final phone = phoneBaseDir();
+  return phone == null ? null : '$phone${Platform.pathSeparator}settings'; // phones: the app's own private folder
 }
 
 /// SECURITY: this file holds display preferences only and can be edited by anybody at the computer. It is read defensively: a missing,

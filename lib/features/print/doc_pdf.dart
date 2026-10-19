@@ -107,6 +107,11 @@ Future<Uint8List> buildDocPdf({
         ]),
       ),
     ),
+    if (lay.upiData.isNotEmpty) ...[
+      pw.SizedBox(height: roll ? 8 : 10),
+      pw.Center(child: pw.BarcodeWidget(barcode: pw.Barcode.qrCode(errorCorrectLevel: pw.BarcodeQRCorrectionLevel.medium), data: lay.upiData, width: paper == PaperSize.mm58 ? 92 : (roll ? 112 : 96), height: paper == PaperSize.mm58 ? 92 : (roll ? 112 : 96), drawText: false)),
+      pw.Center(child: txt(lay.upiLabel, b: true)),
+    ],
     pw.SizedBox(height: roll ? 8 : 12),
     pw.Center(child: pw.Text(lay.note, style: s(), textAlign: pw.TextAlign.center)),
   ];

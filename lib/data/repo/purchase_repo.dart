@@ -214,7 +214,7 @@ class PurchaseRepo {
 
   /// Newest first. [dealerId] limits it to one dealer.
   Future<List<PurchaseRow>> list({String? dealerId, int limit = 1000}) async {
-    final r = await _db.rows('$_rowSelect ${dealerId == null ? '' : 'WHERE p.dealer_id = ?'} ORDER BY p.purchased_at DESC, p.id DESC LIMIT ?', [if (dealerId != null) dealerId, limit]);
+    final r = await _db.rows('$_rowSelect ${dealerId == null ? '' : 'WHERE p.dealer_id = ?'} ORDER BY p.purchased_at DESC, p.id DESC LIMIT ?', [?dealerId, limit]);
     return [for (final x in r) _row(x)];
   }
 

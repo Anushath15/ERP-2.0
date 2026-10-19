@@ -14,7 +14,7 @@ import 'helpers.dart';
 // What these tests prove: the payment receipt page now prints and saves a real PDF with the receipt lines, on every paper size.
 // What they do NOT prove: how it looks on a real receipt printer.
 void main() {
-  final l = Strings();
+  const l = Strings();
   final receipt = PaymentReceipt(number: 'RCP-0041', customerId: 'c1', customerName: 'Murugan Electricals', amountPaise: 150000, mode: 'upi', at: DateTime(2026, 10, 19), note: '', allocations: const [Allocation('A-019804', 100000), Allocation('A-019821', 40000)], advancePaise: 10000, balanceAfter: -10000);
   int pages(Uint8List pdf) => RegExp(r'/Type\s*/Page(?![a-z])').allMatches(latin1.decode(pdf)).length;
 

@@ -4,6 +4,7 @@ import '../../fake/models.dart';
 import '../../fake/shop_profile.dart';
 import '../../fake/store.dart' show PaperSize, PrintTextSize;
 import '../../strings.dart';
+import '../../domain/upi.dart';
 import '../billing/cart.dart';
 
 /// WHAT is printed, with no drawing: one description used by the on-screen paper and by the PDF, so they can never differ.
@@ -43,6 +44,8 @@ class PrintLayout {
     required this.note,
     required this.paidInFull,
     required this.grandTotalPaise,
+    this.upiData = '',
+    this.upiLabel = '',
   });
 
   final bool estimate;
@@ -59,6 +62,9 @@ class PrintLayout {
   /// Bills only: print "Paid in full" under the totals.
   final bool paidInFull;
   final int grandTotalPaise;
+
+  /// A UPI payment link (for the QR code) and its caption: a bill that still has money due only.
+  final String upiData, upiLabel;
 
   List<String> get allText => [
         for (final h in header) h.text,
@@ -152,6 +158,9 @@ PrintLayout buildPrintLayout({required PrintDoc doc, required ShopProfile shop, 
     if (doc.changePaise > 0) totals.add(TotalLine(l.rcChange, formatPaise(doc.changePaise)));
   }
 
+  // the QR code asks for exactly what is still due (never for a paid bill, so nobody pays twice)
+  final upi = est ? null : upiPayUri(upiId: shop.upiId, payeeName: shop.name, amountPaise: doc.balancePaise, note: doc.number);
+
   return PrintLayout(
     estimate: est,
     header: header,
@@ -164,6 +173,8 @@ PrintLayout buildPrintLayout({required PrintDoc doc, required ShopProfile shop, 
     note: est ? l.rcEstimateNote : (shop.billFooter.trim().isEmpty ? l.rcThanks : shop.billFooter.trim()),
     paidInFull: paidInFull,
     grandTotalPaise: c.grandTotal,
+    upiData: upi ?? '',
+    upiLabel: upi == null ? '' : l.upiScanToPay('₹ ${formatPaise(doc.balancePaise)}'),
   );
 }
 
