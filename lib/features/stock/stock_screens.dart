@@ -1,3 +1,4 @@
+import '../products/product_excel.dart';
 import 'package:go_router/go_router.dart';
 import '../../fake/shop_profile.dart' show shopProvider;
 import '../../fake/stats.dart' show statsProvider;
@@ -76,7 +77,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
       searchHint: l.searchProductHint,
       addLabel: l.addProduct,
       onAdd: _add,
-      actions: [OutlinedButton.icon(key: const ValueKey('productsLabels'), onPressed: () => context.go('/labels'), icon: const Icon(Icons.sell_rounded), label: Text(l.navLabels))],
+      actions: [OutlinedButton.icon(key: const ValueKey('productsExcel'), onPressed: () => showProductExcel(context), icon: const Icon(Icons.table_chart_rounded), label: Text(l.xlButton)), OutlinedButton.icon(key: const ValueKey('productsLabels'), onPressed: () => context.go('/labels'), icon: const Icon(Icons.sell_rounded), label: Text(l.navLabels))],
       onTap: (ctx, p) => _edit(p),
       emptyTitle: l.noProductsYet,
       emptyText: l.noProductsHelp,

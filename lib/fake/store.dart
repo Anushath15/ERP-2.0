@@ -40,6 +40,12 @@ class ProductsNotifier extends Notifier<List<Product>> {
     _write(ref, (d) => d.catalog.saveProduct(p, create: false));
   }
 
+  /// Reads every product again from the database (after many were changed or added at once, for example from an Excel sheet).
+  Future<void> reloadAll() async {
+    final all = await ref.read(appDataProvider).catalog.products();
+    if (ref.mounted) state = all;
+  }
+
   /// Reads the named products again from the database (their stock changed: a sale, a purchase, a stock change).
   Future<void> reload(Iterable<String> ids) async {
     final d = ref.read(appDataProvider);

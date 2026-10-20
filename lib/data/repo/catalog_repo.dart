@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../../domain/models.dart';
+import '../../domain/product_sheet/product_sheet.dart';
 import '../context.dart';
 import '../db/app_database.dart';
 import '../../domain/barcode.dart';
@@ -116,6 +117,31 @@ class CatalogRepo {
   }
 
   /// Adds a product, or saves changes to an existing one. A changed "stock now" becomes a stock movement (stock is always the sum of movements).
+  /// Does what a read Excel sheet planned (see `planProductSheet`): changes the details of the products, adds the new ones, and puts counted stock right with a
+  /// stock change of the difference. All rows or none: one failure leaves everything as it was. Returns the ids of the products that were touched.
+  Future<List<String>> applyProductSheet(ProductSheetPlan plan, {required DateTime at, required String source}) {
+    return _db.transaction(() async {
+      final touched = <String>[];
+      for (final r in plan.rows) {
+        final p = r.product;
+        if (p == null || r.status == SheetRowStatus.error || r.status == SheetRowStatus.unchanged) continue;
+        if (r.status == SheetRowStatus.create) {
+          await saveProduct(p, create: true); // an opening stock movement is made from p.stockMilli
+        } else {
+          if (r.detailsChanged) await saveProduct(p, create: false);
+          final target = r.stockTarget;
+          if (target != null) {
+            final now = await _db.scalarInt('SELECT COALESCE((SELECT qty_milli FROM stock_cache WHERE product_id = ?), 0)', [p.id]);
+            final diff = target - now;
+            if (diff != 0) await _move(p.id, diff, 'adjustment', 'Stock counted ($source)', at.millisecondsSinceEpoch);
+          }
+        }
+        touched.add(p.id);
+      }
+      return touched;
+    });
+  }
+
   Future<void> saveProduct(Product p, {required bool create}) {
     return _db.transaction(() async {
       final now = cx.nowMs();

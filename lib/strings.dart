@@ -1450,4 +1450,24 @@ class Strings {
   String get lanKeyLocked => 'Unlink the counters first to change the key.';
   String get changeBrand => 'Change brand';
   String get noBrand => 'No brand';
+  String get xlTitle => 'Fill products from Excel';
+  String get xlIntro => 'Download the sheet, fill MRP, buying price, counted stock and anything else in Excel, then upload it here. You see what will change before anything is saved.';
+  String get xlDownload => 'Download the sheet';
+  String get xlUpload => 'Upload the filled sheet';
+  String xlSaved(String where) => 'Sheet saved: ${where}';
+  String get xlSaveFailed => 'The sheet could not be saved.';
+  String get xlHow => 'In the sheet: leave a cell empty to keep what the program has. Stock is the quantity you counted. Leave Code empty to add a new product (it needs a Name and a Selling price).';
+  String xlReadFailed(String why) => 'This file could not be read: ${why}';
+  String get xlPreview => 'What will change';
+  String xlCounts(String updates, String creates, String unchanged, String errors) => '${updates} to update, ${creates} new, ${unchanged} same, ${errors} with a problem';
+  String xlStockCounts(String n) => '${n} stock counts will be put right';
+  String get xlProblems => 'Rows with a problem (they are skipped)';
+  String xlWarnings(String n) => 'Please check (${n})';
+  String xlRow(String n) => 'Row ${n}';
+  String xlApply(String n) => 'Apply ${n} changes';
+  String get xlNothing => 'Nothing to change in this sheet.';
+  String xlDone(String updates, String creates, String stock) => 'Done: ${updates} updated, ${creates} new, ${stock} stock counts.';
+  String xlApplyFailed(String why) => 'Nothing was changed. The reason: ${why}';
+  String get xlButton => 'Excel';
+  String xlMore(String n) => 'and ${n} more';
 }

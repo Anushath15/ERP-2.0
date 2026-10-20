@@ -1490,3 +1490,23 @@ lanStartFailed | The counter link could not start. Another program may be using 
 lanKeyLocked | Unlink the counters first to change the key.
 changeBrand | Change brand
 noBrand | No brand
+xlTitle | Fill products from Excel
+xlIntro | Download the sheet, fill MRP, buying price, counted stock and anything else in Excel, then upload it here. You see what will change before anything is saved.
+xlDownload | Download the sheet
+xlUpload | Upload the filled sheet
+xlSaved | Sheet saved: {where}
+xlSaveFailed | The sheet could not be saved.
+xlHow | In the sheet: leave a cell empty to keep what the program has. Stock is the quantity you counted. Leave Code empty to add a new product (it needs a Name and a Selling price).
+xlReadFailed | This file could not be read: {why}
+xlPreview | What will change
+xlCounts | {updates} to update, {creates} new, {unchanged} same, {errors} with a problem
+xlStockCounts | {n} stock counts will be put right
+xlProblems | Rows with a problem (they are skipped)
+xlWarnings | Please check ({n})
+xlRow | Row {n}
+xlApply | Apply {n} changes
+xlNothing | Nothing to change in this sheet.
+xlDone | Done: {updates} updated, {creates} new, {stock} stock counts.
+xlApplyFailed | Nothing was changed. The reason: {why}
+xlButton | Excel
+xlMore | and {n} more

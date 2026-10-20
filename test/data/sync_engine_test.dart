@@ -5,7 +5,6 @@ import 'package:erp2/data/repo/records_repo.dart' show EstimateLine;
 import 'package:erp2/data/sync/sync_api.dart';
 import 'package:erp2/data/sync/sync_engine.dart';
 import 'package:erp2/domain/models.dart';
-import 'package:erp2/domain_lite/bill_calc.dart' show EstimateLine;
 import 'package:flutter_test/flutter_test.dart';
 import 'fake_cloud.dart';
 import 'helpers.dart';
