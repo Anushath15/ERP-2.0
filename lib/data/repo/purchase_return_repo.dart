@@ -198,7 +198,8 @@ class PurchaseReturnRepo {
       final id = newId();
       final legacy = await _db.scalarInt("SELECT COUNT(*) FROM records WHERE kind = 'purchaseReturns'");
       await _db.exec("INSERT INTO counters(name, value) VALUES ('rec.purchaseReturns', ?) ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)", [legacy]);
-      final number = 'PRT-${(await nextCounter(_db, 'rec.purchaseReturns')).toString().padLeft(4, '0')}';
+      String fmt(int n) => 'PRT-${n.toString().padLeft(4, '0')}';
+      final number = fmt(await nextFreeNumber(_db, 'rec.purchaseReturns', table: 'purchase_returns', format: fmt));
       await _db.exec(
         'INSERT INTO purchase_returns(id, number, purchase_id, purchase_no, dealer_id, dealer_name, returned_at, day, total_paise, taxable_paise, tax_paise, due_reduced_paise, credit_kept_paise, refunded_paise, refund_mode, reason, by_name, idem_key, created_at, device_id) '
         'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',

@@ -83,3 +83,32 @@ Future<int> nextCounter(DatabaseConnectionUser tx, String name) async {
   await tx.exec('INSERT INTO counters(name, value) VALUES (?, 1) ON CONFLICT(name) DO UPDATE SET value = value + 1', [name]);
   return tx.scalarInt('SELECT value FROM counters WHERE name = ?', [name]);
 }
+
+/// The documents that carry a number from a counter, and the SQL that asks whether a number is already taken (fixed texts, nothing typed by a person).
+const _numberTaken = {
+  'estimations': 'SELECT COUNT(*) FROM estimations WHERE number = ?',
+  'purchases': 'SELECT COUNT(*) FROM purchases WHERE number = ?',
+  'purchase_returns': 'SELECT COUNT(*) FROM purchase_returns WHERE number = ?',
+  'sales_returns': 'SELECT COUNT(*) FROM sales_returns WHERE number = ?',
+};
+
+/// Like [nextCounter], but never hands out a number that is already on a document of [table]. Two counters (or a restore, or an import) can leave
+/// the counter behind the numbers that exist; this skips forward instead of failing the save.
+Future<int> nextFreeNumber(DatabaseConnectionUser tx, String name, {required String table, required String Function(int) format}) async {
+  final sql = _numberTaken[table]!;
+  var n = await nextCounter(tx, name);
+  for (var i = 0; i < 100000 && await tx.scalarInt(sql, [format(n)]) > 0; i++) {
+    n = await nextCounter(tx, name);
+  }
+  return n;
+}
+
+/// What the next number would be without taking it (for showing it before the save): skips numbers that exist, the same way [nextFreeNumber] does.
+Future<int> peekFreeNumber(DatabaseConnectionUser tx, String name, {required String table, required String Function(int) format}) async {
+  final sql = _numberTaken[table]!;
+  var n = await tx.scalarInt('SELECT COALESCE((SELECT value FROM counters WHERE name = ?), 0)', [name]) + 1;
+  for (var i = 0; i < 100000 && await tx.scalarInt(sql, [format(n)]) > 0; i++) {
+    n++;
+  }
+  return n;
+}

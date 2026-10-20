@@ -1,9 +1,11 @@
 import 'package:erp2/data/app_data.dart';
 import 'package:erp2/data/context.dart';
 import 'package:erp2/data/repo/bill_repo.dart';
+import 'package:erp2/data/repo/records_repo.dart' show EstimateLine;
 import 'package:erp2/data/sync/sync_api.dart';
 import 'package:erp2/data/sync/sync_engine.dart';
 import 'package:erp2/domain/models.dart';
+import 'package:erp2/domain_lite/bill_calc.dart' show EstimateLine;
 import 'package:flutter_test/flutter_test.dart';
 import 'fake_cloud.dart';
 import 'helpers.dart';
@@ -149,5 +151,41 @@ void main() {
     final y = await b.db.rows("SELECT balance_paise FROM party_balance WHERE party_id = 'c1'");
     expect(y.single.read<int>('balance_paise'), x.single.read<int>('balance_paise'));
     expect(x.single.read<int>('balance_paise'), greaterThan(0));
+  });
+
+  test('two computers both gave an estimate the number EST-00001: both are kept, and each can carry on saving (it once failed with "something went wrong")', () async {
+    const line = EstimateLine(productId: 'p1', name: 'X', unit: 'pcs', qtyMilli: 1000, ratePaise: 10000);
+    await a.catalog.saveProduct(prod('p1', 'X'), create: true);
+    await ea.run();
+    await eb.run();
+    final ea1 = await a.estimations.save(lines: const [line], totalPaise: 10000, customerName: '', at: DateTime(2026, 10, 20));
+    final eb1 = await b.estimations.save(lines: const [line], totalPaise: 20000, customerName: '', at: DateTime(2026, 10, 20));
+    expect((ea1.number, eb1.number), ('EST-00001', 'EST-00001'));
+    await ea.run();
+    await eb.run();
+    await ea.run();
+    expect(await count(a, 'estimations'), 2);
+    expect(await count(b, 'estimations'), 2);
+    // the counter of each computer is now past what exists, so the next estimate saves
+    final ea2 = await a.estimations.save(lines: const [line], totalPaise: 30000, customerName: '', at: DateTime(2026, 10, 20));
+    final eb2 = await b.estimations.save(lines: const [line], totalPaise: 40000, customerName: '', at: DateTime(2026, 10, 20));
+    expect(ea2.number, isNot(ea1.number));
+    expect(await a.estimations.peekNextNumber(), isNot(ea2.number));
+    expect(eb2.number, isNot(eb1.number));
+    await ea.run();
+    await eb.run();
+    await ea.run();
+    expect(await count(a, 'estimations'), 4);
+    expect(await count(b, 'estimations'), 4);
+  });
+
+  test('a counter that is behind the numbers that exist (restore, import) skips forward instead of failing the save', () async {
+    const line = EstimateLine(productId: 'p1', name: 'X', unit: 'pcs', qtyMilli: 1000, ratePaise: 10000);
+    await a.catalog.saveProduct(prod('p1', 'X'), create: true);
+    await a.db.exec("INSERT INTO estimations(id, number, at, total_paise, created_at, updated_at, device_id) VALUES ('old1', 'EST-00001', 1, 1, 1, 1, 'dev-x')");
+    await a.db.exec("INSERT INTO estimations(id, number, at, total_paise, created_at, updated_at, device_id) VALUES ('old2', 'EST-00002', 1, 1, 1, 1, 'dev-x')");
+    expect(await a.estimations.peekNextNumber(), 'EST-00003');
+    final e = await a.estimations.save(lines: const [line], totalPaise: 10000, customerName: '', at: DateTime(2026, 10, 20));
+    expect(e.number, 'EST-00003');
   });
 }

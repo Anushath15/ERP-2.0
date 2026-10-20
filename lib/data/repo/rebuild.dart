@@ -65,6 +65,11 @@ Future<int> rebuildSummaries(AppDatabase db) {
 
     // an invoice counter never stays behind its newest bill
     await run("INSERT INTO counters(name, value) SELECT 'inv.' || series, MAX(seq) FROM bills GROUP BY series ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)");
+    // the other counters never stay behind the newest number on their documents either (a pulled or imported document can be ahead of this computer)
+    await run("INSERT INTO counters(name, value) SELECT 'est', MAX(CAST(SUBSTR(number, 5) AS INTEGER)) FROM estimations WHERE number LIKE 'EST-%' HAVING COUNT(*) > 0 ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)");
+    await run("INSERT INTO counters(name, value) SELECT 'rec.purchases', MAX(CAST(SUBSTR(number, 5) AS INTEGER)) FROM purchases WHERE number LIKE 'PUR-%' HAVING COUNT(*) > 0 ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)");
+    await run("INSERT INTO counters(name, value) SELECT 'rec.purchaseReturns', MAX(CAST(SUBSTR(number, 5) AS INTEGER)) FROM purchase_returns WHERE number LIKE 'PRT-%' HAVING COUNT(*) > 0 ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)");
+    await run("INSERT INTO counters(name, value) SELECT 'rec.salesReturns', MAX(CAST(SUBSTR(number, 5) AS INTEGER)) FROM sales_returns WHERE number LIKE 'SRT-%' HAVING COUNT(*) > 0 ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)");
     return n;
   });
 }

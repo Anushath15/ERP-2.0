@@ -134,7 +134,8 @@ class PurchaseRepo {
       // the legacy list (older notes) already used some numbers: the new ones carry on after them
       final legacy = await _db.scalarInt("SELECT COUNT(*) FROM records WHERE kind = 'purchases'");
       await _db.exec("INSERT INTO counters(name, value) VALUES ('rec.purchases', ?) ON CONFLICT(name) DO UPDATE SET value = MAX(value, excluded.value)", [legacy]);
-      final number = 'PUR-${(await nextCounter(_db, 'rec.purchases')).toString().padLeft(5, '0')}';
+      String fmt(int n) => 'PUR-${n.toString().padLeft(5, '0')}';
+      final number = fmt(await nextFreeNumber(_db, 'rec.purchases', table: 'purchases', format: fmt));
       final id = newId();
       final at = input.at.millisecondsSinceEpoch;
       final taxable = input.lines.fold<int>(0, (s, l) => s + l.taxable);

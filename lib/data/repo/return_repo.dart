@@ -236,7 +236,8 @@ class ReturnRepo {
       }
 
       final id = newId();
-      final number = 'SRT-${(await nextCounter(_db, 'rec.salesReturns')).toString().padLeft(4, '0')}';
+      String fmt(int n) => 'SRT-${n.toString().padLeft(4, '0')}';
+      final number = fmt(await nextFreeNumber(_db, 'rec.salesReturns', table: 'sales_returns', format: fmt));
       await _db.exec(
         'INSERT INTO sales_returns(id, number, bill_id, bill_no, customer_id, customer_name, returned_at, day, total_paise, taxable_paise, cgst_paise, sgst_paise, igst_paise, cost_paise, round_off_paise, due_reduced_paise, credit_kept_paise, refunded_paise, refund_mode, reason, by_name, idem_key, created_at, device_id) '
         'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',

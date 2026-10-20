@@ -66,7 +66,7 @@ class EstimationRepo {
 
   String numberFor(int seq) => 'EST-${seq.toString().padLeft(5, '0')}';
 
-  Future<String> peekNextNumber() async => numberFor(await _db.scalarInt("SELECT value FROM counters WHERE name = 'est'") + 1);
+  Future<String> peekNextNumber() async => numberFor(await peekFreeNumber(_db, 'est', table: 'estimations', format: numberFor));
 
   static EstimationDoc _doc(QueryRow r) => EstimationDoc(
         number: r.read<String>('number'),
@@ -97,7 +97,7 @@ class EstimationRepo {
         await _db.exec('DELETE FROM estimation_lines WHERE estimation_id = ?', [id]);
       } else {
         id = newId();
-        number = numberFor(await nextCounter(_db, 'est'));
+        number = numberFor(await nextFreeNumber(_db, 'est', table: 'estimations', format: numberFor));
         await _db.exec(
           'INSERT INTO estimations(id, number, at, customer_id, customer_name, total_paise, line_count, created_at, updated_at, device_id, version, hlc, extra_discount_paise, extra_discount_bp) VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?,?)',
           [id, number, at.millisecondsSinceEpoch, customerId, customerName, totalPaise, lines.length, now, now, cx.deviceId, cx.hlc.next(), extraDiscountPaise, extraDiscountBp],
