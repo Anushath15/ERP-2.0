@@ -66,3 +66,5 @@ web/drift_worker.js.deps
 web/drift_worker.js.map
 
 supabase/config.local.json
+
+ASK-ERP-2.0-Setup.exe
