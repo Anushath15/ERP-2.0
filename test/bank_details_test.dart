@@ -1,6 +1,8 @@
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/domain/bank.dart';
-import 'package:erp2/features/billing/cart.dart' show DocMode;
+import 'package:erp2/domain_lite/bill_calc.dart' show calcBill;
+import 'package:erp2/fake/models.dart';
+import 'package:erp2/features/billing/cart.dart' show DocMode, PrintDoc;
 import 'package:erp2/fake/shop_profile.dart';
 import 'package:erp2/features/print/bill_template.dart';
 import 'package:erp2/features/print/print_preview.dart' show samplePrintDoc;
@@ -116,6 +118,34 @@ void main() {
         }
         final inv = buildBillTemplate(doc: samplePrintDoc(products, now), shop: shop, l: l);
         expect(inv.rows.any((r) => r.rate.split('.').last.length == 3), isTrue, reason: 'the tax invoice still shows the rate without GST (three decimals)');
+      });
+    }
+  });
+
+  group('the Disc % column is how much less than the MRP the customer pays (estimate and invoice)', () {
+    const l = Strings();
+    final now = DateTime(2026, 10, 20, 12);
+    final base = seedProducts().first;
+    Product p(int price, int mrp) => base.copyWith(pricePaise: price, mrpPaise: mrp, gstBp: 1800);
+
+    PrintDoc doc(DocMode mode, List<CartLine> lines) => PrintDoc(mode: mode, number: 'X-1', date: now, customer: 'Walk-in', lines: lines, calc: calcBill(lines), pay: PayMode.cash);
+
+    for (final mode in [DocMode.estimation, DocMode.invoice]) {
+      test('${mode.name}: MRP 200, sold at 165, quantity 3: the MRP is shown and 17.5 percent is taken off it', () {
+        final t = buildBillTemplate(doc: doc(mode, [CartLine(product: p(16500, 20000), qtyMilli: 3000)]), shop: ShopProfile.sample, l: l);
+        expect(t.rows.single.mrp, '200.00');
+        expect(t.rows.single.disc, '17.5');
+      });
+      test('${mode.name}: a typed line discount counts too (MRP 200, rate 165, 10 percent off the line: 25.75 percent off the MRP)', () {
+        final t = buildBillTemplate(doc: doc(mode, [CartLine(product: p(16500, 20000), qtyMilli: 1000, discountBp: 1000)]), shop: ShopProfile.sample, l: l);
+        expect(t.rows.single.disc, '25.75');
+      });
+      test('${mode.name}: no MRP shows the typed discount as before; a rate above the MRP shows 0', () {
+        final none = buildBillTemplate(doc: doc(mode, [CartLine(product: p(16500, 0), qtyMilli: 1000, discountBp: 500)]), shop: ShopProfile.sample, l: l);
+        expect(none.rows.single.mrp, '');
+        expect(none.rows.single.disc, '5');
+        final above = buildBillTemplate(doc: doc(mode, [CartLine(product: p(16500, 15000), qtyMilli: 1000)]), shop: ShopProfile.sample, l: l);
+        expect(above.rows.single.disc, '0');
       });
     }
   });

@@ -155,6 +155,15 @@ String _rateEx(int ratePaise, int gstBp, bool inclusive) {
   return (ex / 100).toStringAsFixed(3);
 }
 
+/// The Disc % column: how much less than the MRP the customer pays for this line (MRP x quantity against the amount charged, both with GST). A product
+/// with no MRP shows the discount typed on the line, as before. Never negative: a rate above the MRP shows 0.
+String _discOffMrp({required int mrpPaise, required int qtyMilli, required int shownPaise, required int manualBp}) {
+  if (mrpPaise <= 0) return manualBp > 0 ? _pct(manualBp) : '0';
+  final full = (mrpPaise * qtyMilli / 1000).round();
+  if (full <= 0 || shownPaise >= full) return '0';
+  return _pct(((full - shownPaise) * 10000 / full).round());
+}
+
 /// The unit rate WITH GST (what the customer pays for one), two decimals: an estimate shows this, so the rate times the quantity is the amount.
 String _rateIncl(int ratePaise, int gstBp, bool inclusive) {
   final withGst = inclusive ? ratePaise.toDouble() : ratePaise * (10000 + gstBp) / 10000;
@@ -182,7 +191,7 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
       mrp: p.mrpPaise > 0 ? m(p.mrpPaise) : '',
       hsn: p.hsn,
       qty: formatQty(line.qtyMilli),
-      disc: line.discountBp > 0 ? _pct(line.discountBp) : '0',
+      disc: _discOffMrp(mrpPaise: p.mrpPaise, qtyMilli: line.qtyMilli, shownPaise: shown, manualBp: line.discountBp),
       rate: est ? _rateIncl(line.rate, p.gstBp, inclusive) : _rateEx(line.rate, p.gstBp, inclusive), // an estimate has no GST columns: its rate includes the GST
       gst: _pct(p.gstBp),
       total: m(shown),
