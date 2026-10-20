@@ -54,7 +54,7 @@ class IssueLog {
 class PProduct {
   PProduct(this.oldId, this.name);
   final String oldId;
-  String name, category = '', unit = 'pcs', hsn = '', barcode = '';
+  String name, category = '', unit = 'pcs', hsn = '', barcode = '', brand = '';
   int pricePaise = 0, costPaise = 0, avgCostPaise = 0, gstBp = 1800, minStockMilli = 0, stockMilli = 0, createdMs = 0;
   bool active = true, deleted = false, placeholder = false;
   String get id => 'e1-prod-$oldId';
@@ -356,6 +356,7 @@ class _Builder {
         bc = '';
       }
       pr.barcode = bc;
+      pr.brand = text(r['brand'], max: 80, f: f, what: 'brand');
       pr.minStockMilli = milli(r['minStock'] ?? r['reorderLevel'], f, 'minimum stock', missing: 0) ?? 0;
       final st = milli(r['stock'] ?? r['quantity'], f, 'stock', negativeOk: true, missing: 0) ?? 0;
       if (st < 0) f.note('stock was negative in ERP 1 (kept as it is)');

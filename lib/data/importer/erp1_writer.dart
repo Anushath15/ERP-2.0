@@ -36,8 +36,8 @@ Future<WriteResult> writePlan(AppData d, Erp1Plan p, {required int nowMs}) async
     }
     for (final x in p.products.values) {
       await db.exec(
-        'INSERT OR IGNORE INTO products(id, name, category, unit, price_paise, cost_paise, gst_bp, hsn, barcode, min_stock_milli, active, old_id, created_at, updated_at, deleted_at, device_id, avg_cost_paise) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [x.id, x.name, x.category, x.unit, x.pricePaise, x.costPaise, x.gstBp, x.hsn, x.barcode, x.minStockMilli, x.active ? 1 : 0, x.oldId, x.createdMs > 0 ? x.createdMs : now, now, x.deleted ? now : null, dev, x.avgCostPaise],
+        'INSERT OR IGNORE INTO products(id, name, category, unit, price_paise, cost_paise, gst_bp, hsn, barcode, min_stock_milli, active, old_id, created_at, updated_at, deleted_at, device_id, avg_cost_paise, brand) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        [x.id, x.name, x.category, x.unit, x.pricePaise, x.costPaise, x.gstBp, x.hsn, x.barcode, x.minStockMilli, x.active ? 1 : 0, x.oldId, x.createdMs > 0 ? x.createdMs : now, now, x.deleted ? now : null, dev, x.avgCostPaise, x.brand],
       );
     }
     for (final c in p.customers.values) {
