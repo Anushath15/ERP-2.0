@@ -44,8 +44,9 @@ Map<String, int>? _counts(String file) {
   Database? db;
   try {
     db = sqlite3.open(file, mode: OpenMode.readOnly);
-    int n(String t) => db!.select('SELECT COUNT(*) FROM $t').first.values.first as int;
-    return {'products': n('products'), 'customers': n('customers'), 'bills': n('bills')};
+    // live rows only, the same way the import counts what it wrote (a product removed in ERP 1 is kept but not counted)
+    int n(String t, {bool live = false}) => db!.select(live ? 'SELECT COUNT(*) FROM $t WHERE deleted_at IS NULL' : 'SELECT COUNT(*) FROM $t').first.values.first as int;
+    return {'products': n('products', live: true), 'customers': n('customers', live: true), 'bills': n('bills')};
   } catch (_) {
     return null;
   } finally {
@@ -63,7 +64,7 @@ String? _verify(String file, {Map<String, int>? expected, bool full = true}) {
     final c = db.select(full ? 'PRAGMA integrity_check' : 'PRAGMA quick_check');
     if (c.length != 1 || c.first.values.first != 'ok') return 'The new data file did not pass the integrity check.';
     if (expected != null) {
-      int n(String t) => db!.select('SELECT COUNT(*) FROM $t').first.values.first as int;
+      int n(String t) => db!.select(t == 'bills' ? 'SELECT COUNT(*) FROM $t' : 'SELECT COUNT(*) FROM $t WHERE deleted_at IS NULL').first.values.first as int;
       for (final e in expected.entries) {
         if (const {'products', 'customers', 'bills'}.contains(e.key)) {
           final got = n(e.key);
