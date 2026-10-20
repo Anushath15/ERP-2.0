@@ -31,7 +31,7 @@ void main() {
     expect(o.integrity, 'ok');
     final db = sqlite3.open('${dir.path}/import/new.sqlite');
     final withBrand = db.select("SELECT COUNT(*) AS n FROM products WHERE brand <> ''").first['n'] as int;
-    db.dispose();
+    db.close();
     // and the careful switch that the program does at start-up accepts it (it once refused: a removed product was counted by one side only)
     await requestImportSwap(dataDir: dir.path, newFile: o.newFile, expected: o.counts, source: 'ERP_Backup.json');
     final swap = await applyPendingSwap(dir.path);
