@@ -96,8 +96,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ] else if (ref.watch(cloudConfigProvider).configured)
         Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.syncCloudOff, style: th.bodyMedium)),
       if (!cloud.active && s.sync == SyncState.paused) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.syncPausedHelp, style: th.bodyMedium)),
+      if (!cloud.active) ...[
       row(l.quotaTitle, l.quotaHelp, Text(l.quotaValue('3'), style: th.titleSmall)),
       ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: 0.03, minHeight: 8, color: context.c.success, backgroundColor: context.c.surfaceAlt)),
+      ],
       if (!cloud.active) ...[
       const Divider(height: 24),
       Text(l.demoControls, style: th.labelSmall),
