@@ -13,7 +13,25 @@ class _Big extends ProductsNotifier {
   List<Product> build() => seedProducts(count: 6000);
 }
 
+class _Branded extends ProductsNotifier {
+  @override
+  List<Product> build() {
+    final all = seedProducts(count: 40);
+    return [all[0].copyWith(brand: 'HAVELLS'), all[1].copyWith(brand: ''), ...all.skip(2)];
+  }
+}
+
 void main() {
+  for (final path in ['/bill', '/estimate']) {
+    testWidgets('$path: the picker shows the brand of each product under its name (the same product of another brand has another rate), nothing when it has none', (tester) async {
+      final c = await pumpApp(tester, size: desktop1366, location: path, extraOverrides: [productsProvider.overrideWith(_Branded.new)]);
+      final list = c.read(productsProvider);
+      expect(find.byKey(ValueKey('brand-${list[0].id}')), findsOneWidget);
+      expect(find.text('HAVELLS'), findsWidgets);
+      expect(find.byKey(ValueKey('brand-${list[1].id}')), findsNothing);
+    });
+  }
+
   testWidgets('a long catalogue: after scrolling far down, a new search starts at the top with its first match (and the list is a fresh view)', (tester) async {
     await pumpApp(tester, size: desktop1366, location: '/bill', extraOverrides: [productsProvider.overrideWith(_Big.new)]);
     ScrollableState list() {

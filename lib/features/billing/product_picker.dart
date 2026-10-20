@@ -236,12 +236,19 @@ class _ProductRow extends StatelessWidget {
     final c = context.c;
     final th = Theme.of(context).textTheme;
     final p = product;
-    final name = Text.rich(
+    final nameLine = Text.rich(
       TextSpan(children: [
         TextSpan(text: p.name, style: th.titleMedium?.copyWith(fontWeight: FontWeight.w700)), // wraps, never an ellipsis
         WidgetSpan(alignment: PlaceholderAlignment.middle, child: AnimatedOpacity(opacity: ticked ? 1 : 0, duration: context.motion.fx(150), child: Padding(padding: const EdgeInsets.only(left: 8), child: Icon(Icons.check_circle_rounded, size: 20, color: c.success)))),
       ]),
     );
+    // the brand under the name: the same product from another brand has another rate, so the person at the counter must see which one this is
+    final name = p.brand.trim().isEmpty
+        ? nameLine
+        : Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            nameLine,
+            Text(p.brand.trim(), key: ValueKey('brand-${p.id}'), style: th.bodySmall?.copyWith(color: c.textMuted, fontWeight: FontWeight.w600)),
+          ]);
     final badges = Wrap(spacing: 6, runSpacing: 4, children: [
       if (inBill > 0) StatusBadge(l.inBillQty(formatQty(inBill)), kind: BadgeKind.info, icon: Icons.shopping_cart_rounded),
     ]);
@@ -252,7 +259,7 @@ class _ProductRow extends StatelessWidget {
     ]);
     return Semantics(
       button: true,
-      label: '${p.name}, ${formatPaise(p.pricePaise)}, ${p.outOfStock ? l.outOfStock : '${formatQty(p.stockMilli)} ${p.unit}'}',
+      label: '${p.name}${p.brand.trim().isEmpty ? '' : ', ${p.brand.trim()}'}, ${formatPaise(p.pricePaise)}, ${p.outOfStock ? l.outOfStock : '${formatQty(p.stockMilli)} ${p.unit}'}',
       child: InkWell(
         onTap: onTap,
         child: Container(
