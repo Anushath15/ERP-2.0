@@ -1488,3 +1488,5 @@ lanErrKeyBad | The key is 64 letters and digits (0-9, a-f), like the one shown o
 lanFirewall | If Windows asks to allow the program on the network, choose Allow (private network).
 lanStartFailed | The counter link could not start. Another program may be using the network port, or Windows blocked it.
 lanKeyLocked | Unlink the counters first to change the key.
+changeBrand | Change brand
+noBrand | No brand

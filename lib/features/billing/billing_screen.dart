@@ -289,7 +289,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd, onScan: () => playSound(ref, SoundKind.scan)));
 
     final discountBar = DiscountProfitBar(mode: mode, cart: cart, calc: calc, onAmount: notifier.setExtraDiscountAmount, onPercent: notifier.setExtraDiscountPercent);
-    Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount, trailing: discountBar));
+    Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount, trailing: discountBar, variants: ref.watch(productVariantsProvider), onBrand: notifier.swapProduct));
     final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, customerBalance: cart.customer == null ? null : ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0, onShowQr: mode == DocMode.invoice && cart.pay == PayMode.upi ? () => _showUpiQr(calc) : null, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear);
 
     final shortcuts = <ShortcutActivator, VoidCallback>{

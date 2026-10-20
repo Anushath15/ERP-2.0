@@ -1448,4 +1448,6 @@ class Strings {
   String get lanFirewall => 'If Windows asks to allow the program on the network, choose Allow (private network).';
   String get lanStartFailed => 'The counter link could not start. Another program may be using the network port, or Windows blocked it.';
   String get lanKeyLocked => 'Unlink the counters first to change the key.';
+  String get changeBrand => 'Change brand';
+  String get noBrand => 'No brand';
 }

@@ -82,13 +82,17 @@ class BillHeader extends StatelessWidget {
 
 /// The bill lines. This list scrolls INSIDE itself; the footer is never part of it.
 class BillLines extends StatefulWidget {
-  const BillLines({super.key, required this.mode, required this.cart, required this.calc, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount, this.trailing});
+  const BillLines({super.key, required this.mode, required this.cart, required this.calc, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount, this.trailing, this.variants = const {}, this.onBrand});
   final DocMode mode;
   final CartState cart;
   final BillCalc calc;
   final void Function(int index, int qtyMilli) onQty;
   final void Function(int index) onRemove;
   final void Function(int index, int ratePaise) onRate;
+
+  /// Products that exist in more than one brand (see [productVariantsProvider]) and what to do when the person picks another brand for a line.
+  final Map<String, List<Product>> variants;
+  final void Function(int index, Product other)? onBrand;
   final void Function(int index, int bp) onDiscount;
 
   /// Shown after the last item, inside the scrolling list (the discount on the whole bill and the profit).
@@ -163,6 +167,8 @@ class _BillLinesState extends State<BillLines> {
               onRemove: () => widget.onRemove(i),
               onRate: (r) => widget.onRate(i, r),
               onDiscount: (d) => widget.onDiscount(i, d),
+              brands: widget.onBrand == null ? const [] : (widget.variants[variantKey(lines[i].product)] ?? const []),
+              onBrand: (other) => widget.onBrand?.call(i, other),
             ),
           )),
         ),
@@ -172,7 +178,7 @@ class _BillLinesState extends State<BillLines> {
 }
 
 class _LineBody extends StatelessWidget {
-  const _LineBody({required this.index, required this.line, required this.calc, required this.phone, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount});
+  const _LineBody({required this.index, required this.line, required this.calc, required this.phone, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount, this.brands = const [], this.onBrand});
   final int index;
   final CartLine line;
   final LineCalc calc;
@@ -181,6 +187,10 @@ class _LineBody extends StatelessWidget {
   final VoidCallback onRemove;
   final void Function(int) onRate;
   final void Function(int) onDiscount;
+
+  /// The same product in other brands (empty when there is only this one) and the switch to one of them.
+  final List<Product> brands;
+  final void Function(Product)? onBrand;
 
   @override
   Widget build(BuildContext context) {
@@ -191,6 +201,29 @@ class _LineBody extends StatelessWidget {
     final over = line.qtyMilli > p.stockMilli;
     final name = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(p.name, style: th.titleSmall),
+      if (p.brand.trim().isNotEmpty || brands.isNotEmpty)
+        brands.isEmpty
+            ? Text(p.brand.trim(), key: ValueKey('line-brand-$index'), style: th.bodySmall?.copyWith(color: c.textMuted, fontWeight: FontWeight.w600))
+            : PopupMenuButton<Product>(
+                key: ValueKey('brand-switch-$index'),
+                tooltip: l.changeBrand,
+                onSelected: (o) => onBrand?.call(o),
+                itemBuilder: (_) => [
+                  for (final o in [p, ...brands])
+                    CheckedPopupMenuItem<Product>(
+                      value: o,
+                      checked: o.id == p.id,
+                      child: Text('${o.brand.trim().isEmpty ? l.noBrand : o.brand.trim()}  -  ${formatPaise(o.pricePaise, symbol: true)}  -  ${formatQty(o.stockMilli)} ${o.unit}'),
+                    ),
+                ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(p.brand.trim().isEmpty ? l.noBrand : p.brand.trim(), style: th.bodySmall?.copyWith(color: c.primary, fontWeight: FontWeight.w700)),
+                    Icon(Icons.arrow_drop_down_rounded, size: 20, color: c.primary),
+                  ]),
+                ),
+              ),
       if (over) Padding(padding: const EdgeInsets.only(top: 3), child: StatusBadge(p.stockMilli <= 0 ? l.warnNoStock : l.warnLowStock(formatQty(p.stockMilli), p.unit), kind: BadgeKind.warning, icon: Icons.warning_amber_rounded)),
       if (line.discountBp > 0) Padding(padding: const EdgeInsets.only(top: 3), child: Text(l.discountPercent((line.discountBp / 100).toStringAsFixed(line.discountBp % 100 == 0 ? 0 : 1)), style: th.bodySmall)),
     ]);
@@ -251,7 +284,7 @@ class _LineBody extends StatelessWidget {
 
 /// One bill line. A line that was JUST added slides in and flashes briefly (Full only); nothing here delays the add itself.
 class _LineRow extends StatelessWidget {
-  const _LineRow({super.key, required this.fresh, required this.touchSeq, required this.index, required this.line, required this.calc, required this.phone, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount});
+  const _LineRow({super.key, required this.fresh, required this.touchSeq, required this.index, required this.line, required this.calc, required this.phone, required this.onQty, required this.onRemove, required this.onRate, required this.onDiscount, this.brands = const [], this.onBrand});
   final bool fresh;
   final int touchSeq;
   final int index;
@@ -262,6 +295,8 @@ class _LineRow extends StatelessWidget {
   final VoidCallback onRemove;
   final void Function(int) onRate;
   final void Function(int) onDiscount;
+  final List<Product> brands;
+  final void Function(Product)? onBrand;
 
   @override
   Widget build(BuildContext context) => FadeSlideIn(
@@ -270,7 +305,7 @@ class _LineRow extends StatelessWidget {
         dx: 18,
         dy: 0,
         ms: 220,
-        child: _LineBody(index: index, line: line, calc: calc, phone: phone, onQty: onQty, onRemove: onRemove, onRate: onRate, onDiscount: onDiscount),
+        child: _LineBody(index: index, line: line, calc: calc, phone: phone, onQty: onQty, onRemove: onRemove, onRate: onRate, onDiscount: onDiscount, brands: brands, onBrand: onBrand),
       );
 }
 

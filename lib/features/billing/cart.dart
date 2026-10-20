@@ -3,8 +3,22 @@ import '../../data/ids.dart';
 import '../../domain_lite/bill_calc.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/models.dart';
+import '../../fake/store.dart' show productsProvider;
 
 enum DocMode { invoice, estimation }
+
+/// The key that says two products are "the same thing in another brand": the name with spaces and capitals ignored.
+String variantKey(Product p) => p.name.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+
+/// Products grouped by [variantKey], only the groups with more than one brand (those are the ones where a line can be switched).
+final productVariantsProvider = Provider<Map<String, List<Product>>>((ref) {
+  final groups = <String, List<Product>>{};
+  for (final p in ref.watch(productsProvider)) {
+    groups.putIfAbsent(variantKey(p), () => []).add(p);
+  }
+  groups.removeWhere((_, v) => v.length < 2);
+  return groups;
+});
 
 class CartState {
   const CartState({this.lines = const [], this.customer, this.pay = PayMode.cash, this.editingNumber, this.editingDate, this.editedOn, this.paidPaise, this.touchedId, this.touchedNew = false, this.touchSeq = 0, this.touchedAtMs = 0, this.receivedPaise, this.keepAdvance = false, this.draftId, this.extraDiscountPaise = 0, this.extraDiscountBp = 0});
@@ -73,6 +87,22 @@ class CartNotifier extends Notifier<CartState> {
     } else {
       state = state.copyWith(lines: [...state.lines, CartLine(product: p, qtyMilli: qtyMilli)], touch: (id: p.id, isNew: true), draftId: state.draftId ?? newId());
     }
+  }
+
+  /// The customer wants another brand of the same product: this line becomes that brand's product, with that brand's rate, keeping the
+  /// quantity and the discount. When the other brand is already on the bill the two lines are joined.
+  void swapProduct(int index, Product other) {
+    if (index < 0 || index >= state.lines.length || state.lines[index].product.id == other.id) return;
+    final old = state.lines[index];
+    final j = state.lines.indexWhere((l) => l.product.id == other.id);
+    if (j >= 0) {
+      state = state.copyWith(lines: [
+        for (var i = 0; i < state.lines.length; i++)
+          if (i == j) state.lines[i].copyWith(qtyMilli: state.lines[i].qtyMilli + old.qtyMilli) else if (i != index) state.lines[i]
+      ], touch: (id: other.id, isNew: false));
+      return;
+    }
+    state = state.copyWith(lines: [for (var i = 0; i < state.lines.length; i++) i == index ? CartLine(product: other, qtyMilli: old.qtyMilli, discountBp: old.discountBp) : state.lines[i]], touch: (id: other.id, isNew: false));
   }
 
   void setQty(int index, int qtyMilli) {
