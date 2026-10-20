@@ -1,5 +1,6 @@
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/domain/bank.dart';
+import 'package:erp2/features/billing/cart.dart' show DocMode;
 import 'package:erp2/fake/shop_profile.dart';
 import 'package:erp2/features/print/bill_template.dart';
 import 'package:erp2/features/print/print_preview.dart' show samplePrintDoc;
@@ -94,5 +95,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('bankAccountWarn')), findsNothing);
     expect(c.read(shopProvider).bankAccount, '44131804620');
+  });
+
+  group('the estimate shows the rate WITH GST, so rate x quantity is the amount the customer sees', () {
+    const l = Strings();
+    final now = DateTime(2026, 10, 20, 12);
+    final products = seedProducts();
+
+    // (the bill maths always takes the entered price as the price with GST, as the shop sets it)
+    for (final inclusive in [true]) {
+      test('${inclusive ? 'prices entered with GST' : 'prices entered without GST'}: every estimate row has rate x quantity = total; the invoice keeps the rate without GST', () {
+        final doc = samplePrintDoc(products, now, mode: DocMode.estimation);
+        final shop = ShopProfile.sample.copyWith(pricesIncludeGst: inclusive);
+        final t = buildBillTemplate(doc: doc, shop: shop, l: l);
+        expect(t.rows, isNotEmpty);
+        for (final r in t.rows) {
+          final rate = double.parse(r.rate), qty = double.parse(r.qty), total = double.parse(r.total.replaceAll(',', ''));
+          expect(rate.toStringAsFixed(2), r.rate, reason: 'two decimals, no 139.822');
+          expect(rate * qty, closeTo(total, 0.06 * qty), reason: '${r.goods}: ${r.rate} x ${r.qty} should be ${r.total}');
+        }
+        final inv = buildBillTemplate(doc: samplePrintDoc(products, now), shop: shop, l: l);
+        expect(inv.rows.any((r) => r.rate.split('.').last.length == 3), isTrue, reason: 'the tax invoice still shows the rate without GST (three decimals)');
+      });
+    }
   });
 }

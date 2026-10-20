@@ -155,6 +155,12 @@ String _rateEx(int ratePaise, int gstBp, bool inclusive) {
   return (ex / 100).toStringAsFixed(3);
 }
 
+/// The unit rate WITH GST (what the customer pays for one), two decimals: an estimate shows this, so the rate times the quantity is the amount.
+String _rateIncl(int ratePaise, int gstBp, bool inclusive) {
+  final withGst = inclusive ? ratePaise.toDouble() : ratePaise * (10000 + gstBp) / 10000;
+  return (withGst / 100).toStringAsFixed(2);
+}
+
 BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop, required Strings l}) {
   final est = doc.mode == DocMode.estimation;
   final c = doc.calc;
@@ -177,7 +183,7 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
       hsn: p.hsn,
       qty: formatQty(line.qtyMilli),
       disc: line.discountBp > 0 ? _pct(line.discountBp) : '0',
-      rate: _rateEx(line.rate, p.gstBp, inclusive),
+      rate: est ? _rateIncl(line.rate, p.gstBp, inclusive) : _rateEx(line.rate, p.gstBp, inclusive), // an estimate has no GST columns: its rate includes the GST
       gst: _pct(p.gstBp),
       total: m(shown),
     ));
