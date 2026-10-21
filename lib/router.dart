@@ -56,6 +56,7 @@ GoRouter buildRouter({String initialLocation = '/', String? Function(String loca
           GoRoute(path: '/restore', pageBuilder: (c, s) => _p(c, s, const RestoreScreen())),
           GoRoute(path: '/fix', pageBuilder: (c, s) => _p(c, s, const FixTheseScreen())),
           GoRoute(path: '/inventory', pageBuilder: (c, s) => _p(c, s, const InventoryScreen())),
+          GoRoute(path: '/purchases/:id/edit', pageBuilder: (c, s) => _p(c, s, PurchaseFormScreen(editId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/purchases/new', pageBuilder: (c, s) => _p(c, s, PurchaseFormScreen(dealerId: s.uri.queryParameters['dealer']), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/purchases', pageBuilder: (c, s) => _p(c, s, const PurchasesScreen())),
           GoRoute(path: '/purchase-returns/purchase/:id', pageBuilder: (c, s) => _p(c, s, PurchaseReturnScreen(purchaseId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),

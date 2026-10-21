@@ -16,7 +16,7 @@ import '../../fake/store.dart';
 /// Excludes GST" buttons: what is typed is turned into the figure the program keeps (selling price the way the shop prices things,
 /// buying price without GST; see lib/domain/gst_price.dart). The product code is made by the program from the category when the
 /// product is first saved; brand and HSN code are optional.
-Future<Product?> showProductForm(BuildContext context, {String initialName = '', Product? edit, required String saveLabel}) async {
+Future<Product?> showProductForm(BuildContext context, {String initialName = '', Product? edit, required String saveLabel, bool forPurchase = false}) async {
   final l = tr(context);
   final p = edit;
   final box = ProviderScope.containerOf(context);
@@ -45,7 +45,7 @@ Future<Product?> showProductForm(BuildContext context, {String initialName = '',
       FieldSpec('mrp', l.fieldMrp, type: FieldType.money, initial: p == null || p.mrpPaise == 0 ? '' : two(p.mrpPaise)),
       FieldSpec('cost', l.fieldCostPrice, type: FieldType.money, initial: p == null ? '' : two(p.costPaise), required: true),
       FieldSpec('costMode', '', type: FieldType.choice, initial: 'excl', options: modes),
-      FieldSpec('stock', l.fieldStockNow, type: FieldType.number, initial: p == null ? '' : formatQty(p.stockMilli), required: true),
+      if (!forPurchase) FieldSpec('stock', l.fieldStockNow, type: FieldType.number, initial: p == null ? '' : formatQty(p.stockMilli), required: true), // a purchase brings the stock
       FieldSpec('minStock', l.fieldMinStock, type: FieldType.number, initial: p == null ? '' : formatQty(p.minStockMilli), required: true),
       FieldSpec('hsn', l.fieldHsn, initial: p?.hsn ?? '', check: (s) => RegExp(r'^\d{4,8}$').hasMatch(s) ? null : l.errHsn),
       FieldSpec('barcode', l.fieldBarcode, initial: p?.barcode ?? '', hint: l.barcodeHelp, suffix: (ctl) => IconButton(

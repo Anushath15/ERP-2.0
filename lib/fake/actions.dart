@@ -52,6 +52,15 @@ class BillActions {
     return saved;
   }
 
+  /// Saves the changes to a saved purchase (see PurchaseRepo.editPurchase) and refreshes what the screens show.
+  Future<SavedPurchase> editPurchase(String purchaseId, SavePurchaseInput input, {Iterable<String> oldProductIds = const []}) async {
+    final d = ref.read(appDataProvider);
+    final saved = await ref.read(writeQueueProvider).run(() => d.purchases.editPurchase(purchaseId, input));
+    await _afterPurchase(input.dealerId, {...oldProductIds, for (final l in input.lines) l.productId}.toList(), received: saved.received);
+    await ref.read(statsProvider.notifier).refresh();
+    return saved;
+  }
+
   /// A pending purchase arrives: stock and the dealer's account are updated now.
   Future<bool> markPurchaseReceived(PurchaseRow row) async {
     final d = ref.read(appDataProvider);

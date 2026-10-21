@@ -19,6 +19,7 @@ import '../../fake/data_providers.dart';
 import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
+import '../products/product_form.dart';
 
 /// The purchases made with items (newest first); read again whenever one is saved or received.
 final purchaseListProvider = FutureProvider.autoDispose<List<PurchaseRow>>((ref) {
@@ -85,6 +86,15 @@ Future<void> showPurchasePopup(BuildContext context, WidgetRef ref, PurchaseRow 
     if (!row.received) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.pendingNoStock, style: th.bodySmall)),
     if (d.note.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(d.note, style: th.bodySmall)),
   ], actions: [
+    OutlinedButton.icon(
+      key: const ValueKey('pur-edit'),
+      icon: const Icon(Icons.edit_rounded),
+      label: Text(l.purEdit),
+      onPressed: () {
+        Navigator.of(context, rootNavigator: true).pop();
+        context.go('/purchases/${row.id}/edit');
+      },
+    ),
     if (row.received)
       OutlinedButton.icon(
         key: const ValueKey('pur-return-items'),
@@ -114,9 +124,11 @@ Future<void> showPurchasePopup(BuildContext context, WidgetRef ref, PurchaseRow 
 }
 
 class _FormLine {
-  _FormLine(this.product, {String rate = ''}) : rate = TextEditingController(text: rate);
+  _FormLine(this.product, {String rate = '', String qty = ''})
+      : rate = TextEditingController(text: rate),
+        qty = TextEditingController(text: qty);
   final Product product;
-  final qty = TextEditingController();
+  final TextEditingController qty;
   final TextEditingController rate;
   void dispose() {
     qty.dispose();
@@ -127,8 +139,11 @@ class _FormLine {
 /// Add a purchase: the dealer, the dealer's invoice, the items with their rates, how much was paid. Under each item the last rate paid
 /// for it and any dealer that sold it cheaper are shown while typing.
 class PurchaseFormScreen extends ConsumerStatefulWidget {
-  const PurchaseFormScreen({super.key, this.dealerId});
+  const PurchaseFormScreen({super.key, this.dealerId, this.editId});
   final String? dealerId;
+
+  /// The purchase being changed (the same form, filled in, and Save changes the saved one); null = a new purchase.
+  final String? editId;
 
   @override
   ConsumerState<PurchaseFormScreen> createState() => _PurchaseFormState();
@@ -147,12 +162,51 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
   int _pay = 0; // 0 paid in full, 1 part paid, 2 on credit
   bool _busy = false;
   String? _error;
+  bool _loaded = true; // false while a purchase being edited is read
+  String _number = '';
+  List<String> _oldProducts = const [];
 
   @override
   void initState() {
     super.initState();
     final dealers = ref.read(recsProvider('dealers'));
     _dealer = dealers.any((d) => d.id == widget.dealerId) ? widget.dealerId : (dealers.isEmpty ? null : dealers.first.id);
+    if (widget.editId != null) {
+      _loaded = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadForEdit());
+    }
+  }
+
+  /// Fills the form from the saved purchase.
+  Future<void> _loadForEdit() async {
+    final d = await ref.read(appDataProvider).purchases.detail(widget.editId!);
+    if (!mounted) return;
+    if (d == null) {
+      setState(() {
+        _loaded = true;
+        _error = 'No such purchase.';
+      });
+      return;
+    }
+    final products = ref.read(productsProvider);
+    setState(() {
+      _number = d.row.number;
+      _dealer = d.row.dealerId;
+      _invoice.text = d.row.invoiceNo;
+      _note.text = d.note;
+      _received = d.row.received;
+      _updateCost = d.updateCost;
+      _ratesInclude = false; // the rates are kept without GST: shown the same way
+      _pay = d.row.paidPaise >= d.row.totalPaise ? 0 : (d.row.paidPaise == 0 ? 2 : 1);
+      if (_pay == 1) _paid.text = (d.row.paidPaise / 100).toStringAsFixed(2);
+      _oldProducts = [for (final l in d.lines) l.productId];
+      for (final l in d.lines) {
+        final p = products.where((x) => x.id == l.productId).firstOrNull ??
+            Product(id: l.productId, name: l.name, category: '', unit: l.unit, pricePaise: l.sellingPaise, costPaise: l.ratePaise, stockMilli: 0, gstBp: l.gstBp, barcode: '');
+        _lines.add(_FormLine(p, rate: (l.ratePaise / 100).toStringAsFixed(2), qty: formatQty(l.qtyMilli)));
+      }
+      _loaded = true;
+    });
   }
 
   @override
@@ -189,6 +243,21 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
     return (taxable: taxable, tax: tax, total: taxable + tax);
   }
 
+  /// A product that is not in the list yet: made here (the purchase brings its stock) and added to the items.
+  Future<void> _newProduct() async {
+    final s = tr(context);
+    final p = await showProductForm(context, saveLabel: s.save, forPurchase: true);
+    if (p == null || !mounted) return;
+    ref.read(productsProvider.notifier).add(p);
+    await ref.read(writeQueueProvider).flush(); // the product is in the database before the purchase that names it
+    if (!mounted) return;
+    final made = ref.read(productsProvider).where((x) => x.id == p.id).firstOrNull ?? p;
+    setState(() {
+      _lines.add(_FormLine(made, rate: made.costPaise == 0 ? '' : (made.costPaise / 100).toStringAsFixed(2)));
+      _error = null;
+    });
+  }
+
   Future<void> _save(Strings s) async {
     if (_dealer == null) {
       setState(() => _error = s.purNeedDealer);
@@ -218,17 +287,26 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
       _error = null;
     });
     try {
-      final saved = await ref.read(billActionsProvider).savePurchase(SavePurchaseInput(
-            idemKey: _idemKey,
-            dealerId: _dealer!,
-            at: ref.read(clockProvider),
-            lines: inputs,
-            invoiceNo: _invoice.text,
-            paidPaise: paid,
-            received: _received,
-            updateCost: _updateCost,
-            note: _note.text,
-          ));
+      await ref.read(writeQueueProvider).flush(); // anything typed a moment ago (a product made here) is saved first
+      final input = SavePurchaseInput(
+        idemKey: _idemKey,
+        dealerId: _dealer!,
+        at: ref.read(clockProvider),
+        lines: inputs,
+        invoiceNo: _invoice.text,
+        paidPaise: paid,
+        received: _received,
+        updateCost: _updateCost,
+        note: _note.text,
+      );
+      if (widget.editId != null) {
+        final saved = await ref.read(billActionsProvider).editPurchase(widget.editId!, input, oldProductIds: _oldProducts);
+        if (!mounted) return;
+        toast(context, s.purEdited(saved.number));
+        context.go('/purchases');
+        return;
+      }
+      final saved = await ref.read(billActionsProvider).savePurchase(input);
       if (!mounted) return;
       toast(context, s.purSaved(saved.number, formatPaise(saved.totalPaise, symbol: true)));
       context.go('/purchases');
@@ -363,9 +441,11 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
       onSelectionChanged: (v) => setState(() => _pay = v.first),
     );
 
+    final editing = widget.editId != null;
+    if (!_loaded) return PageFrame(title: s.purFormTitle, child: const Center(child: CircularProgressIndicator()));
     return PageFrame(
-      title: s.purFormTitle,
-      subtitle: s.purFormHint,
+      title: editing ? s.purEditTitle(_number) : s.purFormTitle,
+      subtitle: editing ? s.purEditHint : s.purFormHint,
       actions: [TextButton.icon(onPressed: () => context.go('/purchases'), icon: const Icon(Icons.arrow_back_rounded), label: Text(s.back))],
       child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
         SectionCard(
@@ -375,7 +455,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
               initialValue: _dealer,
               decoration: InputDecoration(labelText: s.purDealer),
               items: [for (final d in dealers) DropdownMenuItem(value: d.id, child: Text(d.s('name')))],
-              onChanged: (v) => setState(() => _dealer = v),
+              onChanged: editing ? null : (v) => setState(() => _dealer = v), // a saved purchase keeps its dealer
             ),
             const SizedBox(height: 12),
             TextField(key: const ValueKey('pur-invoice'), controller: _invoice, decoration: InputDecoration(labelText: s.fieldDealerInvoice)),
@@ -387,8 +467,9 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
               showSelectedIcon: false,
               segments: [ButtonSegment(value: true, label: Text(s.statusReceived)), ButtonSegment(value: false, label: Text(s.statusPending))],
               selected: {_received},
-              onSelectionChanged: (v) => setState(() => _received = v.first),
+              onSelectionChanged: editing ? null : (v) => setState(() => _received = v.first), // a saved purchase keeps its status
             ),
+            if (editing) Padding(padding: const EdgeInsets.only(top: 6), child: Text('${s.purEditDealerFixed} ${s.purEditStatusFixed}', style: th.bodySmall)),
             if (!_received) Padding(padding: const EdgeInsets.only(top: 6), child: Text(s.pendingNoStock, style: th.bodySmall)),
           ]),
         ),
@@ -409,7 +490,12 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            picker,
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: picker),
+              const SizedBox(width: 8),
+              Padding(padding: const EdgeInsets.only(top: 6), child: OutlinedButton.icon(key: const ValueKey('pur-new-product'), onPressed: _busy ? null : _newProduct, icon: const Icon(Icons.add_rounded), label: Text(s.purNewProduct))),
+            ]),
+            Padding(padding: const EdgeInsets.only(top: 4), child: Text(s.purNewProductHint, style: th.bodySmall)),
             for (final x in _lines) ...[const Divider(), lineRow(x)],
           ]),
         ),

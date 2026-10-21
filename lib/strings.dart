@@ -1497,4 +1497,12 @@ class Strings {
   String get featCounterLink => 'Counter link (several counters over the shop Wi-Fi)';
   String get featExcel => 'Fill products from Excel (Products page)';
   String get featBrandSwitch => 'Change the brand of a bill line';
+  String get purNewProduct => 'New product';
+  String get purNewProductHint => 'Not in the list? Add it here: the purchase brings its stock.';
+  String get purEdit => 'Edit';
+  String purEditTitle(String number) => 'Edit purchase ${number}';
+  String get purEditHint => 'Change the items, rates, invoice number, note or what was paid. The stock and the dealer\'s account follow the change.';
+  String purEdited(String number) => 'Changes to ${number} saved.';
+  String get purEditDealerFixed => 'The dealer of a saved purchase cannot be changed.';
+  String get purEditStatusFixed => 'A saved purchase keeps its status (use Mark received on a pending one).';
 }
