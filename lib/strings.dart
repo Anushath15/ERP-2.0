@@ -1489,4 +1489,7 @@ class Strings {
   String get dbTidyHelp => 'Makes the data file smaller and searches faster. Safe: nothing is deleted. Takes a few seconds.';
   String dbTidyDone(String before, String after) => 'Done. The data file went from ${before} to ${after}.';
   String get dbTidyFailed => 'The data file could not be tidied now. Nothing was changed.';
+  String get conflictTitle => 'Changed on another computer';
+  String conflictText(String name) => '"${name}" was changed on another computer after you opened it. If you save, your version replaces theirs.';
+  String get conflictSaveMine => 'Save my version';
 }

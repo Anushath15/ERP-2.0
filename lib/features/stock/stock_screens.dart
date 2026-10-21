@@ -1,3 +1,4 @@
+import '../../domain/product_conflict.dart';
 import '../products/product_excel.dart';
 import 'package:go_router/go_router.dart';
 import '../../fake/shop_profile.dart' show shopProvider;
@@ -58,6 +59,16 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final l = tr(context);
     final n = await showProductForm(context, edit: p, saveLabel: l.save);
     if (n != null) {
+      // another computer (cloud sync or counter link) may have changed this product while the form was open: ask before replacing their change
+      final current = await ref.read(appDataProvider).catalog.product(p.id);
+      if (!mounted) return;
+      if (current != null && productChangedElsewhere(p, current)) {
+        final keepMine = await confirmDialog(context, title: l.conflictTitle, message: l.conflictText(p.name), confirmLabel: l.conflictSaveMine);
+        if (!keepMine) {
+          await ref.read(productsProvider.notifier).reload([p.id]);
+          return;
+        }
+      }
       ref.read(productsProvider.notifier).update(n);
       final warn = sellsAboveMrp(n, shopPricesIncludeGst: ref.read(shopProvider).pricesIncludeGst);
       if (mounted) toast(context, warn ? '${l.saved} ${l.mrpAboveWarn}' : l.saved);

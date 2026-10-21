@@ -1529,3 +1529,6 @@ dbTidy | Tidy the database
 dbTidyHelp | Makes the data file smaller and searches faster. Safe: nothing is deleted. Takes a few seconds.
 dbTidyDone | Done. The data file went from {before} to {after}.
 dbTidyFailed | The data file could not be tidied now. Nothing was changed.
+conflictTitle | Changed on another computer
+conflictText | "{name}" was changed on another computer after you opened it. If you save, your version replaces theirs.
+conflictSaveMine | Save my version
