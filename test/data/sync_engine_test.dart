@@ -206,4 +206,24 @@ void main() {
     expect(await a.outbox.sentToday(), sent1 + 1);
     expect(await a.outbox.refused(), isEmpty);
   });
+
+  test('an estimate edited so that a line is removed or replaced is the same on the other computer (no leftover lines)', () async {
+    await a.catalog.saveProduct(prod('p1', 'ONE'), create: true);
+    await a.catalog.saveProduct(prod('p2', 'TWO'), create: true);
+    await a.catalog.saveProduct(prod('p3', 'THREE'), create: true);
+    EstimateLine l(String id) => EstimateLine(productId: id, name: id, unit: 'pcs', qtyMilli: 1000, ratePaise: 10000);
+    final doc = await a.estimations.save(lines: [l('p1'), l('p2'), l('p3')], totalPaise: 30000, customerName: '', at: DateTime(2026, 10, 20));
+    await ea.run();
+    await eb.run();
+    expect(await count(b, 'estimation_lines'), 3);
+    // edit: the second line is removed, the third is replaced by another product
+    await a.estimations.save(lines: [l('p1'), l('p3')], totalPaise: 20000, customerName: '', at: DateTime(2026, 10, 20), editNumber: doc.number);
+    await ea.run();
+    await eb.run();
+    expect(await count(a, 'estimation_lines'), 2);
+    expect(await count(b, 'estimation_lines'), 2, reason: 'the removed line is gone on the other computer too');
+    final linesA = (await a.db.rows('SELECT line_no, product_id FROM estimation_lines ORDER BY line_no')).map((r) => (r.read<int>('line_no'), r.read<String>('product_id'))).toList();
+    final linesB = (await b.db.rows('SELECT line_no, product_id FROM estimation_lines ORDER BY line_no')).map((r) => (r.read<int>('line_no'), r.read<String>('product_id'))).toList();
+    expect(linesB, linesA);
+  });
 }

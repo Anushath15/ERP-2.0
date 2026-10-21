@@ -196,10 +196,28 @@ class SyncEngine {
       final rev = await cx.db.row('SELECT hlc FROM sync_rev WHERE coll = ? AND doc_id = ?', [d.coll, d.id]);
       if (rev != null && rev.read<String>('hlc').compareTo(d.hlc) >= 0) return false;
       final ok = await _upsert(t, d, replace: true);
-      if (ok) await cx.db.exec('INSERT INTO sync_rev(coll, doc_id, hlc) VALUES (?,?,?) ON CONFLICT(coll, doc_id) DO UPDATE SET hlc = excluded.hlc', [d.coll, d.id, d.hlc]);
+      if (ok) {
+        await cx.db.exec('INSERT INTO sync_rev(coll, doc_id, hlc) VALUES (?,?,?) ON CONFLICT(coll, doc_id) DO UPDATE SET hlc = excluded.hlc', [d.coll, d.id, d.hlc]);
+        await _dropReplacedLines(d);
+      }
       return ok;
     }
-    return _upsert(t, d, replace: true, byHlc: true);
+    final ok = await _upsert(t, d, replace: true, byHlc: true);
+    if (ok) await _dropReplacedLines(d);
+    return ok;
+  }
+
+  /// An edited estimate is saved by taking all its lines away and writing them again (new ids), so the other computer must do the same: a new line
+  /// replaces the old line with the same number, and when the estimate says it has fewer lines now, the extra ones go. (Without this a line removed
+  /// while editing stayed on the other computer.)
+  Future<void> _dropReplacedLines(PulledDoc d) async {
+    if (d.coll == 'estimation_lines') {
+      final est = d.data['estimation_id'], no = d.data['line_no'];
+      if (est is String && no is num) await cx.db.exec('DELETE FROM estimation_lines WHERE estimation_id = ? AND line_no = ? AND id <> ?', [est, no.toInt(), d.id]);
+    } else if (d.coll == 'estimations') {
+      final count = d.data['line_count'];
+      if (count is num) await cx.db.exec('DELETE FROM estimation_lines WHERE estimation_id = ? AND line_no > ?', [d.id, count.toInt()]);
+    }
   }
 
   Future<bool> _applySetting(PulledDoc d) async {
