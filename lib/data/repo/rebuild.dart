@@ -4,7 +4,8 @@ import '../db/app_database.dart';
 /// "Rebuild totals" (Health page): recomputes every summary from the raw rows, in ONE transaction. The raw rows (bills, lines, stock
 /// movements, ledger entries) are never touched, so this can only make the figures agree with what really happened. Also the repair after a
 /// restore from an older backup or an import. Returns how many summary rows were written.
-Future<int> rebuildSummaries(AppDatabase db) {
+/// [searchIndex] false skips the product search index (the sync does: the index is kept up to date by triggers on every product write, only a repair needs it rebuilt).
+Future<int> rebuildSummaries(AppDatabase db, {bool searchIndex = true}) {
   return db.transaction(() async {
     var n = 0;
     Future<void> run(String sql) async {
@@ -12,7 +13,7 @@ Future<int> rebuildSummaries(AppDatabase db) {
     }
 
     // the product search index, built again from the products (the repair if search ever misses a product)
-    await run("INSERT INTO product_fts(product_fts) VALUES('rebuild')");
+    if (searchIndex) await run("INSERT INTO product_fts(product_fts) VALUES('rebuild')");
 
     // stock figure per product = sum of its movements (a product with none has 0)
     await run('DELETE FROM stock_cache');
@@ -30,6 +31,23 @@ Future<int> rebuildSummaries(AppDatabase db) {
       "MAX(CASE WHEN e.kind IN ('payment','advance') THEN e.at END), COUNT(*) FROM ledger_entries e GROUP BY e.party_id, e.party_kind",
     );
     n += await db.scalarInt('SELECT COUNT(*) FROM party_balance');
+
+    // the bill-wise dues (which credit bill is paid how far), worked out again from the ledger: the unpaid part of each credit bill, the payments / write-offs /
+    // credit notes that were put against it (allocations; an entry that was reversed does not count) and whether it was cancelled. A computer that received the ledger
+    // through the sync has no bill-wise dues of its own until this runs. Dues that came from an ERP 1 import (no credit entry behind them) are left as they are.
+    await run(r"""
+WITH credit AS (SELECT party_id, party_kind, bill_no, MIN(at) AS at, SUM(amount_paise) AS credit FROM ledger_entries WHERE kind = 'billCredit' AND bill_no IS NOT NULL GROUP BY party_id, party_kind, bill_no),
+alloc AS (SELECT e.party_id AS party_id, json_extract(a.value, '$.b') AS bill_no, SUM(json_extract(a.value, '$.p')) AS p FROM ledger_entries e, json_each(e.allocations) a
+          WHERE NOT EXISTS (SELECT 1 FROM ledger_entries r WHERE r.reverses = e.id) GROUP BY e.party_id, json_extract(a.value, '$.b')),
+gone AS (SELECT DISTINCT e.party_id AS party_id, e.bill_no AS bill_no FROM ledger_entries e
+         WHERE e.bill_no IS NOT NULL AND (e.kind = 'billCancel' OR (e.kind = 'billCredit' AND EXISTS (SELECT 1 FROM ledger_entries r WHERE r.reverses = e.id)))),
+tot AS (SELECT c.*, COALESCE((SELECT total_paise FROM bills b WHERE b.number = c.bill_no), (SELECT total_paise FROM purchases p WHERE p.number = c.bill_no), c.credit) AS total FROM credit c)
+INSERT INTO party_bills(id, party_kind, party_id, bill_no, date, total_paise, paid_paise, cancelled)
+SELECT t.party_id || '|' || t.bill_no, t.party_kind, t.party_id, t.bill_no, t.at, t.total, t.total - t.credit + COALESCE(a.p, 0), CASE WHEN g.bill_no IS NULL THEN 0 ELSE 1 END
+FROM tot t LEFT JOIN alloc a ON a.party_id = t.party_id AND a.bill_no = t.bill_no LEFT JOIN gone g ON g.party_id = t.party_id AND g.bill_no = t.bill_no WHERE true
+ON CONFLICT(party_id, bill_no) DO UPDATE SET total_paise = excluded.total_paise, paid_paise = excluded.paid_paise, cancelled = excluded.cancelled
+""");
+    n += await db.scalarInt('SELECT COUNT(*) FROM party_bills');
 
     // the day totals and the product-month totals from the bills that count (not cancelled)
     await run('DELETE FROM day_totals');

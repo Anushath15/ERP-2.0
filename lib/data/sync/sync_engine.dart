@@ -146,7 +146,7 @@ class SyncEngine {
       if (docs.length < pullLimit) break;
     }
     if (applied > 0) {
-      await rebuildSummaries(cx.db);
+      await rebuildSummaries(cx.db, searchIndex: false);
       onChanged?.call();
     }
     return (read, applied, skipped);
@@ -158,7 +158,7 @@ class SyncEngine {
     if (docs.isEmpty) return 0;
     final r = await _applyPage(docs, saveCursor: false);
     if (r.$1 > 0) {
-      await rebuildSummaries(cx.db);
+      await rebuildSummaries(cx.db, searchIndex: false);
       onChanged?.call();
     }
     return r.$1;

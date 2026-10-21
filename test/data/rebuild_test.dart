@@ -27,7 +27,7 @@ void main() {
 
     Future<List<String>> snapshot() async {
       final out = <String>[];
-      for (final tbl in ['stock_cache', 'party_balance', 'day_totals', 'product_month', 'counters']) {
+      for (final tbl in ['stock_cache', 'party_balance', 'party_bills', 'day_totals', 'product_month', 'counters']) {
         final cols = (await d.db.rows('PRAGMA table_info($tbl)')).map((r) => r.read<String>('name')).toList();
         final rows = await d.db.rows('SELECT * FROM $tbl ORDER BY ${cols.join(',')}');
         out.add(tbl);
@@ -45,6 +45,8 @@ void main() {
     await d.db.customStatement('DELETE FROM day_totals WHERE rowid % 2 = 0');
     await d.db.customStatement('UPDATE day_totals SET sales_paise = sales_paise + 1');
     await d.db.customStatement('UPDATE party_balance SET balance_paise = 123456');
+    await d.db.customStatement('DELETE FROM party_bills WHERE rowid % 2 = 0');
+    await d.db.customStatement('UPDATE party_bills SET paid_paise = 0, cancelled = 1 - cancelled');
     await d.db.customStatement('UPDATE ledger_entries SET running_paise = 0');
     await d.db.customStatement("DELETE FROM product_month WHERE month = '2026-10'");
     await d.db.customStatement("UPDATE counters SET value = 1 WHERE name LIKE 'inv.%'");

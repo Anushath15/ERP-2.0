@@ -4,6 +4,8 @@ import 'package:erp2/data/repo/bill_repo.dart';
 import 'package:erp2/data/repo/records_repo.dart' show EstimateLine;
 import 'package:erp2/data/sync/sync_api.dart';
 import 'package:erp2/data/sync/sync_engine.dart';
+import 'package:erp2/domain/credit/account.dart' show PartyKind;
+import 'package:erp2/domain/credit/ledger.dart' show LedgerKind;
 import 'package:erp2/domain/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'fake_cloud.dart';
@@ -248,5 +250,31 @@ void main() {
     await b.db.exec("DELETE FROM counters WHERE name LIKE 'est%'");
     final eb3 = await b.estimations.save(lines: const [line], totalPaise: 1, customerName: '', at: DateTime(2026, 10, 20));
     expect(eb3.number, 'EST-B-00003', reason: 'the counter was lost, 00001 and 00002 exist, so the next free one is used');
+  });
+
+  test('the bill-wise dues of a customer are the same on the other computer: which credit bill is paid how far, a reversed payment, a write-off, a cancelled bill', () async {
+    final c = sampleCustomer('Murugan', id: 'c1', limit: 100000000);
+    await a.catalog.saveCustomer(c, create: true);
+    final p = prod('p1', 'X');
+    await a.catalog.saveProduct(p, create: true);
+    final bills = <SavedBill>[];
+    for (var i = 0; i < 4; i++) {
+      bills.add(await a.bills.saveBill(SaveBillInput(idemKey: 'k$i', at: DateTime(2026, 10, 10 + i, 10), lines: [line(p, 1000 * (i + 1))], customerId: 'c1', customerName: 'Murugan', receivedPaise: 0)));
+    }
+    final pay = await a.ledger.receivePayment(PartyKind.customer, partyId: 'c1', partyName: 'Murugan', amount: 15000, mode: 'cash', at: DateTime(2026, 10, 15));
+    await a.ledger.receivePayment(PartyKind.customer, partyId: 'c1', partyName: 'Murugan', amount: 4000, mode: 'upi', at: DateTime(2026, 10, 16));
+    await a.bills.cancelBill(bills[3].id, reason: 'Wrong item');
+    final entries = await a.ledger.entries('c1');
+    final firstPayment = entries.firstWhere((e) => e.kind == LedgerKind.payment && e.amountPaise == -15000);
+    await a.ledger.reverseEntry(PartyKind.customer, partyId: 'c1', entryId: firstPayment.id, reason: 'Wrong amount', at: DateTime(2026, 10, 17));
+    await a.ledger.writeOff(PartyKind.customer, partyId: 'c1', amount: 500, reason: 'Small balance', at: DateTime(2026, 10, 18));
+    expect(pay.number, isNotEmpty);
+    await ea.run();
+    await eb.run();
+    Future<List<String>> dues(AppData d) async => [for (final r in await d.db.rows('SELECT bill_no, total_paise, paid_paise, cancelled FROM party_bills WHERE party_id = ? ORDER BY bill_no', ['c1'])) '${r.read<String>('bill_no')}|${r.read<int>('total_paise')}|${r.read<int>('paid_paise')}|${r.read<int>('cancelled')}'];
+    final onA = await dues(a);
+    expect(onA.length, 4);
+    expect(await dues(b), onA, reason: 'the other computer works out the same dues from the ledger it received');
+    expect(await b.ledger.balanceOf('c1'), await a.ledger.balanceOf('c1'));
   });
 }
