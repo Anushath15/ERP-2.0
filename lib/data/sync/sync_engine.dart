@@ -98,6 +98,12 @@ class SyncEngine {
       return 0;
     }
     await cx.db.transaction(() async {
+      if (chan == 'cloud') {
+        // how many documents went to the cloud today (the free plan has daily limits; this is the real figure)
+        final day = DateTime.fromMillisecondsSinceEpoch(cx.nowMs()).toIso8601String().substring(0, 10);
+        await cx.db.exec("DELETE FROM sync_meta WHERE name LIKE 'sent.%' AND name <> ?", ['sent.$day']);
+        await cx.db.exec("INSERT INTO sync_meta(name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = CAST(value AS INTEGER) + ?", ['sent.$day', '${entries.length}', entries.length]);
+      }
       for (final e in entries) {
         await cx.db.exec('DELETE FROM outbox WHERE seq = ? AND stamp = ?', [e.seq, e.stamp]); // edited again meanwhile = stamp changed = stays queued
         if (syncTable(e.doc.coll)?.hasHlc != true) {

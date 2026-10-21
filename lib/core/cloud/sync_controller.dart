@@ -6,6 +6,7 @@ import '../../data/sync/sync_engine.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/store.dart' show SyncState, settingsProvider;
 import '../backoff.dart';
+import '../diag/diag_log.dart';
 import '../data_mode.dart';
 import 'auth_api.dart';
 import 'auth_controller.dart';
@@ -128,21 +129,26 @@ class SyncController extends Notifier<SyncStatus> {
     if (e == null || _running) return;
     _running = true;
     _timer?.cancel();
+    final started = DateTime.now();
     state = state.copyWith(phase: SyncPhase.syncing, clearNextTry: true);
     try {
-      await e.run();
+      final r = await e.run();
+      ref.read(diagProvider).event('sync', 'round', {'ok': true, 'pushed': r.pushed, 'pulled': r.pulled, 'applied': r.applied, 'skipped': r.skipped, 'ms': DateTime.now().difference(started).inMilliseconds});
       backoff.success();
       await _counts();
       state = state.copyWith(phase: state.attention > 0 ? SyncPhase.attention : SyncPhase.idle, last: DateTime.now(), problem: '');
     } on SyncOffline catch (x) {
+      ref.read(diagProvider).event('sync', 'round', {'ok': false, 'why': 'offline', 'failures': backoff.failures + 1, 'text': x.message});
       backoff.failure();
       await _counts();
       state = state.copyWith(phase: SyncPhase.offline, problem: x.message);
     } on SyncAuthFailed catch (x) {
+      ref.read(diagProvider).event('sync', 'round', {'ok': false, 'why': 'sign-in', 'text': x.message});
       backoff.failure();
       await _counts();
       state = state.copyWith(phase: SyncPhase.signedOut, problem: x.message);
     } catch (x) {
+      ref.read(diagProvider).error('sync', x);
       backoff.failure();
       await _counts();
       state = state.copyWith(phase: SyncPhase.attention, problem: '$x');

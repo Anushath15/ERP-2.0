@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/diag/diag_log.dart';
 import '../../core/printer_service.dart';
 import '../../design/widgets.dart';
 import '../../fake/store.dart';
@@ -9,6 +10,7 @@ import '../../fake/store.dart';
 Future<void> printPdfNow(BuildContext context, WidgetRef ref, Uint8List bytes, String jobName, {bool forLabels = false}) async {
   final l = tr(context);
   toast(context, l.printSending);
+  final started = DateTime.now();
   final st = ref.read(settingsProvider);
   final printer = forLabels && st.labelPrinterName.isNotEmpty ? st.labelPrinterName : st.printerName; // stickers go to the label printer when one is chosen
   PrintOutcome out;
@@ -17,6 +19,7 @@ Future<void> printPdfNow(BuildContext context, WidgetRef ref, Uint8List bytes, S
   } catch (_) {
     out = const PrintOutcome(PrintStatus.failed);
   }
+  ref.read(diagProvider).event('print', 'result', {'status': out.status.name, 'printer': out.printer, 'viaWindow': out.viaWindow, 'viaDialogSetting': st.printViaDialog, 'ms': DateTime.now().difference(started).inMilliseconds, 'bytes': bytes.length});
   if (!context.mounted) return;
   toast(
     context,

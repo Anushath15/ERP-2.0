@@ -17,6 +17,8 @@ import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
+import 'diagnostics_card.dart';
+import 'sync_details.dart';
 import 'lan_card.dart';
 import 'security_card.dart';
 import '../../data/db/integrity.dart';
@@ -92,6 +94,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         }, icon: const Icon(Icons.sync_rounded), label: Text(l.syncNow)),
       ])),
       if (cloud.active) ...[
+        const SyncDetails(),
         Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(cloud.pending == 0 ? l.syncNothingWaiting : l.syncWaiting('${cloud.pending}'), key: const ValueKey('syncWaiting'), style: th.bodyMedium)),
         if (cloud.problem.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l.syncProblemLine(cloud.problem), style: th.bodySmall)),
         Text(l.syncOnHelp, style: th.bodySmall),
@@ -125,7 +128,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (ok) await ref.read(modeSwitcherProvider)(v ? DataMode.demo : DataMode.real);
     })));
     const lan = LanCard();
-    final cards = [look, anim, printing, sounds, backup, sync, lan, security, people, demo];
+    const diag = DiagnosticsCard();
+    final cards = [look, anim, printing, sounds, backup, sync, lan, security, people, diag, demo];
     return PageFrame(
       title: l.navSettings,
       actions: [if (context.canPop()) TextButton.icon(key: const ValueKey('settings-back'), onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded), label: Text(l.back))],
@@ -133,7 +137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(children: [for (final c in [printing, security, people, backup, demo]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [printing, security, people, backup, diag, demo]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
                 Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync, lan]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),

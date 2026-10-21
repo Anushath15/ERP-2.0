@@ -12,6 +12,7 @@ import 'design/tokens.dart';
 import 'design/widgets.dart';
 import 'fake/backup_controller.dart';
 import 'fake/data_providers.dart';
+import 'core/diag/diag_log.dart';
 import 'fake/health.dart';
 import 'fake/store.dart';
 import 'strings.dart';
@@ -78,6 +79,7 @@ class _BootRootState extends State<BootRoot> {
           appPathsProvider.overrideWithValue(_paths),
           deviceIdProvider.overrideWithValue(o.deviceId),
           dataDirProvider.overrideWithValue(o.dataDir.isEmpty ? null : o.dataDir),
+          if (o.dataDir.isNotEmpty) diagSinkProvider.overrideWithValue(createDiagSink('${o.dataDir}/../logs')),
           dbFilePathProvider.overrideWithValue(o.dataDir.isEmpty ? null : o.location),
           appModeProvider.overrideWith(() => _FixedMode(o.mode)),
           modeSwitcherProvider.overrideWithValue(_switch),

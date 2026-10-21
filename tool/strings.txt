@@ -1516,3 +1516,12 @@ setPrintAfterSave | Print straight after Save and print
 setPrintAfterSaveHelp | On: Save and print also sends the bill to the printer at once. Off: it opens the Print page and you press Print.
 printUsedWindow | The printer did not accept the direct way, so the Windows print window was used.
 printBuildFailed | The page could not be made. Nothing was printed. Try again.
+diagTitle | Help and diagnostics
+diagHelp | If something does not work, save the diagnostics file and send it to whoever helps you. It holds counts and settings only: no customer names, phone numbers, amounts or bills.
+diagSave | Save diagnostics file
+diagSaved | Diagnostics saved: {where}
+diagFailed | The diagnostics file could not be saved.
+syncSentToday | Sent to the cloud today: {n}
+syncRefused | Not sent (the cloud refused these)
+syncRetry | Try these again
+syncRefusedLine | {what}: {why}

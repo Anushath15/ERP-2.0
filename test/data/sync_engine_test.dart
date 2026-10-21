@@ -187,4 +187,23 @@ void main() {
     final e = await a.estimations.save(lines: const [line], totalPaise: 10000, customerName: '', at: DateTime(2026, 10, 20));
     expect(e.number, 'EST-00003');
   });
+
+  test('the number of documents sent today is counted, and refused ones can be listed and sent again after the cause is gone', () async {
+    await a.catalog.saveProduct(prod('p1', 'GOOD'), create: true);
+    await a.catalog.saveProduct(prod('p2', 'BAD'), create: true);
+    cloud.reject = (d) => d.coll == 'products' && d.id == 'p2';
+    await ea.run();
+    expect(await a.outbox.sentToday(), greaterThan(0));
+    final sent1 = await a.outbox.sentToday();
+    final refused = await a.outbox.refused();
+    expect(refused.single.docId, 'p2');
+    expect(refused.single.error, isNotEmpty);
+    cloud.reject = null; // the cause is gone
+    expect(await a.outbox.retryRefused(), 1);
+    expect((await a.outbox.counts()).attention, 0);
+    await ea.run();
+    expect(cloud.docs.containsKey('products/p2'), isTrue);
+    expect(await a.outbox.sentToday(), sent1 + 1);
+    expect(await a.outbox.refused(), isEmpty);
+  });
 }

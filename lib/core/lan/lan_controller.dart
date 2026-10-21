@@ -4,6 +4,7 @@ import '../../fake/data_providers.dart';
 import '../cloud/sync_controller.dart';
 import '../data_mode.dart';
 import '../backoff.dart';
+import '../diag/diag_log.dart';
 import 'lan_crypto.dart';
 import '../../data/sync/lan_link.dart';
 import 'lan_transport.dart';
@@ -138,6 +139,7 @@ class LanController extends Notifier<LanState> {
     try {
       await l.syncOnce();
       state = state.copyWith(peers: await l.peers(), status: Map.of(l.status));
+      ref.read(diagProvider).event('lan', 'round', {'peers': l.status.length, 'failed': l.status.values.where((v) => v.isNotEmpty).length});
       if (l.status.values.any((v) => v.isNotEmpty)) {
         backoff.failure(); // a counter did not answer: wait longer before the next try
       } else {

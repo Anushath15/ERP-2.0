@@ -1476,4 +1476,13 @@ class Strings {
   String get setPrintAfterSaveHelp => 'On: Save and print also sends the bill to the printer at once. Off: it opens the Print page and you press Print.';
   String get printUsedWindow => 'The printer did not accept the direct way, so the Windows print window was used.';
   String get printBuildFailed => 'The page could not be made. Nothing was printed. Try again.';
+  String get diagTitle => 'Help and diagnostics';
+  String get diagHelp => 'If something does not work, save the diagnostics file and send it to whoever helps you. It holds counts and settings only: no customer names, phone numbers, amounts or bills.';
+  String get diagSave => 'Save diagnostics file';
+  String diagSaved(String where) => 'Diagnostics saved: ${where}';
+  String get diagFailed => 'The diagnostics file could not be saved.';
+  String syncSentToday(String n) => 'Sent to the cloud today: ${n}';
+  String get syncRefused => 'Not sent (the cloud refused these)';
+  String get syncRetry => 'Try these again';
+  String syncRefusedLine(String what, String why) => '${what}: ${why}';
 }
