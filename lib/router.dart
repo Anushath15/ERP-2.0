@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'core/nav_history.dart';
 import 'design/motion.dart';
 import 'fake/store.dart';
 import 'features/auth/auth_screens.dart';
@@ -30,7 +31,9 @@ Page<void> _p(BuildContext c, GoRouterState s, Widget w, {LocalKey? key}) => mot
 
 GoRouter buildRouter({String initialLocation = '/', String? Function(String location)? gate, Listenable? gateChanges}) {
   final shellKey = GlobalKey<NavigatorState>();
-  return GoRouter(
+  navHistory.reset();
+  late final GoRouter router;
+  router = GoRouter(
     initialLocation: initialLocation,
     refreshListenable: gateChanges,
     redirect: gate == null ? null : (context, state) => gate(state.uri.path),
@@ -95,4 +98,7 @@ GoRouter buildRouter({String initialLocation = '/', String? Function(String loca
       ),
     ],
   );
+  router.routerDelegate.addListener(() => navHistory.visit(router.routerDelegate.currentConfiguration.uri.toString()));
+  navHistory.visit(initialLocation);
+  return router;
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/cloud/sync_controller.dart';
 import 'core/date_fmt.dart';
+import 'core/nav_history.dart';
 import 'core/lock/pin_lock.dart';
 import 'core/responsive.dart';
 import 'design/effects.dart';
@@ -31,6 +32,7 @@ class AppShell extends ConsumerWidget {
       const SingleActivator(LogicalKeyboardKey.f3): () => context.go('/estimate'),
       const SingleActivator(LogicalKeyboardKey.f4): () => context.go('/sales'),
       const SingleActivator(LogicalKeyboardKey.f5): () => context.go('/products'),
+      const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): () => navHistory.back(GoRouter.of(context)),
       const SingleActivator(LogicalKeyboardKey.keyN, control: true, shift: true): () => context.go('/products?add=1'),
     };
 
@@ -43,7 +45,7 @@ class AppShell extends ConsumerWidget {
         child: Scaffold(
           appBar: AppBar(
             titleSpacing: 12,
-            leading: location == '/' || idx >= 0 || location == '/more' ? null : IconButton(icon: const Icon(Icons.arrow_back_rounded), tooltip: l.back, onPressed: () => context.canPop() ? context.pop() : context.go('/')),
+            leading: location == '/' || idx >= 0 || location == '/more' ? null : IconButton(icon: const Icon(Icons.arrow_back_rounded), tooltip: l.back, onPressed: () => navHistory.back(GoRouter.of(context))),
             title: Text(location == '/more' ? l.navMore : (navFor(location)?.label(l) ?? l.appName), maxLines: 1, overflow: TextOverflow.ellipsis),
             actions: const [SyncChip(compact: true), SizedBox(width: 8)],
           ),
@@ -189,6 +191,16 @@ class TopBar extends ConsumerWidget {
       color: context.c.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(children: [
+        if (location != '/')
+          ListenableBuilder(
+            listenable: navHistory,
+            builder: (context, _) => IconButton(
+              key: const ValueKey('topbar-back'),
+              tooltip: l.back,
+              onPressed: () => navHistory.back(GoRouter.of(context)),
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+          ),
         IconButton(
           tooltip: l.toggleMenu,
           onPressed: () => ref.read(navExpandedProvider.notifier).toggle(ref.read(navExpandedProvider) ?? context.isDesktop),
