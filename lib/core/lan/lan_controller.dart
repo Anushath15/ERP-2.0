@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../fake/data_providers.dart';
 import '../cloud/sync_controller.dart';
 import '../data_mode.dart';
+import '../backoff.dart';
 import 'lan_crypto.dart';
 import '../../data/sync/lan_link.dart';
 import 'lan_transport.dart';
@@ -27,6 +28,10 @@ final lanTransportProvider = Provider<LanTransport>((ref) => createLanTransport(
 /// other counters and every few seconds sends them what changed here.
 class LanController extends Notifier<LanState> {
   Timer? _timer;
+  bool _auto = false;
+
+  /// 5 seconds while the other counters answer; after failures longer and longer, at most 2 minutes (a switched-off counter is not knocked at all day).
+  final Backoff backoff = Backoff(base: const Duration(seconds: 5), max: const Duration(minutes: 2));
   LanLink? _link;
   bool _running = false;
 
@@ -66,7 +71,9 @@ class LanController extends Notifier<LanState> {
     }
     _link = link;
     state = state.copyWith(on: true, startFailed: false, addresses: await ref.read(lanTransportProvider).localAddresses(), peers: await link.peers());
-    if (timer) _timer = Timer.periodic(interval, (_) => unawaited(tick()));
+    backoff.success();
+    _auto = timer;
+    if (timer) _scheduleNext();
   }
 
   Future<void> _stop() async {
@@ -127,12 +134,25 @@ class LanController extends Notifier<LanState> {
     final l = _link;
     if (l == null || _running) return;
     _running = true;
+    _timer?.cancel();
     try {
       await l.syncOnce();
       state = state.copyWith(peers: await l.peers(), status: Map.of(l.status));
+      if (l.status.values.any((v) => v.isNotEmpty)) {
+        backoff.failure(); // a counter did not answer: wait longer before the next try
+      } else {
+        backoff.success();
+      }
     } finally {
       _running = false;
+      _scheduleNext();
     }
+  }
+
+  void _scheduleNext() {
+    _timer?.cancel();
+    if (!_auto || _link == null) return;
+    _timer = Timer(backoff.delay, () => unawaited(tick()));
   }
 }
 

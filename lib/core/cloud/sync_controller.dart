@@ -5,6 +5,7 @@ import '../../data/sync/sync_api.dart';
 import '../../data/sync/sync_engine.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/store.dart' show SyncState, settingsProvider;
+import '../backoff.dart';
 import '../data_mode.dart';
 import 'auth_api.dart';
 import 'auth_controller.dart';
@@ -14,7 +15,7 @@ import 'http_sync_api.dart';
 enum SyncPhase { off, idle, syncing, offline, attention, signedOut }
 
 class SyncStatus {
-  const SyncStatus({this.phase = SyncPhase.off, this.pending = 0, this.attention = 0, this.last, this.problem = '', this.newFromCloud = false});
+  const SyncStatus({this.phase = SyncPhase.off, this.pending = 0, this.attention = 0, this.last, this.problem = '', this.newFromCloud = false, this.nextTry});
 
   /// [SyncPhase.off]: no cloud in this build, demo shop, or not signed in - the program works on this computer only.
   final SyncPhase phase;
@@ -25,19 +26,23 @@ class SyncStatus {
   /// Other computers sent changes: the lists on screen are older than the database until the program is reloaded.
   final bool newFromCloud;
 
+  /// When the next automatic try is due (after failures this is later and later); null when everything is fine or nothing is running.
+  final DateTime? nextTry;
+
   bool get active => phase != SyncPhase.off;
 
-  SyncStatus copyWith({SyncPhase? phase, int? pending, int? attention, DateTime? last, String? problem, bool? newFromCloud}) => SyncStatus(
-      phase: phase ?? this.phase, pending: pending ?? this.pending, attention: attention ?? this.attention, last: last ?? this.last, problem: problem ?? this.problem, newFromCloud: newFromCloud ?? this.newFromCloud);
+  SyncStatus copyWith({SyncPhase? phase, int? pending, int? attention, DateTime? last, String? problem, bool? newFromCloud, DateTime? nextTry, bool clearNextTry = false}) => SyncStatus(
+      phase: phase ?? this.phase, pending: pending ?? this.pending, attention: attention ?? this.attention, last: last ?? this.last, problem: problem ?? this.problem, newFromCloud: newFromCloud ?? this.newFromCloud, nextTry: clearNextTry ? null : (nextTry ?? this.nextTry));
 }
 
 /// Runs the sync engine on a timer for the real shop once this computer is signed in to the shop's cloud account, and tells the screens
 /// where it stands. Without a cloud address in the build, in the demo shop, or signed out, it does nothing at all.
 class SyncController extends Notifier<SyncStatus> {
   Timer? _timer;
+  final Backoff backoff = Backoff();
   SyncEngine? _engine;
   AppData? _data;
-  bool _running = false;
+  bool _running = false, _auto = false;
 
   /// How often the program talks to the cloud while it is open (the cloud call is tiny when nothing changed).
   static const interval = Duration(seconds: 20);
@@ -84,10 +89,18 @@ class SyncController extends Notifier<SyncStatus> {
     _data = data;
     _engine = SyncEngine(data.cx, api, onChanged: () => state = state.copyWith(newFromCloud: true));
     state = state.copyWith(phase: SyncPhase.idle);
-    if (timer) {
-      _timer = Timer.periodic(interval, (_) => unawaited(syncNow()));
-      unawaited(syncNow());
-    }
+    backoff.success();
+    _auto = timer;
+    if (timer) unawaited(syncNow());
+  }
+
+  /// The next automatic try: the normal wait, or longer after failures (see [Backoff]).
+  void _scheduleNext({required bool timer}) {
+    _timer?.cancel();
+    if (!timer || _engine == null) return;
+    final wait = backoff.delay;
+    state = state.copyWith(nextTry: DateTime.now().add(wait));
+    _timer = Timer(wait, () => unawaited(syncNow()));
   }
 
   /// Another counter (over the shop Wi-Fi) changed data: the lists on screen are older than the database.
@@ -96,6 +109,7 @@ class SyncController extends Notifier<SyncStatus> {
   void stop() {
     _timer?.cancel();
     _timer = null;
+    backoff.success();
     _engine = null;
     _data = null;
     if (state.phase != SyncPhase.off && state.phase != SyncPhase.signedOut) state = state.copyWith(phase: SyncPhase.off);
@@ -113,22 +127,28 @@ class SyncController extends Notifier<SyncStatus> {
     final e = _engine;
     if (e == null || _running) return;
     _running = true;
-    state = state.copyWith(phase: SyncPhase.syncing);
+    _timer?.cancel();
+    state = state.copyWith(phase: SyncPhase.syncing, clearNextTry: true);
     try {
       await e.run();
+      backoff.success();
       await _counts();
       state = state.copyWith(phase: state.attention > 0 ? SyncPhase.attention : SyncPhase.idle, last: DateTime.now(), problem: '');
     } on SyncOffline catch (x) {
+      backoff.failure();
       await _counts();
       state = state.copyWith(phase: SyncPhase.offline, problem: x.message);
     } on SyncAuthFailed catch (x) {
+      backoff.failure();
       await _counts();
       state = state.copyWith(phase: SyncPhase.signedOut, problem: x.message);
     } catch (x) {
+      backoff.failure();
       await _counts();
       state = state.copyWith(phase: SyncPhase.attention, problem: '$x');
     } finally {
       _running = false;
+      _scheduleNext(timer: _auto);
     }
   }
 }
