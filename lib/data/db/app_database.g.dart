@@ -9853,6 +9853,18 @@ class Purchases extends Table with TableInfo<Purchases, DbPurchase> {
     requiredDuringInsert: true,
     $customConstraints: 'NOT NULL',
   );
+  static const VerificationMeta _lineCountMeta = const VerificationMeta(
+    'lineCount',
+  );
+  late final GeneratedColumn<int> lineCount = GeneratedColumn<int>(
+    'line_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -9874,6 +9886,7 @@ class Purchases extends Table with TableInfo<Purchases, DbPurchase> {
     byName,
     createdAt,
     deviceId,
+    lineCount,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -10022,6 +10035,12 @@ class Purchases extends Table with TableInfo<Purchases, DbPurchase> {
     } else if (isInserting) {
       context.missing(_deviceIdMeta);
     }
+    if (data.containsKey('line_count')) {
+      context.handle(
+        _lineCountMeta,
+        lineCount.isAcceptableOrUnknown(data['line_count']!, _lineCountMeta),
+      );
+    }
     return context;
   }
 
@@ -10107,6 +10126,10 @@ class Purchases extends Table with TableInfo<Purchases, DbPurchase> {
         DriftSqlType.string,
         data['${effectivePrefix}device_id'],
       )!,
+      lineCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}line_count'],
+      )!,
     );
   }
 
@@ -10139,6 +10162,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
   final String byName;
   final int createdAt;
   final String deviceId;
+  final int lineCount;
   const DbPurchase({
     required this.id,
     required this.number,
@@ -10159,6 +10183,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
     required this.byName,
     required this.createdAt,
     required this.deviceId,
+    required this.lineCount,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -10184,6 +10209,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
     map['by_name'] = Variable<String>(byName);
     map['created_at'] = Variable<int>(createdAt);
     map['device_id'] = Variable<String>(deviceId);
+    map['line_count'] = Variable<int>(lineCount);
     return map;
   }
 
@@ -10210,6 +10236,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
       byName: Value(byName),
       createdAt: Value(createdAt),
       deviceId: Value(deviceId),
+      lineCount: Value(lineCount),
     );
   }
 
@@ -10238,6 +10265,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
       byName: serializer.fromJson<String>(json['by_name']),
       createdAt: serializer.fromJson<int>(json['created_at']),
       deviceId: serializer.fromJson<String>(json['device_id']),
+      lineCount: serializer.fromJson<int>(json['line_count']),
     );
   }
   @override
@@ -10263,6 +10291,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
       'by_name': serializer.toJson<String>(byName),
       'created_at': serializer.toJson<int>(createdAt),
       'device_id': serializer.toJson<String>(deviceId),
+      'line_count': serializer.toJson<int>(lineCount),
     };
   }
 
@@ -10286,6 +10315,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
     String? byName,
     int? createdAt,
     String? deviceId,
+    int? lineCount,
   }) => DbPurchase(
     id: id ?? this.id,
     number: number ?? this.number,
@@ -10306,6 +10336,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
     byName: byName ?? this.byName,
     createdAt: createdAt ?? this.createdAt,
     deviceId: deviceId ?? this.deviceId,
+    lineCount: lineCount ?? this.lineCount,
   );
   DbPurchase copyWithCompanion(PurchasesCompanion data) {
     return DbPurchase(
@@ -10340,6 +10371,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
       byName: data.byName.present ? data.byName.value : this.byName,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      lineCount: data.lineCount.present ? data.lineCount.value : this.lineCount,
     );
   }
 
@@ -10364,7 +10396,8 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
           ..write('idemKey: $idemKey, ')
           ..write('byName: $byName, ')
           ..write('createdAt: $createdAt, ')
-          ..write('deviceId: $deviceId')
+          ..write('deviceId: $deviceId, ')
+          ..write('lineCount: $lineCount')
           ..write(')'))
         .toString();
   }
@@ -10390,6 +10423,7 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
     byName,
     createdAt,
     deviceId,
+    lineCount,
   );
   @override
   bool operator ==(Object other) =>
@@ -10413,7 +10447,8 @@ class DbPurchase extends DataClass implements Insertable<DbPurchase> {
           other.idemKey == this.idemKey &&
           other.byName == this.byName &&
           other.createdAt == this.createdAt &&
-          other.deviceId == this.deviceId);
+          other.deviceId == this.deviceId &&
+          other.lineCount == this.lineCount);
 }
 
 class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
@@ -10436,6 +10471,7 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
   final Value<String> byName;
   final Value<int> createdAt;
   final Value<String> deviceId;
+  final Value<int> lineCount;
   final Value<int> rowid;
   const PurchasesCompanion({
     this.id = const Value.absent(),
@@ -10457,6 +10493,7 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
     this.byName = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.deviceId = const Value.absent(),
+    this.lineCount = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PurchasesCompanion.insert({
@@ -10479,6 +10516,7 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
     this.byName = const Value.absent(),
     required int createdAt,
     required String deviceId,
+    this.lineCount = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        number = Value(number),
@@ -10509,6 +10547,7 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
     Expression<String>? byName,
     Expression<int>? createdAt,
     Expression<String>? deviceId,
+    Expression<int>? lineCount,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -10531,6 +10570,7 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
       if (byName != null) 'by_name': byName,
       if (createdAt != null) 'created_at': createdAt,
       if (deviceId != null) 'device_id': deviceId,
+      if (lineCount != null) 'line_count': lineCount,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -10555,6 +10595,7 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
     Value<String>? byName,
     Value<int>? createdAt,
     Value<String>? deviceId,
+    Value<int>? lineCount,
     Value<int>? rowid,
   }) {
     return PurchasesCompanion(
@@ -10577,6 +10618,7 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
       byName: byName ?? this.byName,
       createdAt: createdAt ?? this.createdAt,
       deviceId: deviceId ?? this.deviceId,
+      lineCount: lineCount ?? this.lineCount,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -10641,6 +10683,9 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
     if (deviceId.present) {
       map['device_id'] = Variable<String>(deviceId.value);
     }
+    if (lineCount.present) {
+      map['line_count'] = Variable<int>(lineCount.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -10669,6 +10714,7 @@ class PurchasesCompanion extends UpdateCompanion<DbPurchase> {
           ..write('byName: $byName, ')
           ..write('createdAt: $createdAt, ')
           ..write('deviceId: $deviceId, ')
+          ..write('lineCount: $lineCount, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -29563,6 +29609,7 @@ typedef $PurchasesCreateCompanionBuilder = PurchasesCompanion Function({
   Value<String> byName,
   required int createdAt,
   required String deviceId,
+  Value<int> lineCount,
   Value<int> rowid,
 });
 typedef $PurchasesUpdateCompanionBuilder = PurchasesCompanion Function({
@@ -29585,6 +29632,7 @@ typedef $PurchasesUpdateCompanionBuilder = PurchasesCompanion Function({
   Value<String> byName,
   Value<int> createdAt,
   Value<String> deviceId,
+  Value<int> lineCount,
   Value<int> rowid,
 });
 
@@ -29743,6 +29791,11 @@ class $PurchasesFilterComposer extends Composer<_$AppDatabase, Purchases> {
 
   ColumnFilters<String> get deviceId => $composableBuilder(
     column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lineCount => $composableBuilder(
+    column: $table.lineCount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -29918,6 +29971,11 @@ class $PurchasesOrderingComposer extends Composer<_$AppDatabase, Purchases> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get lineCount => $composableBuilder(
+    column: $table.lineCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $DealersOrderingComposer get dealerId {
     final $DealersOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -30015,6 +30073,9 @@ class $PurchasesAnnotationComposer extends Composer<_$AppDatabase, Purchases> {
 
   GeneratedColumn<String> get deviceId =>
       $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get lineCount =>
+      $composableBuilder(column: $table.lineCount, builder: (column) => column);
 
   $DealersAnnotationComposer get dealerId {
     final $DealersAnnotationComposer composer = $composerBuilder(
@@ -30141,6 +30202,7 @@ class $PurchasesTableManager
                 Value<String> byName = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<String> deviceId = const Value.absent(),
+                Value<int> lineCount = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PurchasesCompanion(
                 id: id,
@@ -30162,6 +30224,7 @@ class $PurchasesTableManager
                 byName: byName,
                 createdAt: createdAt,
                 deviceId: deviceId,
+                lineCount: lineCount,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -30185,6 +30248,7 @@ class $PurchasesTableManager
                 Value<String> byName = const Value.absent(),
                 required int createdAt,
                 required String deviceId,
+                Value<int> lineCount = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PurchasesCompanion.insert(
                 id: id,
@@ -30206,6 +30270,7 @@ class $PurchasesTableManager
                 byName: byName,
                 createdAt: createdAt,
                 deviceId: deviceId,
+                lineCount: lineCount,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

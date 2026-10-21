@@ -191,7 +191,11 @@ class SyncEngine {
     if (d.coll == settingsColl) return _applySetting(d);
     final t = syncTable(d.coll);
     if (t == null) return false; // a collection a newer program version added: ignored, not an error
-    if (t.appendOnly) return _upsert(t, d, replace: false);
+    if (t.appendOnly) {
+      final added = await _upsert(t, d, replace: false);
+      if (added) await _dropReplacedLines(d);
+      return added;
+    }
     if (!t.hasHlc) {
       final rev = await cx.db.row('SELECT hlc FROM sync_rev WHERE coll = ? AND doc_id = ?', [d.coll, d.id]);
       if (rev != null && rev.read<String>('hlc').compareTo(d.hlc) >= 0) return false;
@@ -217,6 +221,13 @@ class SyncEngine {
     } else if (d.coll == 'estimations') {
       final count = d.data['line_count'];
       if (count is num) await cx.db.exec('DELETE FROM estimation_lines WHERE estimation_id = ? AND line_no > ?', [d.id, count.toInt()]);
+    } else if (d.coll == 'purchase_lines') {
+      // an edited purchase writes its items again (new ids): the new item replaces the old one with the same number
+      final pur = d.data['purchase_id'], no = d.data['line_no'];
+      if (pur is String && no is num) await cx.db.exec('DELETE FROM purchase_lines WHERE purchase_id = ? AND line_no = ? AND id <> ?', [pur, no.toInt(), d.id]);
+    } else if (d.coll == 'purchases') {
+      final count = d.data['line_count'];
+      if (count is num && count > 0) await cx.db.exec('DELETE FROM purchase_lines WHERE purchase_id = ? AND line_no > ?', [d.id, count.toInt()]);
     }
   }
 

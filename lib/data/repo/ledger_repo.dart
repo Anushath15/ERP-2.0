@@ -147,6 +147,23 @@ class LedgerRepo {
     await tx.exec('UPDATE party_balance SET last_bill_at = ? WHERE party_id = ?', [at.millisecondsSinceEpoch, partyId]);
   }
 
+  /// The amount still owed on a bill changed by [delta] (a purchase was edited): more owed = a credit on the same bill, less owed = a correction that is put
+  /// against the bill; then the bill-wise due is worked out again from the ledger so it always agrees with it. [newTotal] is the bill's new total.
+  Future<void> changeCredit(DatabaseConnectionUser tx, PartyKind kind, {required String partyId, required String billNo, required DateTime at, required int delta, required int newTotal, required DateTime billDate}) async {
+    if (delta > 0) {
+      await addEntry(tx, kind, LedgerEntry.billCredit(id: newId(), customerId: partyId, paise: delta, at: at, billNo: billNo, by: cx.actor.name));
+    } else if (delta < 0) {
+      await addEntry(tx, kind, LedgerEntry.adjustment(id: newId(), customerId: partyId, signedPaise: delta, at: at, reason: 'Purchase edited', by: cx.actor.name, billNo: billNo, allocations: [Allocation(billNo, -delta)]));
+    }
+    final credit = await tx.scalarInt("SELECT COALESCE(SUM(amount_paise), 0) FROM ledger_entries WHERE party_id = ? AND bill_no = ? AND kind = 'billCredit'", [partyId, billNo]);
+    if (credit <= 0) return; // nothing was ever owed on this bill: no bill-wise due
+    final allocs = await tx.scalarInt(
+        r"SELECT COALESCE(SUM(json_extract(a.value, '$.p')), 0) FROM ledger_entries e, json_each(e.allocations) a WHERE e.party_id = ? AND json_extract(a.value, '$.b') = ? "
+        'AND NOT EXISTS (SELECT 1 FROM ledger_entries r WHERE r.reverses = e.id)',
+        [partyId, billNo]);
+    await putDue(tx, kind, partyId, BillDue(billNo: billNo, date: billDate, totalPaise: newTotal, paidPaise: newTotal - credit + allocs));
+  }
+
   /// A bill was cancelled: its credit is reversed. Does nothing for a bill that added no credit. Returns whether an entry was made.
   Future<bool> cancelBillCredit(DatabaseConnectionUser tx, PartyKind kind, {required String partyId, required String billNo, required DateTime at, required String reason}) async {
     final ledger = await entries(partyId, tx: tx);

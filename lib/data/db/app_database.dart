@@ -7,7 +7,7 @@ part 'app_database.g.dart';
 
 /// The schema version this build of the app understands. Raise it ONLY together with a numbered migration in
 /// [AppDatabase.migrations], a new schema dump (`dart run drift_dev schema dump ...`) and a migration test.
-const currentSchemaVersion = 10;
+const currentSchemaVersion = 11;
 
 /// The database file was made by a NEWER version of the app. It is never opened (an old app could damage it).
 class DatabaseTooNewException implements Exception {
@@ -105,7 +105,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 10; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
+  int get schemaVersion => 11; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
 
   /// Numbered migrations: key = the version the step produces. Every step runs inside the upgrade transaction; the caller
   /// makes a backup first (see DatabaseOpener) and a failed step leaves the old file untouched.
@@ -287,6 +287,11 @@ class AppDatabase extends _$AppDatabase {
       await db.customStatement('DROP INDEX outbox_doc');
       await db.customStatement('CREATE UNIQUE INDEX outbox_doc ON outbox(chan, coll, doc_id)');
       await db.customStatement("CREATE TABLE lan_peers (chan TEXT NOT NULL PRIMARY KEY, host TEXT NOT NULL, port INTEGER NOT NULL, device_id TEXT NOT NULL, name TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL)");
+    },
+    // 11: a purchase can be edited, so it says how many items it has now (the other computer removes the items that are gone)
+    11: (m, db) async {
+      await db.customStatement('ALTER TABLE purchases ADD COLUMN line_count INTEGER NOT NULL DEFAULT 0');
+      await db.customStatement('UPDATE purchases SET line_count = (SELECT COUNT(*) FROM purchase_lines WHERE purchase_id = purchases.id)');
     },
   };
 

@@ -80,12 +80,15 @@ class PurchaseLineView {
 }
 
 class PurchaseDetail {
-  const PurchaseDetail({required this.row, required this.lines, required this.note, required this.receivedAt, required this.taxPaise});
+  const PurchaseDetail({required this.row, required this.lines, required this.note, required this.receivedAt, required this.taxPaise, this.updateCost = true});
   final PurchaseRow row;
   final List<PurchaseLineView> lines;
   final String note;
   final DateTime? receivedAt;
   final int taxPaise;
+
+  /// Whether the buying prices followed this purchase's rates.
+  final bool updateCost;
 }
 
 class DealerSummary {
@@ -140,9 +143,9 @@ class PurchaseRepo {
       final at = input.at.millisecondsSinceEpoch;
       final taxable = input.lines.fold<int>(0, (s, l) => s + l.taxable);
       await _db.exec(
-        'INSERT INTO purchases(id, number, dealer_id, dealer_name, invoice_no, purchased_at, day, total_paise, taxable_paise, tax_paise, paid_paise, status, update_cost, note, idem_key, by_name, created_at, device_id) '
-        'VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?)',
-        [id, number, input.dealerId, dealer.read<String>('name'), input.invoiceNo.trim(), at, DataContext.dayOf(input.at), total, taxable, total - taxable, input.paidPaise, input.updateCost ? 1 : 0, input.note.trim(), input.idemKey, cx.actor.name, cx.nowMs(), cx.deviceId],
+        'INSERT INTO purchases(id, number, dealer_id, dealer_name, invoice_no, purchased_at, day, total_paise, taxable_paise, tax_paise, paid_paise, status, update_cost, note, idem_key, by_name, created_at, device_id, line_count) '
+        'VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?)',
+        [id, number, input.dealerId, dealer.read<String>('name'), input.invoiceNo.trim(), at, DataContext.dayOf(input.at), total, taxable, total - taxable, input.paidPaise, input.updateCost ? 1 : 0, input.note.trim(), input.idemKey, cx.actor.name, cx.nowMs(), cx.deviceId, input.lines.length],
       );
       for (var i = 0; i < input.lines.length; i++) {
         final l = input.lines[i];
@@ -171,25 +174,126 @@ class PurchaseRepo {
       final qty = l.read<int>('qty_milli');
       await _db.exec('INSERT INTO stock_movements(id, product_id, qty_milli, kind, ref_id, unit_cost_paise, at, created_at, device_id) VALUES (?,?,?,?,?,?,?,?,?)', [newId(), pid, qty, 'purchase', id, l.read<int>('rate_paise'), ms, cx.nowMs(), cx.deviceId]);
       await _db.exec('INSERT INTO stock_cache(product_id, qty_milli) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET qty_milli = qty_milli + excluded.qty_milli', [pid, qty]);
-      if (p.read<int>('update_cost') == 1) {
-        final before = await _db.scalarInt('SELECT cost_paise FROM products WHERE id = ?', [pid]);
-        final rate = l.read<int>('rate_paise');
-        if (before != rate) {
-          await _db.exec('UPDATE products SET cost_paise = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [rate, cx.nowMs(), cx.hlc.next(), cx.deviceId, pid]);
-          await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), 'cost', 'product', pid, 'cost', '$before', '$rate', cx.actor.name, cx.nowMs(), cx.deviceId]);
-          // the selling price follows by the same ratio, so the margin stays what it was
-          final oldSell = await _db.scalarInt('SELECT price_paise FROM products WHERE id = ?', [pid]);
-          final newSell = sellingPriceKeepingMargin(oldCost: before, newCost: rate, oldSell: oldSell);
-          if (newSell != oldSell) {
-            await _db.exec('UPDATE products SET price_paise = ? WHERE id = ?', [newSell, pid]);
-            await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), 'price', 'product', pid, 'price', '$oldSell', '$newSell', cx.actor.name, cx.nowMs(), cx.deviceId]);
-          }
-          await enqueue(cx, _db, 'products', pid);
-        }
-      }
+      if (p.read<int>('update_cost') == 1) await _applyCost(pid, l.read<int>('rate_paise'));
     }
     await ledger.addBillCredit(_db, PartyKind.dealer, partyId: p.read<String>('dealer_id'), billNo: p.read<String>('number'), at: when, total: p.read<int>('total_paise'), received: p.read<int>('paid_paise'));
     await _db.exec('UPDATE purchases SET status = 1, received_at = ? WHERE id = ?', [ms, id]);
+  }
+
+  /// The product's buying price becomes [rate] (without GST) and its selling price follows by the same ratio, so the margin stays what it was. Does nothing when
+  /// the buying price already is [rate].
+  Future<void> _applyCost(String pid, int rate) async {
+    final before = await _db.scalarInt('SELECT cost_paise FROM products WHERE id = ?', [pid]);
+    if (before == rate) return;
+    await _db.exec('UPDATE products SET cost_paise = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [rate, cx.nowMs(), cx.hlc.next(), cx.deviceId, pid]);
+    await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), 'cost', 'product', pid, 'cost', '$before', '$rate', cx.actor.name, cx.nowMs(), cx.deviceId]);
+    final oldSell = await _db.scalarInt('SELECT price_paise FROM products WHERE id = ?', [pid]);
+    final newSell = sellingPriceKeepingMargin(oldCost: before, newCost: rate, oldSell: oldSell);
+    if (newSell != oldSell) {
+      await _db.exec('UPDATE products SET price_paise = ? WHERE id = ?', [newSell, pid]);
+      await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), 'price', 'product', pid, 'price', '$oldSell', '$newSell', cx.actor.name, cx.nowMs(), cx.deviceId]);
+    }
+    await enqueue(cx, _db, 'products', pid);
+  }
+
+  /// Changes a saved purchase in place (the same number): the items, rates, invoice number, note, what was paid. The dealer cannot be changed.
+  ///  * A PENDING purchase has had no effect yet, so it is simply replaced.
+  ///  * A RECEIVED one: the stock moves by the DIFFERENCE per product (a stock change, never an edit of the figure), the buying price follows the changed
+  ///    rates when asked, and the dealer's account moves by the difference in what is still owed (a credit or a correction on the same bill).
+  ///  * A purchase that already has a return keeps its items (the return refers to them): only the invoice number and the note can change.
+  ///  * Payments made to the dealer since then count: the new total cannot be below what has been paid in all.
+  Future<SavedPurchase> editPurchase(String purchaseId, SavePurchaseInput input) async {
+    if (input.lines.isEmpty) throw ArgumentError('Add at least one item to the purchase.');
+    for (final l in input.lines) {
+      if (l.qtyMilli <= 0) throw ArgumentError('The quantity of ${l.name} must be above zero.');
+      if (l.ratePaise < 0) throw ArgumentError('The rate of ${l.name} cannot be negative.');
+    }
+    final newTotal = input.total;
+    if (input.paidPaise < 0 || input.paidPaise > newTotal) throw ArgumentError('The money paid must be between zero and the total.');
+    return _db.transaction(() async {
+      final p = await _db.row('SELECT * FROM purchases WHERE id = ?', [purchaseId]);
+      if (p == null) throw StateError('No such purchase.');
+      final dealerId = p.read<String>('dealer_id');
+      if (dealerId != input.dealerId) throw StateError('The dealer of a purchase cannot be changed. Make a return and a new purchase instead.');
+      final received = p.read<int>('status') == 1;
+      final number = p.read<String>('number');
+      final oldLines = await _db.rows('SELECT * FROM purchase_lines WHERE purchase_id = ? ORDER BY line_no', [purchaseId]);
+
+      bool same() {
+        if (oldLines.length != input.lines.length) return false;
+        for (var i = 0; i < oldLines.length; i++) {
+          final o = oldLines[i], n = input.lines[i];
+          if (o.read<String>('product_id') != n.productId || o.read<int>('qty_milli') != n.qtyMilli || o.read<int>('rate_paise') != n.ratePaise || o.read<int>('gst_bp') != n.gstBp) return false;
+        }
+        return true;
+      }
+
+      final linesSame = same();
+      if (!linesSame && await _db.scalarInt('SELECT COUNT(*) FROM purchase_returns WHERE purchase_id = ?', [purchaseId]) > 0) {
+        throw StateError('This purchase already has a return, so its items cannot be changed. You can still change the invoice number and the note.');
+      }
+      final oldTotal = p.read<int>('total_paise'), oldPaid = p.read<int>('paid_paise');
+      final taxable = input.lines.fold<int>(0, (s, l) => s + l.taxable);
+      final at = p.read<int>('purchased_at');
+      final when = _at(at);
+
+      if (received && (oldTotal != newTotal || oldPaid != input.paidPaise || !linesSame)) {
+        // what the dealer has been paid since, through the bill-wise payments (reversed payments do not count)
+        final later = await _db.scalarInt(
+            r"SELECT COALESCE(SUM(json_extract(a.value, '$.p')), 0) FROM ledger_entries e, json_each(e.allocations) a WHERE e.party_id = ? AND json_extract(a.value, '$.b') = ? "
+            'AND NOT EXISTS (SELECT 1 FROM ledger_entries r WHERE r.reverses = e.id)',
+            [dealerId, number]);
+        // an earlier edit that lowered the amount owed is also recorded as an allocation: it must not count as money paid
+        final corrections = await _db.scalarInt(
+            r"SELECT COALESCE(SUM(json_extract(a.value, '$.p')), 0) FROM ledger_entries e, json_each(e.allocations) a WHERE e.party_id = ? AND e.kind = 'adjustment' AND e.note LIKE 'Purchase edited%' "
+            r"AND json_extract(a.value, '$.b') = ? AND NOT EXISTS (SELECT 1 FROM ledger_entries r WHERE r.reverses = e.id)",
+            [dealerId, number]);
+        final paidSince = later - corrections;
+        if (newTotal - input.paidPaise - paidSince < 0) {
+          throw StateError('The dealer has been paid more than this new total since the purchase was made, so the total cannot be this low.');
+        }
+        // stock: the difference per product
+        final net = <String, int>{};
+        for (final o in oldLines) {
+          net[o.read<String>('product_id')] = (net[o.read<String>('product_id')] ?? 0) - o.read<int>('qty_milli');
+        }
+        for (final n in input.lines) {
+          net[n.productId] = (net[n.productId] ?? 0) + n.qtyMilli;
+        }
+        for (final e in net.entries) {
+          if (e.value == 0) continue;
+          final rate = input.lines.where((l) => l.productId == e.key).map((l) => l.ratePaise).firstOrNull ?? 0;
+          await _db.exec('INSERT INTO stock_movements(id, product_id, qty_milli, kind, ref_id, unit_cost_paise, note, at, created_at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), e.key, e.value, 'purchase', purchaseId, rate, 'Purchase edited', cx.nowMs(), cx.nowMs(), cx.deviceId]);
+          await _db.exec('INSERT INTO stock_cache(product_id, qty_milli) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET qty_milli = qty_milli + excluded.qty_milli', [e.key, e.value]);
+        }
+        // the buying price follows a rate that changed (or an item that is new here)
+        if (input.updateCost) {
+          final was = {for (final o in oldLines) o.read<String>('product_id'): o.read<int>('rate_paise')};
+          for (final n in input.lines) {
+            if (was[n.productId] != n.ratePaise) await _applyCost(n.productId, n.ratePaise);
+          }
+        }
+        // the dealer's account: what is still owed changes by the difference
+        final delta = (newTotal - input.paidPaise) - (oldTotal - oldPaid);
+        await ledger.changeCredit(_db, PartyKind.dealer, partyId: dealerId, billNo: number, at: cx.now(), delta: delta, newTotal: newTotal, billDate: when);
+      }
+
+      // the items: written again (new ids), the purchase says how many there are now
+      if (!linesSame) {
+        await _db.exec('DELETE FROM purchase_lines WHERE purchase_id = ?', [purchaseId]);
+        for (var i = 0; i < input.lines.length; i++) {
+          final l = input.lines[i];
+          await _db.exec('INSERT INTO purchase_lines(id, purchase_id, line_no, product_id, name, unit, qty_milli, rate_paise, gst_bp, taxable_paise, tax_paise, total_paise) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+              [newId(), purchaseId, i + 1, l.productId, l.name, l.unit, l.qtyMilli, l.ratePaise, l.gstBp, l.taxable, l.tax, l.total]);
+        }
+      }
+      await _db.exec('UPDATE purchases SET invoice_no = ?, total_paise = ?, taxable_paise = ?, tax_paise = ?, paid_paise = ?, update_cost = ?, note = ?, line_count = ? WHERE id = ?',
+          [input.invoiceNo.trim(), newTotal, taxable, newTotal - taxable, input.paidPaise, input.updateCost ? 1 : 0, input.note.trim(), input.lines.length, purchaseId]);
+      await enqueue(cx, _db, 'purchases', purchaseId);
+      await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
+          [newId(), 'purchaseEdit', 'purchase', purchaseId, 'total', '$oldTotal', '$newTotal', cx.actor.name, cx.nowMs(), cx.deviceId]);
+      return _saved((await _db.row('$_rowSelect WHERE p.id = ?', [purchaseId]))!, replay: false);
+    });
   }
 
   /// A pending purchase arrives: stock and the dealer's account are updated now. Returns false when it was already received.
@@ -255,6 +359,7 @@ class PurchaseRepo {
       note: r.read<String>('note'),
       receivedAt: r.readNullable<int>('received_at') == null ? null : _at(r.read<int>('received_at')),
       taxPaise: r.read<int>('tax_paise'),
+      updateCost: r.read<int>('update_cost') == 1,
     );
   }
 
