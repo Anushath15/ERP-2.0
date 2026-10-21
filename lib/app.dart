@@ -25,6 +25,7 @@ import 'router.dart';
 import 'core/cloud/auth_controller.dart';
 import 'core/cloud/cloud_config.dart';
 import 'core/cloud/sync_controller.dart';
+import 'core/diag/diag_log.dart';
 import 'core/lan/lan_controller.dart';
 import 'core/window_chrome.dart';
 import 'core/lock/pin_lock.dart';
@@ -132,6 +133,17 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       if (!mounted) return;
       ref.read(selfCheckProblemsProvider.notifier).set(found);
       await d.settings.put('selfcheck.last', '${d.cx.nowMs()}');
+    }
+    // once a week, in a quiet moment: tidy the data file (smaller, searches stay fast); the same job as Settings > Tidy the database
+    final lastTidy = int.tryParse(await d.settings.get('maintenance.last') ?? '') ?? 0;
+    if (d.cx.nowMs() - lastTidy > const Duration(days: 7).inMilliseconds) {
+      try {
+        final r = await ref.read(writeQueueProvider).run(() => d.db.maintain());
+        await d.settings.put('maintenance.last', '${d.cx.nowMs()}');
+        ref.read(diagProvider).event('db', 'tidy', {'before': r.before, 'after': r.after, 'auto': true});
+      } catch (e) {
+        ref.read(diagProvider).error('db', e);
+      }
     }
     unawaited(ref.read(diskLevelProvider.notifier).refresh());
     _diskTimer = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(ref.read(diskLevelProvider.notifier).refresh()));

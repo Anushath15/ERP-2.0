@@ -60,6 +60,23 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  /// Tidies the data file: folds the log back in, refreshes the statistics the query planner uses, merges the search index and compacts the file. Nothing is
+  /// deleted. Call it from the write queue so no save runs at the same moment. Returns the data size in bytes before and after.
+  Future<({int before, int after})> maintain() async {
+    Future<int> size() async {
+      final r = await customSelect('SELECT (SELECT page_count FROM pragma_page_count) * (SELECT page_size FROM pragma_page_size) AS n').getSingle();
+      return r.read<int>('n');
+    }
+
+    final before = await size();
+    if (native) await customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+    await customStatement("INSERT INTO product_fts(product_fts) VALUES('optimize')");
+    await customStatement('ANALYZE');
+    await customStatement('VACUUM');
+    await customStatement('PRAGMA optimize');
+    return (before: before, after: await size());
+  }
+
   /// Turns on idle-moment checkpoints (files on disk only). Safe to call once after opening; [close] stops it.
   Future<void> startControlledCheckpoints([CheckpointPolicy policy = const CheckpointPolicy()]) async {
     if (!native || _checkpointTimer != null) return;

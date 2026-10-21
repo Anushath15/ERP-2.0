@@ -70,7 +70,27 @@ class DiagnosticsCard extends ConsumerWidget {
             if (context.mounted) toast(context, where == null ? l.diagFailed : l.diagSaved(where));
           },
         ),
+        const SizedBox(height: 14),
+        Text(l.dbTidyHelp, style: th.bodySmall),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: const ValueKey('dbTidy'),
+          icon: const Icon(Icons.cleaning_services_outlined),
+          label: Text(l.dbTidy),
+          onPressed: () async {
+            try {
+              final r = await ref.read(writeQueueProvider).run(() => ref.read(appDataProvider).db.maintain());
+              ref.read(diagProvider).event('db', 'tidy', {'before': r.before, 'after': r.after});
+              if (context.mounted) toast(context, l.dbTidyDone(_size(r.before), _size(r.after)));
+            } catch (e) {
+              ref.read(diagProvider).error('db', e);
+              if (context.mounted) toast(context, l.dbTidyFailed);
+            }
+          },
+        ),
       ]),
     );
   }
+
+  static String _size(int bytes) => bytes >= 1024 * 1024 ? '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB' : '${(bytes / 1024).toStringAsFixed(0)} KB';
 }

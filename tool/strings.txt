@@ -1525,3 +1525,7 @@ syncSentToday | Sent to the cloud today: {n}
 syncRefused | Not sent (the cloud refused these)
 syncRetry | Try these again
 syncRefusedLine | {what}: {why}
+dbTidy | Tidy the database
+dbTidyHelp | Makes the data file smaller and searches faster. Safe: nothing is deleted. Takes a few seconds.
+dbTidyDone | Done. The data file went from {before} to {after}.
+dbTidyFailed | The data file could not be tidied now. Nothing was changed.

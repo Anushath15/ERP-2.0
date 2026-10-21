@@ -1485,4 +1485,8 @@ class Strings {
   String get syncRefused => 'Not sent (the cloud refused these)';
   String get syncRetry => 'Try these again';
   String syncRefusedLine(String what, String why) => '${what}: ${why}';
+  String get dbTidy => 'Tidy the database';
+  String get dbTidyHelp => 'Makes the data file smaller and searches faster. Safe: nothing is deleted. Takes a few seconds.';
+  String dbTidyDone(String before, String after) => 'Done. The data file went from ${before} to ${after}.';
+  String get dbTidyFailed => 'The data file could not be tidied now. Nothing was changed.';
 }
