@@ -64,7 +64,7 @@ List<int> allocateByWeight(int amount, List<int> weights) {
 /// [extraDiscountBp] (percent in basis points, used when above zero) or [extraDiscountPaise]: a discount on the WHOLE bill, taken off
 /// what the customer pays; it is shared among the items in proportion, and each item's GST comes down with it. Never more than the bill.
 BillCalc calcBillIn(List<CalcLineIn> lines, {bool inclusive = true, bool interState = false, bool roundOff = true, int extraDiscountPaise = 0, int extraDiscountBp = 0}) {
-  var taxable = 0, cgst = 0, sgst = 0, igst = 0, disc = 0, sum = 0;
+  var taxable = 0, cgst = 0, sgst = 0, igst = 0, disc = 0, sum = 0, tax = 0;
   final out = <LineCalc>[];
   final base = [for (final l in lines) calcLineIn(l, inclusive: inclusive)];
   final before = base.fold<int>(0, (s, c) => s + c.total);
@@ -84,13 +84,14 @@ BillCalc calcBillIn(List<CalcLineIn> lines, {bool inclusive = true, bool interSt
     taxable += c.taxable;
     disc += c.discount;
     sum += c.total;
-    if (interState) {
-      igst += c.tax;
-    } else {
-      final half = divRound(c.tax, 2);
-      cgst += half;
-      sgst += c.tax - half; // the two halves always add up to the tax exactly
-    }
+    tax += c.tax;
+  }
+  // CGST and SGST are the two halves of the WHOLE bill's GST (split once at the end, not line by line, so they never drift apart by a paisa per line)
+  if (interState) {
+    igst = tax;
+  } else {
+    cgst = divRound(tax, 2);
+    sgst = tax - cgst; // the two halves always add up to the tax exactly
   }
   final grand = roundOff ? ((sum + 50) ~/ 100) * 100 : sum;
   return BillCalc(lines: out, taxable: taxable, cgst: cgst, sgst: sgst, igst: igst, discount: disc, roundOff: grand - sum, grandTotal: grand, itemCount: lines.length, extraDiscount: extra);

@@ -199,14 +199,17 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
   }
 
   // the GST summary: one row for each rate, CGST and SGST half and half (as the bill maths splits them)
-  final groups = <int, ({int taxable, int cgst, int sgst, int net})>{};
+  final taxOf = <int, ({int taxable, int tax, int net})>{};
   for (var i = 0; i < doc.lines.length; i++) {
     final gst = doc.lines[i].product.gstBp;
     final lc = c.lines[i];
-    final half = divRound(lc.tax, 2);
-    final g = groups[gst] ?? (taxable: 0, cgst: 0, sgst: 0, net: 0);
-    groups[gst] = (taxable: g.taxable + lc.taxable, cgst: g.cgst + half, sgst: g.sgst + (lc.tax - half), net: g.net + lc.total);
+    final g = taxOf[gst] ?? (taxable: 0, tax: 0, net: 0);
+    taxOf[gst] = (taxable: g.taxable + lc.taxable, tax: g.tax + lc.tax, net: g.net + lc.total);
   }
+  // each rate's GST is split into CGST and SGST once, for the whole rate (not line by line)
+  final groups = {
+    for (final e in taxOf.entries) e.key: (taxable: e.value.taxable, cgst: divRound(e.value.tax, 2), sgst: e.value.tax - divRound(e.value.tax, 2), net: e.value.net),
+  };
   final rates = groups.keys.toList()..sort();
   final gstRows = [
     for (final r in rates)
