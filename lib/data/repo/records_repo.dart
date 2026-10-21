@@ -64,9 +64,15 @@ class EstimationRepo {
   final DataContext cx;
   AppDatabase get _db => cx.db;
 
-  String numberFor(int seq) => 'EST-${seq.toString().padLeft(5, '0')}';
+  /// This computer's letter (the same one its bills have). The first computer, A, keeps EST-00001; another computer's estimates are EST-B-00001, so two
+  /// counters never print the same estimate number.
+  String series = 'A';
 
-  Future<String> peekNextNumber() async => numberFor(await peekFreeNumber(_db, 'est', table: 'estimations', format: numberFor));
+  String get _counter => series == 'A' ? 'est' : 'est.$series';
+
+  String numberFor(int seq) => series == 'A' ? 'EST-${seq.toString().padLeft(5, '0')}' : 'EST-$series-${seq.toString().padLeft(5, '0')}';
+
+  Future<String> peekNextNumber() async => numberFor(await peekFreeNumber(_db, _counter, table: 'estimations', format: numberFor));
 
   static EstimationDoc _doc(QueryRow r) => EstimationDoc(
         number: r.read<String>('number'),
@@ -97,7 +103,7 @@ class EstimationRepo {
         await _db.exec('DELETE FROM estimation_lines WHERE estimation_id = ?', [id]);
       } else {
         id = newId();
-        number = numberFor(await nextFreeNumber(_db, 'est', table: 'estimations', format: numberFor));
+        number = numberFor(await nextFreeNumber(_db, _counter, table: 'estimations', format: numberFor));
         await _db.exec(
           'INSERT INTO estimations(id, number, at, customer_id, customer_name, total_paise, line_count, created_at, updated_at, device_id, version, hlc, extra_discount_paise, extra_discount_bp) VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?,?)',
           [id, number, at.millisecondsSinceEpoch, customerId, customerName, totalPaise, lines.length, now, now, cx.deviceId, cx.hlc.next(), extraDiscountPaise, extraDiscountBp],

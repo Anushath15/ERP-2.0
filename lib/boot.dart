@@ -72,6 +72,7 @@ Future<BootOutcome> bootApp({required AppPaths paths, required DataMode mode, Da
     final mine = await SeriesRegistry(data.settings, deviceId).mine();
     final created = await data.settings.get('shop.created') != null;
     data.bills.series = mine ?? 'A';
+    data.estimations.series = data.bills.series;
     final t = now();
     final boot = await Bootstrap.load(data, now: DateTime(t.year, t.month, t.day, t.hour, t.minute));
     return BootReady(mode, swap: swap, data: data, boot: boot, needsSetup: !created || mine == null, dataDir: paths.dataDir, deviceId: deviceId, location: location);

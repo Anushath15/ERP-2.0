@@ -226,4 +226,27 @@ void main() {
     final linesB = (await b.db.rows('SELECT line_no, product_id FROM estimation_lines ORDER BY line_no')).map((r) => (r.read<int>('line_no'), r.read<String>('product_id'))).toList();
     expect(linesB, linesA);
   });
+
+  test('each computer has its own estimate letter: the first keeps EST-00001, another prints EST-B-00001, so two counters never print the same number', () async {
+    b.estimations.series = 'B';
+    await a.catalog.saveProduct(prod('p1', 'X'), create: true);
+    await ea.run();
+    await eb.run();
+    const line = EstimateLine(productId: 'p1', name: 'X', unit: 'pcs', qtyMilli: 1000, ratePaise: 10000);
+    final ea1 = await a.estimations.save(lines: const [line], totalPaise: 10000, customerName: '', at: DateTime(2026, 10, 20));
+    final eb1 = await b.estimations.save(lines: const [line], totalPaise: 20000, customerName: '', at: DateTime(2026, 10, 20));
+    expect((ea1.number, eb1.number), ('EST-00001', 'EST-B-00001'));
+    await ea.run();
+    await eb.run();
+    await ea.run();
+    expect(await count(a, 'estimations'), 2);
+    expect(await count(b, 'estimations'), 2);
+    final eb2 = await b.estimations.save(lines: const [line], totalPaise: 20000, customerName: '', at: DateTime(2026, 10, 20));
+    expect(eb2.number, 'EST-B-00002');
+    expect(await b.estimations.peekNextNumber(), 'EST-B-00003');
+    // the counter is lost (a restore from an older backup): the numbers that exist are skipped
+    await b.db.exec("DELETE FROM counters WHERE name LIKE 'est%'");
+    final eb3 = await b.estimations.save(lines: const [line], totalPaise: 1, customerName: '', at: DateTime(2026, 10, 20));
+    expect(eb3.number, 'EST-B-00003', reason: 'the counter was lost, 00001 and 00002 exist, so the next free one is used');
+  });
 }
