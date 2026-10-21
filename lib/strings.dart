@@ -1006,7 +1006,8 @@ class Strings {
   String get fixPriceInvalid => 'Type a price above zero.';
   String fixInactiveLine(String n, String qty) => '${n} inactive products still have stock (${qty}). They are in the stock value on a separate line.';
   String get navBackups => 'Backups';
-  String get backupsSubtitle => 'Copies of your data on this computer, ready if something goes wrong';
+  String get backupsSubtitle => 'Copies of your data, ready if something goes wrong. One file is kept up to date.';
+  String get kindPrevious => 'The copy from before the last update';
   String backupLastLine(String when) => 'Last backup: ${when}';
   String get backupNever => 'No backup has been made yet';
   String get backupJustNow => 'just now';

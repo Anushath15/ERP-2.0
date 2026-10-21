@@ -60,6 +60,7 @@ void main() {
     var list = listBackups(c.read(backupControllerProvider).folder!);
     expect(list, hasLength(1), reason: 'the first bill of the day');
     final firstName = list.single.name;
+    expect(firstName, 'ASKERP_abcdef12_latest.sqlite', reason: 'one fixed name for this computer');
     expect(c.read(backupControllerProvider).last, isNotNull);
     expect(await paths.readText('backup.last'), isNotNull, reason: 'the time is kept on this computer, outside the data');
 
@@ -72,12 +73,22 @@ void main() {
 
     // a new save, and two hours pass: a new backup
     await makeBill();
-    await Future<void>.delayed(const Duration(milliseconds: 1100)); // file names carry seconds
+    final firstTime = c.read(backupControllerProvider).last;
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     await ctl.tick(now: DateTime.now().add(const Duration(hours: 3)));
     list = listBackups(c.read(backupControllerProvider).folder!);
     expect(c.read(backupControllerProvider).lastError, isNull);
-    expect(list, hasLength(1), reason: 'the rotation keeps one backup per day: the newer one replaces the earlier one of the same day');
-    expect(list.single.name, isNot(firstName), reason: 'a new backup WAS made');
+    expect(list.map((b) => b.name).toSet(), {firstName, firstName.replaceFirst('.sqlite', '.previous.sqlite')}, reason: 'the SAME file was updated; the copy from just before it is kept beside it');
+    expect(c.read(backupControllerProvider).last!.isAfter(firstTime!), isTrue, reason: 'a new backup WAS made');
+    final newer = list.firstWhere((b) => !b.previous), older = list.firstWhere((b) => b.previous);
+    expect(newer.at.isAfter(older.at), isTrue, reason: 'the file says when it was made, from inside itself');
+    expect(await d.db.scalarInt('SELECT COUNT(*) FROM bills'), 2);
+    // more updates never add files
+    for (var i = 0; i < 3; i++) {
+      await makeBill();
+      expect(await ctl.run(BackupKind.manual), isTrue);
+    }
+    expect(listBackups(c.read(backupControllerProvider).folder!), hasLength(2), reason: 'always the file and its previous copy, however many backups are made');
   });
 
   test('a failed backup says why in plain words, keeps the time of the last good one, and the next try can work', () async {

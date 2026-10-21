@@ -28,7 +28,7 @@ final sealedFilePickerProvider = Provider<Future<String?> Function()>((ref) => (
       return f?.path;
     });
 
-String kindLabel(Strings l, BackupInfo b) => switch (b.kind) {
+String kindLabel(Strings l, BackupInfo b) => b.previous ? l.kindPrevious : switch (b.kind) {
       BackupKind.auto => l.kindAuto,
       BackupKind.manual => l.kindManual,
       BackupKind.closing => l.kindClosing,

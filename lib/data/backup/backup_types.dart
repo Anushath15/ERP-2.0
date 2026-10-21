@@ -12,11 +12,14 @@ class BackupException implements Exception {
 }
 
 class BackupInfo {
-  BackupInfo({required this.path, required this.name, required this.at, required this.device, required this.appVersion, required this.kind, this.fy = '', this.bytes = 0});
+  BackupInfo({required this.path, required this.name, required this.at, required this.device, required this.appVersion, required this.kind, this.fy = '', this.bytes = 0, this.rolling = false, this.previous = false});
   final String path, name, device, appVersion, fy;
   final DateTime at;
   final BackupKind kind;
   final int bytes;
+
+  /// One of the two files the routine backups keep up to date (see [rollingName]); [previous] is the copy from just before the last update.
+  final bool rolling, previous;
 
   static final _re = RegExp(r'^ASKERP_(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})_([0-9a-f]{1,8})_v(.+?)_(auto|manual|closing|safety|archive)(?:-(FY\d{4}-\d{2}))?\.sqlite$');
 
@@ -29,8 +32,26 @@ class BackupInfo {
     return 'ASKERP_${at.year.toString().padLeft(4, '0')}${two(at.month)}${two(at.day)}-${two(at.hour)}${two(at.minute)}${two(at.second)}_${d8}_v${safeVer}_${kind.name}${fy.isEmpty ? '' : '-$fy'}.sqlite';
   }
 
-  /// null when the name is not one of ours (such a file is never offered as a backup and never deleted).
+  static final _rolling = RegExp(r'^ASKERP_([0-9a-f]{1,8})_latest(\.previous)?\.sqlite$');
+
+  /// The routine backups (automatic, when closing, and by hand) do not pile up files: they update ONE file, `ASKERP_<this computer>_latest.sqlite`.
+  /// The copy it had just before is kept beside it as `..._latest.previous.sqlite`, so a bad update can never leave the shop with no good backup.
+  static String rollingName(String device) => 'ASKERP_${_dev8(device)}_latest.sqlite';
+  static String previousName(String device) => 'ASKERP_${_dev8(device)}_latest.previous.sqlite';
+
+  static String _dev8(String device) {
+    final dev = device.replaceAll(RegExp(r'[^0-9a-f]'), '');
+    return dev.length >= 8 ? dev.substring(0, 8) : dev.padRight(8, '0');
+  }
+
+  /// Safety copies (before an import or a restore) and the yearly archive are one-off protections: each keeps its own file with its date.
+  static bool isRoutine(BackupKind k) => k == BackupKind.auto || k == BackupKind.manual || k == BackupKind.closing;
+
+  /// null when the name is not one of ours (such a file is never offered as a backup and never deleted). For a rolling file the time is not in the name:
+  /// the caller sets it from inside the file (`at` is the epoch until then).
   static BackupInfo? fromName(String path, String name, {int bytes = 0}) {
+    final r = _rolling.firstMatch(name);
+    if (r != null) return BackupInfo(path: path, name: name, at: DateTime.fromMillisecondsSinceEpoch(0), device: r[1]!, appVersion: '', kind: BackupKind.auto, bytes: bytes, rolling: true, previous: r[2] != null);
     final m = _re.firstMatch(name);
     if (m == null) return null;
     final at = DateTime(int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!), int.parse(m[4]!), int.parse(m[5]!), int.parse(m[6]!));
@@ -59,7 +80,7 @@ class BackupInspection {
 /// Which backups to keep: the newest of each of the last 7 days that have one, of the last 4 weeks that have one, of the last 12 months that have one,
 /// and always the newest of all. Only automatic, manual and closing backups take part; safety copies and yearly archives are never removed by this.
 Set<String> backupsToKeep(List<BackupInfo> all, {int days = 7, int weeks = 4, int months = 12}) {
-  final items = all.where((b) => b.kind == BackupKind.auto || b.kind == BackupKind.manual || b.kind == BackupKind.closing).toList()..sort((a, b) => b.at.compareTo(a.at));
+  final items = all.where((b) => !b.rolling && (b.kind == BackupKind.auto || b.kind == BackupKind.manual || b.kind == BackupKind.closing)).toList()..sort((a, b) => b.at.compareTo(a.at));
   final keep = <String>{};
   if (items.isEmpty) return keep;
   keep.add(items.first.name);

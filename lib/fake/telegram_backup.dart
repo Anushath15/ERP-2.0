@@ -54,8 +54,9 @@ class TelegramBackupController extends Notifier<TelegramState> {
   @override
   TelegramState build() {
     // a finished local backup may be due to go to Telegram
-    ref.listen(backupControllerProvider.select((s) => s.lastFile), (prev, next) {
-      if (next != null && next != prev) unawaited(afterLocalBackup(next));
+    // (the routine backups update one file, so a new backup is told by its time, not by a new file name)
+    ref.listen(backupControllerProvider.select((s) => (s.lastFile, s.last)), (prev, next) {
+      if (next.$1 != null && next != prev) unawaited(afterLocalBackup(next.$1!, kind: ref.read(backupControllerProvider).lastKind));
     });
     try {
       final j = jsonDecode(_vault.read() ?? '');
@@ -125,16 +126,18 @@ class TelegramBackupController extends Notifier<TelegramState> {
   }
 
   /// A new local backup was made: send it when it is time (the day's first one from 8 PM, or the closing one). [file] is the backup's path.
-  Future<void> afterLocalBackup(String file, {DateTime? now}) async {
-    if (!state.configured || state.busy || _handled == file) return;
-    final info = BackupInfo.fromName(file, file.split(RegExp(r'[\\/]')).last);
-    if (info == null || info.kind == BackupKind.safety || info.kind == BackupKind.archive) return;
+  Future<void> afterLocalBackup(String file, {DateTime? now, BackupKind? kind}) async {
     final DateTime t = now ?? ref.read(clockProvider);
+    if (!state.configured || state.busy || _handled == '$file|${t.millisecondsSinceEpoch}') return;
+    final info = BackupInfo.fromName(file, file.split(RegExp(r'[\\/]')).last);
+    if (info == null) return;
+    final why = kind ?? info.kind;
+    if (why == BackupKind.safety || why == BackupKind.archive) return;
     final last = state.lastSent;
     final sentToday = last != null && last.year == t.year && last.month == t.month && last.day == t.day;
     if (sentToday) return;
-    if (t.hour < sendFromHour && info.kind != BackupKind.closing) return;
-    await _upload(file, t);
+    if (t.hour < sendFromHour && why != BackupKind.closing) return;
+    await _upload(file, t, kind: why);
   }
 
   /// "Send now": makes a fresh backup first, then sends it. Returns null when sent, else what is wrong.
@@ -148,16 +151,19 @@ class TelegramBackupController extends Notifier<TelegramState> {
     final file = ref.read(backupControllerProvider).lastFile;
     if (file == null) return TelegramProblem.noBackup;
     _handled = null;
-    await _upload(file, ref.read(clockProvider));
+    await _upload(file, ref.read(clockProvider), kind: BackupKind.manual);
     return state.problem;
   }
 
-  Future<void> _upload(String file, DateTime sentAt) async {
-    _handled = file;
+  Future<void> _upload(String file, DateTime sentAt, {BackupKind? kind}) async {
+    _handled = '$file|${sentAt.millisecondsSinceEpoch}';
     state = state.copyWith(busy: true, clearProblem: true);
     try {
       final sealed = await sealBackupFile(file, _password, rounds: ref.read(sealRoundsProvider));
-      final name = '${file.split(RegExp(r'[\\/]')).last}.askbak';
+      final base = file.split(RegExp(r'[\\/]')).last;
+      // the routine file always has the same name on the computer; in the channel each copy carries its date and why it was made
+      final info = BackupInfo.fromName(file, base);
+      final name = '${info != null && info.rolling ? BackupInfo.fileName(at: sentAt, device: info.device, appVersion: appVersionLabel, kind: kind ?? info.kind) : base}.askbak';
       final mb = (sealed.length / (1024 * 1024)).toStringAsFixed(1);
       await _api.sendDocument(_token, _chat, fileName: name, bytes: sealed, caption: '$_shopName backup, locked. $mb MB. Program $appVersionLabel.');
       state = state.copyWith(busy: false, lastSent: sentAt, lastBytes: sealed.length, clearProblem: true);

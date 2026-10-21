@@ -1038,7 +1038,8 @@ fixPriceInvalid | Type a price above zero.
 fixInactiveLine | {n} inactive products still have stock ({qty}). They are in the stock value on a separate line.
 # ---- Backups and restore
 navBackups | Backups
-backupsSubtitle | Copies of your data on this computer, ready if something goes wrong
+backupsSubtitle | Copies of your data, ready if something goes wrong. One file is kept up to date.
+kindPrevious | The copy from before the last update
 backupLastLine | Last backup: {when}
 backupNever | No backup has been made yet
 backupJustNow | just now
@@ -1537,3 +1538,11 @@ featHelp | Switch a feature off on this computer if you do not use it. Nothing i
 featCounterLink | Counter link (several counters over the shop Wi-Fi)
 featExcel | Fill products from Excel (Products page)
 featBrandSwitch | Change the brand of a bill line
+purNewProduct | New product
+purNewProductHint | Not in the list? Add it here: the purchase brings its stock.
+purEdit | Edit
+purEditTitle | Edit purchase {number}
+purEditHint | Change the items, rates, invoice number, note or what was paid. The stock and the dealer's account follow the change.
+purEdited | Changes to {number} saved.
+purEditDealerFixed | The dealer of a saved purchase cannot be changed.
+purEditStatusFixed | A saved purchase keeps its status (use Mark received on a pending one).

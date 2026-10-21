@@ -269,6 +269,26 @@ void main() {
       expect(tg.documents, hasLength(2), reason: 'the next day, and the closing backup goes at any hour');
     });
 
+    test('the routine backups update one file: each evening copy still goes once a day, and in the channel each copy has its date in its name', () async {
+      await ctl().connect(token: token, password: password);
+      Future<BackupInfo> roll(DateTime at, BackupKind kind) =>
+          createBackup(livePath: paths.dbLocation('shop'), folder: folder, deviceId: 'abcdef12-0000', appVersion: '2.0.0', kind: kind, now: at, rolling: true, freeBytesOverride: 1 << 40);
+      final morning = await roll(DateTime(2026, 10, 14, 10, 0), BackupKind.auto);
+      await ctl().afterLocalBackup(morning.path, now: DateTime(2026, 10, 14, 10, 0), kind: BackupKind.auto);
+      expect(tg.documents, isEmpty, reason: 'too early');
+      final evening = await roll(DateTime(2026, 10, 14, 20, 5), BackupKind.auto);
+      expect(evening.path, morning.path, reason: 'the same file on this computer');
+      await ctl().afterLocalBackup(evening.path, now: DateTime(2026, 10, 14, 20, 5), kind: BackupKind.auto);
+      expect(tg.documents, hasLength(1));
+      expect(tg.documents.single.file, 'ASKERP_20261014-200500_abcdef12_v2.0.0-proto.3_auto.sqlite.askbak', reason: 'the channel copy carries its date and why it was made');
+      await ctl().afterLocalBackup((await roll(DateTime(2026, 10, 14, 22, 0), BackupKind.auto)).path, now: DateTime(2026, 10, 14, 22, 0), kind: BackupKind.auto);
+      expect(tg.documents, hasLength(1), reason: 'once a day');
+      await ctl().afterLocalBackup((await roll(DateTime(2026, 10, 15, 9, 0), BackupKind.closing)).path, now: DateTime(2026, 10, 15, 9, 0), kind: BackupKind.closing);
+      expect(tg.documents, hasLength(2), reason: 'the next day, and a closing backup goes at any hour');
+      expect(tg.documents.last.file, contains('_closing.sqlite.askbak'));
+      expect(tg.documents.map((d) => d.file).toSet().length, 2, reason: 'different names in the channel');
+    });
+
     test('a failure is shown and the next backup tries again; a file is never sent twice', () async {
       await ctl().connect(token: token, password: password);
       tg.documentStatus = 403;

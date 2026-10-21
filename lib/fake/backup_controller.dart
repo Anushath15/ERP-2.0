@@ -11,22 +11,26 @@ final appPathsProvider = Provider<AppPaths?>((ref) => null);
 final deviceIdProvider = Provider<String>((ref) => '00000000');
 
 class BackupState {
-  const BackupState({this.folder, this.last, this.lastError, this.running = false, this.closing = false, this.lastFile});
+  const BackupState({this.folder, this.last, this.lastError, this.running = false, this.closing = false, this.lastFile, this.lastKind});
   final String? folder, lastError, lastFile;
   final DateTime? last;
   final bool running, closing;
 
-  BackupState copyWith({String? folder, DateTime? last, String? lastError, bool clearError = false, bool? running, bool? closing, String? lastFile}) => BackupState(
+  /// Why the last backup was made (the routine ones all go to the same file, so the file name no longer says).
+  final BackupKind? lastKind;
+
+  BackupState copyWith({String? folder, DateTime? last, String? lastError, bool clearError = false, bool? running, bool? closing, String? lastFile, BackupKind? lastKind}) => BackupState(
         folder: folder ?? this.folder,
         last: last ?? this.last,
         lastError: clearError ? null : (lastError ?? this.lastError),
         running: running ?? this.running,
         closing: closing ?? this.closing,
         lastFile: lastFile ?? this.lastFile,
+        lastKind: lastKind ?? this.lastKind,
       );
 }
 
-/// Automatic local backups: after the day's first bill, every 2 hours while the program is open (only if something changed), when it closes, and on
+/// Automatic local backups (they update one file in the backup folder, and keep the copy from just before it beside it): after the day's first bill, every 2 hours while the program is open (only if something changed), when it closes, and on
 /// demand. A snapshot is made by SQLite itself in the background, checked, rotated (7 days, 4 weeks, 12 months) and its time remembered on this computer.
 class BackupController extends Notifier<BackupState> {
   Timer? _timer;
@@ -91,10 +95,10 @@ class BackupController extends Notifier<BackupState> {
     state = state.copyWith(running: true, clearError: true, folder: folder);
     final mark = ref.read(appDataProvider).db.commitCount;
     try {
-      final info = await createBackup(livePath: _dbPath!, folder: folder, deviceId: ref.read(deviceIdProvider), appVersion: appVersionLabel, kind: kind, fy: fy);
+      final info = await createBackup(livePath: _dbPath!, folder: folder, deviceId: ref.read(deviceIdProvider), appVersion: appVersionLabel, kind: kind, fy: fy, rolling: true);
       await _paths!.writeText('backup.last', '${info.at.millisecondsSinceEpoch}');
       _mark = mark;
-      state = state.copyWith(running: false, last: info.at, lastFile: info.path, clearError: true);
+      state = state.copyWith(running: false, last: info.at, lastFile: info.path, lastKind: kind, clearError: true);
       if (kind == BackupKind.auto || kind == BackupKind.manual || kind == BackupKind.closing) {
         try {
           await rotateBackups(folder);

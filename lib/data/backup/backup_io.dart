@@ -25,13 +25,14 @@ Future<T> _work<T>(T Function() job) => runBackupWorkInline ? Future<T>.sync(job
 const _fullCheckBelowBytes = 500 * 1024 * 1024;
 
 class _Args {
-  _Args(this.live, this.folder, this.device, this.version, this.kind, this.fy, this.now);
+  _Args(this.live, this.folder, this.device, this.version, this.kind, this.fy, this.now, this.rolling);
   final String live, folder, device, version, kind, fy;
   final DateTime now;
+  final bool rolling;
 }
 
 /// Makes one backup of [livePath] into [folder]. Throws [BackupException] with a plain-English reason. Runs away from the screen.
-Future<BackupInfo> createBackup({required String livePath, required String folder, required String deviceId, required String appVersion, BackupKind kind = BackupKind.auto, String fy = '', DateTime? now, int? freeBytesOverride}) async {
+Future<BackupInfo> createBackup({bool rolling = false, required String livePath, required String folder, required String deviceId, required String appVersion, BackupKind kind = BackupKind.auto, String fy = '', DateTime? now, int? freeBytesOverride}) async {
   final live = File(livePath);
   if (!live.existsSync()) throw BackupException('There is no data file to back up yet.');
   try {
@@ -45,7 +46,7 @@ Future<BackupInfo> createBackup({required String livePath, required String folde
     throw BackupException('There is not enough free space for a backup in that folder (needs about ${(need / (1024 * 1024)).round()} MB, ${(free / (1024 * 1024)).round()} MB free). Your data is safe. Free some space or choose another folder.');
   }
   try {
-    return await _work(() => _create(_Args(livePath, folder, deviceId, appVersion, kind.name, fy, now ?? DateTime.now())));
+    return await _work(() => _create(_Args(livePath, folder, deviceId, appVersion, kind.name, fy, now ?? DateTime.now(), rolling && BackupInfo.isRoutine(kind))));
   } on BackupException {
     rethrow;
   } on Object catch (e) {
@@ -55,7 +56,7 @@ Future<BackupInfo> createBackup({required String livePath, required String folde
 
 BackupInfo _create(_Args a) {
   final kind = BackupKind.values.firstWhere((k) => k.name == a.kind);
-  final name = BackupInfo.fileName(at: a.now, device: a.device, appVersion: a.version, kind: kind, fy: a.fy);
+  final name = a.rolling ? BackupInfo.rollingName(a.device) : BackupInfo.fileName(at: a.now, device: a.device, appVersion: a.version, kind: kind, fy: a.fy);
   final finalPath = p.join(a.folder, name);
   final tmp = p.join(a.folder, '$name.part');
   for (final f in Directory(a.folder).listSync().whereType<File>()) {
@@ -65,7 +66,7 @@ BackupInfo _create(_Args a) {
       } catch (_) {}
     }
   }
-  if (File(finalPath).existsSync()) throw BackupException('A backup with this name already exists.');
+  if (!a.rolling && File(finalPath).existsSync()) throw BackupException('A backup with this name already exists.');
   Database? src;
   try {
     src = sqlite3.open(a.live, mode: OpenMode.readOnly);
@@ -108,8 +109,21 @@ BackupInfo _create(_Args a) {
     _drop(tmp);
     throw BackupException('The new backup did not pass its check ($bad), so it was thrown away. Your data is safe. It will be tried again.');
   }
+  if (a.rolling) {
+    // the file this one replaces becomes the "previous" copy, but only when it is itself good (a damaged one is dropped, the older good copy stays)
+    final prev = p.join(a.folder, BackupInfo.previousName(a.device));
+    final old = File(finalPath);
+    if (old.existsSync()) {
+      if (_verifyFile(finalPath) == null) {
+        _drop(prev);
+        old.renameSync(prev);
+      } else {
+        _drop(finalPath);
+      }
+    }
+  }
   File(tmp).renameSync(finalPath);
-  return BackupInfo(path: finalPath, name: name, at: a.now, device: a.device, appVersion: a.version, kind: kind, fy: a.fy, bytes: File(finalPath).lengthSync());
+  return BackupInfo(path: finalPath, name: name, at: a.now, device: a.device, appVersion: a.version, kind: kind, fy: a.fy, bytes: File(finalPath).lengthSync(), rolling: a.rolling);
 }
 
 void _drop(String path) {
@@ -148,11 +162,35 @@ List<BackupInfo> listBackups(String folder) {
   if (!d.existsSync()) return const [];
   final out = <BackupInfo>[];
   for (final f in d.listSync().whereType<File>()) {
-    final info = BackupInfo.fromName(f.path, p.basename(f.path), bytes: f.lengthSync());
+    var info = BackupInfo.fromName(f.path, p.basename(f.path), bytes: f.lengthSync());
+    if (info != null && info.rolling) info = _withMeta(info, f);
     if (info != null) out.add(info);
   }
   out.sort((a, b) => b.at.compareTo(a.at));
   return out;
+}
+
+/// A rolling file has no time in its name: when it was made, by what and why is read from inside it (the file's own date if that cannot be read).
+BackupInfo _withMeta(BackupInfo i, File f) {
+  var at = f.lastModifiedSync();
+  var kind = BackupKind.auto;
+  var version = '';
+  Database? db;
+  try {
+    db = sqlite3.open(f.path, mode: OpenMode.readOnly);
+    final r = db.select("SELECT value FROM kv WHERE name = 'backup.meta'");
+    if (r.isNotEmpty) {
+      final j = jsonDecode(r.first.values.first as String) as Map<String, dynamic>;
+      at = DateTime.tryParse('${j['at']}') ?? at;
+      kind = BackupKind.values.firstWhere((k) => k.name == j['kind'], orElse: () => BackupKind.auto);
+      version = '${j['appVersion'] ?? ''}';
+    }
+  } catch (_) {
+    // a file that cannot be read keeps its file date and shows up in the list; the restore check says what is wrong with it
+  } finally {
+    db?.close();
+  }
+  return BackupInfo(path: i.path, name: i.name, at: at, device: i.device, appVersion: version, kind: kind, bytes: i.bytes, rolling: true, previous: i.previous);
 }
 
 /// Removes the backups the rotation no longer keeps (7 days, 4 weeks, 12 months). The newest backup is verified first and nothing is removed if it is not good.
@@ -161,11 +199,11 @@ Future<List<String>> rotateBackups(String folder) async {
   final all = listBackups(folder);
   final keep = backupsToKeep(all);
   if (keep.isEmpty) return const [];
-  final newest = all.where((b) => b.kind == BackupKind.auto || b.kind == BackupKind.manual || b.kind == BackupKind.closing).first;
+  final newest = all.where((b) => !b.rolling && (b.kind == BackupKind.auto || b.kind == BackupKind.manual || b.kind == BackupKind.closing)).first;
   if (await _work(() => _verifyFile(newest.path)) != null) return const [];
   final removed = <String>[];
   for (final b in all) {
-    if ((b.kind == BackupKind.auto || b.kind == BackupKind.manual || b.kind == BackupKind.closing) && !keep.contains(b.name)) {
+    if (!b.rolling && (b.kind == BackupKind.auto || b.kind == BackupKind.manual || b.kind == BackupKind.closing) && !keep.contains(b.name)) {
       try {
         File(b.path).deleteSync();
         removed.add(b.name);

@@ -5,7 +5,7 @@ import 'backup_types.dart';
 /// The browser build keeps its data inside the browser; file backups need the desktop program.
 const bool backupSupported = false;
 
-Future<BackupInfo> createBackup({required String livePath, required String folder, required String deviceId, required String appVersion, BackupKind kind = BackupKind.auto, String fy = '', DateTime? now, int? freeBytesOverride}) async => throw BackupException('Backups need the Windows or Mac program.');
+Future<BackupInfo> createBackup({bool rolling = false, required String livePath, required String folder, required String deviceId, required String appVersion, BackupKind kind = BackupKind.auto, String fy = '', DateTime? now, int? freeBytesOverride}) async => throw BackupException('Backups need the Windows or Mac program.');
 List<BackupInfo> listBackups(String folder) => const [];
 Future<List<String>> rotateBackups(String folder) async => const [];
 Future<BackupInspection> inspectBackup(String path, {required String expectedShopId}) async => const BackupInspection(RestoreProblem.notDatabase);

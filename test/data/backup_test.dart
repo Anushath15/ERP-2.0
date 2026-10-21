@@ -230,4 +230,99 @@ void main() {
       expect(Directory(p.join(dir.path, 'pen', 'drive')).listSync().any((f) => f.path.endsWith('.part')), isFalse);
     });
   });
+
+  group('one file that is updated (the routine backups)', () {
+    const device = 'abcdef12-0000';
+    Future<BackupInfo> roll(String live, String folder, DateTime at, {BackupKind kind = BackupKind.auto}) =>
+        createBackup(livePath: live, folder: folder, deviceId: device, appVersion: '2.0.0', kind: kind, now: at, rolling: true, freeBytesOverride: 1 << 40);
+    Future<void> addProduct(String live, String id) async {
+      final db = await openShopDatabase(live);
+      final d = AppData(DataContext(db: db, deviceId: 'dev-test'));
+      await d.catalog.saveProduct(sampleProduct('More $id', id: id), create: true);
+      await db.close();
+    }
+
+    int products(String path) {
+      final db = sqlite3.open(path, mode: OpenMode.readOnly);
+      try {
+        return db.select('SELECT COUNT(*) FROM products').first.values.first as int;
+      } finally {
+        db.close();
+      }
+    }
+
+    test('names: the file has one fixed name per computer; the copy from just before is kept beside it; neither is ever removed by the rotation', () {
+      expect(BackupInfo.rollingName(device), 'ASKERP_abcdef12_latest.sqlite');
+      expect(BackupInfo.previousName(device), 'ASKERP_abcdef12_latest.previous.sqlite');
+      final i = BackupInfo.fromName('/b/ASKERP_abcdef12_latest.previous.sqlite', 'ASKERP_abcdef12_latest.previous.sqlite')!;
+      expect((i.rolling, i.previous, i.device), (true, true, 'abcdef12'));
+      expect(BackupInfo.fromName('/b/x', BackupInfo.rollingName(device))!.previous, isFalse);
+      final keep = backupsToKeep([i, BackupInfo.fromName('/b/y', BackupInfo.rollingName(device))!]);
+      expect(keep, isEmpty, reason: 'the rotation does not look at these two files');
+    });
+
+    test('every routine backup updates the same file; the one before is kept as previous; always two files however many backups', () async {
+      final live = await makeShop(p.join(dir.path, 'shop.sqlite'));
+      final folder = p.join(dir.path, 'Backups');
+      final first = await roll(live, folder, DateTime(2026, 10, 20, 10));
+      expect(p.basename(first.path), 'ASKERP_abcdef12_latest.sqlite');
+      expect(Directory(folder).listSync().whereType<File>().map((f) => p.basename(f.path)), ['ASKERP_abcdef12_latest.sqlite']);
+      expect(products(first.path), 5);
+      await addProduct(live, 'n1');
+      final second = await roll(live, folder, DateTime(2026, 10, 20, 12), kind: BackupKind.closing);
+      expect(second.path, first.path, reason: 'the same file');
+      expect(products(second.path), 6, reason: 'updated with what is new');
+      final prev = p.join(folder, 'ASKERP_abcdef12_latest.previous.sqlite');
+      expect(File(prev).existsSync(), isTrue);
+      expect(products(prev), 5, reason: 'the previous copy is the file as it was before the update');
+      for (var i = 0; i < 4; i++) {
+        await addProduct(live, 'm$i');
+        await roll(live, folder, DateTime(2026, 10, 20, 13 + i), kind: i.isEven ? BackupKind.manual : BackupKind.auto);
+      }
+      expect(Directory(folder).listSync().whereType<File>().length, 2, reason: 'no pile of files');
+      expect(Directory(folder).listSync().whereType<File>().any((f) => f.path.endsWith('.part')), isFalse);
+      expect(products(first.path), 10);
+      expect(products(prev), 9);
+    });
+
+    test('the listing reads when and why the file was made from inside it; newest first; both files can be checked for a restore', () async {
+      final live = await makeShop(p.join(dir.path, 'shop.sqlite'));
+      final folder = p.join(dir.path, 'Backups');
+      await roll(live, folder, DateTime(2026, 10, 20, 10));
+      await addProduct(live, 'n1');
+      await roll(live, folder, DateTime(2026, 10, 21, 9), kind: BackupKind.closing);
+      final list = listBackups(folder);
+      expect(list.map((b) => (b.previous, b.at, b.kind)), [(false, DateTime(2026, 10, 21, 9), BackupKind.closing), (true, DateTime(2026, 10, 20, 10), BackupKind.auto)]);
+      for (final b in list) {
+        final r = await inspectBackup(b.path, expectedShopId: 'shop-A');
+        expect(r.ok, isTrue, reason: b.name);
+      }
+    });
+
+    test('a damaged file is never promoted to the previous copy: the older good copy stays', () async {
+      final live = await makeShop(p.join(dir.path, 'shop.sqlite'));
+      final folder = p.join(dir.path, 'Backups');
+      await roll(live, folder, DateTime(2026, 10, 20, 10));
+      await addProduct(live, 'n1');
+      await roll(live, folder, DateTime(2026, 10, 20, 11)); // now: latest (6), previous (5)
+      final latest = p.join(folder, 'ASKERP_abcdef12_latest.sqlite');
+      final prev = p.join(folder, 'ASKERP_abcdef12_latest.previous.sqlite');
+      File(latest).writeAsBytesSync(List<int>.filled(4096, 7)); // the latest gets damaged
+      await addProduct(live, 'n2');
+      await roll(live, folder, DateTime(2026, 10, 20, 12));
+      expect(products(latest), 7, reason: 'the new good backup took the name');
+      expect(products(prev), 5, reason: 'the damaged file was not kept as the previous copy; the older good one stays');
+    });
+
+    test('safety copies and the yearly archive are one-off protections: each keeps its own dated file even when rolling is asked for', () async {
+      final live = await makeShop(p.join(dir.path, 'shop.sqlite'));
+      final folder = p.join(dir.path, 'Backups');
+      final a = await roll(live, folder, DateTime(2026, 10, 20, 10), kind: BackupKind.safety);
+      final b = await createBackup(livePath: live, folder: folder, deviceId: device, appVersion: '2.0.0', kind: BackupKind.archive, fy: 'FY2025-26', now: DateTime(2026, 10, 20, 10, 5), rolling: true, freeBytesOverride: 1 << 40);
+      expect(a.name, contains('_safety'));
+      expect(b.name, contains('_archive-FY2025-26'));
+      expect(a.rolling, isFalse);
+      expect(Directory(folder).listSync().whereType<File>().length, 2);
+    });
+  });
 }
