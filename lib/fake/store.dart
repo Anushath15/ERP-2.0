@@ -212,6 +212,10 @@ enum SyncState { synced, syncing, offline, attention, paused }
 enum CreditLimitMode { off, warn, block }
 
 /// Everything in here is remembered on THIS device only (see DeviceStore). Shop details are demo data in the prototype.
+/// Parts of the program that can be switched off on one computer (Settings > Features). Everything is on by default; a switched-off part is hidden, nothing in
+/// the data changes.
+enum AppFeature { counterLink, excelFill, brandSwitch }
+
 class AppSettings {
   const AppSettings({
     this.theme = ThemeMode.dark,
@@ -234,6 +238,7 @@ class AppSettings {
     this.labelPrinterName = '',
     this.printViaDialog = false,
     this.printAfterSave = true,
+    this.featuresOff = const {},
     this.sync = SyncState.synced,
     this.firstRunDone = true,
     this.signedIn = true,
@@ -259,6 +264,11 @@ class AppSettings {
 
   /// Print through the Windows print window (for printers whose driver refuses direct jobs), and print at once after Save and print.
   final bool printViaDialog, printAfterSave;
+
+  /// Features switched off on this computer (see [AppFeature]); empty = everything on.
+  final Set<String> featuresOff;
+
+  bool featureOn(AppFeature f) => !featuresOff.contains(f.name);
   final bool firstRunDone, signedIn;
   final SyncState sync;
 
@@ -283,6 +293,7 @@ class AppSettings {
     String? labelPrinterName,
     bool? printViaDialog,
     bool? printAfterSave,
+    Set<String>? featuresOff,
     bool? pricesIncludeGst,
     CreditLimitMode? creditLimitMode,
     ReminderTone? reminderTone,
@@ -319,6 +330,7 @@ class AppSettings {
         labelPrinterName: labelPrinterName ?? this.labelPrinterName,
         printViaDialog: printViaDialog ?? this.printViaDialog,
         printAfterSave: printAfterSave ?? this.printAfterSave,
+        featuresOff: featuresOff ?? this.featuresOff,
         sync: sync ?? this.sync,
         firstRunDone: firstRunDone ?? this.firstRunDone,
         signedIn: signedIn ?? this.signedIn,
@@ -345,6 +357,7 @@ class AppSettings {
         'labelPrinterName': labelPrinterName,
         'printViaDialog': printViaDialog,
         'printAfterSave': printAfterSave,
+        'featuresOff': featuresOff.toList()..sort(),
       };
 
   /// SECURITY: tolerant and strict at once. Unknown keys are ignored; wrong types, unknown names and out-of-range or non-finite numbers
@@ -380,6 +393,7 @@ class AppSettings {
       labelPrinterName: name_(j['labelPrinterName'], d.labelPrinterName),
       printViaDialog: bool_(j['printViaDialog'], d.printViaDialog),
       printAfterSave: bool_(j['printAfterSave'], d.printAfterSave),
+      featuresOff: {for (final x in (j['featuresOff'] is List ? j['featuresOff'] as List : const [])) if (x is String && AppFeature.values.any((f) => f.name == x)) x},
     );
   }
 }

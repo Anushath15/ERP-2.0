@@ -2,9 +2,15 @@
 
 The 113 ideas the owner listed, checked against the code. "Have" means it is in the program and (where it can be) tested; "Partly" says what is missing; "Not needed" is a choice, not a lack.
 
-**Have 73, Partly 30, Missing 5, Not needed 5.**
+**Have 82, Partly 25, Missing 1, Not needed 5.**
 
-## What is worth doing next (for a hardware shop, not for the sake of the list)
+## Done on 21 Oct 2026 (after the first version of this audit)
+
+Exponential backoff, the diagnostics diary and file, the sent-today count and the refused-documents list with Retry, estimate lines removed on the other computer, estimate letters per computer, tidy the database, random-bill and concurrency tests, feature switches, the edit-conflict question, and bill-wise dues rebuilt on the other computer (found while checking efficiency: they were missing there). Also found by the random-bill tests and fixed: CGST and SGST were split line by line and could differ by a few paise on a long bill; they are now split once for the bill.
+
+Not done on purpose: encrypting the database file itself (needs SQLCipher and a rebuilt Windows toolchain), signing the installer (needs a paid certificate), a Tamil translation (1,490 strings), differential backups (a shop file is a few MB), record-level authorization, and the five "not needed" ideas.
+
+## What was worth doing next (kept for the record)
 
 1. **Local diagnostics (100, 111).** A log of the program's own events with no customer data in it, and a "Send diagnostics" button on Settings that makes one small file. The printer fault on the shop PC needed someone to dig through the Windows log; this makes it one click.
 2. **Exponential backoff for sync, the counter link and Telegram (40, 41).** Today a failing cloud is asked every 20 seconds forever. Waiting longer after each failure saves battery, the free Supabase quota and log noise.
@@ -48,21 +54,21 @@ Not recommended now: a re-layout into feature folders (no benefit for the shop, 
 | 30 | Append-Only Ledger | Have | Ledger entries, stock movements, returns, cancellations |
 | 31 | Audit Logging | Have | audit table (price, cost, cancellations...) |
 | 32 | Idempotency | Have | idem_key on bills, returns, purchases |
-| 33 | Optimistic Concurrency Control | Partly | version + hlc, newest wins; no "someone else changed this" screen |
+| 33 | Optimistic Concurrency Control | Have | Product edit asks before replacing a change made on another computer (lib/domain/product_conflict.dart); version + hlc underneath |
 | 34 | Database Integrity Checks | Have | quick check at start, weekly full check, daily self-check of summaries |
 | 35 | Backup and Restore | Have | Daily, on close, locked Telegram copy, restore screen |
 | 36 | Data Archiving | Partly | Yearly backup archive; old rows are not moved out of the database |
 | 37 | Offline-First Architecture | Have | The shop PC works with no internet |
 | 38 | Local-First Architecture | Have | SQLite per computer, cloud is a copy |
 | 39 | Transactional Outbox Pattern | Have | outbox rows made by triggers in the same transaction |
-| 40 | Exponential Backoff | Missing | Sync retries every 20 seconds, always the same delay |
-| 41 | Retry Mechanism | Partly | Retries forever on a timer; a refused document is set aside as "needs attention" |
+| 40 | Exponential Backoff | Have | lib/core/backoff.dart: 20 s doubling to 10 min (counter link 5 s to 2 min), with jitter, used by the cloud sync and the counter link |
+| 41 | Retry Mechanism | Have | Backoff, a refused document is set aside with its reason, a Retry button on Settings > Sync |
 | 42 | Conflict Resolution | Have | Append-only keep, last-writer-wins by stamp, number suffix |
 | 43 | Hybrid Logical Clock (HLC) | Have | lib/data/hlc.dart |
 | 44 | Synchronization Cursors | Have | sync_meta.pull_cursor |
-| 45 | Tombstones | Partly | Soft-deleted rows sync as edits; a line removed from an edited estimate does not |
-| 46 | Quota Management | Partly | Limits documented; the app does not meter Supabase use |
-| 47 | Sync Status Tracking | Have | Top-bar badge, Settings > Sync, outbox counts |
+| 45 | Tombstones | Have | A line removed or replaced when an estimate is edited is removed on the other computer too (SyncEngine._dropReplacedLines) |
+| 46 | Quota Management | Partly | Real count of documents sent to the cloud today on Settings > Sync; the plan limits themselves are not read from Supabase |
+| 47 | Sync Status Tracking | Have | Badge, Settings > Sync, documents sent today, refused documents with reasons and Retry, next try time |
 | 48 | Device Identity Management | Have | device.id per computer, series letter registry |
 | 49 | Data Reconciliation | Have | rebuildSummaries, self-check, import reconciliation |
 | 50 | Authentication | Have | Supabase e-mail and password, kept sign-in |
@@ -84,12 +90,12 @@ Not recommended now: a re-layout into feature folders (no benefit for the shop, 
 | 66 | Customer Ledger | Have | ledger_entries |
 | 67 | Dealer Ledger | Have | Same ledger, dealer side |
 | 68 | Double-Entry Accounting | Not needed | A single-entry ledger with reversals; a shop does not need debit and credit books |
-| 69 | Invoice Numbering and Series Management | Have | Per computer letter, gapless counters; estimates have one shared series (see gaps) |
+| 69 | Invoice Numbering and Series Management | Have | Per-computer letter: the first computer keeps EST-00001, another prints EST-B-00001; counters skip numbers that exist |
 | 70 | State Machine Pattern | Partly | Purchase pending/received, bill cancelled; not formalised |
 | 71 | Reversing Entries | Have | Cancellations, returns, write-offs |
 | 72 | Credit Limit Management | Have | credit_limit_paise per customer |
 | 73 | Financial Reconciliation | Have | self_check.dart |
-| 74 | Property-Based Testing | Partly | Randomised kill and money tests; no property-testing library |
+| 74 | Property-Based Testing | Have | test/domain/bill_math_properties_test.dart: thousands of random bills must obey the money rules (it found the CGST/SGST split drift, fixed) |
 | 75 | Business Rule Validation | Have | Warnings and blocks (stock, credit, margin, MRP) |
 | 76 | Component-Based UI | Have | Flutter widgets, lib/design |
 | 77 | Responsive UI | Have | Desktop, tablet, phone layouts tested at 80 to 200 percent text |
@@ -111,21 +117,21 @@ Not recommended now: a re-layout into feature folders (no benefit for the shop, 
 | 93 | Widget Testing | Have | Screens in test/*.dart |
 | 94 | End-to-End Testing | Partly | Browser user-journey runs were done by hand; not in CI |
 | 95 | Regression Testing | Have | 929 tests, golden images |
-| 96 | Concurrency Testing | Partly | Two-computer sync and LAN tests; no stress test of simultaneous saves |
+| 96 | Concurrency Testing | Have | test/data/concurrency_test.dart: 60 bills saved at once are gapless and exact; the same bill sent 10 times is saved once |
 | 97 | Crash and Interrupted-Write Testing | Have | tool/kill_test (200 kills) |
 | 98 | Performance Benchmarking | Have | docs/perf-results.md |
 | 99 | CI/CD | Have | .github/workflows ci.yml, release.yml |
-| 100 | Structured Logging | Missing | The app writes no log at all (a test forbids print, to protect customer data) |
+| 100 | Structured Logging | Have | lib/core/diag: a diary with no personal data (anything that looks like a name, number or e-mail is hidden), rotating 400 KB file |
 | 101 | Backup Verification | Have | Restore is checked before it replaces data |
 | 102 | Disaster Recovery | Partly | Restore, cloud copy, docs/failure-modes.md; never rehearsed on a second computer |
-| 103 | Feature Flags | Missing | Settings switches only |
+| 103 | Feature Flags | Have | Settings > Features: counter link, Excel fill and brand switch can be switched off per computer |
 | 104 | Background Scheduling | Have | Sync timer, daily backup, evening Telegram send |
 | 105 | Advanced Analytics | Partly | Reports page; no trends or forecasting |
 | 106 | Event-Driven Notifications | Partly | In-app banners and toasts; no push |
 | 107 | Multi-Branch Inventory Management | Not needed | One shop |
 | 108 | Plugin Architecture | Not needed | Not needed |
 | 109 | API Versioning | Partly | Counter link /lan/v1; cloud functions unversioned |
-| 110 | Database Compaction and Archiving | Partly | WAL checkpoint; no vacuum schedule, no archive |
-| 111 | Observability | Missing | No metrics, no diagnostics bundle |
+| 110 | Database Compaction and Archiving | Have | Settings > Tidy the database and an automatic weekly tidy: log folded in, statistics refreshed, search index merged, file compacted |
+| 111 | Observability | Partly | Diagnostics file (Settings > Help) with counts, settings, printers and the last diary lines; no metrics dashboard |
 | 112 | Differential Backups | Missing | Every backup is a full copy (a shop file is a few MB) |
 | 113 | Multi-Tenant SaaS Architecture | Not needed | shop_id exists in the cloud, but this is one shop |

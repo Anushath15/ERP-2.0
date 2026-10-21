@@ -3,14 +3,13 @@ import 'package:erp2/domain/product_conflict.dart';
 import 'package:erp2/domain/models.dart';
 import 'package:erp2/fake/data_providers.dart';
 import 'package:erp2/fake/store.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'helpers.dart';
 
 // What these tests prove: when another computer changed a product while its form was open here, saving asks first (Save my version or leave theirs);
 // the stock figure alone does not count as a change; with no change nothing is asked.
 void main() {
-  final p = Product(id: 'x', name: 'VALVE', category: 'Plumbing', unit: 'pcs', pricePaise: 10000, costPaise: 7000, stockMilli: 5000, gstBp: 1800, barcode: '');
+  const p = Product(id: 'x', name: 'VALVE', category: 'Plumbing', unit: 'pcs', pricePaise: 10000, costPaise: 7000, stockMilli: 5000, gstBp: 1800, barcode: '');
 
   test('a change in anything that can be edited counts; the stock figure alone does not', () {
     expect(productChangedElsewhere(p, p.copyWith()), isFalse);

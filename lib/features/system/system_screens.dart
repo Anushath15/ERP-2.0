@@ -18,6 +18,7 @@ import '../../fake/store.dart';
 import '../../nav.dart';
 import 'appearance_cards.dart';
 import 'diagnostics_card.dart';
+import 'features_card.dart';
 import 'sync_details.dart';
 import 'lan_card.dart';
 import 'security_card.dart';
@@ -129,7 +130,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     })));
     const lan = LanCard();
     const diag = DiagnosticsCard();
-    final cards = [look, anim, printing, sounds, backup, sync, lan, security, people, diag, demo];
+    const features = FeaturesCard();
+    final cards = [look, anim, printing, sounds, backup, sync, if (s.featureOn(AppFeature.counterLink)) lan, security, people, features, diag, demo];
     return PageFrame(
       title: l.navSettings,
       actions: [if (context.canPop()) TextButton.icon(key: const ValueKey('settings-back'), onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded), label: Text(l.back))],
@@ -139,7 +141,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Expanded(child: Column(children: [for (final c in [printing, security, people, backup, diag, demo]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
-                Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync, lan]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync, if (s.featureOn(AppFeature.counterLink)) lan, features]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),
             )
           : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in cards) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),

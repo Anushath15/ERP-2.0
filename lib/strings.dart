@@ -1492,4 +1492,9 @@ class Strings {
   String get conflictTitle => 'Changed on another computer';
   String conflictText(String name) => '"${name}" was changed on another computer after you opened it. If you save, your version replaces theirs.';
   String get conflictSaveMine => 'Save my version';
+  String get featTitle => 'Features';
+  String get featHelp => 'Switch a feature off on this computer if you do not use it. Nothing is deleted, and you can switch it on again at any time.';
+  String get featCounterLink => 'Counter link (several counters over the shop Wi-Fi)';
+  String get featExcel => 'Fill products from Excel (Products page)';
+  String get featBrandSwitch => 'Change the brand of a bill line';
 }

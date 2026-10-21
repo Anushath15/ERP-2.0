@@ -88,7 +88,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
       searchHint: l.searchProductHint,
       addLabel: l.addProduct,
       onAdd: _add,
-      actions: [OutlinedButton.icon(key: const ValueKey('productsExcel'), onPressed: () => showProductExcel(context), icon: const Icon(Icons.table_chart_rounded), label: Text(l.xlButton)), OutlinedButton.icon(key: const ValueKey('productsLabels'), onPressed: () => context.go('/labels'), icon: const Icon(Icons.sell_rounded), label: Text(l.navLabels))],
+      actions: [if (ref.watch(settingsProvider).featureOn(AppFeature.excelFill)) OutlinedButton.icon(key: const ValueKey('productsExcel'), onPressed: () => showProductExcel(context), icon: const Icon(Icons.table_chart_rounded), label: Text(l.xlButton)), OutlinedButton.icon(key: const ValueKey('productsLabels'), onPressed: () => context.go('/labels'), icon: const Icon(Icons.sell_rounded), label: Text(l.navLabels))],
       onTap: (ctx, p) => _edit(p),
       emptyTitle: l.noProductsYet,
       emptyText: l.noProductsHelp,

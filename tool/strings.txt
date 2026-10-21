@@ -1532,3 +1532,8 @@ dbTidyFailed | The data file could not be tidied now. Nothing was changed.
 conflictTitle | Changed on another computer
 conflictText | "{name}" was changed on another computer after you opened it. If you save, your version replaces theirs.
 conflictSaveMine | Save my version
+featTitle | Features
+featHelp | Switch a feature off on this computer if you do not use it. Nothing is deleted, and you can switch it on again at any time.
+featCounterLink | Counter link (several counters over the shop Wi-Fi)
+featExcel | Fill products from Excel (Products page)
+featBrandSwitch | Change the brand of a bill line
