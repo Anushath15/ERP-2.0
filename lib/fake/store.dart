@@ -232,6 +232,8 @@ class AppSettings {
     this.printSize = PrintTextSize.small,
     this.printerName = '',
     this.labelPrinterName = '',
+    this.printViaDialog = false,
+    this.printAfterSave = true,
     this.sync = SyncState.synced,
     this.firstRunDone = true,
     this.signedIn = true,
@@ -254,6 +256,9 @@ class AppSettings {
 
   /// The printer for barcode stickers (a label printer); empty = the same printer as the bills.
   final String labelPrinterName;
+
+  /// Print through the Windows print window (for printers whose driver refuses direct jobs), and print at once after Save and print.
+  final bool printViaDialog, printAfterSave;
   final bool firstRunDone, signedIn;
   final SyncState sync;
 
@@ -276,6 +281,8 @@ class AppSettings {
     PrintTextSize? printSize,
     String? printerName,
     String? labelPrinterName,
+    bool? printViaDialog,
+    bool? printAfterSave,
     bool? pricesIncludeGst,
     CreditLimitMode? creditLimitMode,
     ReminderTone? reminderTone,
@@ -310,6 +317,8 @@ class AppSettings {
         printSize: printSize ?? this.printSize,
         printerName: printerName ?? this.printerName,
         labelPrinterName: labelPrinterName ?? this.labelPrinterName,
+        printViaDialog: printViaDialog ?? this.printViaDialog,
+        printAfterSave: printAfterSave ?? this.printAfterSave,
         sync: sync ?? this.sync,
         firstRunDone: firstRunDone ?? this.firstRunDone,
         signedIn: signedIn ?? this.signedIn,
@@ -334,6 +343,8 @@ class AppSettings {
         'printSize': printSize.name,
         'printerName': printerName,
         'labelPrinterName': labelPrinterName,
+        'printViaDialog': printViaDialog,
+        'printAfterSave': printAfterSave,
       };
 
   /// SECURITY: tolerant and strict at once. Unknown keys are ignored; wrong types, unknown names and out-of-range or non-finite numbers
@@ -367,6 +378,8 @@ class AppSettings {
       printSize: pick(PrintTextSize.values, j['printSize'], d.printSize),
       printerName: name_(j['printerName'], d.printerName),
       labelPrinterName: name_(j['labelPrinterName'], d.labelPrinterName),
+      printViaDialog: bool_(j['printViaDialog'], d.printViaDialog),
+      printAfterSave: bool_(j['printAfterSave'], d.printAfterSave),
     );
   }
 }
@@ -385,3 +398,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+
+/// Set when Save and print just saved a document and opened the Print page: the page prints it once, at once (see [AppSettings.printAfterSave]).
+class AutoPrintNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void set(bool v) => state = v;
+}
+
+final autoPrintProvider = NotifierProvider<AutoPrintNotifier, bool>(AutoPrintNotifier.new);

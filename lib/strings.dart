@@ -1470,4 +1470,10 @@ class Strings {
   String xlApplyFailed(String why) => 'Nothing was changed. The reason: ${why}';
   String get xlButton => 'Excel';
   String xlMore(String n) => 'and ${n} more';
+  String get setPrintViaWindow => 'Use the Windows print window';
+  String get setPrintViaWindowHelp => 'Switch this on if the printer does nothing when you press Print (some printer drivers refuse the direct way). The program then opens the Windows print window to print.';
+  String get setPrintAfterSave => 'Print straight after Save and print';
+  String get setPrintAfterSaveHelp => 'On: Save and print also sends the bill to the printer at once. Off: it opens the Print page and you press Print.';
+  String get printUsedWindow => 'The printer did not accept the direct way, so the Windows print window was used.';
+  String get printBuildFailed => 'The page could not be made. Nothing was printed. Try again.';
 }

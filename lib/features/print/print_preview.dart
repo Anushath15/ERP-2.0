@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +52,34 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
   late PaperSize _paper = widget.initialPaper ?? ref.read(settingsProvider).paper;
 
   @override
+  void initState() {
+    super.initState();
+    // Save and print: the document goes to the printer at once (once), the page stays so it can be printed again
+    if (ref.read(autoPrintProvider)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(autoPrintProvider.notifier).set(false); // once only (a provider cannot be changed while the page is being built)
+        final doc = ref.read(printDocProvider);
+        if (doc != null && ref.read(settingsProvider).printAfterSave) _print(doc);
+      });
+    }
+  }
+
+  /// Makes the page and sends it to the printer; any failure is said in words (never silent).
+  Future<void> _print(PrintDoc doc) async {
+    final l = tr(context);
+    final Uint8List bytes;
+    try {
+      bytes = await buildDocPdf(doc: doc, paper: _paper, shop: ref.read(shopProvider), size: ref.read(settingsProvider).printSize, l: l);
+    } catch (_) {
+      if (mounted) toast(context, l.printBuildFailed);
+      return;
+    }
+    final kind = doc.mode == DocMode.estimation ? l.rcEstimate : l.rcTaxInvoice;
+    if (mounted) await printPdfNow(context, ref, bytes, '$kind ${doc.number}');
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l = tr(context);
     final c = context.c;
@@ -78,9 +107,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
       FilledButton.icon(
         key: const ValueKey('printNow'),
         onPressed: () async {
-          final bytes = await buildDocPdf(doc: doc!, paper: _paper, shop: ref.read(shopProvider), size: settings.printSize, l: l);
-          final kind = doc!.mode == DocMode.estimation ? l.rcEstimate : l.rcTaxInvoice;
-          if (context.mounted) await printPdfNow(context, ref, bytes, '$kind ${doc.number}');
+          await _print(doc!);
         },
         icon: const Icon(Icons.print_rounded),
         label: Text(l.print),

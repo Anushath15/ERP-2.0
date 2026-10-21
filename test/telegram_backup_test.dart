@@ -14,6 +14,7 @@ import 'package:erp2/features/backup/backups_screen.dart';
 import 'package:erp2/fake/backup_controller.dart';
 import 'package:erp2/fake/data_providers.dart';
 import 'package:erp2/fake/health.dart';
+import 'package:erp2/fake/store.dart' show clockProvider;
 import 'package:erp2/fake/telegram_backup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -195,6 +196,7 @@ void main() {
       vault = MemorySessionVault();
       folder = p.join(dir.path, 'Backups');
       c = ProviderContainer(overrides: [
+        clockProvider.overrideWithValue(DateTime(2026, 10, 14, 10, 0)), // a fixed morning: after 8 PM a finished backup is also sent by itself, which these tests must not depend on
         appPathsProvider.overrideWithValue(paths),
         dbFilePathProvider.overrideWithValue(live),
         appDataProvider.overrideWithValue(d),

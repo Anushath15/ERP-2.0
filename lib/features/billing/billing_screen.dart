@@ -261,6 +261,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     showSuccessCheck(context);
     if (print) {
       ref.read(printDocProvider.notifier).set(doc);
+      ref.read(autoPrintProvider.notifier).set(true);
       unawaited(context.push('/print'));
     }
     setState(() => _phoneTab = 0);

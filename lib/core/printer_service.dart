@@ -14,9 +14,12 @@ enum PrintStatus { sent, noPrinter, failed }
 
 /// What happened when a PDF was sent to a printer: [printer] is the name it went to (empty in the browser, where the person picks).
 class PrintOutcome {
-  const PrintOutcome(this.status, {this.printer = ''});
+  const PrintOutcome(this.status, {this.printer = '', this.viaWindow = false});
   final PrintStatus status;
   final String printer;
+
+  /// The Windows print window did the printing (the direct way was refused or switched off).
+  final bool viaWindow;
 }
 
 /// Sends a PDF straight to a printer (no dialog) and lists the printers. The app uses the real one; tests use a stand-in that
@@ -25,7 +28,8 @@ abstract class PrinterService {
   Future<List<PrinterInfo>> printers();
 
   /// Prints [bytes] on the printer called [printerName]; empty or not found: the computer's default printer.
-  Future<PrintOutcome> printPdf(Uint8List bytes, {required String jobName, String printerName = ''});
+  /// [viaDialog]: skip the direct way and open the Windows print window (for printers whose driver refuses direct jobs).
+  Future<PrintOutcome> printPdf(Uint8List bytes, {required String jobName, String printerName = '', bool viaDialog = false});
 }
 
 final printerServiceProvider = Provider<PrinterService>((ref) => PackagePrinterService());
@@ -45,7 +49,7 @@ class PackagePrinterService implements PrinterService {
   }
 
   @override
-  Future<PrintOutcome> printPdf(Uint8List bytes, {required String jobName, String printerName = ''}) async {
+  Future<PrintOutcome> printPdf(Uint8List bytes, {required String jobName, String printerName = '', bool viaDialog = false}) async {
     try {
       if (kIsWeb) {
         final ok = await Printing.layoutPdf(onLayout: (_) async => bytes, name: jobName);
@@ -54,8 +58,16 @@ class PackagePrinterService implements PrinterService {
       final all = (await Printing.listPrinters()).where((p) => p.isAvailable).toList();
       final chosen = all.where((p) => printerName.isNotEmpty && p.name == printerName).firstOrNull ?? all.where((p) => p.isDefault).firstOrNull ?? all.firstOrNull;
       if (chosen == null) return const PrintOutcome(PrintStatus.noPrinter);
-      final ok = await Printing.directPrintPdf(printer: chosen, onLayout: (_) async => bytes, name: jobName);
-      return PrintOutcome(ok ? PrintStatus.sent : PrintStatus.failed, printer: chosen.name);
+      if (!viaDialog) {
+        try {
+          final ok = await Printing.directPrintPdf(printer: chosen, onLayout: (_) async => bytes, name: jobName);
+          if (ok) return PrintOutcome(PrintStatus.sent, printer: chosen.name);
+        } catch (_) {
+          // some drivers (HP "V4" ones) refuse a direct job ("the remote procedure call failed"): the Windows print window below prints it
+        }
+      }
+      final ok = await Printing.layoutPdf(onLayout: (_) async => bytes, name: jobName, usePrinterSettings: true);
+      return PrintOutcome(ok ? PrintStatus.sent : PrintStatus.failed, printer: chosen.name, viaWindow: true);
     } catch (_) {
       return const PrintOutcome(PrintStatus.failed);
     }

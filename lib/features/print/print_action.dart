@@ -11,12 +11,17 @@ Future<void> printPdfNow(BuildContext context, WidgetRef ref, Uint8List bytes, S
   toast(context, l.printSending);
   final st = ref.read(settingsProvider);
   final printer = forLabels && st.labelPrinterName.isNotEmpty ? st.labelPrinterName : st.printerName; // stickers go to the label printer when one is chosen
-  final out = await ref.read(printerServiceProvider).printPdf(bytes, jobName: jobName, printerName: printer);
+  PrintOutcome out;
+  try {
+    out = await ref.read(printerServiceProvider).printPdf(bytes, jobName: jobName, printerName: printer, viaDialog: st.printViaDialog);
+  } catch (_) {
+    out = const PrintOutcome(PrintStatus.failed);
+  }
   if (!context.mounted) return;
   toast(
     context,
     switch (out.status) {
-      PrintStatus.sent => out.printer.isEmpty ? l.printSentBrowser : l.printSent(out.printer),
+      PrintStatus.sent => out.printer.isEmpty ? l.printSentBrowser : (out.viaWindow && !st.printViaDialog ? '${l.printSent(out.printer)} ${l.printUsedWindow}' : l.printSent(out.printer)),
       PrintStatus.noPrinter => l.printNoPrinter,
       PrintStatus.failed => l.printFailed,
     },
