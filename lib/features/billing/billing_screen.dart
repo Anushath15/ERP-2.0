@@ -221,7 +221,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         final input = SaveBillInput(
           idemKey: cart.draftId ?? newId(),
           at: at,
-          lines: [for (final ln in cart.lines) BillLineInput(productId: ln.product.id, name: ln.product.name, unit: ln.product.unit, qtyMilli: ln.qtyMilli, ratePaise: ln.rate, gstBp: ln.product.gstBp, discountBp: ln.discountBp, costPaise: ln.product.costPaise)],
+          lines: [for (final ln in cart.lines) BillLineInput(productId: ln.product.id, name: ln.product.billName, unit: ln.product.unit, qtyMilli: ln.qtyMilli, ratePaise: ln.rate, gstBp: ln.product.gstBp, discountBp: ln.discountBp, costPaise: ln.product.costPaise)],
           customerId: cart.customer?.id,
           customerName: cart.customer?.name ?? '',
           payMode: cart.pay.index,
@@ -237,7 +237,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         doc = _docFrom(cart, calc, number: saved.number, date: saved.at, received: saved.receivedPaise, change: saved.changePaise, advance: saved.advanceKeptPaise, newBalance: balanceNow);
       } else {
         final e = await ref.read(estimationsProvider.notifier).save(
-              lines: [for (final ln in cart.lines) EstimateLine(productId: ln.product.id, name: ln.product.name, unit: ln.product.unit, qtyMilli: ln.qtyMilli, ratePaise: ln.rate, discountBp: ln.discountBp)],
+              lines: [for (final ln in cart.lines) EstimateLine(productId: ln.product.id, name: ln.product.billName, unit: ln.product.unit, qtyMilli: ln.qtyMilli, ratePaise: ln.rate, discountBp: ln.discountBp)],
               totalPaise: calc.grandTotal,
               customerName: cart.customer?.name ?? '',
               customerId: cart.customer?.id,

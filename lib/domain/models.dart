@@ -28,6 +28,9 @@ class Product {
   final int mrpPaise;
   final int pricePaise, costPaise, stockMilli, gstBp, minStockMilli;
 
+  /// The name as it is printed and listed on a bill or estimate: the brand in brackets in front, so the customer sees which make he is buying, e.g. (HAVELLS)SWITCH.
+  String get billName => brand.trim().isEmpty ? name : '(${brand.trim()})$name';
+
   bool get outOfStock => stockMilli <= 0;
   bool get lowStock => stockMilli > 0 && stockMilli <= minStockMilli;
 

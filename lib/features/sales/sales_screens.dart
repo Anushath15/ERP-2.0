@@ -92,7 +92,7 @@ Future<void> showBillPopup(BuildContext context, WidgetRef ref, BillRow b, {Stri
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(child: Text('${lines[i].product.name}\n${formatQty(lines[i].qtyMilli)} ${lines[i].product.unit} × ${formatPaise(lines[i].rate)}', style: th.bodyMedium)),
+          Expanded(child: Text('${lines[i].product.billName}\n${formatQty(lines[i].qtyMilli)} ${lines[i].product.unit} × ${formatPaise(lines[i].rate)}', style: th.bodyMedium)),
           Text(formatPaise(calc.lines[i].total), style: th.titleSmall),
         ]),
       ),

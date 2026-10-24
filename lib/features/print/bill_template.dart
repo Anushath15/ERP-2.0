@@ -187,7 +187,7 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
     amountTotal += shown;
     rows.add(TemplateRow(
       sl: '${i + 1}',
-      goods: p.brand.trim().isEmpty ? p.name : '(${p.brand.trim()})${p.name}',
+      goods: p.billName,
       mrp: p.mrpPaise > 0 ? m(p.mrpPaise) : '',
       hsn: p.hsn,
       qty: formatQty(line.qtyMilli),

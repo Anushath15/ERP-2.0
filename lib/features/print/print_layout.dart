@@ -115,7 +115,7 @@ PrintLayout buildPrintLayout({required PrintDoc doc, required ShopProfile shop, 
     for (var i = 0; i < doc.lines.length; i++)
       PrintItem(
         number: '${i + 1}',
-        name: doc.lines[i].product.name,
+        name: doc.lines[i].product.billName,
         qty: '${formatQty(doc.lines[i].qtyMilli)} ${doc.lines[i].product.unit}',
         rate: formatPaise(doc.lines[i].rate),
         amount: formatPaise(c.lines[i].total),
