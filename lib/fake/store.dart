@@ -161,8 +161,8 @@ class RecsNotifier extends Notifier<List<Rec>> {
           await d.stock.adjust(productId: product.id, qtyMilli: r.i('qty'), reason: r.s('reason'), at: (r.f['date'] as DateTime?) ?? ref.read(clockProvider));
           await ref.read(productsProvider.notifier).reload([product.id]);
         });
-      case 'purchases' || 'salesReturns' || 'purchaseReturns':
-        final (prefix, width) = switch (kind) { 'purchases' => ('PUR', 5), 'salesReturns' => ('SRT', 4), _ => ('PRT', 4) };
+      case 'purchases' || 'salesReturns' || 'purchaseReturns' || 'orders':
+        final (prefix, width) = switch (kind) { 'purchases' => ('PUR', 5), 'salesReturns' => ('SRT', 4), 'orders' => ('PO', 4), _ => ('PRT', 4) };
         _write(ref, (d) async {
           final saved = await d.records.putNumbered(kind, r, prefix: prefix, width: width);
           state = [for (final x in state) x.id == saved.id ? saved : x]; // now it has its real number

@@ -7,7 +7,7 @@ part 'app_database.g.dart';
 
 /// The schema version this build of the app understands. Raise it ONLY together with a numbered migration in
 /// [AppDatabase.migrations], a new schema dump (`dart run drift_dev schema dump ...`) and a migration test.
-const currentSchemaVersion = 11;
+const currentSchemaVersion = 12;
 
 /// The database file was made by a NEWER version of the app. It is never opened (an old app could damage it).
 class DatabaseTooNewException implements Exception {
@@ -105,7 +105,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 11; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
+  int get schemaVersion => 12; // keep equal to [currentSchemaVersion] (a test checks it); drift_dev reads this literal
 
   /// Numbered migrations: key = the version the step produces. Every step runs inside the upgrade transaction; the caller
   /// makes a backup first (see DatabaseOpener) and a failed step leaves the old file untouched.
@@ -293,6 +293,8 @@ class AppDatabase extends _$AppDatabase {
       await db.customStatement('ALTER TABLE purchases ADD COLUMN line_count INTEGER NOT NULL DEFAULT 0');
       await db.customStatement('UPDATE purchases SET line_count = (SELECT COUNT(*) FROM purchase_lines WHERE purchase_id = purchases.id)');
     },
+    // 12: how a purchase was paid (0 cash, 1 UPI, 2 card, 3 bank transfer), so the day's cash book counts only the cash
+    12: (m, db) => db.customStatement('ALTER TABLE purchases ADD COLUMN pay_mode INTEGER NOT NULL DEFAULT 0'),
   };
 
   @override

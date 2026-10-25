@@ -29,6 +29,7 @@ final navGroups = <NavGroup>[
     NavItem('/labels', Icons.sell_rounded, (l) => l.navLabels),
     NavItem('/categories', Icons.category_rounded, (l) => l.navCategories),
     NavItem('/inventory', Icons.inventory_rounded, (l) => l.navInventory),
+    NavItem('/orders', Icons.shopping_basket_rounded, (l) => l.navOrders),
     NavItem('/purchases', Icons.shopping_cart_rounded, (l) => l.navPurchases),
     NavItem('/purchase-returns', Icons.undo_rounded, (l) => l.navPurchaseReturns),
     NavItem('/adjustments', Icons.edit_note_rounded, (l) => l.navAdjustments),

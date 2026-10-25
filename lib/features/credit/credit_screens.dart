@@ -21,6 +21,7 @@ import 'credit_dialogs.dart';
 import 'party_dialogs.dart';
 import 'receipt_pdf.dart';
 import 'statement_pdf.dart';
+import 'statement_share.dart';
 import '../print/print_action.dart';
 
 /// One line of the Credit and Dues list.
@@ -168,7 +169,7 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
       FilledButton.icon(
         key: const ValueKey('statementPrint'),
         onPressed: () async {
-          final bytes = await buildStatementPdf(statement: st, customer: customer, shopName: ref.read(shopProvider).name, shopPhone: ref.read(shopProvider).phone, today: now, l: l);
+          final bytes = await buildStatementPdf(statement: st, customer: customer, shopName: ref.read(shopProvider).name, shopPhone: ref.read(shopProvider).phone, today: now, l: l, shop: ref.read(shopProvider));
           if (context.mounted) await printPdfNow(context, ref, bytes, '${l.statementTitle} ${customer.name}');
         },
         icon: const Icon(Icons.print_rounded),
@@ -177,13 +178,19 @@ class _StatementScreenState extends ConsumerState<StatementScreen> {
       OutlinedButton.icon(
         key: const ValueKey('statementPdf'),
         onPressed: () async {
-          final bytes = await buildStatementPdf(statement: st, customer: customer, shopName: ref.watch(shopProvider).name, shopPhone: ref.watch(shopProvider).phone, today: now, l: l);
+          final bytes = await buildStatementPdf(statement: st, customer: customer, shopName: ref.read(shopProvider).name, shopPhone: ref.read(shopProvider).phone, today: now, l: l, shop: ref.read(shopProvider));
           final stamp = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
           final where = await ref.read(fileSaverProvider).save('Statement ${customer.name} $stamp.pdf', bytes);
           if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
         },
         icon: const Icon(Icons.picture_as_pdf_rounded),
         label: Text(l.saveAsPdf),
+      ),
+      OutlinedButton.icon(
+        key: const ValueKey('statementWhatsapp'),
+        onPressed: () => shareStatementOnWhatsapp(context, ref, statement: st, customer: customer, now: now),
+        icon: const Icon(Icons.chat_rounded),
+        label: Text(l.waStatementShare),
       ),
       TextButton(onPressed: () => context.go('/customers/${widget.customerId}'), child: Text(l.back)),
     ];

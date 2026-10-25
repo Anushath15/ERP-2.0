@@ -208,6 +208,8 @@ grandTotal | Grand total
 payCash | Cash
 payUpi | UPI
 payCard | Card or other
+payBank | Bank transfer
+purPaidBy | Paid by
 payCredit | Credit
 estimateNoStock | An estimate does not change your stock.
 saveBill | Save bill
@@ -350,6 +352,12 @@ closingCashSales | Cash received
 closingCreditGiven | Given on credit
 closingOpening | Cash at start of day
 closingExpenses | Expenses paid in cash
+waSendPdf | Save PDF and open WhatsApp
+waPdfHelp | WhatsApp cannot attach a file by itself. The PDF is saved and its folder opens: drag the PDF into the chat, or press the paper-clip in WhatsApp.
+waNumber | WhatsApp number
+waSent | WhatsApp opened. The PDF is saved here: {where}
+waOffline | WhatsApp needs the internet. The PDF was saved here: {where}
+waStatementShare | Send on WhatsApp
 closingFromCustomers | Cash received from customers (credit payments)
 closingToDealers | Cash paid to dealers
 closingFromDealers | Cash refunded by dealers
@@ -1550,3 +1558,35 @@ purEditHint | Change the items, rates, invoice number, note or what was paid. Th
 purEdited | Changes to {number} saved.
 purEditDealerFixed | The dealer of a saved purchase cannot be changed.
 purEditStatusFixed | A saved purchase keeps its status (use Mark received on a pending one).
+navOrders | Orders to dealers
+ordersTitle | Orders to dealers
+ordersSubtitle | List what to buy from a dealer, send it on WhatsApp, and turn it into a purchase when the goods come.
+orderNew | New order
+orderEmpty | No orders yet. Make one to send to a dealer.
+orderTitle | Order {number}
+orderFormTitle | New order to a dealer
+orderDealer | Dealer
+orderAddItem | Add an item
+orderNote | Note for the dealer (optional)
+orderQty | Quantity
+orderSave | Save order
+orderSaved | Order {number} saved.
+orderOrderNow | Order now on WhatsApp
+orderMakePurchase | Make purchase
+orderLowStock | Add items that are low in stock
+orderLowAdded | {count} low-stock items added.
+orderNoLow | No item is low in stock.
+orderNoItems | Add at least one item with a quantity.
+orderNeedDealer | Choose a dealer first.
+orderStatusOpen | Not sent
+orderStatusSent | Sent
+orderStatusDone | Purchase made
+orderStatusCancelled | Cancelled
+orderCancel | Cancel this order
+orderCancelled | Order cancelled.
+orderNotFound | No such order.
+orderDoneHint | Purchase {number} was made from this order.
+orderSentOn | Sent on {date}
+orderMake | Order from this dealer
+orderItemsCount | {count} items
+orderPurchaseNote | The quantities and rates can be changed in the purchase before saving.

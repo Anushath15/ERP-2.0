@@ -278,7 +278,8 @@ CREATE TABLE purchases (
   by_name TEXT NOT NULL DEFAULT '',
   created_at INTEGER NOT NULL,
   device_id TEXT NOT NULL,
-  line_count INTEGER NOT NULL DEFAULT 0
+  line_count INTEGER NOT NULL DEFAULT 0,
+  pay_mode INTEGER NOT NULL DEFAULT 0
 ) AS DbPurchase;
 CREATE UNIQUE INDEX purchases_number ON purchases(number);
 CREATE UNIQUE INDEX purchases_idem ON purchases(idem_key);

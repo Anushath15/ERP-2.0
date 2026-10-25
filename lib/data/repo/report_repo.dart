@@ -88,7 +88,7 @@ class ReportRepo {
       salesCash: (await day(d)).cash,
       receivedFromCustomers: await cashEntries('customer'),
       paidToDealersLater: await cashEntries('dealer'),
-      paidWithPurchases: await _db.scalarInt('SELECT COALESCE(SUM(paid_paise), 0) FROM purchases WHERE status = 1 AND day = ?', [key]),
+      paidWithPurchases: await _db.scalarInt('SELECT COALESCE(SUM(paid_paise), 0) FROM purchases WHERE status = 1 AND pay_mode = 0 AND day = ?', [key]),
       refundedByDealers: await _db.scalarInt('SELECT COALESCE(SUM(refunded_paise), 0) FROM purchase_returns WHERE refund_mode = 0 AND day = ?', [key]),
     );
   }

@@ -14,6 +14,7 @@ import '../../design/widgets.dart';
 import '../../domain/gst_price.dart';
 import '../../domain/margin.dart';
 import '../../domain/models.dart';
+import '../../domain/orders.dart';
 import '../../fake/actions.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/shop_profile.dart';
@@ -139,8 +140,11 @@ class _FormLine {
 /// Add a purchase: the dealer, the dealer's invoice, the items with their rates, how much was paid. Under each item the last rate paid
 /// for it and any dealer that sold it cheaper are shown while typing.
 class PurchaseFormScreen extends ConsumerStatefulWidget {
-  const PurchaseFormScreen({super.key, this.dealerId, this.editId});
+  const PurchaseFormScreen({super.key, this.dealerId, this.editId, this.orderId});
   final String? dealerId;
+
+  /// An order to the dealer that this purchase fulfils: its items and quantities fill the form (the rates and quantities can be changed), and the order is marked done on save.
+  final String? orderId;
 
   /// The purchase being changed (the same form, filled in, and Save changes the saved one); null = a new purchase.
   final String? editId;
@@ -160,11 +164,13 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
   bool _ratesInclude = false;
   bool _updateCost = true;
   int _pay = 0; // 0 paid in full, 1 part paid, 2 on credit
+  int _payMode = 0; // how the money was paid: 0 cash, 1 UPI, 2 card, 3 bank transfer
   bool _busy = false;
   String? _error;
   bool _loaded = true; // false while a purchase being edited is read
   String _number = '';
   List<String> _oldProducts = const [];
+  OrderDoc? _order;
 
   @override
   void initState() {
@@ -174,7 +180,27 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
     if (widget.editId != null) {
       _loaded = false;
       WidgetsBinding.instance.addPostFrameCallback((_) => _loadForEdit());
+    } else if (widget.orderId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadFromOrder());
     }
+  }
+
+  /// Fills the form from an order to the dealer: the dealer, the items, the quantities ordered and the latest buying price of each as the rate.
+  void _loadFromOrder() {
+    final rec = ref.read(recsProvider('orders')).where((r) => r.id == widget.orderId).firstOrNull;
+    if (rec == null) return;
+    final order = OrderDoc.fromRec(rec);
+    final products = ref.read(productsProvider);
+    setState(() {
+      _order = order;
+      if (ref.read(recsProvider('dealers')).any((d) => d.id == order.dealerId)) _dealer = order.dealerId;
+      _note.text = 'Order ${order.number}';
+      for (final l in order.lines) {
+        final p = products.where((x) => x.id == l.productId).firstOrNull;
+        if (p == null) continue;
+        _lines.add(_FormLine(p, rate: p.costPaise == 0 ? '' : (p.costPaise / 100).toStringAsFixed(2), qty: formatQty(l.qtyMilli)));
+      }
+    });
   }
 
   /// Fills the form from the saved purchase.
@@ -199,6 +225,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
       // shown with GST when every line's total is a whole number of paise per unit (what was typed), so the total does not move; else without GST
       _ratesInclude = d.lines.isNotEmpty && d.lines.every((l) => l.qtyMilli > 0 && (l.totalPaise * 1000) % l.qtyMilli == 0);
       _pay = d.row.paidPaise >= d.row.totalPaise ? 0 : (d.row.paidPaise == 0 ? 2 : 1);
+      _payMode = d.payMode;
       if (_pay == 1) _paid.text = (d.row.paidPaise / 100).toStringAsFixed(2);
       _oldProducts = [for (final l in d.lines) l.productId];
       for (final l in d.lines) {
@@ -308,6 +335,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
         received: _received,
         updateCost: _updateCost,
         note: _note.text,
+        payMode: paid > 0 ? _payMode : 0,
       );
       if (widget.editId != null) {
         final saved = await ref.read(billActionsProvider).editPurchase(widget.editId!, input, oldProductIds: _oldProducts);
@@ -317,6 +345,11 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
         return;
       }
       final saved = await ref.read(billActionsProvider).savePurchase(input);
+      final fromOrder = _order;
+      if (fromOrder != null) {
+        final rec = ref.read(recsProvider('orders')).where((r) => r.id == fromOrder.id).firstOrNull;
+        if (rec != null) ref.read(recsProvider('orders').notifier).replace(rec.with_({'status': OrderStatus.converted.name, 'purchaseNo': saved.number}));
+      }
       if (!mounted) return;
       toast(context, s.purSaved(saved.number, formatPaise(saved.totalPaise, symbol: true)));
       context.go('/purchases');
@@ -517,6 +550,18 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
             Row(children: [Expanded(child: Text(s.purTotal, style: th.titleMedium)), Text(m(t.total), key: const ValueKey('pur-total'), style: th.titleLarge)]),
             const SizedBox(height: 12),
             payMenu,
+            if (_pay != 2) ...[
+              const SizedBox(height: 10),
+              Text(s.purPaidBy, style: th.bodySmall),
+              const SizedBox(height: 6),
+              SegmentedButton<int>(
+                key: const ValueKey('pur-pay-mode'),
+                showSelectedIcon: false,
+                segments: [ButtonSegment(value: 0, label: Text(s.payCash)), ButtonSegment(value: 1, label: Text(s.payUpi)), ButtonSegment(value: 2, label: Text(s.payCard)), ButtonSegment(value: 3, label: Text(s.payBank))],
+                selected: {_payMode},
+                onSelectionChanged: (v) => setState(() => _payMode = v.first),
+              ),
+            ],
             if (_pay == 1) ...[
               const SizedBox(height: 10),
               TextField(

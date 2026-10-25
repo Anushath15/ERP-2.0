@@ -26,6 +26,7 @@ import 'credit_dialogs.dart';
 import 'credit_screens.dart' show remindedText;
 import 'party_dialogs.dart';
 import 'statement_pdf.dart';
+import 'statement_share.dart';
 
 /// The profile of a customer (who owes us) or a dealer (whom we owe): details, key dates, bill-wise dues with ageing, the full
 /// ledger with a running balance (filter by date), and the actions. Nothing is deleted: a wrong entry is reversed by a new entry.
@@ -154,7 +155,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     Future<void> downloadStatement() async {
       final w = win ?? (DateTime(2000), now);
       final st = buildStatement(entries: acct.ledger, from: w.$1, to: w.$2);
-      final bytes = await buildStatementPdf(statement: st, customer: Customer(id: widget.partyId, name: name, phone: phone, city: city, balancePaise: 0), shopName: shop.name, shopPhone: shop.phone, today: now, l: l, dealer: !_customer);
+      final bytes = await buildStatementPdf(statement: st, customer: Customer(id: widget.partyId, name: name, phone: phone, city: city, balancePaise: 0), shopName: shop.name, shopPhone: shop.phone, today: now, l: l, dealer: !_customer, shop: shop);
       final stamp = '${now.year}-${two(now.month)}-${two(now.day)}';
       final where = await ref.read(fileSaverProvider).save('Statement $name $stamp.pdf', bytes);
       if (context.mounted) toast(context, where == null ? l.pdfFailed : l.pdfSaved(where));
@@ -178,6 +179,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (_customer && hasAccount) Tooltip(message: settings.sync == SyncState.offline ? canOpenWhatsapp(online: false, digits: null).reason! : l.remindersTooltip, child: OutlinedButton.icon(onPressed: bal > 0 ? () => remindCustomer(context, cust!) : null, icon: const Icon(Icons.chat_rounded), label: Text(l.actRemind))),
       if (_customer && hasAccount) OutlinedButton.icon(onPressed: () => context.go('/customers/${widget.partyId}/statement'), icon: const Icon(Icons.description_rounded), label: Text(l.actStatement)),
       if (hasAccount) OutlinedButton.icon(key: const ValueKey('downloadStatement'), onPressed: downloadStatement, icon: const Icon(Icons.picture_as_pdf_rounded), label: Text(l.downloadStatement)),
+      if (_customer && hasAccount)
+        OutlinedButton.icon(
+          key: const ValueKey('profileStatementWhatsapp'),
+          onPressed: () => shareStatementOnWhatsapp(context, ref, statement: buildStatement(entries: acct.ledger, from: (win ?? (DateTime(2000), now)).$1, to: (win ?? (DateTime(2000), now)).$2), customer: Customer(id: widget.partyId, name: name, phone: phone, city: city, balancePaise: 0), now: now),
+          icon: const Icon(Icons.chat_rounded),
+          label: Text(l.waStatementShare),
+        ),
       if (_customer && bal > 0) OutlinedButton.icon(style: OutlinedButton.styleFrom(foregroundColor: c.danger), onPressed: () => showWriteOff(context, ref, cust!), icon: const Icon(Icons.remove_circle_outline_rounded), label: Text(l.writeOff)),
     ]);
 

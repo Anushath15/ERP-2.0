@@ -20,6 +20,7 @@ import 'features/stock/fix_these_screen.dart';
 import 'features/reports/reports_screens.dart';
 import 'features/money/return_from_bill_screen.dart';
 import 'features/purchases/purchase_return_screen.dart';
+import 'features/purchases/order_screens.dart';
 import 'features/purchases/purchase_screens.dart';
 import 'features/sales/sales_screens.dart';
 import 'features/shop/shop_profile_screen.dart';
@@ -60,7 +61,10 @@ GoRouter buildRouter({String initialLocation = '/', String? Function(String loca
           GoRoute(path: '/fix', pageBuilder: (c, s) => _p(c, s, const FixTheseScreen())),
           GoRoute(path: '/inventory', pageBuilder: (c, s) => _p(c, s, const InventoryScreen())),
           GoRoute(path: '/purchases/:id/edit', pageBuilder: (c, s) => _p(c, s, PurchaseFormScreen(editId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
-          GoRoute(path: '/purchases/new', pageBuilder: (c, s) => _p(c, s, PurchaseFormScreen(dealerId: s.uri.queryParameters['dealer']), key: ValueKey(s.uri.toString()))),
+          GoRoute(path: '/purchases/new', pageBuilder: (c, s) => _p(c, s, PurchaseFormScreen(dealerId: s.uri.queryParameters['dealer'], orderId: s.uri.queryParameters['order']), key: ValueKey(s.uri.toString()))),
+          GoRoute(path: '/orders', pageBuilder: (c, s) => _p(c, s, const OrdersScreen())),
+          GoRoute(path: '/orders/new', pageBuilder: (c, s) => _p(c, s, const OrderFormScreen(), key: ValueKey(s.uri.toString()))),
+          GoRoute(path: '/orders/:id', pageBuilder: (c, s) => _p(c, s, OrderFormScreen(orderId: s.pathParameters['id']), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/purchases', pageBuilder: (c, s) => _p(c, s, const PurchasesScreen())),
           GoRoute(path: '/purchase-returns/purchase/:id', pageBuilder: (c, s) => _p(c, s, PurchaseReturnScreen(purchaseId: s.pathParameters['id']!), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/purchase-returns', pageBuilder: (c, s) => _p(c, s, const PurchaseReturnsScreen())),

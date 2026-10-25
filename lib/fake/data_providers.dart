@@ -78,7 +78,7 @@ class Bootstrap {
   /// The newest bills (the first page of the sales register), so the register opens with rows already on screen.
   final List<BillRow> firstBills;
 
-  static const recKinds = ['brands', 'units', 'purchases', 'purchaseReturns', 'salesReturns', 'delivery', 'expenses', 'warranty', 'staff', 'notifications'];
+  static const recKinds = ['brands', 'units', 'purchases', 'purchaseReturns', 'salesReturns', 'delivery', 'expenses', 'warranty', 'staff', 'notifications', 'orders'];
 
   /// Reads the lists the screens show at once. Big things (the sales register, a customer's whole history, reports) are not here:
   /// they are read page by page when asked for.

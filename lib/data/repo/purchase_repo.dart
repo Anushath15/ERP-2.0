@@ -32,7 +32,7 @@ class PurchaseLineInput {
 }
 
 class SavePurchaseInput {
-  const SavePurchaseInput({required this.idemKey, required this.dealerId, required this.at, required this.lines, this.invoiceNo = '', this.paidPaise = 0, this.received = true, this.updateCost = true, this.note = ''});
+  const SavePurchaseInput({required this.idemKey, required this.dealerId, required this.at, required this.lines, this.invoiceNo = '', this.paidPaise = 0, this.received = true, this.updateCost = true, this.note = '', this.payMode = 0});
   final String idemKey, dealerId, invoiceNo, note;
   final DateTime at;
   final List<PurchaseLineInput> lines;
@@ -43,6 +43,9 @@ class SavePurchaseInput {
 
   /// Make these rates the products' buying price when the stock comes in.
   final bool updateCost;
+
+  /// How the money paid now was paid: 0 cash, 1 UPI, 2 card, 3 bank transfer (the day's cash book counts only the cash).
+  final int payMode;
 
   int get total => lines.fold<int>(0, (s, l) => s + l.total);
 }
@@ -85,7 +88,7 @@ class PurchaseLineView {
 }
 
 class PurchaseDetail {
-  const PurchaseDetail({required this.row, required this.lines, required this.note, required this.receivedAt, required this.taxPaise, this.updateCost = true});
+  const PurchaseDetail({required this.row, required this.lines, required this.note, required this.receivedAt, required this.taxPaise, this.updateCost = true, this.payMode = 0});
   final PurchaseRow row;
   final List<PurchaseLineView> lines;
   final String note;
@@ -94,6 +97,7 @@ class PurchaseDetail {
 
   /// Whether the buying prices followed this purchase's rates.
   final bool updateCost;
+  final int payMode;
 }
 
 class DealerSummary {
@@ -148,9 +152,9 @@ class PurchaseRepo {
       final at = input.at.millisecondsSinceEpoch;
       final taxable = input.lines.fold<int>(0, (s, l) => s + l.taxable);
       await _db.exec(
-        'INSERT INTO purchases(id, number, dealer_id, dealer_name, invoice_no, purchased_at, day, total_paise, taxable_paise, tax_paise, paid_paise, status, update_cost, note, idem_key, by_name, created_at, device_id, line_count) '
-        'VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?)',
-        [id, number, input.dealerId, dealer.read<String>('name'), input.invoiceNo.trim(), at, DataContext.dayOf(input.at), total, taxable, total - taxable, input.paidPaise, input.updateCost ? 1 : 0, input.note.trim(), input.idemKey, cx.actor.name, cx.nowMs(), cx.deviceId, input.lines.length],
+        'INSERT INTO purchases(id, number, dealer_id, dealer_name, invoice_no, purchased_at, day, total_paise, taxable_paise, tax_paise, paid_paise, status, update_cost, note, idem_key, by_name, created_at, device_id, line_count, pay_mode) '
+        'VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)',
+        [id, number, input.dealerId, dealer.read<String>('name'), input.invoiceNo.trim(), at, DataContext.dayOf(input.at), total, taxable, total - taxable, input.paidPaise, input.updateCost ? 1 : 0, input.note.trim(), input.idemKey, cx.actor.name, cx.nowMs(), cx.deviceId, input.lines.length, input.payMode],
       );
       for (var i = 0; i < input.lines.length; i++) {
         final l = input.lines[i];
@@ -309,8 +313,8 @@ class PurchaseRepo {
               [newId(), purchaseId, i + 1, l.productId, l.name, l.unit, l.qtyMilli, l.ratePaise, l.gstBp, l.taxable, l.tax, l.total]);
         }
       }
-      await _db.exec('UPDATE purchases SET invoice_no = ?, total_paise = ?, taxable_paise = ?, tax_paise = ?, paid_paise = ?, update_cost = ?, note = ?, line_count = ? WHERE id = ?',
-          [input.invoiceNo.trim(), newTotal, taxable, newTotal - taxable, input.paidPaise, input.updateCost ? 1 : 0, input.note.trim(), input.lines.length, purchaseId]);
+      await _db.exec('UPDATE purchases SET invoice_no = ?, total_paise = ?, taxable_paise = ?, tax_paise = ?, paid_paise = ?, update_cost = ?, note = ?, line_count = ?, pay_mode = ? WHERE id = ?',
+          [input.invoiceNo.trim(), newTotal, taxable, newTotal - taxable, input.paidPaise, input.updateCost ? 1 : 0, input.note.trim(), input.lines.length, input.payMode, purchaseId]);
       await enqueue(cx, _db, 'purchases', purchaseId);
       await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
           [newId(), 'purchaseEdit', 'purchase', purchaseId, 'total', '$oldTotal', '$newTotal', cx.actor.name, cx.nowMs(), cx.deviceId]);
@@ -382,6 +386,7 @@ class PurchaseRepo {
       receivedAt: r.readNullable<int>('received_at') == null ? null : _at(r.read<int>('received_at')),
       taxPaise: r.read<int>('tax_paise'),
       updateCost: r.read<int>('update_cost') == 1,
+      payMode: r.read<int>('pay_mode'),
     );
   }
 

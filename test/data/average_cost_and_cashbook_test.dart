@@ -71,6 +71,8 @@ void main() {
       await d.ledger.receivePayment(PartyKind.customer, partyId: 'c1', partyName: 'Murugan', amount: 10000, mode: 'cash', at: day); // Rs 100 cash in
       await d.ledger.receivePayment(PartyKind.customer, partyId: 'c1', partyName: 'Murugan', amount: 5000, mode: 'upi', at: day); // not cash
       await d.purchases.savePurchase(SavePurchaseInput(idemKey: 'pu', dealerId: 'd1', at: day, lines: [line(10000, 20000)], paidPaise: 7000)); // Rs 70 paid with the purchase
+      await d.purchases.savePurchase(SavePurchaseInput(idemKey: 'pu2', dealerId: 'd1', at: day, lines: [line(10000, 20000)], paidPaise: 4000, payMode: 1)); // Rs 40 paid by UPI with the purchase: not cash
+      expect((await d.purchases.detail((await d.purchases.list()).first.id))!.payMode, 1, reason: 'the way it was paid is kept');
       await d.ledger.receivePayment(PartyKind.dealer, partyId: 'd1', partyName: 'Sakthi', amount: 3000, mode: 'cash', at: day); // Rs 30 paid later
       await d.ledger.receivePayment(PartyKind.dealer, partyId: 'd1', partyName: 'Sakthi', amount: 2000, mode: 'upi', at: day); // not cash
       final book = await d.reports.cashBook(day);

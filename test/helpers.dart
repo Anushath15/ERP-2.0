@@ -8,6 +8,7 @@ import 'package:erp2/core/device_store.dart';
 import 'package:erp2/core/file_saver.dart';
 import 'package:erp2/core/link_launcher.dart';
 import 'package:erp2/core/printer_service.dart';
+import 'package:erp2/core/reveal_file.dart';
 import 'package:erp2/domain/credit/reminder.dart' show LinkPlatform;
 import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/fake/store.dart';
@@ -129,4 +130,11 @@ class FakePrinter implements PrinterService {
     if (status == PrintStatus.sent) jobs.add((name: jobName, printer: target!.name, bytes: bytes));
     return PrintOutcome(status, printer: target?.name ?? '');
   }
+}
+
+/// A stand-in for showing a saved file in its folder: remembers the paths, opens nothing.
+class FakeRevealer implements FileRevealer {
+  final shown = <String>[];
+  @override
+  Future<void> reveal(String path) async => shown.add(path);
 }
