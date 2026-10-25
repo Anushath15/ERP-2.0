@@ -36,6 +36,10 @@ fn list() -> ExitCode {
 }
 
 fn print(file: &str, printer: &str) -> ExitCode {
+    if !Path::new(file).is_file() {
+        eprintln!("file not found: {file}");
+        return ExitCode::from(4);
+    }
     let device = if printer.is_empty() {
         match PrinterDevice::user_default() {
             Ok(Some(d)) => d,

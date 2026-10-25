@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -11,8 +12,14 @@ Future<bool?> printWithHelper(Uint8List bytes, {required String printerName}) as
   final tmp = File('${Directory.systemTemp.path}${Platform.pathSeparator}askerp-print-${DateTime.now().microsecondsSinceEpoch}.pdf');
   try {
     await tmp.writeAsBytes(bytes, flush: true);
-    final r = await Process.run(exe.path, [tmp.path, if (printerName.isNotEmpty) printerName]).timeout(const Duration(seconds: 120));
-    return r.exitCode == 0;
+    final p = await Process.start(exe.path, [tmp.path, if (printerName.isNotEmpty) printerName]);
+    unawaited(p.stdout.drain<void>());
+    unawaited(p.stderr.drain<void>());
+    final code = await p.exitCode.timeout(const Duration(seconds: 120), onTimeout: () {
+      p.kill(); // never leave a stuck helper behind
+      return -1;
+    });
+    return code == 0;
   } catch (_) {
     return false;
   } finally {
