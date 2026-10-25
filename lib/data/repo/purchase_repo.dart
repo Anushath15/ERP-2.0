@@ -17,13 +17,17 @@ import '../ids.dart';
 import 'ledger_repo.dart';
 
 class PurchaseLineInput {
-  const PurchaseLineInput({required this.productId, required this.name, required this.unit, required this.qtyMilli, required this.ratePaise, required this.gstBp});
+  const PurchaseLineInput({required this.productId, required this.name, required this.unit, required this.qtyMilli, required this.ratePaise, required this.gstBp, this.grossPaise});
   final String productId, name, unit;
   final int qtyMilli, ratePaise, gstBp;
 
-  int get taxable => lineAmount(ratePaise, qtyMilli);
-  int get tax => divRound(taxable * gstBp, 10000);
-  int get total => taxable + tax;
+  /// What the line costs WITH GST, exactly as typed (quantity x the rate typed with GST), when the rates were typed with GST. The rate kept without GST is
+  /// rounded to the paisa, so working the line back from it can be a few paise off; the line is worked from this figure instead.
+  final int? grossPaise;
+
+  int get total => grossPaise ?? taxable + tax;
+  int get taxable => grossPaise == null ? lineAmount(ratePaise, qtyMilli) : divRound(grossPaise! * 10000, 10000 + gstBp);
+  int get tax => grossPaise == null ? divRound(lineAmount(ratePaise, qtyMilli) * gstBp, 10000) : grossPaise! - taxable;
 }
 
 class SavePurchaseInput {

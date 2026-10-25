@@ -196,14 +196,16 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
       _note.text = d.note;
       _received = d.row.received;
       _updateCost = d.updateCost;
-      _ratesInclude = false; // the rates are kept without GST: shown the same way
+      // shown with GST when every line's total is a whole number of paise per unit (what was typed), so the total does not move; else without GST
+      _ratesInclude = d.lines.isNotEmpty && d.lines.every((l) => l.qtyMilli > 0 && (l.totalPaise * 1000) % l.qtyMilli == 0);
       _pay = d.row.paidPaise >= d.row.totalPaise ? 0 : (d.row.paidPaise == 0 ? 2 : 1);
       if (_pay == 1) _paid.text = (d.row.paidPaise / 100).toStringAsFixed(2);
       _oldProducts = [for (final l in d.lines) l.productId];
       for (final l in d.lines) {
         final p = products.where((x) => x.id == l.productId).firstOrNull ??
             Product(id: l.productId, name: l.name, category: '', unit: l.unit, pricePaise: l.sellingPaise, costPaise: l.ratePaise, stockMilli: 0, gstBp: l.gstBp, barcode: '');
-        _lines.add(_FormLine(p, rate: (l.ratePaise / 100).toStringAsFixed(2), qty: formatQty(l.qtyMilli)));
+        final shown = _ratesInclude ? l.totalPaise * 1000 ~/ l.qtyMilli : l.ratePaise;
+        _lines.add(_FormLine(p, rate: (shown / 100).toStringAsFixed(2), qty: formatQty(l.qtyMilli)));
       }
       _loaded = true;
     });
@@ -228,7 +230,15 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
   PurchaseLineInput? _input(_FormLine x) {
     final q = parseQtyMilli(x.qty.text);
     if (q == null || q <= 0 || double.tryParse(x.rate.text.trim()) == null) return null;
-    return PurchaseLineInput(productId: x.product.id, name: x.product.name, unit: x.product.unit, qtyMilli: q, ratePaise: _exRate(x), gstBp: x.product.gstBp);
+    return PurchaseLineInput(
+      productId: x.product.id,
+      name: x.product.name,
+      unit: x.product.unit,
+      qtyMilli: q,
+      ratePaise: _exRate(x),
+      gstBp: x.product.gstBp,
+      grossPaise: _ratesInclude ? lineAmount(_paise(x.rate.text), q) : null, // 10 x 3.13 with GST is 31.30, not what 10 x 2.65 plus GST makes
+    );
   }
 
   ({int taxable, int tax, int total}) _totals() {
