@@ -14,6 +14,7 @@ import '../../fake/shop_profile.dart';
 import '../../fake/stats.dart';
 import '../../fake/store.dart';
 import '../../data/repo/export_repo.dart';
+import '../../data/repo/gst_return_repo.dart' show monthLabel;
 import '../dashboard/dashboard_screen.dart';
 import '../export/export_action.dart';
 
@@ -243,6 +244,7 @@ class ExportScreen extends ConsumerWidget {
         return SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 24),
           child: Wrap(spacing: 12, runSpacing: 12, children: [
+            SizedBox(width: bc.maxWidth, child: const _GstReturnsCard()),
             for (final it in items)
               SizedBox(
                 width: w,
@@ -270,3 +272,50 @@ class ExportScreen extends ConsumerWidget {
   }
 }
 
+/// GST returns of one month: GSTR-1, GSTR-3B and the HSN summary, each as Excel or PDF.
+class _GstReturnsCard extends ConsumerStatefulWidget {
+  const _GstReturnsCard();
+  @override
+  ConsumerState<_GstReturnsCard> createState() => _GstReturnsCardState();
+}
+
+class _GstReturnsCardState extends ConsumerState<_GstReturnsCard> {
+  DateTime? _month;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = tr(context);
+    final th = Theme.of(context).textTheme;
+    final now = ref.watch(clockProvider);
+    final months = [for (var i = 0; i < 18; i++) DateTime(now.year, now.month - i, 1)];
+    final month = _month ?? DateTime(now.year, now.month - 1, 1); // returns are made for the month that just ended
+    final parts = <(String, GstReturnKind)>[(l.gstRet1, GstReturnKind.gstr1), (l.gstRet3b, GstReturnKind.gstr3b), (l.gstRetHsn, GstReturnKind.hsn)];
+    return SectionCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [Icon(Icons.account_balance_rounded, color: context.c.primary), const SizedBox(width: 10), Expanded(child: Text(l.gstRetTitle, style: th.titleMedium))]),
+        const SizedBox(height: 6),
+        Text(l.gstRetHelp, style: th.bodySmall),
+        const SizedBox(height: 12),
+        Wrap(spacing: 16, runSpacing: 12, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          SizedBox(
+            width: 300,
+            child: DropdownButtonFormField<DateTime>(
+              isExpanded: true,
+              key: const ValueKey('gst-month'),
+              initialValue: months.firstWhere((m) => m.year == month.year && m.month == month.month, orElse: () => months.first),
+              decoration: InputDecoration(labelText: l.gstRetMonth, isDense: true),
+              items: [for (final m in months) DropdownMenuItem(value: m, child: Text(monthLabel(m)))],
+              onChanged: (v) => setState(() => _month = v),
+            ),
+          ),
+          for (final p in parts)
+            Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              Text(p.$1, style: th.titleSmall),
+              OutlinedButton(key: ValueKey('gst-${p.$2.name}-excel'), onPressed: () => runGstExport(context, ref, month, p.$2, ExportFormat.excel), child: const Text('Excel')),
+              OutlinedButton(key: ValueKey('gst-${p.$2.name}-pdf'), onPressed: () => runGstExport(context, ref, month, p.$2, ExportFormat.pdf), child: const Text('PDF')),
+            ]),
+        ]),
+      ]),
+    );
+  }
+}

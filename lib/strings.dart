@@ -1550,4 +1550,10 @@ class Strings {
   String get orderMake => 'Order from this dealer';
   String orderItemsCount(String count) => '${count} items';
   String get orderPurchaseNote => 'The quantities and rates can be changed in the purchase before saving.';
+  String get gstRetTitle => 'GST returns';
+  String get gstRetHelp => 'The figures for GSTR-1, GSTR-3B and the HSN summary of one month, from your bills, credit notes and purchases. Give them to your accountant, or key them into the GST portal.';
+  String get gstRetMonth => 'Month';
+  String get gstRet1 => 'GSTR-1 (sales)';
+  String get gstRet3b => 'GSTR-3B (summary)';
+  String get gstRetHsn => 'HSN summary';
 }

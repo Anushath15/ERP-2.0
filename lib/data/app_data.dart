@@ -7,6 +7,7 @@ import 'repo/outbox_repo.dart';
 import 'repo/records_repo.dart';
 import 'repo/purchase_repo.dart';
 import 'repo/purchase_return_repo.dart';
+import 'repo/gst_return_repo.dart';
 import 'repo/report_repo.dart';
 import 'repo/return_repo.dart';
 
@@ -22,6 +23,7 @@ class AppData {
         stock = StockRepo(cx),
         settings = SettingsRepo(cx),
         reports = ReportRepo(cx),
+        gst = GstReturnRepo(cx),
         outbox = OutboxRepo(cx) {
     bills = BillRepo(cx, ledger);
     returns = ReturnRepo(cx, ledger);
@@ -38,6 +40,7 @@ class AppData {
   final StockRepo stock;
   final SettingsRepo settings;
   final ReportRepo reports;
+  final GstReturnRepo gst;
   final OutboxRepo outbox;
   late final BillRepo bills;
   late final ReturnRepo returns;

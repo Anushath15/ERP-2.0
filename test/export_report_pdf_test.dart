@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:erp2/data/context.dart';
 import 'package:erp2/data/repo/bill_repo.dart';
 import 'package:erp2/data/repo/export_repo.dart';
+import 'package:erp2/data/repo/gst_return_repo.dart';
 import 'package:erp2/domain/export/export_table.dart';
 import 'package:erp2/domain/stock_value.dart';
 import 'package:erp2/fake/shop_profile.dart';
@@ -76,4 +78,25 @@ void main() {
       expect((g.totalsRow![c] as Rupees).paise, g.rows.fold<int>(0, (a, r) => a + (r[c] as Rupees).paise), reason: g.headers[c]);
     }
   });
-}
+
+  test('GST returns as PDF: GSTR-1 (all parts in one file) and GSTR-3B', () async {
+    final d = memoryShop();
+    addTearDown(d.close);
+    await d.catalog.saveProduct(sampleProduct('PVC PIPE', price: 100000, cost: 70000, stock: 1000000, id: 'p18', gst: 1800), create: true);
+    await d.catalog.saveCustomer(sampleCustomer('Registered Co', id: 'c1', limit: 100000000), create: true);
+    await d.db.exec("UPDATE customers SET gstin = '33AAACS1234B1Z5' WHERE id = 'c1'");
+    await d.db.exec("UPDATE products SET hsn = '39172390' WHERE id = 'p18'");
+    BillLineInput line(int q) => BillLineInput(productId: 'p18', name: 'PVC PIPE', unit: 'pcs', qtyMilli: q, ratePaise: 100000, gstBp: 1800);
+    await d.bills.saveBill(SaveBillInput(idemKey: 'a', at: DateTime(2026, 10, 10), customerId: 'c1', customerName: 'Registered Co', lines: [line(2000)]));
+    await d.bills.saveBill(SaveBillInput(idemKey: 'b', at: DateTime(2026, 10, 12), lines: [line(1000)]));
+    final m = await d.gst.month(DateTime(2026, 10, 1), shopGstin: shop.gstin);
+    final dir = Platform.environment['ASK_PDF_DIR'];
+    for (final e in {'gstr1': gstr1Tables(m), 'gstr3b': [gstr3bTable(m)]}.entries) {
+      final bytes = await encodePdfBook(e.value, title: '${e.key} - ${m.label}', shopName: shop.name, now: DateTime(2026, 11, 2, 10), shop: shop, sectionTitles: e.value.length > 1, headerLines: ['Return period: ${m.label}']);
+      expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+      if (dir != null) {
+        Directory(dir).createSync(recursive: true);
+        File('$dir/${e.key}.pdf').writeAsBytesSync(bytes);
+      }
+    }
+  });}

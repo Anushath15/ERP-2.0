@@ -1590,3 +1590,9 @@ orderSentOn | Sent on {date}
 orderMake | Order from this dealer
 orderItemsCount | {count} items
 orderPurchaseNote | The quantities and rates can be changed in the purchase before saving.
+gstRetTitle | GST returns
+gstRetHelp | The figures for GSTR-1, GSTR-3B and the HSN summary of one month, from your bills, credit notes and purchases. Give them to your accountant, or key them into the GST portal.
+gstRetMonth | Month
+gstRet1 | GSTR-1 (sales)
+gstRet3b | GSTR-3B (summary)
+gstRetHsn | HSN summary

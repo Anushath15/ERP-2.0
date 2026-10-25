@@ -43,3 +43,25 @@ the total; the average cost lies between the cheapest and dearest rate paid; day
   profit basis can be switched later.
 * **Opening cash** is one setting, not yesterday's counted cash carried forward.
 * **Product GST rates imported from ERP 1**: 835 of 836 are 18 % (probably ERP 1's default): check HSN and rate item by item.
+
+## GST returns (Export page > GST returns)
+
+| Part | Rule |
+|---|---|
+| GSTR-1 B2B | invoices to customers whose GSTIN has the right shape, one row for each GST rate of the invoice; cancelled bills are left out |
+| GSTR-1 B2C | all other sales by rate (inter-state bills show IGST) after taking off credit notes |
+| Credit notes | sales returns; to a registered customer they are listed (against the invoice), to others they are taken off B2C |
+| HSN summary | sales less returns by HSN, rate and unit (UQC); products with no HSN show as (not set) |
+| GSTR-3B 3.1 | outward supplies = all sales less all credit notes (rate 0 goes to 3.1(c)) |
+| GSTR-3B 4 | input tax credit = GST of purchases received in the month from dealers WITH a GSTIN, less purchase returns; other dealers' tax is shown as not claimable; a dealer in another state gives IGST |
+| GSTR-3B 6.1 | tax to pay = output tax less credit, head by head; leftover credit is shown to carry forward |
+
+CGST and SGST are split once for each invoice and rate (an odd paisa goes to SGST), exactly as the printed invoice's GST summary does. Round-off is never part of a
+taxable value. `test/data/gst_return_test.dart` proves, for random months, that B2B + B2C - credit notes, the HSN summary and GSTR-3B all equal the saved bills and
+returns to the paisa. The figures are for the accountant to check and file; the program does not file anything.
+
+## Other rules added with the orders and statements
+
+* A statement of account carries a UPI QR code for the whole amount due (the customer scans, confirms).
+* A purchase records how it was paid (cash, UPI, card, bank); the day's cash book counts only the cash.
+* An order to a dealer holds items and quantities only (no rates); "Make purchase" fills a purchase from it with the latest buying prices, and everything can be changed before saving.

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/file_saver.dart';
 import '../../design/widgets.dart';
 import '../../data/repo/export_repo.dart';
+import '../../data/repo/gst_return_repo.dart';
 import '../../domain/export/export_table.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/shop_profile.dart';
@@ -44,6 +45,38 @@ Future<String?> runExport(BuildContext context, WidgetRef ref, ExportKind kind, 
       return null;
     }
     toast(context, format == ExportFormat.pdf && table.rows.length > maxPdfRows ? '${l.exportSaved(ext.toUpperCase(), where)} ${l.exportCapped(maxPdfRows.toString())}' : l.exportSaved(ext.toUpperCase(), where));
+    return where;
+  } catch (_) {
+    if (context.mounted) toast(context, l.exportFailed);
+    return null;
+  }
+}
+
+enum GstReturnKind { gstr1, gstr3b, hsn }
+
+/// A month's GST return (GSTR-1 with its parts, GSTR-3B, or the HSN summary) as Excel (one sheet for each part) or PDF (all parts in one file), saved like the other exports.
+Future<String?> runGstExport(BuildContext context, WidgetRef ref, DateTime month, GstReturnKind kind, ExportFormat format) async {
+  final l = tr(context);
+  try {
+    final shop = ref.read(shopProvider);
+    final data = await ref.read(appDataProvider).gst.month(month, shopGstin: shop.gstin);
+    if (!context.mounted) return null;
+    final tables = switch (kind) { GstReturnKind.gstr1 => gstr1Tables(data), GstReturnKind.gstr3b => [gstr3bTable(data)], GstReturnKind.hsn => [hsnTable(data)] };
+    final title = switch (kind) { GstReturnKind.gstr1 => 'GSTR-1', GstReturnKind.gstr3b => 'GSTR-3B', GstReturnKind.hsn => 'HSN summary' };
+    final now = ref.read(clockProvider);
+    final stamp = '${month.year}-${month.month.toString().padLeft(2, '0')}';
+    final Uint8List bytes;
+    final String ext;
+    if (format == ExportFormat.pdf) {
+      bytes = await encodePdfBook(tables, title: '$title  -  ${data.label}', shopName: shop.name, now: now, shop: shop, sectionTitles: tables.length > 1, headerLines: ['Return period: ${data.label}']);
+      ext = 'pdf';
+    } else {
+      bytes = encodeXlsxBook(tables);
+      ext = 'xlsx';
+    }
+    final where = await ref.read(fileSaverProvider).save('$title $stamp.$ext', bytes);
+    if (!context.mounted) return where;
+    toast(context, where == null ? l.exportFailed : l.exportSaved(ext.toUpperCase(), where));
     return where;
   } catch (_) {
     if (context.mounted) toast(context, l.exportFailed);
