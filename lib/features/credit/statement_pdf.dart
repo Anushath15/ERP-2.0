@@ -4,6 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
 import '../../domain/credit/dues.dart';
+import '../../domain/upi.dart';
 import '../../fake/models.dart';
 import '../../fake/shop_profile.dart';
 import '../../strings.dart';
@@ -26,6 +27,8 @@ Future<Uint8List> buildStatementPdf({
   String m(int v) => v == 0 ? '' : formatPaise(v);
   final from = statement.from.year <= 2000 ? DateTime(2000) : statement.from;
   final due = statement.closingPaise;
+  // a QR code for the whole amount due: the customer scans it with any UPI app and only confirms (none when nothing is due or the shop has no UPI ID)
+  final upi = due > 0 ? upiPayUri(upiId: shop?.upiId ?? '', payeeName: shop?.name ?? shopName, amountPaise: due, note: 'Statement ${customer.name}') : null;
 
   final doc = pw.Document(title: '${l.statementTitle} ${customer.name}', author: kit.name.isEmpty ? shopName : kit.name, creator: 'ASK ERP 2.0', producer: 'ASK ERP 2.0');
   doc.addPage(pw.MultiPage(
@@ -72,15 +75,32 @@ Future<Uint8List> buildStatementPdf({
         totals: ['', l.stClosing, formatPaise(statement.totalCharges), formatPaise(statement.totalCredits), formatPaise(due)],
       ),
       pw.SizedBox(height: 12),
-      pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: pw.BoxDecoration(color: pdfBand, borderRadius: pw.BorderRadius.circular(4), border: pw.Border.all(color: pdfInk, width: 0.8)),
-        child: pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text(due < 0 ? l.custAdvance : l.stClosing, style: kit.st(b: true, size: 12, color: pdfInk)),
-          pw.Text(formatPaise(due.abs(), symbol: true), style: kit.st(b: true, size: 15, color: pdfInk)),
-        ]),
-      ),
-      if (due > 0 && kit.upiId.isNotEmpty) pw.Padding(padding: const pw.EdgeInsets.only(top: 6), child: pw.Text('Pay by UPI: ${kit.upiId}', style: kit.st(b: true, size: 9.5, color: pdfInk))),
+      pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+        pw.Expanded(
+          child: pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            decoration: pw.BoxDecoration(color: pdfBand, borderRadius: pw.BorderRadius.circular(4), border: pw.Border.all(color: pdfInk, width: 0.8)),
+            child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text(due < 0 ? l.custAdvance : l.stClosing, style: kit.st(b: true, size: 12, color: pdfInk)),
+              pw.SizedBox(height: 4),
+              pw.Text(formatPaise(due.abs(), symbol: true), style: kit.st(b: true, size: 20, color: pdfInk)),
+              if (upi != null && kit.upiId.isNotEmpty) pw.Padding(padding: const pw.EdgeInsets.only(top: 6), child: pw.Text('Pay by UPI: ${kit.upiId}', style: kit.st(b: true, size: 9.5, color: pdfInk))),
+            ]),
+          ),
+        ),
+        if (upi != null) ...[
+          pw.SizedBox(width: 12),
+          pw.Column(children: [
+            pw.Container(
+              padding: const pw.EdgeInsets.all(5),
+              decoration: pw.BoxDecoration(color: PdfColors.white, border: pw.Border.all(color: pdfLine, width: 0.6), borderRadius: pw.BorderRadius.circular(4)),
+              child: pw.BarcodeWidget(barcode: pw.Barcode.qrCode(errorCorrectLevel: pw.BarcodeQRCorrectionLevel.medium), data: upi, width: 92, height: 92, drawText: false),
+            ),
+            pw.SizedBox(height: 3),
+            pw.Text('Scan to pay ${formatPaise(due, symbol: true)}', style: kit.st(b: true, size: 8.5, color: pdfInk)),
+          ]),
+        ],
+      ]),
       pw.SizedBox(height: 10),
       pw.Center(child: pw.Text(l.statementHint, style: kit.st(size: 8, color: pdfSoft))),
     ],

@@ -106,8 +106,7 @@ String _sheetName(String n) {
 
 const _xmlHead = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 
-/// A real .xlsx file (opens in Excel, LibreOffice and Google Sheets).
-Uint8List encodeXlsx(ExportTable t) {
+String _sheetXml(ExportTable t) {
   final sb = StringBuffer('$_xmlHead<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
       '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetData>');
   sb.write('<row r="1">');
@@ -124,23 +123,41 @@ Uint8List encodeXlsx(ExportTable t) {
     sb.write('</row>');
   }
   sb.write('</sheetData></worksheet>');
+  return sb.toString();
+}
 
+/// A real .xlsx file (opens in Excel, LibreOffice and Google Sheets).
+Uint8List encodeXlsx(ExportTable t) => encodeXlsxBook([t]);
+
+/// One .xlsx file with a sheet for each table (the sheet names are made unique and kept within Excel's rules).
+Uint8List encodeXlsxBook(List<ExportTable> tables) {
   const rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  final names = <String>[];
+  for (final t in tables) {
+    var n = _sheetName(t.name);
+    var k = 2;
+    while (names.any((x) => x.toLowerCase() == n.toLowerCase())) {
+      final suffix = ' $k';
+      n = '${_sheetName(t.name).substring(0, _sheetName(t.name).length > 31 - suffix.length ? 31 - suffix.length : _sheetName(t.name).length)}$suffix';
+      k++;
+    }
+    names.add(n);
+  }
   final files = <String, String>{
     '[Content_Types].xml': '$_xmlHead<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
         '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
         '<Default Extension="xml" ContentType="application/xml"/>'
         '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
-        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        '${[for (var i = 0; i < tables.length; i++) '<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'].join()}'
         '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
         '</Types>',
     '_rels/.rels': '$_xmlHead<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         '<Relationship Id="rId1" Type="$rel/officeDocument" Target="xl/workbook.xml"/></Relationships>',
     'xl/workbook.xml': '$_xmlHead<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="$rel">'
-        '<sheets><sheet name="${_esc(_sheetName(t.name))}" sheetId="1" r:id="rId1"/></sheets></workbook>',
+        '<sheets>${[for (var i = 0; i < tables.length; i++) '<sheet name="${_esc(names[i])}" sheetId="${i + 1}" r:id="rId${i + 1}"/>'].join()}</sheets></workbook>',
     'xl/_rels/workbook.xml.rels': '$_xmlHead<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-        '<Relationship Id="rId1" Type="$rel/worksheet" Target="worksheets/sheet1.xml"/>'
-        '<Relationship Id="rId2" Type="$rel/styles" Target="styles.xml"/></Relationships>',
+        '${[for (var i = 0; i < tables.length; i++) '<Relationship Id="rId${i + 1}" Type="$rel/worksheet" Target="worksheets/sheet${i + 1}.xml"/>'].join()}'
+        '<Relationship Id="rId${tables.length + 1}" Type="$rel/styles" Target="styles.xml"/></Relationships>',
     'xl/styles.xml': '$_xmlHead<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
         '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>'
         '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
@@ -148,7 +165,7 @@ Uint8List encodeXlsx(ExportTable t) {
         '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
         '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
         '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs></styleSheet>',
-    'xl/worksheets/sheet1.xml': sb.toString(),
+    for (var i = 0; i < tables.length; i++) 'xl/worksheets/sheet${i + 1}.xml': _sheetXml(tables[i]),
   };
   final a = Archive();
   files.forEach((name, text) {
