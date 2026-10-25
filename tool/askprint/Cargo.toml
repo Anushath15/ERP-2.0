@@ -8,6 +8,8 @@ license = "BSD-3-Clause"
 [dependencies]
 # BSD-3-Clause. default-features = false: the optional PDFium backend is not needed.
 winprint = { version = "0.3", default-features = false }
+# the same version winprint uses; only to start COM for this thread before printing
+windows = { version = "0.62", features = ["Win32_System_Com"] }
 
 [profile.release]
 opt-level = "s"

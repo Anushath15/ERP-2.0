@@ -1,4 +1,4 @@
-//! askprint <file.pdf> [printer name]   print a PDF on that printer (the default printer when no name is given)
+﻿//! askprint <file.pdf> [printer name]   print a PDF on that printer (the default printer when no name is given)
 //! askprint --list                      list the printers, the default one marked with *
 //!
 //! Exit codes: 0 printed (the spooler took the job and finished it), 2 no such printer, 3 the job failed, 4 bad arguments.
@@ -8,6 +8,10 @@ use winprint::printer::{FilePrinter, PrinterDevice, WinPdfPrinter};
 use winprint::ticket::{PrintTicket, PrintTicketBuilder};
 
 fn main() -> ExitCode {
+    // the Windows print and PDF classes need COM running on this thread (multi-threaded, as the winprint tests do)
+    unsafe {
+        let _ = windows::Win32::System::Com::CoInitializeEx(None, windows::Win32::System::Com::COINIT_MULTITHREADED);
+    }
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("--list") => list(),
@@ -57,8 +61,11 @@ fn print(file: &str, printer: &str) -> ExitCode {
             }
         }
     };
+    let dbg = std::env::var_os("ASKPRINT_DEBUG").is_some();
+    if dbg { eprintln!("printer: {}", device.name()); }
     // the driver's own defaults (paper size, tray, quality) checked against what the printer can do: what Word and the Windows PDF reader hand to the spooler
-    let ticket = PrintTicketBuilder::new(&device).and_then(|b| b.build()).unwrap_or_else(|_| PrintTicket::default());
+    let ticket = PrintTicketBuilder::new(&device).and_then(|b| b.build()).unwrap_or_else(|e| { if dbg { eprintln!("ticket fallback: {e:?}"); } PrintTicket::default() });
+    if dbg { eprintln!("ticket ready, printing"); }
     match WinPdfPrinter::new(device).print(Path::new(file), ticket) {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
@@ -67,3 +74,4 @@ fn print(file: &str, printer: &str) -> ExitCode {
         }
     }
 }
+

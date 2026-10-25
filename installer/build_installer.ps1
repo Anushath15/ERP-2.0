@@ -1,5 +1,6 @@
 # Makes ASK-ERP-2.0-Setup.exe with IExpress (built into Windows, nothing to download).
 # Run after `flutter build windows --release`:  powershell -File installer\build_installer.ps1
+param([switch]$WithPrintHelper)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $rel = Join-Path $root 'build\windows\x64\runner\Release'
@@ -7,9 +8,14 @@ if (-not (Test-Path (Join-Path $rel 'ASK_ERP_2.exe'))) { throw 'Build the Window
 $work = Join-Path $env:TEMP 'askerp2-installer-build'
 Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory $work | Out-Null
-# the print helper (tool\askprint, built with `cargo build --release`) travels beside the program; without it the program prints the older way
-$helper = Join-Path $root 'tool\askprint\target\release\askprint.exe'
-if (Test-Path $helper) { Copy-Item $helper $rel -Force } else { Write-Warning 'askprint.exe not built: the installer will not have the Windows-style print helper.' }
+# The print helper (tool\askprint) travels beside the program only when asked for with -WithPrintHelper: it has not yet been proven on a real printer
+# (on this laptop it hung with "Microsoft Print to PDF"), so the default installer prints the proven way.
+if ($WithPrintHelper) {
+  $helper = Join-Path $root 'tool\askprint\target\release\askprint.exe'
+  if (Test-Path $helper) { Copy-Item $helper $rel -Force } else { Write-Warning 'askprint.exe not built.' }
+} else {
+  Remove-Item (Join-Path $rel 'askprint.exe') -Force -ErrorAction SilentlyContinue
+}
 Compress-Archive -Path (Join-Path $rel '*') -DestinationPath (Join-Path $work 'app.zip') -Force
 foreach ($f in 'install.ps1', 'uninstall.ps1', 'install.cmd') { Copy-Item (Join-Path $PSScriptRoot $f) $work }
 $out = Join-Path $root 'ASK-ERP-2.0-Setup.exe'
