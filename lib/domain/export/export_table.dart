@@ -34,12 +34,21 @@ class Qty {
 }
 
 class ExportTable {
-  const ExportTable({required this.name, required this.headers, required this.rows});
+  const ExportTable({required this.name, required this.headers, required this.rows, this.summary = const [], this.totalsRow, this.note = ''});
 
   /// Used for the file name and the Excel sheet name.
   final String name;
   final List<String> headers;
   final List<List<Object?>> rows;
+
+  /// Figures shown above the table in the PDF (label, value), e.g. ("Total products", "836"). Excel and CSV hold the rows only.
+  final List<(String, String)> summary;
+
+  /// The last row of the PDF table, one cell for each header (null = empty); the first text cell says "Total".
+  final List<Object?>? totalsRow;
+
+  /// A line under the title in the PDF, e.g. what the report leaves out.
+  final String note;
 }
 
 /// Excel's own limit (one row is the header).

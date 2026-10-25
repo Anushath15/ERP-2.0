@@ -34,7 +34,7 @@ Future<String?> runExport(BuildContext context, WidgetRef ref, ExportKind kind, 
         bytes = encodeCsv(table);
         ext = 'csv';
       case ExportFormat.pdf:
-        bytes = await encodePdf(table, shopName: ref.read(shopProvider).name, now: now);
+        bytes = await encodePdf(table, shopName: ref.read(shopProvider).name, now: now, shop: ref.read(shopProvider));
         ext = 'pdf';
     }
     final where = await ref.read(fileSaverProvider).save(exportFileName(table, ext, now), bytes);
