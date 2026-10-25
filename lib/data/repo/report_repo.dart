@@ -33,6 +33,17 @@ class DayTotals {
       );
 }
 
+/// The cash of one day. [expected] is what should be in the drawer: the opening cash plus the cash that came in, minus the cash that went out.
+class CashBook {
+  const CashBook({required this.day, this.salesCash = 0, this.receivedFromCustomers = 0, this.paidToDealersLater = 0, this.paidWithPurchases = 0, this.refundedByDealers = 0});
+  final String day;
+  final int salesCash, receivedFromCustomers, paidToDealersLater, paidWithPurchases, refundedByDealers;
+
+  int get cashIn => salesCash + receivedFromCustomers + refundedByDealers;
+  int get cashOutBeforeExpenses => paidToDealersLater + paidWithPurchases;
+  int expected({required int opening, required int expenses}) => opening + cashIn - cashOutBeforeExpenses - expenses;
+}
+
 /// Everything the Home page, the day closing and the reports show comes from the summary tables (written with each bill), so a
 /// year of sales by day costs a fraction of a millisecond whatever the number of bills.
 class ReportRepo {
@@ -59,6 +70,27 @@ class ReportRepo {
     final key = DataContext.dayOf(d);
     final r = await _db.row('SELECT * FROM day_totals WHERE day = ?', [key]);
     return r == null ? DayTotals(day: key) : _row(r);
+  }
+
+  /// The cash book of one day (what Tally's Cash Book and Zoho's cash account show): every rupee of cash that came in or went out, not only the cash
+  /// sales. Cash in: cash sales (after cash refunds to customers), cash received from customers against credit, cash refunded by a dealer. Cash out:
+  /// cash paid to dealers (with a purchase or later), expenses (the caller adds them: they are not in the database tables). Reversed payments do not count.
+  Future<CashBook> cashBook(DateTime d) async {
+    final key = DataContext.dayOf(d);
+    final from = DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
+    final to = DateTime(d.year, d.month, d.day + 1).millisecondsSinceEpoch;
+    Future<int> cashEntries(String party) => _db.scalarInt(
+        "SELECT COALESCE(SUM(-e.amount_paise), 0) FROM ledger_entries e WHERE e.party_kind = ? AND e.kind IN ('payment','advance') AND e.mode = 'cash' AND e.reverses IS NULL "
+        'AND e.at >= ? AND e.at < ? AND NOT EXISTS (SELECT 1 FROM ledger_entries r WHERE r.reverses = e.id)',
+        [party, from, to]);
+    return CashBook(
+      day: key,
+      salesCash: (await day(d)).cash,
+      receivedFromCustomers: await cashEntries('customer'),
+      paidToDealersLater: await cashEntries('dealer'),
+      paidWithPurchases: await _db.scalarInt('SELECT COALESCE(SUM(paid_paise), 0) FROM purchases WHERE status = 1 AND day = ?', [key]),
+      refundedByDealers: await _db.scalarInt('SELECT COALESCE(SUM(refunded_paise), 0) FROM purchase_returns WHERE refund_mode = 0 AND day = ?', [key]),
+    );
   }
 
   /// Day totals from [from] to [to], both included (local days), oldest first. Days without bills are missing.

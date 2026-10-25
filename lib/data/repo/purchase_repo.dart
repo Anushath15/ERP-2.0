@@ -12,6 +12,7 @@ import '../../core/money.dart';
 import '../../domain/credit/account.dart';
 import '../context.dart';
 import '../db/app_database.dart';
+import '../../domain/average_cost.dart';
 import '../../domain/margin.dart';
 import '../ids.dart';
 import 'ledger_repo.dart';
@@ -176,12 +177,28 @@ class PurchaseRepo {
     for (final l in lines) {
       final pid = l.read<String>('product_id');
       final qty = l.read<int>('qty_milli');
+      await _applyAverage(pid, qty, l.read<int>('rate_paise')); // before the stock goes up: the average is of what was there and what comes in
       await _db.exec('INSERT INTO stock_movements(id, product_id, qty_milli, kind, ref_id, unit_cost_paise, at, created_at, device_id) VALUES (?,?,?,?,?,?,?,?,?)', [newId(), pid, qty, 'purchase', id, l.read<int>('rate_paise'), ms, cx.nowMs(), cx.deviceId]);
       await _db.exec('INSERT INTO stock_cache(product_id, qty_milli) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET qty_milli = qty_milli + excluded.qty_milli', [pid, qty]);
       if (p.read<int>('update_cost') == 1) await _applyCost(pid, l.read<int>('rate_paise'));
     }
     await ledger.addBillCredit(_db, PartyKind.dealer, partyId: p.read<String>('dealer_id'), billNo: p.read<String>('number'), at: when, total: p.read<int>('total_paise'), received: p.read<int>('paid_paise'));
     await _db.exec('UPDATE purchases SET status = 1, received_at = ? WHERE id = ?', [ms, id]);
+  }
+
+  /// The moving-average buying cost (what Tally, Zoho Inventory and ERPNext value stock at): when [inQty] comes in at [rate], the average becomes
+  /// (stock now x average + inQty x rate) / (stock now + inQty), to the paisa. With no stock in hand (or less) the new rate is the average; with no
+  /// average known yet the latest buying price stands in for it. Selling does not change the average; only buying does.
+  Future<void> _applyAverage(String pid, int inQty, int rate) async {
+    if (inQty <= 0 || rate <= 0) return;
+    final row = await _db.row('SELECT p.avg_cost_paise AS avg_c, p.cost_paise AS cost, COALESCE(s.qty_milli, 0) AS qty FROM products p LEFT JOIN stock_cache s ON s.product_id = p.id WHERE p.id = ?', [pid]);
+    if (row == null) return;
+    final have = row.read<int>('qty');
+    final base = row.read<int>('avg_c') > 0 ? row.read<int>('avg_c') : row.read<int>('cost');
+    final next = movingAverage(haveMilli: have, haveCost: base, inMilli: inQty, inCost: rate);
+    if (next == row.read<int>('avg_c')) return;
+    await _db.exec('UPDATE products SET avg_cost_paise = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [next, cx.nowMs(), cx.hlc.next(), cx.deviceId, pid]);
+    await enqueue(cx, _db, 'products', pid);
   }
 
   /// The product's buying price becomes [rate] (without GST) and its selling price follows by the same ratio, so the margin stays what it was. Does nothing when
@@ -227,7 +244,7 @@ class PurchaseRepo {
         if (oldLines.length != input.lines.length) return false;
         for (var i = 0; i < oldLines.length; i++) {
           final o = oldLines[i], n = input.lines[i];
-          if (o.read<String>('product_id') != n.productId || o.read<int>('qty_milli') != n.qtyMilli || o.read<int>('rate_paise') != n.ratePaise || o.read<int>('gst_bp') != n.gstBp) return false;
+          if (o.read<String>('product_id') != n.productId || o.read<int>('qty_milli') != n.qtyMilli || o.read<int>('rate_paise') != n.ratePaise || o.read<int>('gst_bp') != n.gstBp || o.read<int>('total_paise') != n.total) return false;
         }
         return true;
       }
@@ -267,6 +284,7 @@ class PurchaseRepo {
         for (final e in net.entries) {
           if (e.value == 0) continue;
           final rate = input.lines.where((l) => l.productId == e.key).map((l) => l.ratePaise).firstOrNull ?? 0;
+          if (e.value > 0) await _applyAverage(e.key, e.value, rate); // more came in: the average moves; less (a removal) leaves it as it was
           await _db.exec('INSERT INTO stock_movements(id, product_id, qty_milli, kind, ref_id, unit_cost_paise, note, at, created_at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), e.key, e.value, 'purchase', purchaseId, rate, 'Purchase edited', cx.nowMs(), cx.nowMs(), cx.deviceId]);
           await _db.exec('INSERT INTO stock_cache(product_id, qty_milli) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET qty_milli = qty_milli + excluded.qty_milli', [e.key, e.value]);
         }

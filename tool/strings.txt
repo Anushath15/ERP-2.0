@@ -350,6 +350,10 @@ closingCashSales | Cash received
 closingCreditGiven | Given on credit
 closingOpening | Cash at start of day
 closingExpenses | Expenses paid in cash
+closingFromCustomers | Cash received from customers (credit payments)
+closingToDealers | Cash paid to dealers
+closingFromDealers | Cash refunded by dealers
+profitUnknown | Not known yet: the items sold have no buying price
 closingExpected | Cash that should be in the drawer
 closingCount | Count the cash
 closingCountHelp | Count the notes and coins in the drawer and type the total.

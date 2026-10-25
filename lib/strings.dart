@@ -343,6 +343,10 @@ class Strings {
   String get closingCreditGiven => 'Given on credit';
   String get closingOpening => 'Cash at start of day';
   String get closingExpenses => 'Expenses paid in cash';
+  String get closingFromCustomers => 'Cash received from customers (credit payments)';
+  String get closingToDealers => 'Cash paid to dealers';
+  String get closingFromDealers => 'Cash refunded by dealers';
+  String get profitUnknown => 'Not known yet: the items sold have no buying price';
   String get closingExpected => 'Cash that should be in the drawer';
   String get closingCount => 'Count the cash';
   String get closingCountHelp => 'Count the notes and coins in the drawer and type the total.';

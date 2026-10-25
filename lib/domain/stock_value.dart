@@ -120,5 +120,6 @@ class StockValuation {
     return StockValuation._(active, inactive, ap, ip, aq, iq, up, uq, neg, unpriced, chosen);
   }
 
-  static int _value(int unitPaise, int qtyMilli) => (unitPaise * qtyMilli / 1000).round();
+  /// Whole-number money maths (no floating point), half-up to the paisa.
+  static int _value(int unitPaise, int qtyMilli) => (unitPaise * qtyMilli + 500) ~/ 1000;
 }

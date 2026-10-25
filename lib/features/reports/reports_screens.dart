@@ -7,6 +7,8 @@ import '../../core/responsive.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
 import '../../data/repo/report_repo.dart';
+import '../../fake/actions.dart' show purchasesVersionProvider;
+import '../../fake/credit_store.dart' show creditProvider;
 import '../../fake/data_providers.dart';
 import '../../fake/shop_profile.dart';
 import '../../fake/stats.dart';
@@ -18,7 +20,10 @@ import '../export/export_action.dart';
 /// Everything one report range shows, read from the day and month summaries (never from the bills themselves).
 class ReportData {
   const ReportData({required this.sales, required this.bills, required this.cash, required this.upi, required this.card, required this.credit, required this.profit, required this.values, required this.labels, required this.top});
-  final int sales, bills, cash, upi, card, credit, profit;
+  final int sales, bills, cash, upi, card, credit;
+
+  /// What was sold before tax minus what it cost; null when the items sold have no buying price (nothing is guessed).
+  final int? profit;
   final List<int> values;
   final List<String> labels;
   final List<({String name, int amount})> top;
@@ -28,6 +33,14 @@ class ReportData {
     return ReportData(sales: 0, bills: 0, cash: 0, upi: 0, card: 0, credit: 0, profit: 0, values: List.filled(b, 0), labels: List.filled(b, ''), top: const []);
   }
 }
+
+/// Today's cash book, read again after every bill, payment and purchase.
+final cashBookProvider = FutureProvider.autoDispose<CashBook>((ref) {
+  ref.watch(statsProvider);
+  ref.watch(purchasesVersionProvider);
+  ref.watch(creditProvider);
+  return ref.read(appDataProvider).reports.cashBook(ref.watch(clockProvider));
+});
 
 final reportProvider = FutureProvider.family<ReportData, int>((ref, range) async {
   final d = ref.watch(appDataProvider);
@@ -47,8 +60,8 @@ final reportProvider = FutureProvider.family<ReportData, int>((ref, range) async
   }
   final labels = [for (var i = 0; i < buckets; i++) range == 2 ? '${today.subtract(Duration(days: ((buckets - 1 - i) * span).round())).month}' : two(today.subtract(Duration(days: ((buckets - 1 - i) * span).round())).day)];
   final sum = DayTotals.sum('range', rows);
-  // profit: what was sold before tax minus what it cost; where no cost is known the old 19% rule of thumb is shown (the card says estimate)
-  final profit = sum.cost > 0 ? sum.taxable - sum.cost : (sum.taxable * 19 / 100).round();
+  // profit: what was sold before tax minus what it cost; where no cost is known nothing is made up
+  final int? profit = sum.cost > 0 ? sum.taxable - sum.cost : (sum.taxable == 0 ? 0 : null);
   return ReportData(sales: sum.sales, bills: sum.bills, cash: sum.cash, upi: sum.upi, card: sum.card, credit: sum.credit, profit: profit, values: values, labels: labels, top: await d.reports.topProducts(from, today));
 });
 
@@ -79,7 +92,8 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
     final credit = today.credit;
     final expenses = ref.watch(recsProvider('expenses')).where((r) => sameDay(r.f['date'] as DateTime)).fold<int>(0, (s, r) => s + r.i('amount'));
     final opening = ref.watch(shopProvider).openingCashPaise;
-    final expected = opening + cash - expenses;
+    final book = ref.watch(cashBookProvider).value ?? CashBook(day: '', salesCash: cash);
+    final expected = book.expected(opening: opening, expenses: expenses);
     final countedPaise = ((double.tryParse(_counted.text) ?? 0) * 100).round();
     final diff = countedPaise - expected;
     Widget row(String k, String v, {bool bold = false}) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(children: [Expanded(child: Text(k, style: bold ? th.titleSmall : th.bodyMedium)), Text(v, style: bold ? th.titleMedium : th.bodyMedium)]));
@@ -92,6 +106,9 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
       row(l.closingCreditGiven, '₹ ${formatPaise(credit)}'),
       const Divider(),
       row(l.closingOpening, '₹ ${formatPaise(opening)}'),
+      if (book.receivedFromCustomers > 0) row(l.closingFromCustomers, '+ ₹ ${formatPaise(book.receivedFromCustomers)}'),
+      if (book.refundedByDealers > 0) row(l.closingFromDealers, '+ ₹ ${formatPaise(book.refundedByDealers)}'),
+      if (book.cashOutBeforeExpenses > 0) row(l.closingToDealers, '- ₹ ${formatPaise(book.cashOutBeforeExpenses)}'),
       row(l.closingExpenses, '- ₹ ${formatPaise(expenses)}'),
       row(l.closingExpected, '₹ ${formatPaise(expected)}', bold: true),
     ]));
@@ -169,7 +186,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         StatCard(label: l.statSales, value: '₹ ${formatPaise(total)}', icon: Icons.trending_up_rounded, tone: context.c.success),
         StatCard(label: l.statBills, value: '${r.bills}', icon: Icons.receipt_long_rounded),
         StatCard(label: l.statAvgBill, value: '₹ ${formatPaise(avg)}', icon: Icons.calculate_rounded),
-        StatCard(label: l.statProfit, value: '₹ ${formatPaise(profit)}', icon: Icons.savings_rounded, tone: context.c.success, hint: l.profitEstimate),
+        StatCard(label: l.statProfit, value: profit == null ? '—' : '₹ ${formatPaise(profit)}', icon: Icons.savings_rounded, tone: context.c.success, hint: profit == null ? l.profitUnknown : l.profitEstimate),
       ])
         SizedBox(width: context.isPhone ? double.infinity : 230, child: s),
     ]);
