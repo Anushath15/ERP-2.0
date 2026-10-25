@@ -1,0 +1,15 @@
+[package]
+name = "askprint"
+version = "0.1.0"
+edition = "2021"
+description = "Prints a PDF the way modern Windows apps do (print ticket + Windows.Data.Pdf + the XPS print pipeline), for printers whose V4 driver refuses a direct GDI job."
+license = "BSD-3-Clause"
+
+[dependencies]
+# BSD-3-Clause. default-features = false: the optional PDFium backend is not needed.
+winprint = { version = "0.3", default-features = false }
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

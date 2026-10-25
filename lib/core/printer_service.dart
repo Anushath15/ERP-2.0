@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
+import 'askprint_stub.dart' if (dart.library.io) 'askprint_io.dart';
 
 /// A printer the computer knows (as Windows lists it).
 class PrinterInfo {
@@ -59,6 +60,9 @@ class PackagePrinterService implements PrinterService {
       final chosen = all.where((p) => printerName.isNotEmpty && p.name == printerName).firstOrNull ?? all.where((p) => p.isDefault).firstOrNull ?? all.firstOrNull;
       if (chosen == null) return const PrintOutcome(PrintStatus.noPrinter);
       if (!viaDialog) {
+        // first the modern Windows way (print ticket + XPS pipeline, like Word); null = the helper is not installed
+        final helped = await printWithHelper(bytes, printerName: chosen.name);
+        if (helped == true) return PrintOutcome(PrintStatus.sent, printer: chosen.name);
         try {
           final ok = await Printing.directPrintPdf(printer: chosen, onLayout: (_) async => bytes, name: jobName);
           if (ok) return PrintOutcome(PrintStatus.sent, printer: chosen.name);

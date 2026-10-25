@@ -7,6 +7,9 @@ if (-not (Test-Path (Join-Path $rel 'ASK_ERP_2.exe'))) { throw 'Build the Window
 $work = Join-Path $env:TEMP 'askerp2-installer-build'
 Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory $work | Out-Null
+# the print helper (tool\askprint, built with `cargo build --release`) travels beside the program; without it the program prints the older way
+$helper = Join-Path $root 'tool\askprint\target\release\askprint.exe'
+if (Test-Path $helper) { Copy-Item $helper $rel -Force } else { Write-Warning 'askprint.exe not built: the installer will not have the Windows-style print helper.' }
 Compress-Archive -Path (Join-Path $rel '*') -DestinationPath (Join-Path $work 'app.zip') -Force
 foreach ($f in 'install.ps1', 'uninstall.ps1', 'install.cmd') { Copy-Item (Join-Path $PSScriptRoot $f) $work }
 $out = Join-Path $root 'ASK-ERP-2.0-Setup.exe'
