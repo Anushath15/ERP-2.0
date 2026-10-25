@@ -67,8 +67,9 @@ class _Ready {
         for (var c = 0; c < cols; c++)
           if (!numeric[c]) c,
       ].firstOrNull;
-      if (firstText != null && firstText < totals!.length)
+      if (firstText != null && firstText < totals!.length) {
         totals = [...totals!]..[firstText] = 'Total';
+      }
     }
   }
 
