@@ -36,7 +36,7 @@ void main() {
     test('purchases average the cost; a sale does not move it; the buying price is the latest rate', () async {
       await d.purchases.savePurchase(buy('a', [line(10000, 20000)])); // 10 in stock at 100 (the price on the product) + 10 at 200
       expect(await avg(), 15000);
-      await d.bills.saveBill(SaveBillInput(idemKey: 's', at: DateTime(2026, 10, 11), lines: [BillLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 5000, ratePaise: 25000, gstBp: 1800)]));
+      await d.bills.saveBill(SaveBillInput(idemKey: 's', at: DateTime(2026, 10, 11), lines: [const BillLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 5000, ratePaise: 25000, gstBp: 1800)]));
       expect(await avg(), 15000, reason: 'selling does not change the average');
       await d.purchases.savePurchase(buy('b', [line(5000, 30000)])); // 15 left at 150 + 5 at 300
       expect(await avg(), 18750);
@@ -54,8 +54,8 @@ void main() {
 
     test('a purchase typed with GST whose rate without GST is the same but whose money differs by a paisa is saved with the new money', () async {
       // 3.13 and 3.14 with 18 % both come to 2.65 / 2.66; pick two inclusive amounts that give the same rate without GST
-      final a = PurchaseLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 10000, ratePaise: 265, gstBp: 1800, grossPaise: 3130);
-      final b = PurchaseLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 10000, ratePaise: 265, gstBp: 1800, grossPaise: 3131);
+      const a = PurchaseLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 10000, ratePaise: 265, gstBp: 1800, grossPaise: 3130);
+      const b = PurchaseLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 10000, ratePaise: 265, gstBp: 1800, grossPaise: 3131);
       final s = await d.purchases.savePurchase(buy('a', [a]));
       expect(s.totalPaise, 3130);
       final e = await d.purchases.editPurchase(s.id, buy('a', [b]));
@@ -66,8 +66,8 @@ void main() {
 
     test('the cash book counts cash sales, cash from customers, cash to dealers, with-purchase payments and dealer refunds, and ignores reversed or non-cash money', () async {
       final day = DateTime(2026, 10, 12, 11);
-      await d.bills.saveBill(SaveBillInput(idemKey: 'cash', at: day, lines: [BillLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 1000, ratePaise: 11800, gstBp: 1800)])); // Rs 118 cash
-      await d.bills.saveBill(SaveBillInput(idemKey: 'cr', at: day, customerId: 'c1', customerName: 'Murugan', receivedPaise: 0, lines: [BillLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 2000, ratePaise: 11800, gstBp: 1800)])); // Rs 236 credit
+      await d.bills.saveBill(SaveBillInput(idemKey: 'cash', at: day, lines: [const BillLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 1000, ratePaise: 11800, gstBp: 1800)])); // Rs 118 cash
+      await d.bills.saveBill(SaveBillInput(idemKey: 'cr', at: day, customerId: 'c1', customerName: 'Murugan', receivedPaise: 0, lines: [const BillLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: 2000, ratePaise: 11800, gstBp: 1800)])); // Rs 236 credit
       await d.ledger.receivePayment(PartyKind.customer, partyId: 'c1', partyName: 'Murugan', amount: 10000, mode: 'cash', at: day); // Rs 100 cash in
       await d.ledger.receivePayment(PartyKind.customer, partyId: 'c1', partyName: 'Murugan', amount: 5000, mode: 'upi', at: day); // not cash
       await d.purchases.savePurchase(SavePurchaseInput(idemKey: 'pu', dealerId: 'd1', at: day, lines: [line(10000, 20000)], paidPaise: 7000)); // Rs 70 paid with the purchase

@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:erp2/data/app_data.dart';
 import 'package:erp2/data/context.dart';
 import 'package:erp2/data/repo/bill_repo.dart';
 import 'package:erp2/data/repo/purchase_repo.dart';
