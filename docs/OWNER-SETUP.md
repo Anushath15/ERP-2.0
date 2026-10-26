@@ -67,7 +67,7 @@ Do these yourself (I cannot create accounts, organisations or passwords for you)
 5. **SQL Editor**: I will tell you when `supabase/migrations/0001_sync.sql` has been tested; paste and Run it only then.
 6. (Decided: there is NO Google sign-in. The program signs in with e-mail and password only.)
 6b. **Sign-in in the program (built, e-mail and password).** What is needed from you, once:
-   - **Build with the cloud address:** `flutter build windows --dart-define-from-file=supabase/config.local.json`. Without it the program opens as before, with no sign-in (local only).
+   - **Build with the cloud address:** `flutter build windows --release --no-tree-shake-icons --dart-define-from-file=supabase/config.local.json`. Keep `--no-tree-shake-icons`: without it the build dropped 7 of the icons the program uses (they showed blank). Without it the program opens as before, with no sign-in (local only).
    - **First sign-in:** make the account with e-mail and password (**First time? Make the shop account**) and open the link it sends. The program will say "this account has no access to the shop yet" until you run `supabase/seed_shop.example.sql` once with the two shop e-mails. After that: sign in once per computer; opening the program never asks again; only **Sign out** (Shop profile) asks again.
 7. Add the same two addresses as members of the organisation (Organization settings > Team) so one person can never lock you out.
 Keep-alive: the free plan pauses an unused project after about a week; see docs/supabase-sync-design.md.
