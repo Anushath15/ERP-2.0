@@ -8,6 +8,7 @@ import 'package:erp2/fake/data_providers.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'helpers.dart';
 
 // What these tests prove: an order to a dealer is made, saved with its number, sent on WhatsApp (the PDF is saved, its folder is shown, the chat opens with the
@@ -30,7 +31,7 @@ void main() {
     final saver = FakeSaver();
     final launcher = FakeLauncher();
     final revealer = FakeRevealer();
-    final c = await pumpApp(tester, size: const ScreenSpec('tall', 1500, 3600), location: '/orders/new', motion: MotionLevel.off, followSystemMotion: false, extraOverrides: [
+    final c = await pumpApp(tester, size: const ScreenSpec('tall', 1500, 3600), location: '/dealers', motion: MotionLevel.off, followSystemMotion: false, extraOverrides: [
       fileSaverProvider.overrideWithValue(saver),
       linkLauncherProvider.overrideWithValue(launcher),
       fileRevealerProvider.overrideWithValue(revealer),
@@ -41,8 +42,15 @@ void main() {
     }
 
     final product = c.read(productsProvider).first;
-    final dealerCount = c.read(recsProvider('dealers')).length;
-    expect(dealerCount, greaterThan(0));
+    final dealer = c.read(recsProvider('dealers')).last;
+    // the order starts on the dealer's own page (it is not in the side menu)
+    expect(find.text('Orders to dealers'), findsNothing);
+    GoRouter.of(tester.element(find.byType(Scaffold).first)).go('/dealers/${dealer.id}');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('dealer-place-order')));
+    await tester.tap(find.byKey(const ValueKey('dealer-place-order')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<DropdownButtonFormField<String>>(find.byKey(const ValueKey('order-dealer'))).initialValue, dealer.id, reason: 'the order is for this dealer');
 
     // add an item, quantity 3, a note, save
     await tester.enterText(find.byKey(const ValueKey('order-picker')), product.name);
@@ -75,7 +83,10 @@ void main() {
       File('$dumpDir/${saver.saved.keys.single.replaceAll(' ', '_')}').writeAsBytesSync(saver.saved.values.single);
     }
     expect(String.fromCharCodes(saver.saved.values.single.take(5)), '%PDF-');
-    expect(revealer.shown, isNotEmpty, reason: 'its folder is shown so the file can be dragged into WhatsApp');
+    expect(revealer.copied.single, 'Downloads/${saver.saved.keys.single}', reason: 'the PDF itself is on the clipboard: Ctrl+V in the chat attaches it');
+    expect(find.byKey(const ValueKey('wa-done')), findsOneWidget, reason: 'the next steps stay on screen');
+    await tester.tap(find.byKey(const ValueKey('wa-close')));
+    await settle(600);
     expect(launcher.opened.single, contains('919876543210'));
     expect(Uri.decodeComponent(launcher.opened.single), contains(product.name));
     order = OrderDoc.fromRec(c.read(recsProvider('orders')).single);

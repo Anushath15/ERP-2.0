@@ -26,6 +26,7 @@ Future<PickedSheet?> pickSheetFile() async {
   const types = XTypeGroup(label: 'Excel or CSV', extensions: ['xlsx', 'csv']);
   final f = await openFile(acceptedTypeGroups: [types]);
   if (f == null) return null;
+  if (await f.length() > maxSheetFileBytes) throw const SheetReadException('This file is too big to read (more than 25 MB).');
   return PickedSheet(f.name, await f.readAsBytes());
 }
 
@@ -33,7 +34,7 @@ Future<PickedSheet?> pickSheetFile() async {
 final sheetPickerProvider = Provider<Future<PickedSheet?> Function()>((ref) => pickSheetFile);
 
 /// The rows of a picked file, from Excel (.xlsx) or CSV text.
-List<List<String>> readPickedSheet(PickedSheet s) => s.name.toLowerCase().endsWith('.csv') ? readCsvRows(utf8.decode(s.bytes, allowMalformed: true)) : readXlsxRows(s.bytes);
+List<List<String>> readPickedSheet(PickedSheet s) => s.bytes.length > maxSheetFileBytes ? throw const SheetReadException('This file is too big to read (more than 25 MB).') : s.name.toLowerCase().endsWith('.csv') ? readCsvRows(utf8.decode(s.bytes, allowMalformed: true)) : readXlsxRows(s.bytes);
 
 /// Products page > Excel: download the sheet, upload it filled, see what will change, apply.
 Future<void> showProductExcel(BuildContext context) => showDialog<void>(context: context, animationStyle: dialogStyle(context), builder: (_) => const _ExcelDialog());
@@ -65,8 +66,15 @@ class _ExcelDialogState extends ConsumerState<_ExcelDialog> {
 
   Future<void> _upload() async {
     final l = tr(context);
-    final picked = await ref.read(sheetPickerProvider)();
-    if (picked == null || !mounted) return;
+    final PickedSheet? chosen;
+    try {
+      chosen = await ref.read(sheetPickerProvider)();
+    } on SheetReadException catch (e) {
+      if (mounted) setState(() => _error = l.xlReadFailed(e.message));
+      return;
+    }
+    if (chosen == null || !mounted) return;
+    final PickedSheet picked = chosen;
     try {
       final rows = readPickedSheet(picked);
       final all = await ref.read(appDataProvider).catalog.products();
@@ -129,7 +137,7 @@ class _ExcelDialogState extends ConsumerState<_ExcelDialog> {
             Text(l.xlHow, style: th.bodySmall),
             const SizedBox(height: 12),
             Wrap(spacing: 8, runSpacing: 8, children: [
-              OutlinedButton.icon(key: const ValueKey('xlDownload'), onPressed: _busy ? null : _download, icon: const Icon(Icons.download_rounded), label: Text(l.xlDownload)),
+              OutlinedButton.icon(key: const ValueKey('xlDownload'), onPressed: _busy ? null : _download, icon: const Icon(Icons.file_download_rounded), label: Text(l.xlDownload)),
               FilledButton.icon(key: const ValueKey('xlUpload'), onPressed: _busy ? null : _upload, icon: const Icon(Icons.upload_file_rounded), label: Text(l.xlUpload)),
             ]),
             if (_saved != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_saved!, key: const ValueKey('xlSaved'), style: th.bodySmall?.copyWith(color: c.success))),

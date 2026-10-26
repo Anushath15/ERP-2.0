@@ -108,3 +108,29 @@ The project is on the Spark plan. The owner confirms the "Spark" badge in the Fi
 - Spam inside the daily batch cap, and damage to the free daily quota (denial of service) by someone who is signed in. There is no bill, but sync pauses until the reset.
 - Malware on the shop computer, and theft of the database file from the disk (use BitLocker).
 - Anyone on the internet who reads this public repository: that is expected; security does not rely on secrecy.
+
+## Security review, October 2026 (attacker's view of the whole program)
+
+Found and fixed (each has a test in `test/security_attacks_test.dart` or next to the code):
+
+| # | Where | What an attacker could do | Fix |
+|---|---|---|---|
+| S1 | Counter link (shop Wi-Fi) | Record a sealed "link" message and send it again from their own laptop within 10 minutes: the counter would then send its (still encrypted) changes to the laptop instead of the real counter. Record any message and play it back. | Every sealed message is accepted once only (nonce guard), names the address it is for, and every answer names the request it answers; an old answer is refused. |
+| S2 | Shop file brought in (restore, Telegram copy, a file handed over) | Hide a SQLite trigger in the file that later changes data (halve bills, empty the ledger), or replace one of the program's own triggers. | On every open, any trigger or view the program did not make is removed, and the program's own ones are compared with their exact text and made again when changed. |
+| S3 | Cloud (Supabase) | A cashier or manager (or a changed program with their sign-in) changes a bill that is already saved: lowers its total, removes an item, un-cancels it. | `supabase/migrations/0004_saved_bills_fixed.sql`: only the owner can change a saved bill; resending the same bill still works. Run it once in the SQL Editor. |
+| S4 | Products > Excel | A tiny crafted .xlsx (zip bomb) that unpacks to gigabytes freezes the program. | Files over 25 MB and parts that unpack to over 64 MB are refused before unpacking. |
+| S5 | Imported ERP 1 records | A record with a field in an unexpected form (text date, true/false) broke whole pages (the grey Notifications page). | Records are read whatever form a field has (`Rec.i`, `Rec.d`, `Rec.date`); a damaged one shows instead of breaking the page. |
+
+Checked and found sound: SQL is always parameterised (and the sync writes only real column names); file names are cleaned and kept inside one folder;
+the sign-in and the Telegram token are kept encrypted for the Windows user (DPAPI); the PIN is a salted PBKDF2 hash with growing waits; nothing under the lock
+screen can be clicked or typed into; CSV/Excel exports cannot carry formulas; the cloud's own rules refuse non-members, revoked computers, cashier changes to
+products and owner-only actions; the UPI link accepts only a valid UPI ID; the WhatsApp message is URL-encoded.
+
+Still true (cannot be fixed inside the program, or a decision for the owner):
+
+* Anyone who can sign in to the shop computer's Windows account can open the shop file directly; the PIN only guards the program's screens. Use a Windows
+  password, and BitLocker if the computer may be stolen.
+* A removed computer is refused by its computer id; a person with a valid sign-in could make a new id. To shut a person out, turn their membership off
+  (Supabase > shop_members, `active = false`), not only the computer.
+* Routine backups (`.sqlite`) are not encrypted; the Telegram copies are (`.askbak`). Keep the backup folder on the shop computer or a pen drive you hold.
+* The installer is not code-signed, so Windows shows "unknown publisher".

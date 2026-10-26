@@ -44,7 +44,7 @@ navSalesReturns | Sales returns
 navDelivery | Delivery
 navProducts | Products
 navCategories | Categories
-navInventory | Stock left
+navInventory | Inventory
 navPurchases | Purchases
 navPurchaseReturns | Purchase returns
 navAdjustments | Fix stock
@@ -353,7 +353,15 @@ closingCreditGiven | Given on credit
 closingOpening | Cash at start of day
 closingExpenses | Expenses paid in cash
 waSendPdf | Save PDF and open WhatsApp
-waPdfHelp | WhatsApp cannot attach a file by itself. The PDF is saved and its folder opens: drag the PDF into the chat, or press the paper-clip in WhatsApp.
+waPdfHelp | The PDF is made and copied for you, and the chat opens with the message. In WhatsApp press Ctrl+V: the PDF is attached. Then press Send.
+waOpenedTitle | WhatsApp is open: attach the PDF
+waNotOpenedTitle | The PDF is ready
+waStepPaste | 1. In the WhatsApp chat, press Ctrl+V. The PDF is attached.
+waStepSend | 2. Press Send (the message is already typed).
+waStepDrag | Drag the PDF from the folder that opened into the WhatsApp chat, then press Send.
+waCopyPdf | Copy the PDF again
+waCopiedAgain | PDF copied. Press Ctrl+V in the WhatsApp chat.
+waShowFile | Show the file
 waNumber | WhatsApp number
 waSent | WhatsApp opened. The PDF is saved here: {where}
 waOffline | WhatsApp needs the internet. The PDF was saved here: {where}
@@ -1596,3 +1604,5 @@ gstRetMonth | Month
 gstRet1 | GSTR-1 (sales)
 gstRet3b | GSTR-3B (summary)
 gstRetHsn | HSN summary
+orderPlace | Place order
+dealerOrdersTitle | Orders to this dealer

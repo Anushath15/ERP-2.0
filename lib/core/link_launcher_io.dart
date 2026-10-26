@@ -18,6 +18,8 @@ class _IoLauncher implements LinkLauncher {
 
   @override
   Future<bool> open(String url) async {
+    // SECURITY: Windows' "open this" handler would also start a program or open a file if it were given a path; only web and WhatsApp links pass
+    if (!RegExp(r'^(https://|http://|whatsapp://)[^\s"<>]+$').hasMatch(url)) return false;
     try {
       if (Platform.isWindows) {
         // The WhatsApp app registers the "whatsapp:" link type. If it is not registered, report false so the caller falls back to wa.me.

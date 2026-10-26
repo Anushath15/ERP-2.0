@@ -30,14 +30,24 @@ class LanPeerApi implements SyncApi {
 
   @override
   Future<void> push(List<SyncDoc> docs) async {
-    final body = await lanSeal(key, {'from': fromDevice, 'docs': [for (final d in docs) d.toJson()]});
+    const path = '/lan/v1/push';
+    final body = await lanSeal(key, {'path': path, 'from': fromDevice, 'docs': [for (final d in docs) d.toJson()]});
     ({int status, Uint8List body}) r;
     try {
-      r = await net.post(host, port, '/lan/v1/push', body);
+      r = await net.post(host, port, path, body);
     } catch (e) {
       throw SyncOffline('$e');
     }
-    if (r.status == 200) return;
+    if (r.status == 200) {
+      // the answer must be sealed by the real counter and name THIS request (a recorded or made-up "200" proves nothing)
+      try {
+        final ok = await lanOpen(key, r.body);
+        if (ok['re'] != lanNonce(body)) throw const LanSealException();
+      } on LanSealException {
+        throw const SyncAuthFailed('the answer was not from the linked counter');
+      }
+      return;
+    }
     if (r.status == 401) throw const SyncAuthFailed('wrong counter-link key');
     if (r.status >= 500 || r.status == 408) throw SyncOffline('${r.status}');
     throw SyncRejected('HTTP ${r.status}');
@@ -77,6 +87,9 @@ class LanLink {
 
   late final SyncEngine _receiver = SyncEngine(data.cx, _NoApi(), onChanged: onChanged);
 
+  /// SECURITY: a message recorded on the Wi-Fi and sent again is refused (each sealed message has its own nonce).
+  final _replay = LanReplayGuard();
+
   /// chan -> '' (fine) or the problem, from the last round.
   final Map<String, String> status = {};
 
@@ -85,7 +98,7 @@ class LanLink {
   Future<void> start() => net.serve(port, _handle);
   Future<void> stop() => net.stopServing();
 
-  Future<Uint8List> _reply(Map<String, Object?> m) => lanSeal(key, m);
+  Future<Uint8List> _reply(Map<String, Object?> m, String re) => lanSeal(key, {...m, 're': re});
 
   Future<Uint8List> _handle(String path, Uint8List body, String ip) async {
     final Map<String, Object?> msg;
@@ -94,14 +107,17 @@ class LanLink {
     } on LanSealException {
       throw const LanRefused(401);
     }
+    // SECURITY: the sealed message names the address it was meant for (a message for one cannot be used on another), and it is used once only
+    if (msg['path'] != path || !_replay.fresh(lanNonce(body))) throw const LanRefused(401);
+    final re = lanNonce(body);
     switch (path) {
       case '/lan/v1/hello':
-        return _reply({'deviceId': deviceId, 'name': name});
+        return _reply({'deviceId': deviceId, 'name': name}, re);
       case '/lan/v1/link':
         final id = '${msg['deviceId'] ?? ''}';
         if (id.isEmpty || id == deviceId) throw const LanRefused(400);
         await _savePeer(LanPeer(chan: 'lan-$id', host: ip, port: (msg['port'] as num?)?.toInt() ?? lanPort, deviceId: id, name: '${msg['name'] ?? ''}'));
-        return _reply({'deviceId': deviceId, 'name': name});
+        return _reply({'deviceId': deviceId, 'name': name}, re);
       case '/lan/v1/push':
         final from = '${msg['from'] ?? ''}';
         final list = msg['docs'];
@@ -120,7 +136,7 @@ class LanLink {
               ),
         ];
         final n = await _receiver.applyIncoming(docs);
-        return _reply({'applied': n});
+        return _reply({'applied': n}, re);
       default:
         throw const LanRefused(404);
     }
@@ -144,15 +160,18 @@ class LanLink {
     if (!RegExp(r'^[0-9A-Za-z.\-]{1,100}$').hasMatch(h)) throw const LanLinkException(LanLinkProblem.badAddress);
     Future<Map<String, Object?>> call(String path, Map<String, Object?> m) async {
       ({int status, Uint8List body}) r;
+      final sealed = await lanSeal(key, {...m, 'path': path});
       try {
-        r = await net.post(h, p, path, await lanSeal(key, m));
+        r = await net.post(h, p, path, sealed);
       } catch (_) {
         throw const LanLinkException(LanLinkProblem.unreachable);
       }
       if (r.status == 401) throw const LanLinkException(LanLinkProblem.wrongKey);
       if (r.status != 200) throw const LanLinkException(LanLinkProblem.unreachable);
       try {
-        return await lanOpen(key, r.body);
+        final answer = await lanOpen(key, r.body);
+        if (answer['re'] != lanNonce(sealed)) throw const LanSealException(); // an old answer played back
+        return answer;
       } on LanSealException {
         throw const LanLinkException(LanLinkProblem.wrongKey);
       }

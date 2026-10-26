@@ -63,10 +63,13 @@ class _OLine {
 
 /// One order: the dealer, the items with quantities, a note. Save it, send it on WhatsApp ("Order now"), and when the goods come make the purchase from it.
 class OrderFormScreen extends ConsumerStatefulWidget {
-  const OrderFormScreen({super.key, this.orderId});
+  const OrderFormScreen({super.key, this.orderId, this.dealerId});
 
   /// The saved order being opened; null = a new order.
   final String? orderId;
+
+  /// A new order made from a dealer's page is for that dealer.
+  final String? dealerId;
 
   @override
   ConsumerState<OrderFormScreen> createState() => _OrderFormState();
@@ -84,7 +87,7 @@ class _OrderFormState extends ConsumerState<OrderFormScreen> {
   void initState() {
     super.initState();
     final dealers = ref.read(recsProvider('dealers'));
-    _dealer = dealers.isEmpty ? null : dealers.first.id;
+    _dealer = dealers.any((d) => d.id == widget.dealerId) ? widget.dealerId : (dealers.isEmpty ? null : dealers.first.id);
     if (widget.orderId != null) {
       final rec = ref.read(recsProvider('orders')).where((r) => r.id == widget.orderId).firstOrNull;
       if (rec != null) {
@@ -111,6 +114,9 @@ class _OrderFormState extends ConsumerState<OrderFormScreen> {
   }
 
   bool get _locked => _saved != null && !_saved!.editable;
+
+  /// Back goes to the dealer's page (orders are made and kept there).
+  String get _backPath => _dealer == null ? '/dealers' : '/dealers/${Uri.encodeComponent(_dealer!)}';
 
   List<OrderLine>? _readLines(Strings s) {
     final out = <OrderLine>[];
@@ -235,7 +241,7 @@ class _OrderFormState extends ConsumerState<OrderFormScreen> {
     if (rec == null) return;
     ref.read(recsProvider('orders').notifier).replace(rec.with_({'status': OrderStatus.cancelled.name}));
     toast(context, s.orderCancelled);
-    context.go('/orders');
+    context.go(_backPath);
   }
 
   void _addLow() {
@@ -325,7 +331,7 @@ class _OrderFormState extends ConsumerState<OrderFormScreen> {
     return PageFrame(
       title: saved == null ? s.orderFormTitle : s.orderTitle(saved.number),
       subtitle: saved == null ? s.ordersSubtitle : _statusLabel(s, saved.status),
-      actions: [TextButton.icon(onPressed: () => context.go('/orders'), icon: const Icon(Icons.arrow_back_rounded), label: Text(s.back))],
+      actions: [TextButton.icon(onPressed: () => context.go(_backPath), icon: const Icon(Icons.arrow_back_rounded), label: Text(s.back))],
       child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
         SectionCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -355,10 +361,10 @@ class _OrderFormState extends ConsumerState<OrderFormScreen> {
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, key: const ValueKey('order-error'), style: th.bodyMedium?.copyWith(color: c.danger))),
         const SizedBox(height: 12),
         Wrap(spacing: 10, runSpacing: 10, children: [
-          if (!locked) FilledButton.icon(key: const ValueKey('order-save'), onPressed: _busy ? null : _onSave, icon: const Icon(Icons.save_rounded), label: Text(s.orderSave)),
-          if (!locked) FilledButton.tonalIcon(key: const ValueKey('order-now'), onPressed: _busy ? null : _orderNow, icon: const Icon(Icons.chat_rounded), label: Text(s.orderOrderNow)),
+          if (!locked) FilledButton.icon(key: const ValueKey('order-now'), onPressed: _busy ? null : _orderNow, icon: const Icon(Icons.chat_rounded), label: Text(s.orderOrderNow)),
+          if (!locked) OutlinedButton.icon(key: const ValueKey('order-save'), onPressed: _busy ? null : _onSave, icon: const Icon(Icons.save_rounded), label: Text(s.orderSave)),
           if (!locked) OutlinedButton.icon(key: const ValueKey('order-make-purchase'), onPressed: _busy ? null : _makePurchase, icon: const Icon(Icons.shopping_cart_checkout_rounded), label: Text(s.orderMakePurchase)),
-          if (saved != null && saved.editable) TextButton.icon(key: const ValueKey('order-cancel'), onPressed: _busy ? null : _cancel, icon: Icon(Icons.cancel_outlined, color: c.danger), label: Text(s.orderCancel, style: TextStyle(color: c.danger))),
+          if (saved != null && saved.editable) TextButton.icon(key: const ValueKey('order-cancel'), onPressed: _busy ? null : _cancel, icon: Icon(Icons.cancel_rounded, color: c.danger), label: Text(s.orderCancel, style: TextStyle(color: c.danger))),
         ]),
         if (!locked) Padding(padding: const EdgeInsets.only(top: 8), child: Text(s.orderPurchaseNote, style: th.bodySmall)),
       ]),

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show SqlDialect, Trigger, ViewInfo;
 import '../db/app_database.dart';
 
 /// How one table is synced to the cloud copy.
@@ -66,16 +67,9 @@ const _triggerVersion = '3';
 /// be sent back.
 const applyingFlag = 'applying';
 
-/// Makes the triggers that put every inserted or changed row of a synced table into the upload queue. Done every time the database
-/// opens (cheap when they are already there), so no migration has to repeat them.
-Future<void> ensureSyncTriggers(AppDatabase db) async {
-  // an older file being upgraded step by step (tests, or a file not yet at version 9) has no sync tables yet
-  if ((await db.customSelect("SELECT 1 AS x FROM sqlite_master WHERE type = 'table' AND name = 'lan_peers'").get()).isEmpty) return;
-  final have = await db.customSelect("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'sync\\_%' ESCAPE '\\'").getSingle();
-  final ver = await db.customSelect("SELECT value FROM sync_meta WHERE name = 'trigger_ver'").get();
-  if (have.read<int>('n') == syncTables.length * 2 + 2 && ver.isNotEmpty && ver.first.read<String>('value') == _triggerVersion) return;
-  // Only fixed names from the constant lists in this file are ever pasted into these statements, never text a person typed.
-  final statements = <String>[];
+/// The sync triggers this program makes, name -> the exact CREATE statement. Only fixed names from the constant lists in this file are ever pasted in.
+Map<String, String> expectedSyncTriggers() {
+  final out = <String, String>{};
   const when = "WHEN NOT EXISTS (SELECT 1 FROM sync_meta WHERE name = '$applyingFlag' AND value = '1')";
   const nowMs = "CAST(strftime('%s','now') AS INTEGER) * 1000";
   const upsert = "ON CONFLICT(chan, coll, doc_id) DO UPDATE SET op = 'set', stamp = '', state = 'pending', attempts = 0, last_error = NULL";
@@ -83,18 +77,77 @@ Future<void> ensureSyncTriggers(AppDatabase db) async {
   String queue(String coll, String idExpr) => "INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at, chan) VALUES ('$coll', $idExpr, 'set', '', 'pending', 0, 0, $nowMs, 'cloud') $upsert; "
       "INSERT INTO outbox(coll, doc_id, op, stamp, state, attempts, hold_until, created_at, chan) SELECT '$coll', $idExpr, 'set', '', 'pending', 0, ${coll == 'payments' || coll == 'reminders' ? '$nowMs + 10000' : '0'}, $nowMs, p.chan FROM lan_peers p WHERE true $upsert;";
   for (final t in syncTables) {
-    statements.add('DROP TRIGGER IF EXISTS sync_${t.name}_ai');
-    statements.add('DROP TRIGGER IF EXISTS sync_${t.name}_au');
-    statements.add('CREATE TRIGGER sync_${t.name}_ai AFTER INSERT ON ${t.name} $when BEGIN ${queue(t.name, 'new.id')} END');
-    statements.add('CREATE TRIGGER sync_${t.name}_au AFTER UPDATE ON ${t.name} $when BEGIN ${queue(t.name, 'new.id')} END');
+    out['sync_${t.name}_ai'] = 'CREATE TRIGGER sync_${t.name}_ai AFTER INSERT ON ${t.name} $when BEGIN ${queue(t.name, 'new.id')} END';
+    out['sync_${t.name}_au'] = 'CREATE TRIGGER sync_${t.name}_au AFTER UPDATE ON ${t.name} $when BEGIN ${queue(t.name, 'new.id')} END';
   }
   final names = sharedSettingNames.map((n) => "'$n'").join(',');
-  statements.add('DROP TRIGGER IF EXISTS sync_kv_ai');
-  statements.add('DROP TRIGGER IF EXISTS sync_kv_au');
-  statements.add("CREATE TRIGGER sync_kv_ai AFTER INSERT ON kv WHEN new.name IN ($names) AND ${when.substring(5)} BEGIN ${queue(settingsColl, 'new.name')} END");
-  statements.add("CREATE TRIGGER sync_kv_au AFTER UPDATE ON kv WHEN new.name IN ($names) AND ${when.substring(5)} BEGIN ${queue(settingsColl, 'new.name')} END");
-  for (final q in statements) {
+  out['sync_kv_ai'] = "CREATE TRIGGER sync_kv_ai AFTER INSERT ON kv WHEN new.name IN ($names) AND ${when.substring(5)} BEGIN ${queue(settingsColl, 'new.name')} END";
+  out['sync_kv_au'] = "CREATE TRIGGER sync_kv_au AFTER UPDATE ON kv WHEN new.name IN ($names) AND ${when.substring(5)} BEGIN ${queue(settingsColl, 'new.name')} END";
+  return out;
+}
+
+/// A name from sqlite_master as a quoted identifier (the name may be anything a crafted file put there).
+String _quoted(String name) => '"${name.replaceAll('"', '""')}"';
+
+String _squash(String sql) => sql.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+/// Makes the triggers that put every inserted or changed row of a synced table into the upload queue. Done every time the database
+/// opens (cheap when they are already there), so no migration has to repeat them. SECURITY: each one is compared with the exact statement
+/// it must be (not only its name), so a trigger with our name but other contents (from a crafted backup) is replaced.
+Future<void> ensureSyncTriggers(AppDatabase db) async {
+  // an older file being upgraded step by step (tests, or a file not yet at version 9) has no sync tables yet
+  if ((await db.customSelect("SELECT 1 AS x FROM sqlite_master WHERE type = 'table' AND name = 'lan_peers'").get()).isEmpty) return;
+  final want = expectedSyncTriggers();
+  final have = {
+    for (final r in await db.customSelect("SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'sync\\_%' ESCAPE '\\'").get()) r.read<String>('name'): r.read<String?>('sql') ?? '',
+  };
+  if (have.length == want.length && want.entries.every((e) => _squash(have[e.key] ?? '') == _squash(e.value))) return;
+  for (final n in have.keys) {
+    await db.customStatement('DROP TRIGGER IF EXISTS ${_quoted(n)}');
+  }
+  for (final q in want.values) {
     await db.customStatement(q);
   }
   await db.customStatement("INSERT INTO sync_meta(name, value) VALUES ('trigger_ver', '$_triggerVersion') ON CONFLICT(name) DO UPDATE SET value = excluded.value");
+}
+
+/// SECURITY: a shop file can come from outside (a restored backup, a Telegram copy, a file someone hands over). SQLite keeps "triggers" and "views"
+/// inside the file, and a crafted one could quietly change or delete data later (say, a trigger that halves every bill or empties the ledger). Every
+/// time the database opens, any trigger or view this program did not make is removed, and one of ours whose contents were changed is made again
+/// ([rewriteOurs]: only when the file is at this program's schema version; a test that stops an upgrade half way has older triggers on purpose).
+Future<int> removeForeignSchemaObjects(AppDatabase db, {bool rewriteOurs = true}) async {
+  final ours = <String, String>{
+    for (final e in db.allSchemaEntities)
+      if (e is Trigger) e.entityName: e.createStatementsByDialect[SqlDialect.sqlite] ?? e.createStatementsByDialect.values.first,
+  };
+  final views = {for (final e in db.allSchemaEntities) if (e is ViewInfo) e.entityName};
+  final sync = expectedSyncTriggers();
+  var removed = 0;
+  for (final r in await db.customSelect("SELECT type, name, sql FROM sqlite_master WHERE type IN ('trigger','view')").get()) {
+    final type = r.read<String>('type'), name = r.read<String>('name'), sql = r.read<String?>('sql') ?? '';
+    if (type == 'view') {
+      if (!views.contains(name)) {
+        await db.customStatement('DROP VIEW IF EXISTS ${_quoted(name)}');
+        removed++;
+      }
+      continue;
+    }
+    if (sync.containsKey(name)) continue; // checked and remade by ensureSyncTriggers
+    final stmt = ours[name];
+    if (stmt == null) {
+      await db.customStatement('DROP TRIGGER IF EXISTS ${_quoted(name)}');
+      removed++;
+    } else if (rewriteOurs && _squash(stmt) != _squash(sql) && !_sameTrigger(stmt, sql)) {
+      await db.customStatement('DROP TRIGGER IF EXISTS ${_quoted(name)}');
+      await db.customStatement(stmt);
+      removed++;
+    }
+  }
+  return removed;
+}
+
+/// Our own triggers were also made by a migration whose text differs from the schema's only in spacing and an ending semicolon.
+bool _sameTrigger(String a, String b) {
+  String n(String s) => _squash(s).replaceAll(RegExp(r';\s*END$'), ' END').replaceAll(RegExp(r'\s*;\s*'), ';').replaceAll(' ', '').toLowerCase();
+  return n(a) == n(b);
 }

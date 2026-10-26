@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'cloud/session_vault_io.dart' show systemDll;
 import 'package:ffi/ffi.dart';
 
 /// Windows 10 (1809+) understands the dark title bar switch; Windows 11 also takes an exact caption and text colour. A call that Windows
@@ -8,7 +9,7 @@ void paintTitleBar({required bool dark, required int background, required int te
   if (!Platform.isWindows || Platform.environment.containsKey('FLUTTER_TEST')) return;
   try {
     final user32 = DynamicLibrary.open('user32.dll');
-    final dwm = DynamicLibrary.open('dwmapi.dll');
+    final dwm = DynamicLibrary.open(systemDll('dwmapi.dll'));
     final findWindow = user32.lookupFunction<IntPtr Function(Pointer<Utf16>, Pointer<Utf16>), int Function(Pointer<Utf16>, Pointer<Utf16>)>('FindWindowW');
     final set = dwm.lookupFunction<Int32 Function(IntPtr, Uint32, Pointer<Uint32>, Uint32), int Function(int, int, Pointer<Uint32>, int)>('DwmSetWindowAttribute');
     final cls = 'FLUTTER_RUNNER_WIN32_WINDOW'.toNativeUtf16();

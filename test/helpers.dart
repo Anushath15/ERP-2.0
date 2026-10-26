@@ -134,7 +134,14 @@ class FakePrinter implements PrinterService {
 
 /// A stand-in for showing a saved file in its folder: remembers the paths, opens nothing.
 class FakeRevealer implements FileRevealer {
-  final shown = <String>[];
+  FakeRevealer({this.canCopy = true});
+  final bool canCopy;
+  final shown = <String>[], copied = <String>[];
   @override
   Future<void> reveal(String path) async => shown.add(path);
+  @override
+  Future<bool> copyFile(String path) async {
+    if (canCopy) copied.add(path);
+    return canCopy;
+  }
 }

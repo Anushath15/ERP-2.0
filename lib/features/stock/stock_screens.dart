@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_fmt.dart';
 import '../../core/money.dart';
+import '../../core/responsive.dart';
 import '../../design/data_list.dart';
 import '../../design/detail_sheet.dart';
 import '../../design/form_sheet.dart';
@@ -143,6 +144,27 @@ class InventoryScreen extends ConsumerWidget {
       items: items,
       searchText: (p) => '${p.name} ${p.barcode}',
       searchHint: l.searchProductHint,
+      // purchases, stock fixes and categories live inside Inventory (not in the side menu)
+      // on a phone the three go into one menu, so the list keeps its room
+      actions: context.isPhone
+          ? [
+              PopupMenuButton<String>(
+                key: const ValueKey('inv-more'),
+                tooltip: l.navMore,
+                icon: const Icon(Icons.more_vert_rounded),
+                onSelected: (p) => context.go(p),
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: '/purchases', child: Text(l.navPurchases)),
+                  PopupMenuItem(value: '/adjustments', child: Text(l.navAdjustments)),
+                  PopupMenuItem(value: '/categories', child: Text(l.navCategories)),
+                ],
+              ),
+            ]
+          : [
+              FilledButton.icon(key: const ValueKey('inv-purchases'), onPressed: () => context.go('/purchases'), icon: const Icon(Icons.shopping_cart_rounded), label: Text(l.navPurchases)),
+              OutlinedButton.icon(key: const ValueKey('inv-fix-stock'), onPressed: () => context.go('/adjustments'), icon: const Icon(Icons.edit_note_rounded), label: Text(l.navAdjustments)),
+              OutlinedButton.icon(key: const ValueKey('inv-categories'), onPressed: () => context.go('/categories'), icon: const Icon(Icons.category_rounded), label: Text(l.navCategories)),
+            ],
       stats: [
         InkWell(onTap: () => showStockValueSheet(context, ref), child: StatCard(label: l.statStockValue, value: sv == null ? '…' : '₹ ${formatPaise(sv.shownTotal)}', icon: Icons.account_balance_rounded, hint: sv == null ? null : ruleCaption(l, sv))),
         StatCard(label: l.statItems, value: items.length.toString(), icon: Icons.inventory_2_rounded),
@@ -340,15 +362,15 @@ class AdjustmentsScreen extends ConsumerWidget {
         if (context.mounted) toast(context, l.saved);
       },
       columns: [
-        ColumnSpec(l.colDate, (c, r) => Cell(formatDate(r.f['date'] as DateTime), muted: true), width: 100),
+        ColumnSpec(l.colDate, (c, r) => Cell(formatDate(r.date('date')), muted: true), width: 100),
         ColumnSpec(l.colProduct, (c, r) => Cell(r.s('product'), bold: true), flex: 5),
         ColumnSpec(l.colQty, (c, r) => Cell('${r.i('qty') > 0 ? '+' : ''}${formatQty(r.i('qty'))}', bold: true, color: r.i('qty') < 0 ? c.c.danger : c.c.success), width: 80, numeric: true),
         ColumnSpec(l.fieldReason, (c, r) => Cell(r.s('reason'), muted: true), flex: 3),
       ],
       phoneTitle: (c, r) => Cell(r.s('product'), bold: true),
-      phoneSubtitle: (r) => '${formatDate(r.f['date'] as DateTime)} · ${r.s('reason')}',
+      phoneSubtitle: (r) => '${formatDate(r.date('date'))} · ${r.s('reason')}',
       phoneTrailing: (c, r) => Text('${r.i('qty') > 0 ? '+' : ''}${formatQty(r.i('qty'))}', style: Theme.of(c).textTheme.titleSmall?.copyWith(color: r.i('qty') < 0 ? c.c.danger : c.c.success)),
-      onTap: (ctx, r) => showDetail(ctx, title: l.navAdjustments, body: [KeyValue(l.colDate, formatDate(r.f['date'] as DateTime)), KeyValue(l.colProduct, r.s('product'), bold: true), KeyValue(l.colQty, formatQty(r.i('qty'))), KeyValue(l.fieldReason, r.s('reason'))]),
+      onTap: (ctx, r) => showDetail(ctx, title: l.navAdjustments, body: [KeyValue(l.colDate, formatDate(r.date('date'))), KeyValue(l.colProduct, r.s('product'), bold: true), KeyValue(l.colQty, formatQty(r.i('qty'))), KeyValue(l.fieldReason, r.s('reason'))]),
     );
   }
 }

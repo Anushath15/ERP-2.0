@@ -5,6 +5,9 @@ import 'reveal_file_stub.dart' if (dart.library.io) 'reveal_file_io.dart' as imp
 /// not possible (a browser). Never throws.
 abstract class FileRevealer {
   Future<void> reveal(String path);
+
+  /// Puts the file itself on the clipboard (as Explorer's Copy does), so it can be pasted into a WhatsApp chat with Ctrl+V. False when that is not possible.
+  Future<bool> copyFile(String path);
 }
 
 final fileRevealerProvider = Provider<FileRevealer>((ref) => impl.createRevealer());

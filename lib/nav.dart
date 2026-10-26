@@ -22,17 +22,13 @@ final navGroups = <NavGroup>[
     NavItem('/estimate', Icons.request_quote_rounded, (l) => l.navNewEstimate),
     NavItem('/estimates', Icons.folder_open_rounded, (l) => l.navSavedEstimates),
     NavItem('/sales', Icons.list_alt_rounded, (l) => l.navSalesRegister),
-    NavItem('/sales-returns', Icons.keyboard_return_rounded, (l) => l.navSalesReturns),
+    NavItem('/sales-returns', Icons.assignment_return_rounded, (l) => l.navSalesReturns),
   ]),
   NavGroup((l) => l.groupStock, [
     NavItem('/products', Icons.inventory_2_rounded, (l) => l.navProducts),
     NavItem('/labels', Icons.sell_rounded, (l) => l.navLabels),
-    NavItem('/categories', Icons.category_rounded, (l) => l.navCategories),
+    // Purchases, Purchase returns, Fix stock and Categories are opened from inside Inventory
     NavItem('/inventory', Icons.inventory_rounded, (l) => l.navInventory),
-    NavItem('/orders', Icons.shopping_basket_rounded, (l) => l.navOrders),
-    NavItem('/purchases', Icons.shopping_cart_rounded, (l) => l.navPurchases),
-    NavItem('/purchase-returns', Icons.undo_rounded, (l) => l.navPurchaseReturns),
-    NavItem('/adjustments', Icons.edit_note_rounded, (l) => l.navAdjustments),
   ]),
   NavGroup((l) => l.groupPeople, [
     NavItem('/customers', Icons.people_rounded, (l) => l.navCustomers),
@@ -48,7 +44,6 @@ final navGroups = <NavGroup>[
   ]),
   NavGroup((l) => l.groupMore, [
     NavItem('/warranty', Icons.verified_user_rounded, (l) => l.navWarranty),
-    NavItem('/notifications', Icons.notifications_rounded, (l) => l.navNotifications),
     NavItem('/import', Icons.upload_file_rounded, (l) => l.navImport),
     NavItem('/shop', Icons.storefront_rounded, (l) => l.navShop),
     NavItem('/settings', Icons.settings_rounded, (l) => l.navSettings),
@@ -61,6 +56,23 @@ final navGroups = <NavGroup>[
 
 /// Bottom bar on phones: the four most used screens plus "More".
 const phoneTabs = <String>['/', '/bill', '/products', '/customers'];
+
+/// Pages that are not in the menu, and the menu item they belong to (which is shown as the current one).
+const navParents = <String, String>{
+  '/purchases': '/inventory',
+  '/purchase-returns': '/inventory',
+  '/adjustments': '/inventory',
+  '/categories': '/inventory',
+  '/orders': '/dealers',
+};
+
+/// The menu item a location belongs to: itself, or the page it is opened from.
+String navHome(String location) {
+  for (final e in navParents.entries) {
+    if (location == e.key || location.startsWith('${e.key}/')) return e.value;
+  }
+  return location;
+}
 
 NavItem? navFor(String location) {
   for (final g in navGroups) {

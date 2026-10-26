@@ -47,7 +47,7 @@ class AppShell extends ConsumerWidget {
             titleSpacing: 12,
             leading: location == '/' || idx >= 0 || location == '/more' ? null : IconButton(icon: const Icon(Icons.arrow_back_rounded), tooltip: l.back, onPressed: () => navHistory.back(GoRouter.of(context))),
             title: Text(location == '/more' ? l.navMore : (navFor(location)?.label(l) ?? l.appName), maxLines: 1, overflow: TextOverflow.ellipsis),
-            actions: const [SyncChip(compact: true), SizedBox(width: 8)],
+            actions: const [NotificationBell(), SyncChip(compact: true), SizedBox(width: 8)],
           ),
           body: Column(children: [const ProblemBanner(), Expanded(child: child)]),
           bottomNavigationBar: hideBar
@@ -134,7 +134,7 @@ class SideNav extends StatelessWidget {
           child: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
             for (final g in navGroups) ...[
               if (wide) Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 4), child: Text(g.label(l).toUpperCase(), style: th.labelSmall)) else const SizedBox(height: 8),
-              for (final i in g.items) _NavTile(item: i, selected: i.path == location || (i.path != '/' && location.startsWith('${i.path}/')), wide: wide),
+              for (final i in g.items) _NavTile(item: i, selected: i.path == navHome(location) || (i.path != '/' && navHome(location).startsWith('${i.path}/')), wide: wide),
             ],
           ]),
         ),
@@ -216,6 +216,7 @@ class TopBar extends ConsumerWidget {
           onPressed: () => ref.read(settingsProvider.notifier).set((x) => x.copyWith(theme: dark ? ThemeMode.light : ThemeMode.dark)),
           icon: Icon(dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
         ),
+        const NotificationBell(),
         if (ref.watch(pinLockProvider.select((x) => x.enabled)))
           IconButton(key: const ValueKey('topbar-lock'), tooltip: l.lockNow, onPressed: ref.read(pinLockProvider.notifier).lock, icon: Icon(Icons.lock_outline_rounded, color: context.c.text)),
         IconButton(
@@ -226,6 +227,22 @@ class TopBar extends ConsumerWidget {
         ),
 
       ]),
+    );
+  }
+}
+
+/// The bell on the top bar (notifications are not in the side menu): the number of unread ones on it, a tap opens the list.
+class NotificationBell extends ConsumerWidget {
+  const NotificationBell({super.key});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = tr(context);
+    final unread = ref.watch(recsProvider('notifications')).where((r) => r.i('read') == 0).length;
+    return IconButton(
+      key: const ValueKey('topbar-notifications'),
+      tooltip: unread == 0 ? l.navNotifications : '${l.navNotifications}: $unread',
+      onPressed: () => context.go('/notifications'),
+      icon: Badge(isLabelVisible: unread > 0, label: Text(unread > 99 ? '99+' : '$unread'), child: Icon(unread > 0 ? Icons.notifications_active_rounded : Icons.notifications_none_rounded)),
     );
   }
 }

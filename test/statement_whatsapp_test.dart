@@ -39,7 +39,9 @@ void main() {
       File('$dumpDir/${saver.saved.keys.single.replaceAll(' ', '_')}').writeAsBytesSync(saver.saved.values.single);
     }
     expect(String.fromCharCodes(saver.saved.values.single.take(5)), '%PDF-');
-    expect(revealer.shown, isNotEmpty);
+    expect(revealer.copied, hasLength(1), reason: 'the PDF itself is on the clipboard');
+    await tester.tap(find.byKey(const ValueKey('wa-close')));
+    await tester.pumpAndSettle();
     final url = Uri.decodeComponent(launcher.opened.single);
     expect(url, contains('919876543210'));
     expect(url, contains('Amount to pay'));

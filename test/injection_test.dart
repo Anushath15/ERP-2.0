@@ -105,7 +105,8 @@ void main() {
 
     test('inside the data layer a statement may paste in nothing but fixed numbers; text a person typed is only ever a parameter (hostile-text tests: test/data/injection_data_test.dart)', () {
       final risky = RegExp(r'''(customStatement|execute)\s*\(\s*["'][^"']*\$[a-zA-Z{]''');
-      final allowed = RegExp(r'busyTimeoutMs|currentSchemaVersion|netPages');
+      // _quoted: a trigger or view name read back from the file itself, written as an escaped identifier (names cannot be parameters)
+      final allowed = RegExp(r'busyTimeoutMs|currentSchemaVersion|netPages|_quoted\(');
       String norm(String p) => p.replaceAll(r'\', '/');
       final found = <String>[];
       for (final f in libFiles) {

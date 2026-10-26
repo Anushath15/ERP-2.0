@@ -48,14 +48,25 @@ int _colIndex(String ref) {
   return n - 1;
 }
 
+/// SECURITY: the most one part of an Excel file may unpack to. A crafted file (a "zip bomb") of a few kilobytes can claim gigabytes; it is refused
+/// before it is unpacked, instead of filling the memory.
+const maxSheetPartBytes = 64 * 1024 * 1024;
+
+/// The biggest Excel or CSV file read at all.
+const maxSheetFileBytes = 25 * 1024 * 1024;
+
 String? _file(Archive a, String path) {
   final f = a.findFile(path);
   if (f == null) return null;
-  return utf8.decode(f.content as List<int>, allowMalformed: true);
+  if (f.size < 0 || f.size > maxSheetPartBytes) throw const SheetReadException('This Excel file is too big to read. Save it again with fewer rows.');
+  final bytes = f.content as List<int>;
+  if (bytes.length > maxSheetPartBytes) throw const SheetReadException('This Excel file is too big to read. Save it again with fewer rows.');
+  return utf8.decode(bytes, allowMalformed: true);
 }
 
 /// The cells of the first sheet, row by row (missing cells are empty text, trailing empty cells and empty rows are dropped).
 List<List<String>> readXlsxRows(Uint8List bytes, {int maxRows = 200000}) {
+  if (bytes.length > maxSheetFileBytes) throw const SheetReadException('This Excel file is too big to read. Save it again with fewer rows.');
   final Archive zip;
   try {
     zip = ZipDecoder().decodeBytes(bytes);

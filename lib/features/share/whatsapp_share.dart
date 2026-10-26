@@ -10,6 +10,7 @@ import '../../design/motion.dart';
 import '../../design/widgets.dart';
 import '../../domain/credit/reminder.dart';
 import '../../fake/shop_profile.dart';
+import '../../strings.dart';
 
 /// "Send a PDF on WhatsApp" for a customer statement or an order to a dealer. WhatsApp's own link carries a message but never a file, so the program
 /// saves the PDF, opens its folder with the file selected, and opens the chat with the message ready: the person drags the PDF in (or uses the
@@ -49,6 +50,10 @@ class _ShareDialogState extends ConsumerState<_ShareDialog> {
   String? _error;
   bool _busy = false;
 
+  /// Set once the PDF is saved and WhatsApp was asked to open: the dialog then shows the next steps.
+  String? _saved;
+  bool _copied = false, _opened = false;
+
   @override
   void dispose() {
     _phone.dispose();
@@ -67,8 +72,6 @@ class _ShareDialogState extends ConsumerState<_ShareDialog> {
       _busy = true;
       _error = null;
     });
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.maybeOf(context);
     try {
       final bytes = await widget.pdf();
       final where = await ref.read(fileSaverProvider).save(widget.fileName, bytes);
@@ -77,13 +80,19 @@ class _ShareDialogState extends ConsumerState<_ShareDialog> {
         return;
       }
       if (_phone.text.trim() != widget.phone.trim()) widget.onNumber?.call(_phone.text.trim());
-      unawaited(ref.read(fileRevealerProvider).reveal(where));
+      // the PDF itself goes on the clipboard: in the chat, Ctrl+V attaches it. Where that is not possible, its folder opens to drag it from.
+      final revealer = ref.read(fileRevealerProvider);
+      final copied = await revealer.copyFile(where);
+      if (!copied) unawaited(revealer.reveal(where));
       final links = buildWhatsappLinks(digits: digits, message: _msg.text);
       final launcher = ref.read(linkLauncherProvider);
       final ok = await openFirst(launcher, links.tryOrder(launcher.platform));
       if (!mounted) return;
-      navigator.pop(ok);
-      messenger?.showSnackBar(SnackBar(content: Text(ok ? l.waSent(where) : l.waOffline(where)), duration: const Duration(seconds: 8)));
+      setState(() {
+        _saved = where;
+        _copied = copied;
+        _opened = ok;
+      });
     } catch (_) {
       if (mounted) setState(() => _error = l.pdfFailed);
     } finally {
@@ -91,10 +100,47 @@ class _ShareDialogState extends ConsumerState<_ShareDialog> {
     }
   }
 
+  /// After WhatsApp opened: what to do there (Ctrl+V, Send), with the PDF ready to copy again or to find in its folder.
+  Widget _done(Strings l, TextTheme th) {
+    final where = _saved!;
+    return AlertDialog(
+      key: const ValueKey('wa-done'),
+      title: Text(_opened ? l.waOpenedTitle : l.waNotOpenedTitle),
+      content: SizedBox(
+        width: 460,
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (_copied) ...[
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Icon(Icons.keyboard_rounded), const SizedBox(width: 10), Expanded(child: Text(l.waStepPaste, style: th.titleMedium))]),
+            const SizedBox(height: 10),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Icon(Icons.send_rounded), const SizedBox(width: 10), Expanded(child: Text(l.waStepSend, style: th.titleMedium))]),
+          ] else
+            Text(l.waStepDrag, style: th.titleMedium),
+          const SizedBox(height: 12),
+          Text(l.pdfSaved(where), style: th.bodySmall),
+          if (!_opened) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.waOffline(where), style: th.bodySmall)),
+        ]),
+      ),
+      actions: [
+        OutlinedButton.icon(
+          key: const ValueKey('wa-copy-again'),
+          onPressed: () async {
+            final ok = await ref.read(fileRevealerProvider).copyFile(where);
+            if (mounted) toast(context, ok ? l.waCopiedAgain : l.pdfFailed);
+          },
+          icon: const Icon(Icons.copy_rounded),
+          label: Text(l.waCopyPdf),
+        ),
+        OutlinedButton.icon(key: const ValueKey('wa-show-file'), onPressed: () => ref.read(fileRevealerProvider).reveal(where), icon: const Icon(Icons.folder_open_rounded), label: Text(l.waShowFile)),
+        FilledButton(key: const ValueKey('wa-close'), onPressed: () => Navigator.pop(context, _opened), child: Text(l.close)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = tr(context);
     final th = Theme.of(context).textTheme;
+    if (_saved != null) return _done(l, th);
     return AlertDialog(
       title: Text(widget.title),
       content: SizedBox(

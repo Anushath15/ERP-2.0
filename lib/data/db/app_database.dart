@@ -310,6 +310,7 @@ class AppDatabase extends _$AppDatabase {
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
+          await removeForeignSchemaObjects(this, rewriteOurs: details.versionNow == currentSchemaVersion); // a crafted file cannot bring its own triggers or views
           await ensureSyncTriggers(this);
           if (native) {
             await customStatement('PRAGMA busy_timeout = $busyTimeoutMs');

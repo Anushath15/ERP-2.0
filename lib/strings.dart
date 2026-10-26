@@ -48,7 +48,7 @@ class Strings {
   String get navDelivery => 'Delivery';
   String get navProducts => 'Products';
   String get navCategories => 'Categories';
-  String get navInventory => 'Stock left';
+  String get navInventory => 'Inventory';
   String get navPurchases => 'Purchases';
   String get navPurchaseReturns => 'Purchase returns';
   String get navAdjustments => 'Fix stock';
@@ -346,7 +346,15 @@ class Strings {
   String get closingOpening => 'Cash at start of day';
   String get closingExpenses => 'Expenses paid in cash';
   String get waSendPdf => 'Save PDF and open WhatsApp';
-  String get waPdfHelp => 'WhatsApp cannot attach a file by itself. The PDF is saved and its folder opens: drag the PDF into the chat, or press the paper-clip in WhatsApp.';
+  String get waPdfHelp => 'The PDF is made and copied for you, and the chat opens with the message. In WhatsApp press Ctrl+V: the PDF is attached. Then press Send.';
+  String get waOpenedTitle => 'WhatsApp is open: attach the PDF';
+  String get waNotOpenedTitle => 'The PDF is ready';
+  String get waStepPaste => '1. In the WhatsApp chat, press Ctrl+V. The PDF is attached.';
+  String get waStepSend => '2. Press Send (the message is already typed).';
+  String get waStepDrag => 'Drag the PDF from the folder that opened into the WhatsApp chat, then press Send.';
+  String get waCopyPdf => 'Copy the PDF again';
+  String get waCopiedAgain => 'PDF copied. Press Ctrl+V in the WhatsApp chat.';
+  String get waShowFile => 'Show the file';
   String get waNumber => 'WhatsApp number';
   String waSent(String where) => 'WhatsApp opened. The PDF is saved here: ${where}';
   String waOffline(String where) => 'WhatsApp needs the internet. The PDF was saved here: ${where}';
@@ -1556,4 +1564,6 @@ class Strings {
   String get gstRet1 => 'GSTR-1 (sales)';
   String get gstRet3b => 'GSTR-3B (summary)';
   String get gstRetHsn => 'HSN summary';
+  String get orderPlace => 'Place order';
+  String get dealerOrdersTitle => 'Orders to this dealer';
 }

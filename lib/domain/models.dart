@@ -103,7 +103,15 @@ class Rec {
   final String id;
   final Map<String, Object> f;
   String s(String k) => '${f[k] ?? ''}';
-  int i(String k) => (f[k] as int?) ?? 0;
+
+  /// A whole number, whatever form it was kept in (records brought in from ERP 1 may hold true/false or text): never throws.
+  int i(String k) => switch (f[k]) { int v => v, num v => v.round(), bool v => v ? 1 : 0, String v => int.tryParse(v.trim()) ?? 0, _ => 0 };
+
+  /// A date and time, whatever form it was kept in (a date, milliseconds, or ISO text from ERP 1); null when there is none.
+  DateTime? d(String k) => switch (f[k]) { DateTime v => v, int v => DateTime.fromMillisecondsSinceEpoch(v), String v => DateTime.tryParse(v)?.toLocal(), _ => null };
+
+  /// [d], or the start of 1970 when there is no usable date (so a damaged record still shows instead of breaking the page).
+  DateTime date(String k) => d(k) ?? DateTime.fromMillisecondsSinceEpoch(0);
   Rec with_(Map<String, Object> more) => Rec(id, {...f, ...more});
 }
 

@@ -46,6 +46,27 @@ Future<Uint8List> lanSeal(LanKey key, Map<String, Object?> message, {int Functio
   return Uint8List.fromList([...nonce, ...box.cipherText, ...box.mac.bytes]);
 }
 
+/// The nonce of a sealed message as text: unique for every message, so it tells a replay (the same message sent again) from a new one.
+String lanNonce(Uint8List sealed) => sealed.length < 12 ? '' : [for (final b in Uint8List.sublistView(sealed, 0, 12)) b.toRadixString(16).padLeft(2, '0')].join();
+
+/// The nonces seen in the last [window]: a message that comes a second time is refused.
+class LanReplayGuard {
+  LanReplayGuard({this.window = const Duration(minutes: 11), DateTime Function()? now}) : _now = now ?? DateTime.now;
+  final Duration window;
+  final DateTime Function() _now;
+  final _seen = <String, DateTime>{};
+
+  /// True the first time [nonce] is seen, false after.
+  bool fresh(String nonce) {
+    final now = _now();
+    _seen.removeWhere((_, t) => now.difference(t) > window);
+    if (nonce.isEmpty || _seen.containsKey(nonce)) return false;
+    if (_seen.length > 50000) _seen.clear(); // a flood cannot fill the memory; anything older than the window is refused by its time stamp anyway
+    _seen[nonce] = now;
+    return true;
+  }
+}
+
 /// The message inside [data], or a [LanSealException] when it was not locked with [key], was changed, or is older than [maxAgeMs]
 /// (a recorded message cannot be played back later).
 Future<Map<String, Object?>> lanOpen(LanKey key, Uint8List data, {int maxAgeMs = 10 * 60 * 1000, int Function()? nowMs}) async {

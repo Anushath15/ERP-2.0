@@ -17,6 +17,7 @@ import '../../fake/actions.dart' show returnsVersionProvider;
 import '../../fake/credit_store.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/stats.dart';
+import '../../domain/orders.dart';
 import '../purchases/purchase_screens.dart' show dealerPurchasesProvider, dealerSummaryProvider, showPurchasePopup;
 import '../sales/sales_screens.dart' show showBillPopup, statusInfo, billStatus;
 import '../../fake/models.dart';
@@ -310,6 +311,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ]),
           );
 
+    // the orders sent to this dealer (newest first): open one to send it again or make the purchase from it
+    final dorders = _customer
+        ? const <OrderDoc>[]
+        : ([for (final r in ref.watch(recsProvider('orders'))) OrderDoc.fromRec(r)].where((o) => o.dealerId == widget.partyId && o.status != OrderStatus.cancelled).toList()..sort((a, b) => b.date.compareTo(a.date)));
+    final ordersList = dorders.isEmpty
+        ? null
+        : SectionCard(
+            key: const ValueKey('dealer-orders'),
+            title: l.dealerOrdersTitle,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              for (final o in dorders) ...[
+                InkWell(
+                  key: ValueKey('dealer-order-${o.number}'),
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => context.go('/orders/${o.id}'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(o.number, style: th.titleSmall),
+                          Text('${formatDate(o.date)}  ·  ${l.itemsCount('${o.lines.length}')}${o.purchaseNo.isEmpty ? '' : '  ·  ${o.purchaseNo}'}', style: th.bodySmall),
+                        ]),
+                      ),
+                      StatusBadge(
+                        switch (o.status) { OrderStatus.open => l.orderStatusOpen, OrderStatus.sent => l.orderStatusSent, OrderStatus.converted => l.orderStatusDone, OrderStatus.cancelled => l.orderStatusCancelled },
+                        kind: switch (o.status) { OrderStatus.open => BadgeKind.warning, OrderStatus.sent => BadgeKind.info, OrderStatus.converted => BadgeKind.success, OrderStatus.cancelled => BadgeKind.neutral },
+                      ),
+                      const Icon(Icons.chevron_right_rounded, size: 20),
+                    ]),
+                  ),
+                ),
+                if (o != dorders.last) const Divider(height: 1),
+              ],
+            ]),
+          );
+
     // on the profile: only how much they owe (or paid ahead) and a way into the account status page
     final accountPath = _customer ? '/customers/${widget.partyId}/account' : '/dealers/${widget.partyId}/account';
     final accountCard = !hasAccount
@@ -342,6 +380,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 OutlinedButton.icon(key: const ValueKey('addCredit'), onPressed: () => showAddCredit(context, cust), icon: const Icon(Icons.add_card_rounded), label: Text(l.addCredit)),
               ]))
         : Wrap(spacing: 8, runSpacing: 8, children: [
+            FilledButton.icon(key: const ValueKey('dealer-place-order'), onPressed: () => context.go('/orders/new?dealer=${Uri.encodeQueryComponent(widget.partyId)}'), icon: const Icon(Icons.chat_rounded), label: Text(l.orderPlace)),
             FilledButton.icon(key: const ValueKey('dealer-add-purchase'), onPressed: () => context.go('/purchases/new?dealer=${Uri.encodeQueryComponent(widget.partyId)}'), icon: const Icon(Icons.add_shopping_cart_rounded), label: Text(l.dealerAddPurchase)),
             OutlinedButton.icon(key: const ValueKey('addAdjustment'), onPressed: () => showAddAdjustment(context, party), icon: const Icon(Icons.tune_rounded), label: Text(l.addAccountAdjustment)),
           ]);
@@ -450,6 +489,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (dealerStats != null) ...[dealerStats, const SizedBox(height: 12)],
         if (purchasesList != null) ...[purchasesList, const SizedBox(height: 12)],
         if (profileActions != null) ...[profileActions, const SizedBox(height: 12)],
+        if (ordersList != null) ...[ordersList, const SizedBox(height: 12)],
         details,
         if (accountCard != null) ...[const SizedBox(height: 12), accountCard],
       ],

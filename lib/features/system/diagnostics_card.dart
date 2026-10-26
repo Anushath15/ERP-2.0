@@ -60,7 +60,7 @@ class DiagnosticsCard extends ConsumerWidget {
         const SizedBox(height: 10),
         OutlinedButton.icon(
           key: const ValueKey('diagSave'),
-          icon: const Icon(Icons.medical_information_outlined),
+          icon: const Icon(Icons.medical_information_rounded),
           label: Text(l.diagSave),
           onPressed: () async {
             final now = ref.read(clockProvider);
@@ -75,7 +75,7 @@ class DiagnosticsCard extends ConsumerWidget {
         const SizedBox(height: 8),
         OutlinedButton.icon(
           key: const ValueKey('dbTidy'),
-          icon: const Icon(Icons.cleaning_services_outlined),
+          icon: const Icon(Icons.cleaning_services_rounded),
           label: Text(l.dbTidy),
           onPressed: () async {
             try {

@@ -91,7 +91,7 @@ class _ClosingScreenState extends ConsumerState<ClosingScreen> {
     bool sameDay(DateTime a) => a.year == now.year && a.month == now.month && a.day == now.day;
     final cash = today.cash, upi = today.upi, card = today.card;
     final credit = today.credit;
-    final expenses = ref.watch(recsProvider('expenses')).where((r) => sameDay(r.f['date'] as DateTime)).fold<int>(0, (s, r) => s + r.i('amount'));
+    final expenses = ref.watch(recsProvider('expenses')).where((r) => sameDay(r.date('date'))).fold<int>(0, (s, r) => s + r.i('amount'));
     final opening = ref.watch(shopProvider).openingCashPaise;
     final book = ref.watch(cashBookProvider).value ?? CashBook(day: '', salesCash: cash);
     final expected = book.expected(opening: opening, expenses: expenses);

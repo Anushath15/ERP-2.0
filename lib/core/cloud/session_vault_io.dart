@@ -92,7 +92,7 @@ typedef _FreeD = Pointer<Void> Function(Pointer<Void>);
 const _uiForbidden = 0x1; // CRYPTPROTECT_UI_FORBIDDEN: never show a window
 
 Uint8List dpapiProtect(Uint8List plain) {
-  final crypt = DynamicLibrary.open('crypt32.dll');
+  final crypt = DynamicLibrary.open(systemDll('crypt32.dll'));
   final free = DynamicLibrary.open('kernel32.dll').lookupFunction<_FreeN, _FreeD>('LocalFree');
   final fn = crypt.lookupFunction<_ProtectN, _ProtectD>('CryptProtectData');
   final inBlob = calloc<_Blob>();
@@ -118,7 +118,7 @@ Uint8List dpapiProtect(Uint8List plain) {
 
 /// Null when the bytes cannot be opened by this Windows user.
 Uint8List? dpapiUnprotect(Uint8List protectedBytes) {
-  final crypt = DynamicLibrary.open('crypt32.dll');
+  final crypt = DynamicLibrary.open(systemDll('crypt32.dll'));
   final free = DynamicLibrary.open('kernel32.dll').lookupFunction<_FreeN, _FreeD>('LocalFree');
   final fn = crypt.lookupFunction<_UnprotectN, _UnprotectD>('CryptUnprotectData');
   final inBlob = calloc<_Blob>();
@@ -138,4 +138,11 @@ Uint8List? dpapiUnprotect(Uint8List protectedBytes) {
     calloc.free(inBlob);
     calloc.free(outBlob);
   }
+}
+
+/// SECURITY: a Windows DLL by its full path in System32, never by bare name (a bare name is searched in the program's own folder first, where a
+/// planted file of the same name would be loaded instead).
+String systemDll(String name) {
+  final root = Platform.environment['SystemRoot'] ?? r'C:\Windows';
+  return '$root\\System32\\$name';
 }

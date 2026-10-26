@@ -17,7 +17,7 @@ import '../../fake/data_providers.dart';
 import '../../fake/models.dart';
 import '../../fake/store.dart';
 
-String _d(Rec r, String k) => formatDate(r.f[k] as DateTime);
+String _d(Rec r, String k) => formatDate(r.date(k));
 
 /// The purchases with items (read from the database) and the older plain notes kept from before items were saved.
 final purchaseListRecsProvider = FutureProvider.autoDispose<List<Rec>>((ref) async {
@@ -46,6 +46,8 @@ class PurchasesScreen extends ConsumerWidget {
       searchText: (r) => '${r.s('no')} ${r.s('dealer')} ${r.s('invoice')}',
       addLabel: l.addPurchase,
       onAdd: () => context.go('/purchases/new'),
+      // purchase returns live inside Purchases (not in the side menu)
+      actions: [OutlinedButton.icon(key: const ValueKey('purchases-returns'), onPressed: () => context.go('/purchase-returns'), icon: const Icon(Icons.assignment_return_rounded), label: Text(l.navPurchaseReturns))],
       filters: [FilterSpec(l.statusReceived, (r) => r.s('status') == 'received'), FilterSpec(l.statusPending, (r) => r.s('status') == 'pending')],
       columns: [
         ColumnSpec(l.colNo, (c, r) => Cell(r.s('no'), bold: true), width: 110),
@@ -233,8 +235,8 @@ class ExpensesScreen extends ConsumerWidget {
     final l = tr(context);
     final items = ref.watch(recsProvider('expenses'));
     final now = ref.watch(clockProvider);
-    final month = items.where((r) => (r.f['date'] as DateTime).month == now.month && (r.f['date'] as DateTime).year == now.year).fold<int>(0, (s, r) => s + r.i('amount'));
-    final today = items.where((r) => formatDate(r.f['date'] as DateTime) == formatDate(now)).fold<int>(0, (s, r) => s + r.i('amount'));
+    final month = items.where((r) => r.date('date').month == now.month && r.date('date').year == now.year).fold<int>(0, (s, r) => s + r.i('amount'));
+    final today = items.where((r) => formatDate(r.date('date')) == formatDate(now)).fold<int>(0, (s, r) => s + r.i('amount'));
     return DataListScreen<Rec>(
       title: l.navExpenses,
       subtitle: l.expensesSubtitle,
@@ -272,7 +274,7 @@ class WarrantyScreen extends ConsumerWidget {
     final items = ref.watch(recsProvider('warranty'));
     final now = ref.watch(clockProvider);
     final th = Theme.of(context).textTheme;
-    bool active(Rec r) => (r.f['till'] as DateTime).isAfter(now);
+    bool active(Rec r) => r.date('till').isAfter(now);
     Widget badge(Rec r) => active(r) ? StatusBadge(l.warrantyActive, kind: BadgeKind.success) : StatusBadge(l.warrantyEnded, kind: BadgeKind.neutral);
     return DataListScreen<Rec>(
       title: l.navWarranty,
@@ -315,11 +317,15 @@ class NotificationsScreen extends ConsumerWidget {
               itemBuilder: (ctx, i) {
                 final r = items[i];
                 final unread = r.i('read') == 0;
+                // a notice from ERP 1 has a title and a message instead of one text, and its kind in "type"
+                final title = r.s('text').isNotEmpty ? r.s('text') : r.s('title');
+                final message = r.s('text').isNotEmpty ? '' : r.s('message');
+                final when = r.d('time') ?? r.d('createdAt');
                 return Card(
                   child: ListTile(
-                    leading: Icon(icon(r.s('kind')), color: unread ? context.c.primary : context.c.textMuted),
-                    title: Text(r.s('text'), style: unread ? th.titleSmall : th.bodyMedium),
-                    subtitle: Text(formatDateTime(r.f['time'] as DateTime)),
+                    leading: Icon(icon(r.s('kind').isNotEmpty ? r.s('kind') : (r.s('type') == 'warning' ? 'stock' : r.s('type'))), color: unread ? context.c.primary : context.c.textMuted),
+                    title: Text(title.isEmpty ? message : title, style: unread ? th.titleSmall : th.bodyMedium),
+                    subtitle: Text([if (message.isNotEmpty && title.isNotEmpty) message, if (when != null) formatDateTime(when)].join('\n')),
                     trailing: unread ? StatusBadge(l.newLabel, kind: BadgeKind.info) : null,
                   ),
                 );
