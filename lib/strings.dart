@@ -1359,7 +1359,7 @@ class Strings {
   String get barcodeHelp => 'Leave empty, or press the button to make one for a loose item';
   String get setThermal => 'Thermal printer, direct';
   String get setThermalHelp => 'For 80 mm and 58 mm roll printers. The bill goes straight to the printer in its own language (ESC/POS): quicker, sharp letters, the paper is cut and the cash drawer can open. If the printer does not answer, the bill prints the normal way.';
-  String get thermalOff => 'Off';
+  String get thermalOff => 'Not used';
   String get thermalWindows => 'Bill printer';
   String get thermalNetwork => 'Network';
   String get thermalHow => 'How it is connected';

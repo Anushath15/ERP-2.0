@@ -136,7 +136,7 @@ class BillTemplate {
   /// A bill only: the money received (with how it was paid) and what is left to pay (added to the customer's credit). Empty when not shown.
   final String paidLabel, paidValue, balanceLabel, balanceValue;
 
-  /// Item columns the shop chose not to print (2 MRP, 3 HSN, 5 Disc %).
+  /// Item columns the shop chose to leave off the bill (2 MRP, 3 HSN, 5 Disc %).
   final Set<int> hiddenCols;
 
   bool get showShop => shopLeft.isNotEmpty;

@@ -6,6 +6,7 @@ import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/data/context.dart';
 import 'package:erp2/fake/data_providers.dart' show appDataProvider;
 import 'package:flutter/material.dart';
+import 'package:erp2/core/app_info.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'helpers.dart';
 
@@ -74,7 +75,7 @@ void main() {
     final entry = saver.saved.entries.single;
     expect(entry.key, matches(RegExp(r'^ASK-ERP-diagnostics-\d{4}-\d{2}-\d{2}\.txt$')));
     final text = utf8.decode(entry.value);
-    expect(text, contains('program: 2.0.0'));
+    expect(text, contains('program: $appVersionLabel'));
     expect(text, contains('data version:'));
     expect(text, contains('products:'));
     expect(text, contains('printers found: HP LaserJet A4 (default); Epson Receipt'));

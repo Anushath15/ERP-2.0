@@ -11,7 +11,7 @@ void main() {
 
   test('what is saved is display preferences only: no role, trust, approval, sign-in or shop field', () {
     final keys = d.toJson().keys.toSet();
-    expect(keys, {'theme', 'accent', 'highContrast', 'textScale', 'billingScale', 'density', 'font', 'motion', 'followSystemMotion', 'motionAutoReduced', 'soundScan', 'soundSave', 'soundError', 'soundVolume', 'paper', 'printSize', 'printerName', 'labelPrinterName', 'printViaDialog', 'printAfterSave', 'featuresOff'});
+    expect(keys, {'theme', 'accent', 'highContrast', 'textScale', 'billingScale', 'density', 'font', 'motion', 'followSystemMotion', 'motionAutoReduced', 'soundScan', 'soundSave', 'soundError', 'soundVolume', 'paper', 'printSize', 'printerName', 'labelPrinterName', 'printViaDialog', 'printAfterSave', 'thermal', 'thermalAddress', 'thermalChars', 'thermalCut', 'thermalDrawer', 'featuresOff'}); // the thermal printer: how this computer reaches its receipt printer
   });
 
   test('security-looking keys in the file are ignored: the result is the same as a clean file', () {

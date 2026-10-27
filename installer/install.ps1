@@ -43,7 +43,7 @@ try {
   $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ASKERP2'
   New-Item -Path $key -Force | Out-Null
   $uninst = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + (Join-Path $dest 'uninstall.ps1') + '"'
-  $props = @{ DisplayName = $name; DisplayVersion = '2.0'; Publisher = 'Senthil Enterprises'; InstallLocation = $dest; DisplayIcon = $exe; UninstallString = $uninst; NoModify = 1; NoRepair = 1 }
+  $props = @{ DisplayName = $name; DisplayVersion = '2.1.0'; Publisher = 'Senthil Enterprises'; InstallLocation = $dest; DisplayIcon = $exe; UninstallString = $uninst; NoModify = 1; NoRepair = 1 }
   foreach ($k in $props.Keys) { New-ItemProperty -Path $key -Name $k -Value $props[$k] -Force | Out-Null }
 
   if (-not $Quiet) {

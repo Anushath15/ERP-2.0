@@ -15,7 +15,13 @@ class ThermalCard extends ConsumerStatefulWidget {
 }
 
 class _ThermalCardState extends ConsumerState<ThermalCard> {
-  late final _address = TextEditingController(text: ref.read(settingsProvider).thermalAddress);
+  final _address = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _address.text = ref.read(settingsProvider).thermalAddress;
+  }
 
   @override
   void dispose() {
@@ -30,14 +36,18 @@ class _ThermalCardState extends ConsumerState<ThermalCard> {
     final s = ref.watch(settingsProvider);
     final set = ref.read(settingsProvider.notifier).set;
     final on = s.thermal != ThermalLink.off;
+    // an address saved while this card was open (or on first show) appears in the box; what the person is typing is never overwritten
+    if (_address.text.isEmpty && s.thermalAddress.isNotEmpty) _address.text = s.thermalAddress;
     final badAddress = s.thermal == ThermalLink.network && _address.text.trim().isNotEmpty && parsePrinterAddress(_address.text) == null;
 
-    Widget row(String title, String? help, Widget trailing) => Padding(
+    // the choices get a whole line of their own, so their words never break (also on a phone and with big text)
+    Widget row(String title, String? help, Widget choices) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: th.titleSmall), if (help != null) Text(help, style: th.bodySmall)])),
-            const SizedBox(width: 12),
-            Flexible(child: Align(alignment: Alignment.centerRight, child: trailing)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(title, style: th.titleSmall),
+            if (help != null) Text(help, style: th.bodySmall),
+            const SizedBox(height: 6),
+            choices,
           ]),
         );
     String paperName(PaperSize p) => switch (p) { PaperSize.a4 => l.paperA4, PaperSize.a5 => l.paperA5, PaperSize.mm80 => l.paper80, PaperSize.mm58 => l.paper58 };

@@ -83,3 +83,19 @@ Files up to 50 MB can be sent (a shop file compresses to a few MB). Telegram is 
 
 ## 8. Cloud sync (Gate 2E)
 In Supabase > SQL Editor run, in this order, once: `supabase/migrations/0001_sync.sql`, `supabase/migrations/0002_sync_names.sql`, `supabase/migrations/0003_owner_only_actions.sql`, `supabase/migrations/0004_saved_bills_fixed.sql`, then `supabase/seed_shop.example.sql` with the shop e-mails (see section 6b). Build with the cloud address (`--dart-define-from-file=supabase/config.local.json`), sign in, and the status badge changes from the preview to the real state; Settings > Sync shows what is waiting and has **Sync now**. The first sync uploads everything already in the program. On a second computer, install the program, sign in, and let it finish the first sync before billing.
+
+## 9. Thermal receipt printer, direct (optional, 2 minutes at the counter)
+
+1. Settings > Printing: choose the paper **80 mm** (or **58 mm**) and pick the receipt printer as the bill printer.
+2. Settings > Thermal printer, direct: choose **Bill printer** (USB or shared printer that Windows knows) or **Network** and type its
+   address, like `192.168.1.50` (port 9100 is used when none is typed).
+3. Press **Print a test slip**. The row of numbers must fill exactly one line. If it is cut off on an 80 mm printer, pick **42** letters
+   per line and print the test slip again.
+4. With a cash drawer plugged into the printer: switch on **Open the cash drawer for cash bills** and press **Open drawer** once to check.
+5. If the printer is off or the cable is out, bills still print the normal way and the program says so.
+
+## 10. Updates
+
+The program looks for a newer version on the GitHub page about 25 seconds after it starts (About page: **Check for updates**). It finds
+one only after a release is published there with the Setup .exe attached, for example:
+`gh release create v2.1.0 ASK-ERP-2.0-Setup.exe --title "ASK ERP 2.1.0" --notes "..."`. The repository is public, so the release is public.
