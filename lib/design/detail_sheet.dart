@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/responsive.dart';
 import 'motion.dart';
 import 'widgets.dart';
 
 /// Read-only detail view with optional actions (dialog on wide screens, bottom sheet on phones).
-Future<T?> showDetail<T>(BuildContext context, {required String title, String? subtitle, required List<Widget> body, List<Widget> actions = const []}) {
-  final content = _Detail(title: title, subtitle: subtitle, body: body, actions: actions);
+Future<T?> showDetail<T>(BuildContext context, {required String title, String? subtitle, required List<Widget> body, List<Widget> actions = const [], VoidCallback? onPrint}) {
+  final detail = _Detail(title: title, subtitle: subtitle, body: body, actions: actions);
+  // Ctrl+P prints (a box sits above the page, so it needs its own shortcut)
+  final Widget content = onPrint == null ? detail : CallbackShortcuts(bindings: {const SingleActivator(LogicalKeyboardKey.keyP, control: true): onPrint}, child: Focus(autofocus: true, child: detail));
   if (context.isPhone) {
     return showModalBottomSheet<T>(
       context: context,

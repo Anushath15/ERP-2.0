@@ -2,6 +2,7 @@ import 'dart:async';
 import '../../core/validators.dart';
 import 'package:flutter/material.dart';
 import '../../core/search_rank.dart';
+import '../../design/hotkeys.dart';
 import 'package:flutter/services.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
@@ -14,13 +15,16 @@ import '../../fake/models.dart';
 /// price in its own column, stock with unit, a separate "Out of stock" badge, an "in bill" badge.
 /// Up/Down move, Enter adds the highlighted row (the first match by default), a scanned barcode + Enter adds that product.
 class ProductPicker extends StatefulWidget {
-  const ProductPicker({super.key, required this.products, required this.inBill, required this.onAdd, required this.onQuickAdd, this.onScan, this.focusNode});
+  const ProductPicker({super.key, required this.products, required this.inBill, required this.onAdd, required this.onQuickAdd, this.onScan, this.focusNode, this.onEmptyEnter});
   final List<Product> products;
   final Map<String, int> inBill; // productId -> qty milli
   final void Function(Product) onAdd;
   final void Function(String text) onQuickAdd;
   final VoidCallback? onScan; // called when a scanned barcode adds a product (for the optional beep)
   final FocusNode? focusNode;
+
+  /// Enter pressed with nothing typed in the search box (the bill uses it to save).
+  final VoidCallback? onEmptyEnter;
 
   @override
   State<ProductPicker> createState() => _ProductPickerState();
@@ -41,6 +45,7 @@ class _ProductPickerState extends State<ProductPicker> {
   @override
   void initState() {
     super.initState();
+    SearchFocus.add(_focus); // Ctrl+F goes to this search box
     _reindex();
     _rows = widget.products;
   }
@@ -94,6 +99,11 @@ class _ProductPickerState extends State<ProductPicker> {
   }
 
   void _enter() {
+    if (_q.trim().isEmpty && widget.onEmptyEnter != null) {
+      widget.onEmptyEnter!();
+      _focus.requestFocus();
+      return;
+    }
     if (_rows.isEmpty) {
       if (_q.trim().isNotEmpty) widget.onQuickAdd(_q.trim());
       return;
@@ -114,6 +124,7 @@ class _ProductPickerState extends State<ProductPicker> {
 
   @override
   void dispose() {
+    SearchFocus.remove(_focus);
     _tickTimer?.cancel();
     _ctl.dispose();
     if (widget.focusNode == null) _focus.dispose();

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../design/hotkeys.dart';
 import '../../core/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -118,7 +119,11 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
 
     return CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.keyS, control: true): save},
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: enterSaves(() => unawaited(save())), // Enter saves the payment
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 8, 4),
           child: Row(children: [
@@ -190,6 +195,7 @@ class _ReceivePaymentPanelState extends ConsumerState<ReceivePaymentPanel> {
           ]),
         ),
       ]),
+      ),
     );
   }
 }

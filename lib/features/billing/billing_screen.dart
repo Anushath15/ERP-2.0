@@ -287,7 +287,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final number = _number();
     final date = _date();
 
-    final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd, onScan: () => playSound(ref, SoundKind.scan)));
+    final picker = TextScaleBy(factor: settings.billingScale, child: ProductPicker(products: products, inBill: inBill, onAdd: _addProduct, onQuickAdd: _quickAdd, onEmptyEnter: () {
+      if (cart.lines.isNotEmpty) _save(); // Enter with nothing typed saves the bill
+    }, onScan: () => playSound(ref, SoundKind.scan)));
 
     final discountBar = DiscountProfitBar(mode: mode, cart: cart, calc: calc, onAmount: notifier.setExtraDiscountAmount, onPercent: notifier.setExtraDiscountPercent);
     Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount, trailing: discountBar, variants: settings.featureOn(AppFeature.brandSwitch) ? ref.watch(productVariantsProvider) : const {}, onBrand: notifier.swapProduct));
@@ -304,6 +306,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         }
       },
       const SingleActivator(LogicalKeyboardKey.f9): () {
+        if (cart.lines.isNotEmpty) _save(print: true);
+      },
+      // Ctrl+P prints, as everywhere: the bill is saved first (a bill is printed only once it is saved)
+      const SingleActivator(LogicalKeyboardKey.keyP, control: true): () {
+        if (cart.lines.isNotEmpty) _save(print: true);
+      },
+      const SingleActivator(LogicalKeyboardKey.enter, control: true): () {
         if (cart.lines.isNotEmpty) _save(print: true);
       },
     };

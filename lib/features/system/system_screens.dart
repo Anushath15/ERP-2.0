@@ -14,6 +14,7 @@ import '../print/print_action.dart';
 import '../print/test_page_pdf.dart';
 import '../../core/responsive.dart';
 import '../../design/tokens.dart';
+import '../../design/hotkeys.dart';
 import '../../design/widgets.dart';
 import '../../design/app_logo.dart';
 import '../../fake/shop_profile.dart';
@@ -399,6 +400,8 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         const SizedBox(height: 12),
         SectionCard(title: l.aboutPrivacy, child: Text(l.aboutPrivacyText, style: th.bodyMedium)),
         const SizedBox(height: 12),
+        OutlinedButton.icon(key: const ValueKey('shortcuts-open'), onPressed: () => showShortcutsDialog(context), icon: const Icon(Icons.keyboard_rounded), label: const Text('Keyboard shortcuts (F1)')),
+        const SizedBox(height: 8),
         OutlinedButton.icon(onPressed: () => showLicensePage(context: context, applicationName: l.appName, applicationVersion: appVersionLabel), icon: const Icon(Icons.description_rounded), label: Text(l.aboutLicenses)),
       ])))),
     );

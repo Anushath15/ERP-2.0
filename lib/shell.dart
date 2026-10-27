@@ -9,6 +9,7 @@ import 'core/nav_history.dart';
 import 'core/lock/pin_lock.dart';
 import 'core/responsive.dart';
 import 'design/effects.dart';
+import 'design/hotkeys.dart';
 import 'design/motion.dart';
 import 'design/text_zoom.dart';
 import 'design/tokens.dart';
@@ -32,6 +33,13 @@ class AppShell extends ConsumerWidget {
       const SingleActivator(LogicalKeyboardKey.f3): () => context.go('/estimate'),
       const SingleActivator(LogicalKeyboardKey.f4): () => context.go('/sales'),
       const SingleActivator(LogicalKeyboardKey.f5): () => context.go('/products'),
+      const SingleActivator(LogicalKeyboardKey.f6): () => context.go('/customers'),
+      const SingleActivator(LogicalKeyboardKey.f7): () => context.go('/credit'),
+      const SingleActivator(LogicalKeyboardKey.f8): () => context.go('/reports'),
+      const SingleActivator(LogicalKeyboardKey.keyQ, control: true): () => context.go('/bill'), // as in Invoiso
+      const SingleActivator(LogicalKeyboardKey.keyN, control: true): () => context.go('/bill'),
+      const SingleActivator(LogicalKeyboardKey.keyF, control: true): () => SearchFocus.focus(),
+      const SingleActivator(LogicalKeyboardKey.f1): () => showShortcutsDialog(context),
       const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): () => navHistory.back(GoRouter.of(context)),
       const SingleActivator(LogicalKeyboardKey.keyN, control: true, shift: true): () => context.go('/products?add=1'),
     };

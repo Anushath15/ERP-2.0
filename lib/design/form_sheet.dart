@@ -4,6 +4,7 @@ import '../core/date_fmt.dart';
 import '../core/sound.dart';
 import '../core/validators.dart';
 import 'effects.dart';
+import 'hotkeys.dart';
 import '../core/responsive.dart';
 import 'motion.dart';
 import '../strings.dart';
@@ -196,7 +197,11 @@ class _FormBodyState extends State<_FormBody> {
     final l = tr(context);
     return CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.keyS, control: true): _save},
-      child: Shake(
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: enterSaves(_save),
+        child: Shake(
         key: _shake,
         child: Form(
         key: _formKey,
@@ -226,6 +231,7 @@ class _FormBodyState extends State<_FormBody> {
             ]),
           ),
         ]),
+      ),
       ),
       ),
     );

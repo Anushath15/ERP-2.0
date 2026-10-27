@@ -87,6 +87,13 @@ Future<void> showBillPopup(BuildContext context, WidgetRef ref, BillRow b, {Stri
   final cancelledNow = b.cancelled;
   final pay = payModeOf(b.payMode);
   final cust = b.customerId == null ? null : ref.read(customersProvider).where((c) => c.id == b.customerId).firstOrNull;
+  // Print again (the button and Ctrl+P)
+  void printAgain() {
+    Navigator.of(ctx, rootNavigator: true).pop();
+    ref.read(printDocProvider.notifier).set(PrintDoc(extraDiscountBp: d.extraDiscountBp, mode: DocMode.invoice, number: b.number, date: b.at, customer: custName(b), customerPhone: cust?.phone ?? '', customerGstin: cust?.gstin ?? '', lines: lines, calc: calc, pay: pay, receivedPaise: d.received, changePaise: d.change, advanceKeptPaise: d.advanceKept, backTo: backTo ?? '/sales?open=${Uri.encodeQueryComponent(b.id)}'));
+    unawaited(context.push('/print'));
+  }
+
   unawaited(showDetail(ctx, title: b.number, subtitle: '${custName(b)}  ·  ${formatDateTime(b.at)}${b.oldBillNo == null ? '' : '  ·  ${l.oldBillNo}: ${b.oldBillNo}'}', body: [
     for (var i = 0; i < lines.length; i++)
       Padding(
@@ -104,13 +111,10 @@ Future<void> showBillPopup(BuildContext context, WidgetRef ref, BillRow b, {Stri
     KeyValue(l.colStatus, statusInfo(billStatus(b), l).$1),
     if (givenBack > 0) KeyValue(l.retReturned, '₹ ${formatPaise(givenBack)}'),
     if (cancelledNow) Padding(padding: const EdgeInsets.only(top: 8), child: Text('${l.cancelledNote}${d.cancelReason == null ? '' : '\n${l.fieldReason}: ${d.cancelReason}'}', style: th.bodySmall)),
-  ], actions: [
+  ], onPrint: printAgain, actions: [
     OutlinedButton.icon(
-      onPressed: () {
-        Navigator.of(ctx, rootNavigator: true).pop();
-        ref.read(printDocProvider.notifier).set(PrintDoc(extraDiscountBp: d.extraDiscountBp, mode: DocMode.invoice, number: b.number, date: b.at, customer: custName(b), customerPhone: cust?.phone ?? '', customerGstin: cust?.gstin ?? '', lines: lines, calc: calc, pay: pay, receivedPaise: d.received, changePaise: d.change, advanceKeptPaise: d.advanceKept, backTo: backTo ?? '/sales?open=${Uri.encodeQueryComponent(b.id)}'));
-        unawaited(context.push('/print'));
-      },
+      key: const ValueKey('print-again'),
+      onPressed: printAgain,
       icon: const Icon(Icons.print_rounded),
       label: Text(l.printAgain),
     ),

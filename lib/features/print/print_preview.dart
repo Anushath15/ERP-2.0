@@ -1,5 +1,6 @@
-import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/file_saver.dart';
@@ -134,7 +135,13 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
       if (doc.backTo != null || context.canPop()) TextButton(key: const ValueKey('printBack'), onPressed: () => doc?.backTo != null ? context.go(doc!.backTo!) : context.pop(), child: Text(l.back)),
     ];
 
-    return PageFrame(
+    // Ctrl+P (and Ctrl+Enter) print, as in every program; the page takes the focus so the key works without clicking first
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyP, control: true): () => unawaited(_print(doc!)),
+        const SingleActivator(LogicalKeyboardKey.enter, control: true): () => unawaited(_print(doc!)),
+      },
+      child: Focus(autofocus: true, child: PageFrame(
       title: l.printPreview,
       subtitle: doc.mode == DocMode.invoice ? l.previewInvoiceHint : l.previewEstimateHint,
       actions: phone ? const [] : actions,
@@ -166,6 +173,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
         ),
         if (phone) Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Wrap(spacing: 8, runSpacing: 8, children: actions)),
       ]),
+    )),
     );
   }
 }

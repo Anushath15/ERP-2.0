@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/responsive.dart';
 import '../core/search_rank.dart';
+import 'hotkeys.dart';
 import 'tokens.dart';
 import 'widgets.dart';
 
@@ -129,6 +130,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
   @override
   void initState() {
     super.initState();
+    SearchFocus.add(_searchFocus); // Ctrl+F goes to this search box
     final src = widget.source;
     if (src == null) return;
     final first = src.initial;
@@ -147,8 +149,12 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
     if (widget.source != null && (old.refreshKey != widget.refreshKey || !identical(old.source, widget.source))) unawaited(_reload());
   }
 
+  final FocusNode _searchFocus = FocusNode(debugLabel: 'list search');
+
   @override
   void dispose() {
+    SearchFocus.remove(_searchFocus);
+    _searchFocus.dispose();
     _debounce?.cancel();
     _spinTimer?.cancel();
     super.dispose();
@@ -261,7 +267,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
         const SizedBox(height: 12),
       ],
       Row(children: [
-        Expanded(child: SearchField(hint: widget.searchHint ?? l.searchHere, onChanged: _search, autofocus: !phone)),
+        Expanded(child: SearchField(hint: widget.searchHint ?? l.searchHere, onChanged: _search, autofocus: !phone, focusNode: _searchFocus)),
         if (widget.sorts.isNotEmpty) ...[
           const SizedBox(width: 8),
           PopupMenuButton<int>(
