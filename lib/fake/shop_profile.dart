@@ -59,6 +59,9 @@ class ShopProfile {
     this.countryCode = '91',
     this.openingCashPaise = 0,
     this.qrOnEveryBill = true,
+    this.billDesign = 'classic',
+    this.billAccent = 0xFF1F4E79,
+    this.billHideCols = const [],
   });
 
   /// The made-up shop of the demo mode (never used for a real shop, whose profile starts empty and is filled in by the set-up).
@@ -95,6 +98,16 @@ class ShopProfile {
   /// Print the shop's UPI QR on every tax invoice: with the amount still due when something is due, without an amount on a paid bill.
   final bool qrOnEveryBill;
 
+  /// How an A4 / A5 bill looks: 'classic' (the shop's own template, black lines), 'modern' (a coloured band and headings) or 'compact' (smaller
+  /// writing, more items on a page).
+  final String billDesign;
+
+  /// The colour of the 'modern' design (ARGB).
+  final int billAccent;
+
+  /// Item columns the shop does not print: any of 'mrp', 'hsn', 'disc'.
+  final List<String> billHideCols;
+
   /// Cash in the drawer at the start of each day (the day closing starts from it).
   final int openingCashPaise;
 
@@ -124,6 +137,9 @@ class ShopProfile {
         'countryCode': countryCode,
         'openingCashPaise': openingCashPaise,
         'qrOnEveryBill': qrOnEveryBill,
+        'billDesign': billDesign,
+        'billAccent': billAccent,
+        'billHideCols': billHideCols,
       };
 
   /// Tolerant: anything missing or of the wrong type keeps the default (a damaged value never stops the program from starting).
@@ -159,6 +175,9 @@ class ShopProfile {
       guardHours: m['guardHours'] is int && (m['guardHours'] as int) >= 0 && (m['guardHours'] as int) <= 720 ? m['guardHours'] as int : base.guardHours,
       countryCode: str('countryCode', base.countryCode),
       qrOnEveryBill: m['qrOnEveryBill'] is bool ? m['qrOnEveryBill'] as bool : base.qrOnEveryBill,
+      billDesign: const ['classic', 'modern', 'compact'].contains(m['billDesign']) ? m['billDesign'] as String : base.billDesign,
+      billAccent: m['billAccent'] is int ? (m['billAccent'] as int) | 0xFF000000 : base.billAccent,
+      billHideCols: m['billHideCols'] is List ? [for (final x in m['billHideCols'] as List) if (const ['mrp', 'hsn', 'disc'].contains(x)) x as String] : base.billHideCols,
       openingCashPaise: m['openingCashPaise'] is int && (m['openingCashPaise'] as int) >= 0 && (m['openingCashPaise'] as int) <= 100000000000 ? m['openingCashPaise'] as int : base.openingCashPaise,
     );
   }
@@ -191,6 +210,9 @@ class ShopProfile {
     String? countryCode,
     int? openingCashPaise,
     bool? qrOnEveryBill,
+    String? billDesign,
+    int? billAccent,
+    List<String>? billHideCols,
   }) =>
       ShopProfile(
         name: name ?? this.name,
@@ -218,6 +240,9 @@ class ShopProfile {
         countryCode: countryCode ?? this.countryCode,
         openingCashPaise: openingCashPaise ?? this.openingCashPaise,
         qrOnEveryBill: qrOnEveryBill ?? this.qrOnEveryBill,
+        billDesign: billDesign ?? this.billDesign,
+        billAccent: billAccent ?? this.billAccent,
+        billHideCols: billHideCols ?? this.billHideCols,
       );
 }
 

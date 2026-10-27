@@ -120,6 +120,67 @@ class ShopProfileScreen extends ConsumerWidget {
       ]),
     );
 
+    // the bill's look: a design, the Modern design's colour, and the columns that can be left off (the amounts never change)
+    const accents = [0xFF1F4E79, 0xFF0B6E4F, 0xFF8E2C48, 0xFF5B3A8C, 0xFFB45309, 0xFF334155];
+    final designHelp = switch (s.billDesign) { 'modern' => l.billDesignModernHelp, 'compact' => l.billDesignCompactHelp, _ => l.billDesignClassicHelp };
+    SwitchListTile col(String k, String label) => SwitchListTile(
+          key: ValueKey('bill-col-$k'),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text(label),
+          value: !s.billHideCols.contains(k),
+          onChanged: (v) => set((x) => x.copyWith(billHideCols: [for (final c in x.billHideCols) if (c != k) c, if (!v) k])),
+        );
+    final look = SectionCard(
+      title: l.billLookTitle,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(l.billLookHelp, style: th.bodySmall),
+        const SizedBox(height: 8),
+        SegmentedButton<String>(
+          key: const ValueKey('bill-design'),
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(value: 'classic', label: Text(l.billDesignClassic, key: const ValueKey('bill-design-classic'))),
+            ButtonSegment(value: 'modern', label: Text(l.billDesignModern, key: const ValueKey('bill-design-modern'))),
+            ButtonSegment(value: 'compact', label: Text(l.billDesignCompact, key: const ValueKey('bill-design-compact'))),
+          ],
+          selected: {s.billDesign},
+          onSelectionChanged: (v) => set((x) => x.copyWith(billDesign: v.first)),
+        ),
+        const SizedBox(height: 6),
+        Text(designHelp, style: th.bodySmall),
+        if (s.billDesign == 'modern') ...[
+          const SizedBox(height: 12),
+          Text(l.billAccentTitle, style: th.labelLarge),
+          const SizedBox(height: 6),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final a in accents)
+              Semantics(
+                button: true,
+                selected: s.billAccent == a,
+                label: '${l.billAccentTitle} ${accents.indexOf(a) + 1}',
+                child: InkWell(
+                  key: ValueKey('bill-accent-${a.toRadixString(16)}'),
+                  customBorder: const CircleBorder(),
+                  onTap: () => set((x) => x.copyWith(billAccent: a)),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(color: Color(a), shape: BoxShape.circle, border: Border.all(color: s.billAccent == a ? Theme.of(context).colorScheme.onSurface : Colors.transparent, width: 3)),
+                    child: s.billAccent == a ? const Icon(Icons.check_rounded, color: Colors.white, size: 20) : null,
+                  ),
+                ),
+              ),
+          ]),
+        ],
+        const SizedBox(height: 12),
+        Text(l.billColsTitle, style: th.labelLarge),
+        col('mrp', l.billColMrp),
+        col('hsn', l.billColHsn),
+        col('disc', l.billColDisc),
+      ]),
+    );
+
     const reminders = RemindersCard();
     const credit = CreditSettingsCard();
     return PageFrame(
@@ -138,12 +199,12 @@ class ShopProfileScreen extends ConsumerWidget {
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(children: [for (final c in [details, tax]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [details, tax, look]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
                 Expanded(child: Column(children: [for (final c in [estimate, reminders, credit]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),
             )
-          : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in [details, tax, estimate, reminders, credit]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),
+          : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in [details, tax, look, estimate, reminders, credit]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),
     );
   }
 }

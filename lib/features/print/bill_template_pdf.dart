@@ -18,14 +18,20 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
   final m = PrintMetrics.of(size);
   final a5 = paper == PaperSize.a5;
   // small rows, so that many products fit on one page (paper is not wasted)
-  final fs = (a5 ? m.row - 3.5 : m.row - 2.0).clamp(6.0, 12.0).toDouble();
+  final look = BillLook.of(shop);
+  final fs = (a5 ? m.row - 3.5 : m.row - 2.0).clamp(6.0, 12.0).toDouble() + look.fontDelta;
+  final ink = PdfColor.fromInt(look.lineColor), accent = PdfColor.fromInt(look.accent), tint = PdfColor.fromInt(look.tint);
+  // the column heads: filled with the colour (white writing) in the modern design, a light tint otherwise
+  final headFill = pw.BoxDecoration(color: look.band ? accent : tint);
   final margin = paperMarginPt(paper);
-  pw.TextStyle st({bool b = false, double? size}) => pw.TextStyle(font: b ? bold : font, fontSize: size ?? fs, lineSpacing: 1.3);
-  pw.Widget txt(String s, {bool b = false, double? size, pw.TextAlign? align}) => pw.Text(s, style: st(b: b, size: size), textAlign: align);
-  const border = pw.TableBorder(left: pw.BorderSide(width: 0.6), right: pw.BorderSide(width: 0.6), top: pw.BorderSide(width: 0.6), bottom: pw.BorderSide(width: 0.6), horizontalInside: pw.BorderSide(width: 0.4), verticalInside: pw.BorderSide(width: 0.4));
-  pw.Widget cell(String s, {bool b = false, pw.TextAlign align = pw.TextAlign.left}) => pw.Padding(padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 0.8), child: txt(s, b: b, align: align));
+  pw.TextStyle st({bool b = false, double? size, PdfColor? color}) => pw.TextStyle(font: b ? bold : font, fontSize: size ?? fs, lineSpacing: 1.3, color: color);
+  pw.Widget txt(String s, {bool b = false, double? size, pw.TextAlign? align, PdfColor? color}) => pw.Text(s, style: st(b: b, size: size, color: color), textAlign: align);
+  final outer = pw.BorderSide(width: look.line, color: ink), inner = pw.BorderSide(width: look.grid, color: ink);
+  final border = pw.TableBorder(left: outer, right: outer, top: outer, bottom: outer, horizontalInside: inner, verticalInside: inner);
+  pw.Widget cell(String s, {bool b = false, pw.TextAlign align = pw.TextAlign.left, PdfColor? color}) => pw.Padding(padding: pw.EdgeInsets.symmetric(horizontal: 3, vertical: look.padV), child: txt(s, b: b, align: align, color: color));
+  final headInk = look.band ? PdfColors.white : null;
   pw.TableRow totalRow(String label, {String qty = '', String mid = '', required String amount, bool b = false, bool shaded = false}) => pw.TableRow(
-        decoration: shaded ? const pw.BoxDecoration(color: PdfColors.grey200) : null,
+        decoration: shaded ? pw.BoxDecoration(color: tint) : null,
         children: [
           for (final i in t.cols) [cell(''), cell(label, b: b), cell(''), cell(''), cell(qty, align: pw.TextAlign.right), cell(''), cell(mid, align: pw.TextAlign.right), cell(''), cell(amount, b: b, align: pw.TextAlign.right)][i],
         ],
@@ -34,23 +40,23 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
   final logo = t.showShop ? logoBytes(shop.logoPng) : null;
   final children = <pw.Widget>[
     if (t.heading.isNotEmpty) ...[
-      pw.Center(child: pw.Text(t.heading, style: st(b: true, size: m.title).copyWith(decoration: pw.TextDecoration.underline))),
+      pw.Center(child: pw.Text(t.heading, style: st(b: true, size: m.title + look.fontDelta, color: look.band ? accent : null).copyWith(decoration: look.band ? pw.TextDecoration.none : pw.TextDecoration.underline))),
       pw.SizedBox(height: 4),
     ],
     if (t.showShop)
       pw.Container(
-        decoration: pw.BoxDecoration(border: pw.Border.all(width: 0.6)),
-        padding: const pw.EdgeInsets.all(6),
+        decoration: look.band ? pw.BoxDecoration(color: accent) : pw.BoxDecoration(border: pw.Border.all(width: look.line, color: ink)),
+        padding: pw.EdgeInsets.all(look.band ? 8 : 6),
         child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-          if (logo != null) ...[pw.Image(pw.MemoryImage(logo), height: 40), pw.SizedBox(width: 8)],
+          if (logo != null) ...[pw.Container(color: look.band ? PdfColors.white : null, padding: look.band ? const pw.EdgeInsets.all(2) : null, child: pw.Image(pw.MemoryImage(logo), height: look.design == 'compact' ? 28 : 40)), pw.SizedBox(width: 8)],
           pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-            for (var i = 0; i < t.shopLeft.length; i++) txt(t.shopLeft[i], b: i == 0, size: i == 0 ? m.shop + 1 : null),
+            for (var i = 0; i < t.shopLeft.length; i++) txt(t.shopLeft[i], b: i == 0, size: i == 0 ? m.shop + 1 + look.fontDelta + (look.band ? 2 : 0) : null, color: headInk),
           ])),
-          pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [for (final r in t.shopRight) txt(r, b: true, align: pw.TextAlign.right)]),
+          pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [for (final r in t.shopRight) txt(r, b: true, align: pw.TextAlign.right, color: headInk)]),
         ]),
       ),
     pw.Container(
-      decoration: const pw.BoxDecoration(border: pw.Border(left: pw.BorderSide(width: 0.6), right: pw.BorderSide(width: 0.6), bottom: pw.BorderSide(width: 0.6), top: pw.BorderSide(width: 0.6))),
+      decoration: pw.BoxDecoration(border: pw.Border(left: outer, right: outer, bottom: outer, top: outer)),
       padding: const pw.EdgeInsets.all(6),
       child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
         pw.Expanded(
@@ -76,7 +82,7 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
       border: border,
       columnWidths: {for (var k = 0; k < t.cols.length; k++) k: t.cols[k] == 1 ? const pw.FlexColumnWidth() : pw.FixedColumnWidth(templateColWidths[t.cols[k]] * (a5 ? 0.8 : 1))},
       children: [
-        pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [for (final i in t.cols) cell(t.head[i], b: true, align: i == 1 ? pw.TextAlign.left : pw.TextAlign.center)]),
+        pw.TableRow(repeat: true, decoration: headFill, children: [for (final i in t.cols) cell(t.head[i], b: true, align: i == 1 ? pw.TextAlign.left : pw.TextAlign.center, color: headInk)]),
         for (final r in t.rows)
           pw.TableRow(children: [
             for (final i in t.cols) cell(r.cells[i], align: i == 1 ? pw.TextAlign.left : (i == 0 || i == 3 ? pw.TextAlign.center : pw.TextAlign.right)),
@@ -101,15 +107,15 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
       border: border,
       columnWidths: {0: const pw.FlexColumnWidth(1.4), 1: const pw.FlexColumnWidth(0.8), 2: const pw.FlexColumnWidth(1), 3: const pw.FlexColumnWidth(0.8), 4: const pw.FlexColumnWidth(1), 5: const pw.FlexColumnWidth(0.8), 6: const pw.FlexColumnWidth(1), 7: const pw.FlexColumnWidth(1.4)},
       children: [
-        pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
-          cell(t.gstHead[0], b: true, align: pw.TextAlign.center),
-          cell(t.gstHead[1], b: true, align: pw.TextAlign.center),
+        pw.TableRow(decoration: headFill, children: [
+          cell(t.gstHead[0], b: true, align: pw.TextAlign.center, color: headInk),
+          cell(t.gstHead[1], b: true, align: pw.TextAlign.center, color: headInk),
           cell('', b: true),
-          cell(t.gstHead[2], b: true, align: pw.TextAlign.center),
+          cell(t.gstHead[2], b: true, align: pw.TextAlign.center, color: headInk),
           cell('', b: true),
-          cell(t.gstHead[3], b: true, align: pw.TextAlign.center),
+          cell(t.gstHead[3], b: true, align: pw.TextAlign.center, color: headInk),
           cell('', b: true),
-          cell(t.gstHead[4], b: true, align: pw.TextAlign.center),
+          cell(t.gstHead[4], b: true, align: pw.TextAlign.center, color: headInk),
         ]),
         pw.TableRow(children: [cell(''), for (var i = 0; i < 3; i++) ...[cell(t.pctLabel, b: true, align: pw.TextAlign.center), cell(t.amountLabel, b: true, align: pw.TextAlign.center)], cell('')]),
         for (final g in t.gstRows)

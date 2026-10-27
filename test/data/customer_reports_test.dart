@@ -16,7 +16,7 @@ void main() {
     await d.catalog.saveCustomer(sampleCustomer('Murugan', id: 'c1', limit: 100000000), create: true);
     await d.catalog.saveCustomer(sampleCustomer('Selvi', id: 'c2', limit: 100000000), create: true);
     BillLineInput line(int qty) => BillLineInput(productId: 'p1', name: 'Bulb', unit: 'pcs', qtyMilli: qty, ratePaise: 10000, gstBp: 0);
-    Future<SavedBill> bill(String key, DateTime at, {String? cust, int qty = 1000, int? received}) => d.bills.saveBill(SaveBillInput(idemKey: key, at: at, lines: [line(qty)], customerId: cust, customerName: cust == null ? '' : cust, receivedPaise: received));
+    Future<SavedBill> bill(String key, DateTime at, {String? cust, int qty = 1000, int? received}) => d.bills.saveBill(SaveBillInput(idemKey: key, at: at, lines: [line(qty)], customerId: cust, customerName: cust ?? '', receivedPaise: received));
 
     // Murugan: Rs 1000 on credit on 1 Sep, paid in full on 11 Sep (10 days); Rs 300 cash; Rs 100 returned
     final m1 = await bill('m1', DateTime(2026, 9, 1, 10), cust: 'c1', qty: 10000, received: 0);

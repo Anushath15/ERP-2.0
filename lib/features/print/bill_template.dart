@@ -18,6 +18,33 @@ class TemplateRow {
   List<String> get cells => [sl, goods, mrp, hsn, qty, disc, rate, gst, total];
 }
 
+/// How the bill is drawn (the same numbers for the screen and the PDF, so they always look alike). Colours are ARGB.
+class BillLook {
+  const BillLook({required this.design, required this.accent, required this.fontDelta, required this.padV, required this.line, required this.grid, required this.lineColor, required this.band});
+  final String design;
+  final int accent;
+
+  /// Added to every font size (compact writes smaller).
+  final double fontDelta;
+  final double padV, line, grid;
+  final int lineColor;
+
+  /// The shop block and the column heads filled with the colour, white writing on them.
+  final bool band;
+
+  factory BillLook.of(ShopProfile shop) => switch (shop.billDesign) {
+        'modern' => BillLook(design: 'modern', accent: shop.billAccent, fontDelta: 0, padV: 1.6, line: 0.5, grid: 0.3, lineColor: 0xFFB0B7C3, band: true),
+        'compact' => const BillLook(design: 'compact', accent: 0xFF000000, fontDelta: -1, padV: 0.3, line: 0.5, grid: 0.3, lineColor: 0xFF000000, band: false),
+        _ => const BillLook(design: 'classic', accent: 0xFF000000, fontDelta: 0, padV: 0.8, line: 0.6, grid: 0.4, lineColor: 0xFF000000, band: false),
+      };
+
+  /// The light tint used under the column heads and the net total (the colour at 15%, or light grey).
+  int get tint => band ? (accent & 0x00FFFFFF) | 0x26000000 : 0x14000000;
+}
+
+/// Item columns by the name the shop profile keeps them under.
+const billColumnIndex = {'mrp': 2, 'hsn': 3, 'disc': 5};
+
 class TemplateGstRow {
   const TemplateGstRow({required this.salesAmt, required this.pct, required this.cgst, required this.sgst, required this.igst, required this.net});
   final String salesAmt, pct, cgst, sgst, igst, net;
@@ -64,6 +91,7 @@ class BillTemplate {
     required this.paidValue,
     required this.balanceLabel,
     required this.balanceValue,
+    this.hiddenCols = const {},
   });
 
   final bool estimate;
@@ -108,10 +136,13 @@ class BillTemplate {
   /// A bill only: the money received (with how it was paid) and what is left to pay (added to the customer's credit). Empty when not shown.
   final String paidLabel, paidValue, balanceLabel, balanceValue;
 
+  /// Item columns the shop chose not to print (2 MRP, 3 HSN, 5 Disc %).
+  final Set<int> hiddenCols;
+
   bool get showShop => shopLeft.isNotEmpty;
 
   /// The columns of the items table that are printed (an estimate has no GST% column).
-  List<int> get cols => estimate ? const [0, 1, 2, 3, 4, 5, 6, 8] : const [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  List<int> get cols => [for (final i in estimate ? const [0, 1, 2, 3, 4, 5, 6, 8] : const [0, 1, 2, 3, 4, 5, 6, 7, 8]) if (!hiddenCols.contains(i)) i];
 
   /// Everything printed, for tests.
   List<String> get allText => [
@@ -240,6 +271,7 @@ BillTemplate buildBillTemplate({required PrintDoc doc, required ShopProfile shop
   final upi = upiPayUri(upiId: shop.upiId, payeeName: shop.name, amountPaise: due, note: doc.number, openAmount: !est && shop.qrOnEveryBill);
 
   return BillTemplate(
+    hiddenCols: {for (final k in shop.billHideCols) ?billColumnIndex[k]},
     estimate: est,
     shopLeft: shopLeft,
     shopRight: shopRight,

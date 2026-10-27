@@ -1338,7 +1338,6 @@ tplPhone | Phone
 tplFor | For {shop}
 tplSignatory | Authorised signatory
 tplEstimateNote | This is an estimate, not a bill. Prices may change.
-fieldEmail | E-mail
 tplTaxInvoice | TAX INVOICE
 fieldGstinOptional | GST number (optional)
 gstAddForBill | Customer wants GST? Add their GST number
@@ -1469,6 +1468,19 @@ upiDemoWarn | Demo mode: this QR uses a made-up UPI id, so it cannot receive mon
 upiPayAnytime | Pay us on UPI
 shopQrAlways | Print my UPI QR on every bill
 shopQrAlwaysHelp | A bill with money still due always gets a QR with that amount. A paid bill gets a QR with no amount, for later payments.
+billLookTitle | Bill design
+billLookHelp | How printed and saved bills look. The amounts on the bill stay the same in every design.
+billDesignClassic | Classic
+billDesignModern | Modern
+billDesignCompact | Compact
+billDesignClassicHelp | Black lines, like a printed bill book. Best for any printer.
+billDesignModernHelp | A coloured band with the shop name and coloured column heads.
+billDesignCompactHelp | Smaller letters and tight rows, so more items fit on one page.
+billAccentTitle | Colour for the Modern design
+billColsTitle | Columns on the bill
+billColMrp | MRP column
+billColHsn | HSN code column
+billColDisc | Discount % column
 upiHandleWarn | The ending @{handle} is not a UPI ending I know. Check it in your UPI app and copy the ID exactly (for example @oksbi, @okhdfcbank, @ybl). With a wrong ID the QR cannot be paid.
 shopBankName | Bank name
 shopBankHolder | Name on the account (optional)
