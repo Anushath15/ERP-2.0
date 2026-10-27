@@ -146,3 +146,11 @@ Still true (cannot be fixed inside the program, or a decision for the owner):
 * **The cash drawer** opens only for a cash bill right after Save and print, or with the Open drawer button in Settings; never on a reprint.
 * The Windows RAW job loads `winspool.drv` by its full System32 path (`systemDll`) and runs on its own thread with a time limit, so a
   printer that does not answer cannot freeze the counter; the bill then prints the normal way and the person is told.
+
+## Developer tools (firebase/package.json), 27 October 2026
+
+Nothing in `firebase/` ships in the program; it only pins the Firebase command-line tool. GitHub's 7 alerts there (undici, fast-uri,
+uuid) and npm's body-parser alert are fixed with exact `overrides` on patch versions (uuid 9 to 11: gaxios only calls `v4()`, which
+is the same). One moderate item is accepted: `@opentelemetry/core` 1.30.1 (unbounded memory in W3C Baggage parsing) inside
+`@google-cloud/pubsub`, which needs version 1 while the fix exists only in version 2. The tool runs on the owner's computer to deploy
+rules and never parses Baggage headers from strangers. Look again when firebase-tools moves pubsub to OpenTelemetry 2.

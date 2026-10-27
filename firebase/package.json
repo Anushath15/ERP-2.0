@@ -3,6 +3,14 @@
   "private": true,
   "description": "Records which Firebase command-line tool version the rules are tested and deployed with. Dependabot watches it. Nothing here is shipped in the app.",
   "devDependencies": {
-    "firebase-tools": "15.33.0"
+    "firebase-tools": "15.34.1"
+  },
+  "overrides": {
+    "fast-uri": "3.1.9",
+    "undici@^6": "6.29.1",
+    "undici@^8": "8.12.2",
+    "uuid": "11.1.1",
+    "body-parser@^1": "1.20.9",
+    "body-parser@^2": "2.4.0"
   }
 }
