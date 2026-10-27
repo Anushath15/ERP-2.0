@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/app_info.dart';
 import '../../core/cloud/cloud_config.dart';
+import '../../core/link_launcher.dart';
+import '../../core/update_check.dart';
 import '../../core/cloud/sync_controller.dart';
 import '../../core/date_fmt.dart';
 import '../../core/printer_service.dart';
@@ -325,12 +328,32 @@ class HelpScreen extends StatelessWidget {
   }
 }
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
+  @override
+  ConsumerState<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends ConsumerState<AboutScreen> {
+  bool _checking = false;
+  bool _checked = false;
+
+  Future<void> _check() async {
+    setState(() => _checking = true);
+    await ref.read(updateProvider.notifier).check();
+    if (mounted) {
+      setState(() {
+        _checking = false;
+        _checked = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = tr(context);
     final th = Theme.of(context).textTheme;
+    final update = ref.watch(updateProvider);
     return PageFrame(
       title: l.navAbout,
       child: SingleChildScrollView(child: Align(alignment: Alignment.topLeft, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 640), child: Column(children: [
@@ -338,17 +361,42 @@ class AboutScreen extends StatelessWidget {
           Row(children: [
             const AppLogo(size: 64),
             const SizedBox(width: 14),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l.appName, style: th.headlineSmall), Text(l.aboutVersion('2.0.0-preview.1'), style: th.bodySmall)])),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l.appName, style: th.headlineSmall), Text(l.aboutVersion(appVersionLabel), key: const ValueKey('about-version'), style: th.bodySmall)])),
           ]),
           const SizedBox(height: 12),
           Text(l.aboutText, style: th.bodyLarge),
-          const SizedBox(height: 12),
-          StatusBadge(l.aboutPrototype, kind: BadgeKind.warning, icon: Icons.science_rounded),
         ])),
+        const SizedBox(height: 12),
+        SectionCard(
+          key: const ValueKey('about-update'),
+          title: l.updateTitle,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (update != null) ...[
+              Text(l.updateReady(update.version), style: th.titleMedium),
+              if (update.notes.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text(update.notes, style: th.bodySmall)),
+              const SizedBox(height: 10),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                FilledButton.icon(
+                  key: const ValueKey('update-download'),
+                  onPressed: () => ref.read(linkLauncherProvider).open(update.downloadUrl.isNotEmpty ? update.downloadUrl : update.pageUrl),
+                  icon: const Icon(Icons.file_download_rounded),
+                  label: Text(l.updateDownload),
+                ),
+                OutlinedButton(onPressed: () => ref.read(linkLauncherProvider).open(update.pageUrl), child: Text(l.updateWhatsNew)),
+              ]),
+              const SizedBox(height: 6),
+              Text(l.updateHow, style: th.bodySmall),
+            ] else ...[
+              Text(_checked ? l.updateNone(appVersionLabel) : l.updateHelp, style: th.bodyMedium),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(key: const ValueKey('update-check'), onPressed: _checking ? null : _check, icon: _checking ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.refresh_rounded), label: Text(l.updateCheck)),
+            ],
+          ]),
+        ),
         const SizedBox(height: 12),
         SectionCard(title: l.aboutPrivacy, child: Text(l.aboutPrivacyText, style: th.bodyMedium)),
         const SizedBox(height: 12),
-        OutlinedButton.icon(onPressed: () => showLicensePage(context: context, applicationName: l.appName, applicationVersion: '2.0.0-preview.1'), icon: const Icon(Icons.description_rounded), label: Text(l.aboutLicenses)),
+        OutlinedButton.icon(onPressed: () => showLicensePage(context: context, applicationName: l.appName, applicationVersion: appVersionLabel), icon: const Icon(Icons.description_rounded), label: Text(l.aboutLicenses)),
       ])))),
     );
   }

@@ -48,6 +48,7 @@ final navGroups = <NavGroup>[
     NavItem('/shop', Icons.storefront_rounded, (l) => l.navShop),
     NavItem('/settings', Icons.settings_rounded, (l) => l.navSettings),
     NavItem('/backups', Icons.cloud_upload_rounded, (l) => l.navBackups),
+    NavItem('/trash', Icons.delete_outline_rounded, (l) => l.navTrash),
     NavItem('/health', Icons.monitor_heart_rounded, (l) => l.navHealth),
     NavItem('/help', Icons.help_rounded, (l) => l.navHelp),
     NavItem('/about', Icons.info_rounded, (l) => l.navAbout),

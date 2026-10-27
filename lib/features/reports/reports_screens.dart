@@ -216,6 +216,57 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: charts[1]), const SizedBox(width: 12), Expanded(child: charts[2])]),
         ] else
           for (final c in charts) Padding(padding: const EdgeInsets.only(bottom: 12), child: c),
+        if (context.isDesktop) const SizedBox(height: 12),
+        const _CustomerInsights(),
+      ]),
+    );
+  }
+}
+
+/// Top customers (last 12 months), how many days customers take to pay a credit bill, and what is overdue.
+final customerInsightsProvider = FutureProvider.autoDispose<({List<TopCustomer> top, PaymentDelay delay, List<OverdueBill> overdue})>((ref) async {
+  ref.watch(statsProvider);
+  final d = ref.read(appDataProvider);
+  final now = ref.watch(clockProvider);
+  return (top: await d.reports.topCustomers(DateTime(now.year - 1, now.month, now.day + 1), now, limit: 5), delay: await d.reports.paymentDelay(), overdue: await d.reports.overdueBills(now));
+});
+
+class _CustomerInsights extends ConsumerWidget {
+  const _CustomerInsights();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = tr(context);
+    final th = Theme.of(context).textTheme;
+    final v = ref.watch(customerInsightsProvider).value;
+    if (v == null) return const SizedBox.shrink();
+    final overdue = v.overdue.fold<int>(0, (s, x) => s + x.duePaise);
+    return SectionCard(
+      key: const ValueKey('report-customers'),
+      title: l.repCustomersTitle,
+      trailing: TextButton.icon(onPressed: () => context.go('/export'), icon: const Icon(Icons.ios_share_rounded), label: Text(l.navExport)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Wrap(spacing: 12, runSpacing: 12, children: [
+          SizedBox(width: 230, child: StatCard(key: const ValueKey('rep-delay'), label: l.repAvgDays, value: v.delay.averageDays == null ? '—' : l.repDays(v.delay.averageDays!.toStringAsFixed(1)), icon: Icons.timelapse_rounded, hint: v.delay.bills == 0 ? l.repNoPaidYet : l.repDelayHint('${v.delay.bills}', '${v.delay.longestDays}'))),
+          SizedBox(width: 230, child: StatCard(key: const ValueKey('rep-overdue'), label: l.expOverdue, value: '₹ ${formatPaise(overdue)}', icon: Icons.alarm_rounded, tone: overdue > 0 ? context.c.warning : null, hint: l.repOverdueHint('${v.overdue.length}'))),
+        ]),
+        const SizedBox(height: 12),
+        Text(l.expTopCustomers, style: th.titleSmall),
+        const SizedBox(height: 6),
+        if (v.top.isEmpty) Text(l.repNoCustomers, style: th.bodySmall),
+        for (var i = 0; i < v.top.length; i++)
+          InkWell(
+            onTap: () => context.go('/customers/${v.top[i].id}'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(children: [
+                SizedBox(width: 26, child: Text('${i + 1}', style: th.bodySmall)),
+                Expanded(child: Text(v.top[i].name, style: th.bodyMedium)),
+                Text(l.repBillsCount('${v.top[i].bills}'), style: th.bodySmall),
+                const SizedBox(width: 12),
+                SizedBox(width: 110, child: Text('₹ ${formatPaise(v.top[i].salesPaise)}', textAlign: TextAlign.right, style: th.titleSmall)),
+              ]),
+            ),
+          ),
       ]),
     );
   }
@@ -233,6 +284,8 @@ class ExportScreen extends ConsumerWidget {
       (Icons.account_balance_wallet_rounded, l.expDues, l.expDuesHelp, ExportKind.dues),
       (Icons.payments_rounded, l.expExpenses, l.expExpensesHelp, ExportKind.expenses),
       (Icons.percent_rounded, l.expGst, l.expGstHelp, ExportKind.gst),
+      (Icons.emoji_events_rounded, l.expTopCustomers, l.expTopCustomersHelp, ExportKind.topCustomers),
+      (Icons.alarm_rounded, l.expOverdue, l.expOverdueHelp, ExportKind.overdue),
     ];
     final th = Theme.of(context).textTheme;
     return PageFrame(

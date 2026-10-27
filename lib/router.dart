@@ -26,6 +26,7 @@ import 'features/sales/sales_screens.dart';
 import 'features/shop/shop_profile_screen.dart';
 import 'features/stock/stock_screens.dart';
 import 'features/system/system_screens.dart';
+import 'features/system/trash_screen.dart';
 import 'shell.dart';
 
 Page<void> _p(BuildContext c, GoRouterState s, Widget w, {LocalKey? key}) => motionPage(c, key ?? s.pageKey, w);
@@ -57,6 +58,7 @@ GoRouter buildRouter({String initialLocation = '/', String? Function(String loca
           GoRoute(path: '/products', pageBuilder: (c, s) => _p(c, s, ProductsScreen(autoAdd: s.uri.queryParameters['add'] == '1'), key: ValueKey(s.uri.toString()))),
           GoRoute(path: '/categories', pageBuilder: (c, s) => _p(c, s, const CategoriesScreen())),
           GoRoute(path: '/backups', pageBuilder: (c, s) => _p(c, s, const BackupsScreen())),
+          GoRoute(path: '/trash', pageBuilder: (c, s) => _p(c, s, const TrashScreen())),
           GoRoute(path: '/restore', pageBuilder: (c, s) => _p(c, s, const RestoreScreen())),
           GoRoute(path: '/fix', pageBuilder: (c, s) => _p(c, s, const FixTheseScreen())),
           GoRoute(path: '/inventory', pageBuilder: (c, s) => _p(c, s, const InventoryScreen())),

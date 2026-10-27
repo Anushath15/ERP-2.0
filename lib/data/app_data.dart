@@ -18,6 +18,7 @@ class AppData {
       : catalog = CatalogRepo(cx),
         ledger = LedgerRepo(cx),
         records = RecordsRepo(cx),
+        trash = TrashRepo(cx),
         estimations = EstimationRepo(cx),
         reminders = ReminderRepo(cx),
         stock = StockRepo(cx),
@@ -35,6 +36,7 @@ class AppData {
   final CatalogRepo catalog;
   final LedgerRepo ledger;
   final RecordsRepo records;
+  final TrashRepo trash;
   final EstimationRepo estimations;
   final ReminderRepo reminders;
   final StockRepo stock;

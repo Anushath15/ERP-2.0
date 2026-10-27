@@ -114,6 +114,26 @@ Future<void> showBillPopup(BuildContext context, WidgetRef ref, BillRow b, {Stri
       icon: const Icon(Icons.print_rounded),
       label: Text(l.printAgain),
     ),
+    // a regular customer's usual order: the same items again on a new bill, at today's prices
+    OutlinedButton.icon(
+      key: const ValueKey('bill-again'),
+      onPressed: () async {
+        final cart = ref.read(cartProvider(DocMode.invoice));
+        if (cart.lines.isNotEmpty) {
+          final ok = await confirmDialog(ctx, title: l.billAgainReplaceTitle, message: l.billAgainReplaceText, confirmLabel: l.billAgain);
+          if (!ok) return;
+        }
+        if (!ctx.mounted) return;
+        Navigator.of(ctx, rootNavigator: true).pop();
+        ref.read(cartProvider(DocMode.invoice).notifier).loadCopy(lines, cust, ref.read(productsProvider));
+        if (context.mounted) {
+          context.go('/bill');
+          toast(context, l.billAgainDone(b.number));
+        }
+      },
+      icon: const Icon(Icons.content_copy_rounded),
+      label: Text(l.billAgain),
+    ),
     if (!cancelledNow)
       OutlinedButton.icon(key: const ValueKey('bill-return-items'), onPressed: () { Navigator.of(ctx, rootNavigator: true).pop(); context.go('/sales-returns/bill/${b.id}'); }, icon: const Icon(Icons.assignment_return_rounded), label: Text(l.returnItems)),
     if (!cancelledNow)

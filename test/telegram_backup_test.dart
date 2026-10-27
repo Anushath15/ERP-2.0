@@ -1,3 +1,4 @@
+import 'package:erp2/core/app_info.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -280,7 +281,7 @@ void main() {
       expect(evening.path, morning.path, reason: 'the same file on this computer');
       await ctl().afterLocalBackup(evening.path, now: DateTime(2026, 10, 14, 20, 5), kind: BackupKind.auto);
       expect(tg.documents, hasLength(1));
-      expect(tg.documents.single.file, 'ASKERP_20261014-200500_abcdef12_v2.0.0-proto.3_auto.sqlite.askbak', reason: 'the channel copy carries its date and why it was made');
+      expect(tg.documents.single.file, 'ASKERP_20261014-200500_abcdef12_v${appVersionLabel}_auto.sqlite.askbak', reason: 'the channel copy carries its date and why it was made');
       await ctl().afterLocalBackup((await roll(DateTime(2026, 10, 14, 22, 0), BackupKind.auto)).path, now: DateTime(2026, 10, 14, 22, 0), kind: BackupKind.auto);
       expect(tg.documents, hasLength(1), reason: 'once a day');
       await ctl().afterLocalBackup((await roll(DateTime(2026, 10, 15, 9, 0), BackupKind.closing)).path, now: DateTime(2026, 10, 15, 9, 0), kind: BackupKind.closing);

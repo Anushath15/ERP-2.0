@@ -143,6 +143,20 @@ class CartNotifier extends Notifier<CartState> {
 
   void clear() => state = const CartState();
 
+  /// "Bill again": a new bill with the items and quantities of an old one, for the same customer. Each item takes today's selling price from the
+  /// product list (prices may have changed since); an item no longer in the list keeps the old bill's rate.
+  void loadCopy(List<CartLine> old, Customer? customer, List<Product> products) {
+    final byId = {for (final p in products) p.id: p};
+    state = CartState(
+      lines: [
+        for (final l in old)
+          byId[l.product.id] == null ? CartLine(product: l.product, qtyMilli: l.qtyMilli, discountBp: l.discountBp, ratePaise: l.rate) : CartLine(product: byId[l.product.id]!, qtyMilli: l.qtyMilli, discountBp: l.discountBp),
+      ],
+      customer: customer,
+      draftId: newId(),
+    );
+  }
+
   /// Start editing a saved estimation in place (it keeps its number and its own date). Reads its lines from the database.
   Future<void> loadForEdit(EstimationDoc e, List<Product> products, List<Customer> customers) async {
     final d = ref.read(appDataProvider);

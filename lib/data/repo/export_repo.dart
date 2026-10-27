@@ -8,7 +8,7 @@ import '../../core/money.dart';
 import '../../domain/export/export_table.dart';
 import '../../domain/stock_value.dart';
 
-enum ExportKind { sales, products, customers, dues, expenses, gst }
+enum ExportKind { sales, products, customers, dues, expenses, gst, topCustomers, overdue }
 
 /// Most rows one export reads (a shop with more than this many bills exports by year with the date filter in a later release).
 const maxExportRows = 500000;
@@ -235,6 +235,36 @@ Future<ExportTable> buildExport(AppData d, ExportKind kind) async {
         rows: [
           for (final r in list.reversed) [date(r.f['date']), r.s('category'), r.s('note'), Rupees(r.i('amount'))],
         ],
+      );
+    case ExportKind.topCustomers:
+      final now = d.cx.now();
+      final from = DateTime(now.year - 1, now.month, now.day + 1);
+      final top = await d.reports.topCustomers(from, now, limit: 100);
+      final delay = await d.reports.paymentDelay();
+      final all = top.fold<int>(0, (s, x) => s + x.salesPaise);
+      return ExportTable(
+        name: 'Top customers',
+        note: 'The last 12 months: bills (not cancelled) less returns. Walk-in sales without a customer are not counted.',
+        summary: [
+          ('Customers', '${top.length}'),
+          ('Their purchases', rupees(all)),
+          if (delay.averageDays != null) ('Average days to pay a credit bill', delay.averageDays!.toStringAsFixed(1)),
+          if (delay.bills > 0) ('Longest wait', '${delay.longestDays} days'),
+        ],
+        totalsRow: [null, null, top.fold<int>(0, (s, x) => s + x.bills), Rupees(all), null],
+        headers: const ['Customer', 'Phone', 'Bills', 'Bought', 'Share %'],
+        rows: [for (final x in top) [x.name, x.phone, x.bills, Rupees(x.salesPaise), all == 0 ? 0 : (x.salesPaise * 1000 ~/ all) / 10]],
+      );
+    case ExportKind.overdue:
+      final list = await d.reports.overdueBills(d.cx.now());
+      final due = list.fold<int>(0, (s, x) => s + x.duePaise);
+      return ExportTable(
+        name: 'Overdue bills',
+        note: 'Credit bills not paid in full more than 30 days after the bill, oldest first.',
+        summary: [('Overdue bills', '${list.length}'), ('Customers', '${list.map((x) => x.customerId).toSet().length}'), ('Amount overdue', rupees(due))],
+        totalsRow: [null, null, null, null, null, Rupees(due)],
+        headers: const ['Customer', 'Phone', 'Bill no', 'Bill date', 'Days', 'Still due'],
+        rows: [for (final x in list) [x.customerName, x.phone, x.billNo, x.billDate, x.daysOld, Rupees(x.duePaise)]],
       );
   }
 }

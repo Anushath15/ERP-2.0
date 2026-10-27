@@ -29,6 +29,7 @@ import 'core/diag/diag_log.dart';
 import 'core/lan/lan_controller.dart';
 import 'core/window_chrome.dart';
 import 'core/lock/pin_lock.dart';
+import 'core/update_check.dart';
 import 'features/lock/lock_screen.dart';
 
 class ErpApp extends ConsumerStatefulWidget {
@@ -85,6 +86,10 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
     });
     if (widget.runChecks && widget.dbLocation != null) {
       unawaited(_startChecks());
+      // a newer program on the program's GitHub page? Asked a little after starting, so starting stays quick; offline it says nothing
+      _updateTimer = Timer(const Duration(seconds: 25), () {
+        if (mounted) unawaited(ref.read(updateProvider.notifier).check());
+      });
       // closing the program makes one last backup when something was saved since the previous one
       _exitListener = AppLifecycleListener(onExitRequested: () async {
         await ref.read(backupControllerProvider.notifier).backupOnClose();
@@ -154,6 +159,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
 
   Timer? _diskTimer;
   AppLifecycleListener? _exitListener;
+  Timer? _updateTimer;
 
   void _onTimings(List<FrameTiming> timings) {
     for (final t in timings) {
@@ -175,6 +181,7 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
   void dispose() {
     _diskTimer?.cancel();
     _exitListener?.dispose();
+    _updateTimer?.cancel();
     _gateTick.dispose();
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);

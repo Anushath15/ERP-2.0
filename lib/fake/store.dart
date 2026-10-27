@@ -175,6 +175,12 @@ class RecsNotifier extends Notifier<List<Rec>> {
   /// Shows a record that was already written elsewhere (nothing is saved here).
   void showOnly(Rec r) => state = [r, ...state];
 
+  /// Reads this kind again from the database (after a record came back from the Trash).
+  Future<void> reload() async {
+    if (kind == 'dealers' || kind == 'categories' || kind == 'adjustments') return;
+    state = await ref.read(appDataProvider).records.list(kind);
+  }
+
   void replace(Rec r) {
     state = [for (final x in state) x.id == r.id ? r : x];
     switch (kind) {

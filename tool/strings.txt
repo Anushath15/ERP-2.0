@@ -1606,3 +1606,40 @@ gstRet3b | GSTR-3B (summary)
 gstRetHsn | HSN summary
 orderPlace | Place order
 dealerOrdersTitle | Orders to this dealer
+billAgain | Bill again
+billAgainReplaceTitle | Replace the bill being made?
+billAgainReplaceText | The New bill page already has items. They will be replaced by the items of this bill.
+billAgainDone | The items of {number} are on a new bill, at today's prices. Check and save.
+navTrash | Trash
+trashSubtitle | Things that were deleted. Press Restore to bring one back.
+trashEmpty | The Trash is empty
+trashEmptyHelp | A deleted estimate, expense, staff member, brand or unit waits here and can be brought back.
+trashRestore | Restore
+trashRestored | {name} is back.
+trashGone | It is no longer in the Trash.
+trashDeletedOn | Deleted {when}
+trashKindEstimate | Estimate
+trashKindUnit | Unit
+trashKindDelivery | Delivery
+trashKindOrder | Order to a dealer
+expTopCustomers | Top customers
+expTopCustomersHelp | Who bought the most in the last 12 months, and how many days customers take to pay a credit bill.
+expOverdue | Overdue bills
+expOverdueHelp | Credit bills still not paid 30 days after the bill, oldest first, with phone numbers.
+repCustomersTitle | Customers and credit
+repAvgDays | Average days to pay a credit bill
+repDays | {n} days
+repNoPaidYet | No credit bill has been paid in full yet.
+repDelayHint | From {bills} credit bills paid in full. Longest wait: {days} days.
+repOverdueHint | {count} bills unpaid 30 days after the bill
+repNoCustomers | No bills to a named customer in the last 12 months.
+repBillsCount | {count} bills
+updateTitle | Updates
+updateHelp | Ask whether a newer version of the program is ready. Your shop data stays as it is when you update.
+updateCheck | Check for updates
+updateNone | You have the newest version ({version}).
+updateReady | A new version of ASK ERP is ready: {version}
+updateSee | See
+updateDownload | Download the new version
+updateWhatsNew | What is new
+updateHow | Close this program, then run the downloaded ASK-ERP-2.0-Setup.exe. Your shop data and backups are not touched; a safety backup is made first.

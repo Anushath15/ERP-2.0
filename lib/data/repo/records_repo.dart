@@ -147,6 +147,54 @@ class EstimationRepo {
   }
 }
 
+/// One thing in the Trash: a deleted estimate or a deleted small record (an expense, a staff member, a brand, a unit, a warranty...).
+class TrashItem {
+  const TrashItem({required this.id, required this.kind, required this.title, required this.detail, required this.deletedAt, this.amountPaise = 0});
+  final String id, kind, title, detail;
+  final DateTime deletedAt;
+  final int amountPaise;
+}
+
+/// The Trash: what was deleted can be brought back (nothing in this program is ever really removed). Products, customers and dealers are never deleted
+/// and a bill is cancelled, never deleted, so they are not here. A restore is a normal change: it is synced to the other computers too.
+class TrashRepo {
+  TrashRepo(this.cx);
+  final DataContext cx;
+  AppDatabase get _db => cx.db;
+
+  /// The kinds of record that can be deleted on the screens and so can come back.
+  static const recordKinds = ['expenses', 'staff', 'brands', 'units', 'warranty', 'delivery', 'notifications', 'orders'];
+
+  Future<List<TrashItem>> list({int limit = 500}) async {
+    final out = <TrashItem>[];
+    for (final r in await _db.rows('SELECT id, number, customer_name, total_paise, deleted_at FROM estimations WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC LIMIT ?', [limit])) {
+      out.add(TrashItem(id: r.read<String>('id'), kind: 'estimate', title: r.read<String>('number'), detail: r.read<String>('customer_name'), amountPaise: r.read<int>('total_paise'), deletedAt: DateTime.fromMillisecondsSinceEpoch(r.read<int>('deleted_at'))));
+    }
+    final marks = List.filled(recordKinds.length, '?').join(',');
+    for (final r in await _db.rows('SELECT id, kind, data, deleted_at FROM records WHERE deleted_at IS NOT NULL AND kind IN ($marks) ORDER BY deleted_at DESC LIMIT ?', [...recordKinds, limit])) {
+      final rec = Rec(r.read<String>('id'), RecordsRepo.decode(r.read<String>('data')));
+      final title = [for (final k in ['name', 'no', 'category', 'product', 'title', 'text']) rec.s(k)].firstWhere((s) => s.isNotEmpty, orElse: () => r.read<String>('kind'));
+      final detail = [for (final k in ['note', 'role', 'customer', 'dealerName', 'phone', 'message']) rec.s(k)].firstWhere((s) => s.isNotEmpty, orElse: () => '');
+      out.add(TrashItem(id: rec.id, kind: r.read<String>('kind'), title: title, detail: detail, amountPaise: rec.i('amount'), deletedAt: DateTime.fromMillisecondsSinceEpoch(r.read<int>('deleted_at'))));
+    }
+    out.sort((a, b) => b.deletedAt.compareTo(a.deletedAt));
+    return out;
+  }
+
+  /// Brings [item] back. Returns false when it is no longer in the Trash.
+  Future<bool> restore(TrashItem item) {
+    return _db.transaction(() async {
+      final table = item.kind == 'estimate' ? 'estimations' : 'records';
+      final now = cx.nowMs();
+      await _db.exec('UPDATE $table SET deleted_at = NULL, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ? AND deleted_at IS NOT NULL', [now, cx.hlc.next(), cx.deviceId, item.id]);
+      if (await _db.scalarInt('SELECT changes()') == 0) return false;
+      await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), 'restore', item.kind, item.id, 'deleted', item.title, 'restored', cx.actor.name, now, cx.deviceId]);
+      await enqueue(cx, _db, table, item.id);
+      return true;
+    });
+  }
+}
+
 class EstimateLine {
   const EstimateLine({required this.productId, required this.name, required this.unit, required this.qtyMilli, required this.ratePaise, this.discountBp = 0});
   final String productId, name, unit;

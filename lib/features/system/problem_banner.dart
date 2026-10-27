@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/cloud/sync_controller.dart';
 import '../../core/data_mode.dart';
+import '../../core/update_check.dart';
 import '../../data/platform/disk_space.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
@@ -27,6 +28,7 @@ class ProblemBanner extends ConsumerWidget {
     final sync = ref.watch(syncProvider);
     final c = context.c;
     final bk = ref.watch(backupControllerProvider);
+    final update = ref.watch(updateProvider);
     final now = DateTime.now();
     final prevFy = previousFinancialYear(now);
     final yearlyDue = ref.read(backupControllerProvider.notifier).available && now.month >= 4 && now.month <= 6 && !ref.watch(backupListProvider).any((b) => b.kind == BackupKind.archive && b.fy == prevFy) && (ref.watch(backupListProvider).isNotEmpty);
@@ -39,6 +41,7 @@ class ProblemBanner extends ConsumerWidget {
       if (disk == DiskLevel.full) (l.diskFullBanner, c.danger, null, null),
       if (bk.lastError != null) (l.backupFailed(bk.lastError!), c.danger, () => ref.read(backupControllerProvider.notifier).dismissError(), null),
       if (yearlyDue) (l.backupYearlyReminder(prevFy), c.info, () => context.go('/backups'), l.backupYearlyGo),
+      if (update != null) (l.updateReady(update.version), c.info, () => context.go('/about'), l.updateSee),
     ];
     if (items.isEmpty) return const SizedBox.shrink();
     return Column(children: [

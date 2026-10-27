@@ -33,6 +33,26 @@ class DayTotals {
       );
 }
 
+class TopCustomer {
+  const TopCustomer({required this.id, required this.name, required this.phone, required this.bills, required this.salesPaise});
+  final String id, name, phone;
+  final int bills, salesPaise;
+}
+
+class PaymentDelay {
+  const PaymentDelay({required this.bills, this.averageDays, this.longestDays = 0});
+  final int bills;
+  final double? averageDays;
+  final int longestDays;
+}
+
+class OverdueBill {
+  const OverdueBill({required this.customerId, required this.customerName, required this.phone, required this.billNo, required this.billDate, required this.duePaise, required this.daysOld});
+  final String customerId, customerName, phone, billNo;
+  final DateTime billDate;
+  final int duePaise, daysOld;
+}
+
 /// The cash of one day. [expected] is what should be in the drawer: the opening cash plus the cash that came in, minus the cash that went out.
 class CashBook {
   const CashBook({required this.day, this.salesCash = 0, this.receivedFromCustomers = 0, this.paidToDealersLater = 0, this.paidWithPurchases = 0, this.refundedByDealers = 0});
@@ -91,6 +111,55 @@ class ReportRepo {
       paidWithPurchases: await _db.scalarInt('SELECT COALESCE(SUM(paid_paise), 0) FROM purchases WHERE status = 1 AND pay_mode = 0 AND day = ?', [key]),
       refundedByDealers: await _db.scalarInt('SELECT COALESCE(SUM(refunded_paise), 0) FROM purchase_returns WHERE refund_mode = 0 AND day = ?', [key]),
     );
+  }
+
+  /// The customers who bought the most from [from] to [to] (both days included): bills that count (not cancelled) less what they gave back.
+  Future<List<TopCustomer>> topCustomers(DateTime from, DateTime to, {int limit = 10}) async {
+    final a = DateTime(from.year, from.month, from.day).millisecondsSinceEpoch, b = DateTime(to.year, to.month, to.day + 1).millisecondsSinceEpoch;
+    final r = await _db.rows(
+        'SELECT b.customer_id AS id, COALESCE(c.name, MAX(b.customer_name)) AS name, COALESCE(c.phone, \'\') AS phone, COUNT(*) AS bills, SUM(b.total_paise) AS sales, '
+        'COALESCE((SELECT SUM(s.total_paise) FROM sales_returns s WHERE s.customer_id = b.customer_id AND s.returned_at >= ? AND s.returned_at < ?), 0) AS back '
+        'FROM bills b LEFT JOIN customers c ON c.id = b.customer_id WHERE b.cancelled = 0 AND b.customer_id IS NOT NULL AND b.billed_at >= ? AND b.billed_at < ? '
+        'GROUP BY b.customer_id ORDER BY SUM(b.total_paise) DESC LIMIT ?',
+        [a, b, a, b, limit * 2]);
+    final out = [for (final x in r) TopCustomer(id: x.read<String>('id'), name: x.read<String>('name'), phone: x.read<String>('phone'), bills: x.read<int>('bills'), salesPaise: x.read<int>('sales') - x.read<int>('back'))]
+      ..sort((p, q) => q.salesPaise.compareTo(p.salesPaise));
+    return out.take(limit).toList();
+  }
+
+  /// How long customers take to pay a credit bill: for every credit bill that is now paid in full, the days from the bill to the payment that
+  /// settled it (payments that were reversed do not count). [averageDays] is null when no credit bill has been paid yet.
+  Future<PaymentDelay> paymentDelay({DateTime? since}) async {
+    final r = await _db.rows(
+        r"SELECT pb.party_id, pb.bill_no, pb.date AS billed, MAX(e.at) AS paid_at FROM party_bills pb JOIN ledger_entries e ON e.party_id = pb.party_id, json_each(e.allocations) a "
+        r"WHERE pb.party_kind = 'customer' AND pb.cancelled = 0 AND pb.total_paise > 0 AND pb.paid_paise >= pb.total_paise AND json_extract(a.value, '$.b') = pb.bill_no "
+        r"AND e.kind IN ('payment','advance') AND NOT EXISTS (SELECT 1 FROM ledger_entries x WHERE x.reverses = e.id) AND pb.date >= ? GROUP BY pb.party_id, pb.bill_no",
+        [since?.millisecondsSinceEpoch ?? 0]);
+    if (r.isEmpty) return const PaymentDelay(bills: 0);
+    var total = 0, longest = 0;
+    for (final x in r) {
+      final days = Duration(milliseconds: (x.read<int>('paid_at') - x.read<int>('billed')).clamp(0, 1 << 52)).inDays;
+      total += days;
+      if (days > longest) longest = days;
+    }
+    return PaymentDelay(bills: r.length, averageDays: total / r.length, longestDays: longest);
+  }
+
+  /// Credit bills still not paid in full more than [termDays] after they were made, oldest first, with who owes them.
+  Future<List<OverdueBill>> overdueBills(DateTime today, {int termDays = 30, int limit = 500}) async {
+    final cut = DateTime(today.year, today.month, today.day).subtract(Duration(days: termDays)).millisecondsSinceEpoch;
+    final r = await _db.rows(
+        "SELECT pb.party_id, pb.bill_no, pb.date, pb.total_paise, pb.paid_paise, COALESCE(c.name, '') AS name, COALESCE(c.phone, '') AS phone FROM party_bills pb "
+        "LEFT JOIN customers c ON c.id = pb.party_id WHERE pb.party_kind = 'customer' AND pb.cancelled = 0 AND pb.total_paise > pb.paid_paise AND pb.date < ? ORDER BY pb.date LIMIT ?",
+        [cut, limit]);
+    final t0 = DateTime(today.year, today.month, today.day);
+    return [
+      for (final x in r)
+        () {
+          final d = DateTime.fromMillisecondsSinceEpoch(x.read<int>('date'));
+          return OverdueBill(customerId: x.read<String>('party_id'), customerName: x.read<String>('name'), phone: x.read<String>('phone'), billNo: x.read<String>('bill_no'), billDate: d, duePaise: x.read<int>('total_paise') - x.read<int>('paid_paise'), daysOld: t0.difference(DateTime(d.year, d.month, d.day)).inDays);
+        }(),
+    ];
   }
 
   /// Day totals from [from] to [to], both included (local days), oldest first. Days without bills are missing.
