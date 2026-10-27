@@ -5,6 +5,7 @@ import 'package:erp2/core/file_saver_io.dart';
 import 'package:erp2/core/printer_service.dart';
 import 'package:erp2/core/update_check.dart';
 import 'package:erp2/design/motion_level.dart';
+import 'package:erp2/fake/backup_controller.dart';
 import 'package:erp2/features/share/whatsapp_share.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,8 @@ class FakeBridge implements AndroidBridge {
   final String? shareWay;
   final saved = <(String, String, int)>[];
   final shared = <({String name, String mime, String text, String phone, Uint8List bytes})>[];
+  final copiedFiles = <(String, String)>[];
+  final sharedFiles = <(String, String)>[];
   @override
   bool get available => true;
   @override
@@ -36,6 +39,19 @@ class FakeBridge implements AndroidBridge {
   @override
   Future<String?> share(Uint8List bytes, {required String name, required String mime, String text = '', String phone = ''}) async {
     shared.add((name: name, mime: mime, text: text, phone: phone, bytes: bytes));
+    return shareWay;
+  }
+
+  @override
+  Future<String?> copyFileToDownloads(String path, {required String name, required String mime}) async {
+    if (!downloads) return null;
+    copiedFiles.add((path, name));
+    return 'Downloads/ASK ERP 2.0/$name';
+  }
+
+  @override
+  Future<String?> shareFile(String path, {required String name, required String mime, String text = ''}) async {
+    sharedFiles.add((path, name));
     return shareWay;
   }
 }
@@ -96,6 +112,26 @@ void main() {
     expect(parseRelease(body)!.downloadUrl, endsWith('.exe'));
     expect(parseRelease(body, installer: '.apk')!.downloadUrl, endsWith('ASK-ERP-2.0.apk'));
     expect(parseRelease(jsonEncode({'tag_name': 'v2.2.0', 'html_url': 'https://github.com/x', 'assets': []}), installer: '.apk')!.downloadUrl, isEmpty);
+  });
+
+  test('the phone backup mirror copies and sends a file of the program folder by its path, under the file name', () async {
+    final b = FakeBridge();
+    final m = AndroidBackupMirror(b);
+    expect(await m.save('/data/user/0/in.senthil.erp2/files/ASK ERP 2.0/Backups/ASKERP_ab12_latest.sqlite'), 'Downloads/ASK ERP 2.0/ASKERP_ab12_latest.sqlite');
+    expect(b.copiedFiles.single.$2, 'ASKERP_ab12_latest.sqlite', reason: 'one rolling file name, so Android replaces it instead of piling copies up');
+    expect(await m.send('/x/ASKERP_ab12_latest.sqlite'), isTrue);
+    expect(b.sharedFiles.single.$2, 'ASKERP_ab12_latest.sqlite');
+    expect(await AndroidBackupMirror(FakeBridge(downloads: false)).save('/x/y.sqlite'), isNull, reason: 'an old phone: no Downloads copy, said as null');
+    expect(await AndroidBackupMirror(FakeBridge(shareWay: null)).send('/x/y.sqlite'), isFalse);
+  });
+
+  test('on a computer there is no mirror, on a phone there is one', () {
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    expect(c.read(backupMirrorProvider), isNull);
+    final phone = ProviderContainer(overrides: [androidBridgeProvider.overrideWithValue(FakeBridge())]);
+    addTearDown(phone.dispose);
+    expect(phone.read(backupMirrorProvider), isA<AndroidBackupMirror>());
   });
 
   test('the bridge stand-in is the one the app reads when overridden', () {

@@ -3,6 +3,7 @@ import '../../core/cloud/auth_api.dart';
 import '../../core/cloud/auth_controller.dart';
 import '../../core/cloud/cloud_config.dart';
 import '../../core/logo_image.dart';
+import '../../core/os.dart';
 import '../../core/validators.dart';
 import '../shop/shop_profile_screen.dart' show ShopLogo, logoPickerProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -280,6 +281,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
       case 3:
         if (!RegExp(r'^[A-Za-z0-9-]{0,6}$').hasMatch(_prefix.text.trim())) return l.wizPrefixBad;
         if (_letter == null) return l.wizSeriesPick;
+        if (ref.read(reservedSeriesProvider).contains(_letter)) return l.wizSeriesReserved(ref.read(reservedSeriesProvider).join(', '));
     }
     return null;
   }
@@ -350,6 +352,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
       case 3:
         final free = ref.watch(freeSeriesProvider);
         final letters = free.value ?? const <String>[];
+        final reserved = ref.watch(reservedSeriesProvider);
         // a computer that already has its letter (its old bills carry it) keeps it: shown chosen, the others greyed out
         final mine = ref.watch(mySeriesProvider).value;
         if (mine != null && _letter != mine) {
@@ -365,6 +368,7 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
           Text(l.wizSeriesLabel, style: th.titleSmall),
           const SizedBox(height: 4),
           Text(mine != null ? l.wizSeriesMine(mine) : l.wizSeriesHelp, key: const ValueKey('wizSeriesHelp'), style: th.bodySmall),
+          if (mine == null && reserved.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.wizSeriesPhone(reserved.join(', ')), key: const ValueKey('wizSeriesPhone'), style: th.bodySmall?.copyWith(color: context.c.warning))),
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final x in SeriesRegistry.letters)
@@ -372,7 +376,10 @@ class _WizardScreenState extends ConsumerState<WizardScreen> {
                 key: ValueKey('series-$x'),
                 label: Text(x),
                 selected: _letter == x,
-                onSelected: mine != null ? null : (letters.contains(x) ? (_) => setState(() => _letter = x) : null),
+                onSelected: mine != null ? null : (letters.contains(x) && !reserved.contains(x) ? (_) => setState(() {
+                      _letter = x;
+                      _error = null;
+                    }) : null),
               ),
           ]),
           const SizedBox(height: 8),
@@ -455,6 +462,11 @@ final mySeriesProvider = FutureProvider<String?>((ref) {
   final d = ref.watch(appDataProvider);
   return SeriesRegistry(d.settings, d.cx.deviceId).mine();
 });
+
+/// Letters a new device may not pick in the set-up. A phone (or tablet) that joins a shop with a cloud copy cannot know yet which letters the
+/// shop's other computers use (the list arrives with the first sync), and the main computer of a shop always has A, so A is not offered
+/// there: two devices with the same letter would make the same bill numbers. Computers and local-only shops are not affected.
+final reservedSeriesProvider = Provider<Set<String>>((ref) => (onAndroid || onIos) && ref.watch(cloudConfigProvider).configured ? const {'A'} : const <String>{});
 
 /// The series letters nobody in this shop has taken yet.
 final freeSeriesProvider = FutureProvider<List<String>>((ref) {

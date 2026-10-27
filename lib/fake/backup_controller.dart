@@ -1,25 +1,57 @@
 import 'dart:async';
 import 'dart:io' show FileSystemException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import '../core/android_bridge.dart';
 import '../core/app_info.dart';
 import '../core/app_paths.dart';
 import '../data/backup/backup.dart';
 import 'data_providers.dart';
 import 'health.dart';
 
+/// On a phone the backup file lies inside the app's own folder, where it vanishes with the app (removed, data cleared, phone reset). The mirror
+/// keeps a second copy where the person can find it (Downloads/ASK ERP 2.0, one rolling file per backup name) and can send a copy
+/// to Drive, WhatsApp or e-mail. Null on a computer: nothing changes there.
+abstract class BackupMirror {
+  /// Copies [path] into Downloads and returns the place shown to the person, or null when that could not be done.
+  Future<String?> save(String path);
+
+  /// Opens the phone's Share menu with [path]; false when nothing could open.
+  Future<bool> send(String path);
+}
+
+class AndroidBackupMirror implements BackupMirror {
+  const AndroidBackupMirror(this.bridge);
+  final AndroidBridge bridge;
+
+  @override
+  Future<String?> save(String path) => bridge.copyFileToDownloads(path, name: p.basename(path), mime: 'application/octet-stream');
+
+  @override
+  Future<bool> send(String path) async => await bridge.shareFile(path, name: p.basename(path), mime: 'application/octet-stream', text: 'ASK ERP 2.0 backup') != null;
+}
+
+final backupMirrorProvider = Provider<BackupMirror?>((ref) {
+  final bridge = ref.watch(androidBridgeProvider);
+  return bridge.available ? AndroidBackupMirror(bridge) : null;
+});
+
 final appPathsProvider = Provider<AppPaths?>((ref) => null);
 final deviceIdProvider = Provider<String>((ref) => '00000000');
 
 class BackupState {
-  const BackupState({this.folder, this.last, this.lastError, this.running = false, this.closing = false, this.lastFile, this.lastKind});
+  const BackupState({this.folder, this.last, this.lastError, this.running = false, this.closing = false, this.lastFile, this.lastKind, this.copyPlace});
   final String? folder, lastError, lastFile;
+
+  /// Where the phone's second copy of the newest backup lies (e.g. "Downloads/ASK ERP 2.0/..."), null when there is none yet.
+  final String? copyPlace;
   final DateTime? last;
   final bool running, closing;
 
   /// Why the last backup was made (the routine ones all go to the same file, so the file name no longer says).
   final BackupKind? lastKind;
 
-  BackupState copyWith({String? folder, DateTime? last, String? lastError, bool clearError = false, bool? running, bool? closing, String? lastFile, BackupKind? lastKind}) => BackupState(
+  BackupState copyWith({String? folder, DateTime? last, String? lastError, bool clearError = false, bool? running, bool? closing, String? lastFile, BackupKind? lastKind, String? copyPlace}) => BackupState(
         folder: folder ?? this.folder,
         last: last ?? this.last,
         lastError: clearError ? null : (lastError ?? this.lastError),
@@ -27,6 +59,7 @@ class BackupState {
         closing: closing ?? this.closing,
         lastFile: lastFile ?? this.lastFile,
         lastKind: lastKind ?? this.lastKind,
+        copyPlace: copyPlace ?? this.copyPlace,
       );
 }
 
@@ -99,6 +132,7 @@ class BackupController extends Notifier<BackupState> {
       await _paths!.writeText('backup.last', '${info.at.millisecondsSinceEpoch}');
       _mark = mark;
       state = state.copyWith(running: false, last: info.at, lastFile: info.path, lastKind: kind, clearError: true);
+      await _mirror(info.path);
       if (kind == BackupKind.auto || kind == BackupKind.manual || kind == BackupKind.closing) {
         try {
           await rotateBackups(folder);
@@ -114,6 +148,49 @@ class BackupController extends Notifier<BackupState> {
       state = state.copyWith(running: false, lastError: 'The backup could not be saved (${e.message}). Your data is safe.');
       return false;
     }
+  }
+
+  /// A phone keeps a second copy of every backup in Downloads (see [BackupMirror]). Never fails the backup that was just made.
+  Future<void> _mirror(String path) async {
+    final m = ref.read(backupMirrorProvider);
+    if (m == null) return;
+    try {
+      final place = await m.save(path);
+      if (place != null) state = state.copyWith(copyPlace: place);
+    } catch (_) {
+      // the copy is an extra; the backup inside the app is already safe
+    }
+  }
+
+  /// The newest backup (a fresh manual one when there is none yet).
+  Future<BackupInfo> _newestOrMake() async {
+    final folder = state.folder;
+    if (folder == null) throw BackupException('No backup folder is set.');
+    var newest = listBackups(folder).where((b) => b.kind != BackupKind.safety).firstOrNull;
+    if (newest == null) {
+      if (!await run(BackupKind.manual)) throw BackupException(state.lastError ?? 'No backup could be made.');
+      newest = listBackups(folder).first;
+    }
+    return newest;
+  }
+
+  /// Phone: puts the newest backup in Downloads now and returns the place shown to the person. Throws [BackupException] when it could not be done.
+  Future<String> saveCopyToDownloads() async {
+    final m = ref.read(backupMirrorProvider);
+    if (m == null) throw BackupException('This needs the phone program.');
+    final newest = await _newestOrMake();
+    final place = await m.save(newest.path);
+    if (place == null) throw BackupException('The copy could not be saved. Your backup inside the program is safe.');
+    state = state.copyWith(copyPlace: place);
+    return place;
+  }
+
+  /// Phone: opens the Share menu with the newest backup (Drive, WhatsApp, e-mail...). False when nothing could open.
+  Future<bool> sendNewestCopy() async {
+    final m = ref.read(backupMirrorProvider);
+    if (m == null) throw BackupException('This needs the phone program.');
+    final newest = await _newestOrMake();
+    return m.send(newest.path);
   }
 
   /// When the program is closed: one last backup if anything was saved since the previous one. Gives up after a minute so closing is never stuck.

@@ -106,15 +106,25 @@ one only after a release is published there with the Setup .exe attached, for ex
 1. Copy `ASK-ERP-2.0.apk` to the phone: by USB cable, from the pen drive with an OTG adapter, or send it to yourself on WhatsApp or Google Drive.
 2. On the phone, tap the file. Android asks to allow installing apps from this source (Files, WhatsApp or Drive): allow it once, then tap
    **Install**. If Play Protect warns that the app is unknown, choose **Install anyway** (the app is the shop's own, not from the Play Store).
-3. Open **ASK ERP 2.0**, sign in with the shop account, and on the shop computer approve the phone (Settings > Security > Devices).
-   The phone then fills itself from the cloud copy.
+3. Open **ASK ERP 2.0**. A new phone first asks the 7 set-up questions (shop name, GST, bill numbers, logo, printer, stock), then shows **Sign in**.
+   In the question "The letter of THIS computer" the letter **A is not offered on a phone**: it belongs to the shop's main computer. Choose another letter
+   (for example **B**) and never give two devices the same letter, or they could make the same bill number.
+4. Sign in with the shop account, and on the shop computer approve the phone (Settings > Security > Devices). The phone then fills itself from the cloud copy.
 
 **On the phone**: Download PDF / Excel saves into the phone's Downloads/ASK ERP 2.0 folder (the Files app shows it). Send on WhatsApp opens
 the customer's chat with the PDF and the message already attached: check and press Send. Print opens the phone's own print window (a Wi-Fi
 printer, or Save as PDF). The thermal printer works only by its network address on a phone.
 
+**Back button**: Back (or the back swipe) goes to the page before, then to Home; on Home press it twice to close the program. The Bill page has its own back arrow.
+A bill that is not saved yet is kept on the phone and comes back when you open the Bill page again.
+
+**Backups on a phone**: the backup file is kept inside the program, and every backup is also copied to the phone's Downloads/ASK ERP 2.0 folder (one file, replaced each time).
+On Backups use **Save a copy in Downloads** or **Send a copy...** (Google Drive, WhatsApp, e-mail). Do this before you remove the program or change the phone:
+the copy inside the program disappears with it.
+
 **Updates**: install the new APK over the old one; the data stays. Android installs an update only when it is signed with the SAME key:
 `android/ask-erp-release.jks` with `android/key.properties` (both kept out of git). Keep a safe copy of these two files; without them an update
 cannot be installed over the old app (it would have to be removed first, and the phone would sign in and fill itself again).
-Every new APK also needs a higher build number than the one on the phone: raise the number after the `+` in `version:` of `pubspec.yaml`
-(now `2.1.0+1`) before building, or Android refuses to install it as an update.
+Every new APK also needs a higher build number than the one on the phone, or Android refuses to install it as an update: build with
+`flutter build apk --release --no-tree-shake-icons --build-number=N` (N higher than before; the first APK was 1, this one is 2). The number is given on the
+command line so `pubspec.yaml` (which the Windows program reads too) stays as it is.

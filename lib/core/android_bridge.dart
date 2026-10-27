@@ -15,6 +15,13 @@ abstract class AndroidBridge {
 
   /// "whatsapp" (the person's chat opened with the file and the words), "menu" (the Share menu opened) or null (nothing could open).
   Future<String?> share(Uint8List bytes, {required String name, required String mime, String text = '', String phone = ''});
+
+  /// The same two for a big file that lies in the program's own folder (a backup): copied by path, never through memory. The copy in
+  /// Downloads REPLACES an earlier one of the same name. Returns the place shown to the person, or null when it could not be done.
+  Future<String?> copyFileToDownloads(String path, {required String name, required String mime});
+
+  /// "menu" (the Share menu opened) or null.
+  Future<String?> shareFile(String path, {required String name, required String mime, String text = ''});
 }
 
 class ChannelAndroidBridge implements AndroidBridge {
@@ -46,6 +53,24 @@ class ChannelAndroidBridge implements AndroidBridge {
   Future<String?> share(Uint8List bytes, {required String name, required String mime, String text = '', String phone = ''}) async {
     try {
       return await _ch.invokeMethod<String>('share', {'bytes': bytes, 'name': name, 'mime': mime, 'text': text, 'phone': phone});
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> copyFileToDownloads(String path, {required String name, required String mime}) async {
+    try {
+      return await _ch.invokeMethod<String>('copyFileToDownloads', {'path': path, 'name': name, 'mime': mime});
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> shareFile(String path, {required String name, required String mime, String text = ''}) async {
+    try {
+      return await _ch.invokeMethod<String>('shareFile', {'path': path, 'name': name, 'mime': mime, 'text': text});
     } catch (_) {
       return null;
     }

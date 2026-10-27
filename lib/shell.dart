@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'core/cloud/sync_controller.dart';
 import 'core/date_fmt.dart';
 import 'core/nav_history.dart';
+import 'core/os.dart';
 import 'core/lock/pin_lock.dart';
 import 'core/responsive.dart';
 import 'design/effects.dart';
@@ -18,6 +19,10 @@ import 'design/app_logo.dart';
 import 'fake/store.dart';
 import 'fake/shop_profile.dart';
 import 'nav.dart';
+
+/// True on a real phone or tablet (Android, iPhone). A computer window that is narrow, or shows big text, also gets the phone layout, but it is not a
+/// touch device and keeps its pages exactly as they were. Tests switch it on to try the phone-only parts.
+final touchDeviceProvider = Provider<bool>((ref) => onAndroid || onIos);
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.location, required this.child});
@@ -46,14 +51,17 @@ class AppShell extends ConsumerWidget {
 
     if (size == ScreenSize.phone) {
       final billing = location == '/bill' || location == '/estimate';
+      final touch = ref.watch(touchDeviceProvider);
       final idx = phoneTabs.indexOf(location);
       final hideBar = billing || (idx < 0 && location != '/more');
-      return CallbackShortcuts(
+      return _BackGuard(
+        location: location,
+        child: CallbackShortcuts(
         bindings: shortcuts,
         child: Scaffold(
           appBar: AppBar(
             titleSpacing: 12,
-            leading: location == '/' || idx >= 0 || location == '/more' ? null : IconButton(icon: const Icon(Icons.arrow_back_rounded), tooltip: l.back, onPressed: () => navHistory.back(GoRouter.of(context))),
+            leading: location == '/' || (idx >= 0 && !(billing && touch)) || location == '/more' ? null : IconButton(icon: const Icon(Icons.arrow_back_rounded), tooltip: l.back, onPressed: () => navHistory.back(GoRouter.of(context))),
             title: Text(location == '/more' ? l.navMore : (navFor(location)?.label(l) ?? l.appName), maxLines: 1, overflow: TextOverflow.ellipsis),
             actions: const [NotificationBell(), SyncChip(compact: true), SizedBox(width: 8)],
           ),
@@ -73,11 +81,12 @@ class AppShell extends ConsumerWidget {
                   ],
                 ),
         ),
+      ),
       );
     }
 
     final wide = ref.watch(navExpandedProvider) ?? size == ScreenSize.desktop;
-    return CallbackShortcuts(
+    final desktop = CallbackShortcuts(
       bindings: shortcuts,
       child: Scaffold(
         body: Row(children: [
@@ -94,7 +103,54 @@ class AppShell extends ConsumerWidget {
         ]),
       ),
     );
+    // a computer has no Back button; an Android tablet or a phone turned sideways has one
+    return onAndroid || onIos ? _BackGuard(location: location, child: desktop) : desktop;
   }
+}
+
+/// The Android Back button (and the back swipe). Screens are opened with `go`, which leaves nothing for the system to pop, so Back used to
+/// close the whole program from any page. Now: on a page it returns to the page before (the dashboard when there is none); on the dashboard a
+/// first press says "press again" and a second press within two seconds closes the program. Open dialogs and sheets are their own routes
+/// and close first; the keyboard closes before any of this.
+class _BackGuard extends StatefulWidget {
+  const _BackGuard({required this.location, required this.child});
+  final String location;
+  final Widget child;
+  @override
+  State<_BackGuard> createState() => _BackGuardState();
+}
+
+class _BackGuardState extends State<_BackGuard> {
+  DateTime? _lastBack;
+
+  void _back() {
+    if (widget.location != '/') {
+      final router = GoRouter.of(context);
+      if (navHistory.canGoBack || router.canPop()) {
+        navHistory.back(router);
+      } else {
+        router.go('/');
+      }
+      return;
+    }
+    final now = DateTime.now();
+    final last = _lastBack;
+    if (last != null && now.difference(last) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastBack = now;
+    toast(context, tr(context).backPressAgain);
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _back();
+        },
+        child: widget.child,
+      );
 }
 
 /// The owner can fold the left menu away (null = decide by window size).

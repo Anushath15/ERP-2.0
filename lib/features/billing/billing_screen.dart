@@ -52,6 +52,19 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   DocMode get mode => widget.mode;
 
+  @override
+  void initState() {
+    super.initState();
+    // a phone: the unfinished bill the person left (or Android closed) comes back
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final restored = await ref.read(cartProvider(mode).notifier).restoreDraft();
+      if (!restored || !mounted) return;
+      setState(() => _phoneTab = 1);
+      final l = tr(context);
+      toast(context, mode == DocMode.invoice ? l.draftRestored : l.draftRestoredEstimate);
+    });
+  }
+
   void _addProduct(Product p) {
     final cart = ref.read(cartProvider(mode));
     final already = cart.qtyOf(p.id);

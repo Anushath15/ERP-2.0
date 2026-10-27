@@ -1671,4 +1671,18 @@ class Strings {
   String get updateDownload => 'Download the new version';
   String get updateWhatsNew => 'What is new';
   String get updateHow => 'Close this program, then run the downloaded ASK-ERP-2.0-Setup.exe. Your shop data and backups are not touched; a safety backup is made first.';
+  String get backPressAgain => 'Press Back again to close the program';
+  String get draftRestored => 'Your unsaved bill was brought back.';
+  String get draftRestoredEstimate => 'Your unsaved estimate was brought back.';
+  String get backupFolderPhone => 'Backups are kept inside the program. The newest one is also copied to the Downloads folder of your phone (ASK ERP 2.0), so it is still there if the program is removed or the phone is changed.';
+  String backupCopyAt(String place) => 'Latest copy: ${place}';
+  String get backupPhoneCopyTitle => 'Keep a copy outside the program';
+  String get backupPhoneCopyHelp => 'Save the newest backup in your Downloads folder, or send it to Google Drive, WhatsApp or e-mail. Do this before you remove the program or change the phone.';
+  String get backupSaveDownloads => 'Save a copy in Downloads';
+  String get backupSendCopy => 'Send a copy...';
+  String backupSavedAt(String place) => 'Copy saved in ${place}';
+  String backupDoneAndCopy(String place) => 'Backup made and checked. Copy saved in ${place}';
+  String get backupSendNone => 'Nothing on this phone could open the backup. Use Save a copy in Downloads instead.';
+  String wizSeriesPhone(String letters) => 'This phone joins a shop that already has a main computer. The letter ${letters} belongs to that computer, so it is not offered here. Choose another letter, for example B.';
+  String wizSeriesReserved(String letters) => 'The letter ${letters} is kept for the main computer of the shop. Please choose a different one.';
 }

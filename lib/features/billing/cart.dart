@@ -1,9 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/os.dart';
 import '../../data/ids.dart';
 import '../../domain_lite/bill_calc.dart';
 import '../../fake/data_providers.dart';
 import '../../fake/models.dart';
-import '../../fake/store.dart' show productsProvider;
+import '../../fake/store.dart' show customersProvider, productsProvider;
 
 enum DocMode { invoice, estimation }
 
@@ -73,12 +76,116 @@ class CartState {
   }
 }
 
+/// An unfinished bill or estimate is saved on this phone after every change and brought back when the Bill page opens again, so leaving the
+/// program (or Android closing it) never loses a half-made bill. Switched on only on an Android phone: on a computer nothing changes.
+final cartDraftEnabledProvider = Provider<bool>((ref) => onAndroid);
+
+/// A saved draft older than this is ignored (its prices are stale).
+const cartDraftMaxAge = Duration(days: 3);
+
+/// The draft as text; '' for an empty cart.
+String encodeCartDraft(CartState s, {int? nowMs}) {
+  if (s.lines.isEmpty) return '';
+  return jsonEncode({
+    'v': 1,
+    't': nowMs ?? DateTime.now().millisecondsSinceEpoch,
+    'id': s.draftId,
+    'lines': [for (final l in s.lines) {'p': l.product.id, 'q': l.qtyMilli, 'd': l.discountBp, 'r': l.ratePaise}],
+    'c': s.customer?.id,
+    'pay': s.pay.name,
+    'recv': s.receivedPaise,
+    'adv': s.keepAdvance,
+    'xp': s.extraDiscountPaise,
+    'xb': s.extraDiscountBp,
+  });
+}
+
+/// The cart a draft describes, or null when it is empty, too old, unreadable, or none of its products exist any more.
+CartState? decodeCartDraft(String raw, List<Product> products, List<Customer> customers, {int? nowMs}) {
+  try {
+    if (raw.isEmpty) return null;
+    final m = jsonDecode(raw);
+    if (m is! Map || m['v'] != 1) return null;
+    final t = (m['t'] as num?)?.toInt() ?? 0;
+    if ((nowMs ?? DateTime.now().millisecondsSinceEpoch) - t > cartDraftMaxAge.inMilliseconds) return null;
+    final byId = {for (final p in products) p.id: p};
+    final lines = <CartLine>[];
+    for (final e in (m['lines'] as List)) {
+      final p = byId[e['p']];
+      if (p == null) continue;
+      final r = (e['r'] as num?)?.toInt() ?? -1;
+      lines.add(CartLine(product: p, qtyMilli: (e['q'] as num).toInt(), discountBp: (e['d'] as num?)?.toInt() ?? 0, ratePaise: r >= 0 ? r : null));
+    }
+    if (lines.isEmpty) return null;
+    final cid = m['c'];
+    final pay = PayMode.values.where((x) => x.name == m['pay']).firstOrNull ?? PayMode.cash;
+    return CartState(
+      lines: lines,
+      customer: cid == null ? null : customers.where((c) => c.id == cid).firstOrNull,
+      pay: pay,
+      receivedPaise: (m['recv'] as num?)?.toInt(),
+      keepAdvance: m['adv'] == true,
+      extraDiscountPaise: (m['xp'] as num?)?.toInt() ?? 0,
+      extraDiscountBp: (m['xb'] as num?)?.toInt() ?? 0,
+      draftId: (m['id'] as String?) ?? newId(),
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
 class CartNotifier extends Notifier<CartState> {
   CartNotifier(this.mode);
   final DocMode mode;
+  String? _savedDraft;
 
   @override
-  CartState build() => const CartState();
+  CartState build() {
+    listenSelf((prev, next) {
+      // an empty cart after an empty cart has nothing to save, and must never wipe the draft the last session left behind
+      if (next.lines.isEmpty && (prev == null || prev.lines.isEmpty)) return;
+      _saveDraft(next);
+    });
+    return const CartState();
+  }
+
+  String get _draftKey => mode == DocMode.invoice ? 'draft.bill' : 'draft.estimate';
+
+  /// Local to this phone (never uploaded). An estimate being edited is already saved, so it has no draft.
+  void _saveDraft(CartState s) {
+    if (!ref.read(cartDraftEnabledProvider) || s.editingNumber != null) return;
+    final text = encodeCartDraft(s);
+    final same = jsonDecode(text.isEmpty ? '{}' : text);
+    if (_savedDraft != null && _sameDraft(_savedDraft!, text, same)) return;
+    _savedDraft = text;
+    try {
+      unawaited(ref.read(appDataProvider).settings.put(_draftKey, text).catchError((Object _) {}));
+    } catch (_) {
+      // the draft is a convenience; billing never waits for it
+    }
+  }
+
+  /// Two drafts are the same when only their time stamp differs.
+  bool _sameDraft(String oldText, String newText, Object? newJson) {
+    if (oldText == newText) return true;
+    if (oldText.isEmpty || newText.isEmpty) return false;
+    final a = Map<String, dynamic>.of(jsonDecode(oldText) as Map<String, dynamic>)..remove('t');
+    final b = Map<String, dynamic>.of(newJson! as Map<String, dynamic>)..remove('t');
+    return jsonEncode(a) == jsonEncode(b);
+  }
+
+  /// Brings back the saved draft when the cart is empty. True when something was restored.
+  Future<bool> restoreDraft() async {
+    if (!ref.read(cartDraftEnabledProvider) || state.lines.isNotEmpty || state.editingNumber != null) return false;
+    final products = ref.read(productsProvider);
+    if (products.isEmpty) return false;
+    final raw = await ref.read(appDataProvider).settings.get(_draftKey);
+    if (raw == null || raw.isEmpty) return false;
+    final restored = decodeCartDraft(raw, products, ref.read(customersProvider));
+    if (restored == null || state.lines.isNotEmpty) return false; // nothing usable, or the cart was filled meanwhile
+    state = restored;
+    return true;
+  }
 
   void add(Product p, {int qtyMilli = 1000}) {
     final i = state.lines.indexWhere((l) => l.product.id == p.id);

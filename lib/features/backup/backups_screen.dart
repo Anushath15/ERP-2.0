@@ -93,7 +93,37 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
 
   Future<void> _now() async {
     final ok = await ref.read(backupControllerProvider.notifier).run(BackupKind.manual);
-    if (mounted && ok) toast(context, tr(context).backupDone);
+    if (!mounted || !ok) return;
+    final place = ref.read(backupControllerProvider).copyPlace;
+    final l = tr(context);
+    toast(context, ref.read(backupMirrorProvider) != null && place != null ? l.backupDoneAndCopy(place) : l.backupDone);
+  }
+
+  /// Phone: the newest backup into the Downloads folder.
+  Future<void> _saveDownloads() async {
+    setState(() {
+      _copying = true;
+      _message = null;
+    });
+    try {
+      final place = await ref.read(backupControllerProvider.notifier).saveCopyToDownloads();
+      if (mounted) toast(context, tr(context).backupSavedAt(place));
+    } on BackupException catch (e) {
+      if (mounted) setState(() => _message = e.message);
+    } finally {
+      if (mounted) setState(() => _copying = false);
+    }
+  }
+
+  /// Phone: the Share menu with the newest backup (Drive, WhatsApp, e-mail).
+  Future<void> _sendCopy() async {
+    setState(() => _message = null);
+    try {
+      final ok = await ref.read(backupControllerProvider.notifier).sendNewestCopy();
+      if (mounted && !ok) setState(() => _message = tr(context).backupSendNone);
+    } on BackupException catch (e) {
+      if (mounted) setState(() => _message = e.message);
+    }
   }
 
   Future<void> _pickFolder() async {
@@ -133,6 +163,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
     final now = DateTime.now();
     final fy = previousFinancialYear(now);
     final hasArchive = list.any((b) => b.kind == BackupKind.archive && b.fy == fy);
+    final phone = ref.watch(backupMirrorProvider) != null; // a phone: the backup lies inside the program, so a copy outside it is offered
     Widget body;
     if (!ctrl.available) {
       body = SectionCard(child: Text(l.importNotSupported));
@@ -159,7 +190,29 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
           ]),
         ),
         const SizedBox(height: 12),
-        SectionCard(
+        if (phone) ...[
+          SectionCard(
+            title: l.backupFolderTitle,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l.backupFolderPhone, key: const ValueKey('backupFolderPhone'), style: th.bodyMedium),
+              if (s.copyPlace != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(l.backupCopyAt(s.copyPlace!), key: const ValueKey('backupCopyAt'), style: th.bodySmall)),
+            ]),
+          ),
+          const SizedBox(height: 12),
+          SectionCard(
+            title: l.backupPhoneCopyTitle,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l.backupPhoneCopyHelp, style: th.bodySmall),
+              const SizedBox(height: 8),
+              Wrap(spacing: 10, runSpacing: 8, children: [
+                FilledButton.icon(key: const ValueKey('saveDownloads'), onPressed: _copying ? null : _saveDownloads, icon: const Icon(Icons.download_rounded), label: Text(l.backupSaveDownloads)),
+                OutlinedButton.icon(key: const ValueKey('sendCopy'), onPressed: _copying ? null : _sendCopy, icon: const Icon(Icons.share_rounded), label: Text(l.backupSendCopy)),
+              ]),
+              if (_message != null) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(_message!, kind: BadgeKind.danger, icon: Icons.error_outline_rounded)),
+            ]),
+          ),
+        ] else ...[
+          SectionCard(
           title: l.backupFolderTitle,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SelectableText(s.folder ?? '-', style: th.bodyMedium),
@@ -180,6 +233,7 @@ class _BackupsScreenState extends ConsumerState<BackupsScreen> {
             OutlinedButton.icon(key: const ValueKey('copyBackup'), onPressed: _copying ? null : _copy, icon: const Icon(Icons.usb_rounded), label: Text(l.backupCopyButton)),
           ]),
         ),
+        ],
         const SizedBox(height: 12),
         const TelegramBackupCard(),
         const SizedBox(height: 12),
