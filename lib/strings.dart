@@ -1608,6 +1608,11 @@ class Strings {
   String get gstRet1 => 'GSTR-1 (sales)';
   String get gstRet3b => 'GSTR-3B (summary)';
   String get gstRetHsn => 'HSN summary';
+  String get auditTitle => 'Auditor pack (all bills)';
+  String get auditHelp => 'Everything for the auditor or the accountant filing GST, in one file: every bill with customer, GSTIN, taxable value, CGST, SGST, IGST and total; every item with HSN; GST by rate; HSN summary; credit notes; cancelled bills with reasons; purchases; and a check for missing bill numbers. Excel has one sheet for each part.';
+  String get auditPeriod => 'Period';
+  String get auditFy => 'Financial year';
+  String get auditWorking => 'Making the auditor pack...';
   String get orderPlace => 'Place order';
   String get dealerOrdersTitle => 'Orders to this dealer';
   String get billAgain => 'Bill again';

@@ -52,6 +52,36 @@ Future<String?> runExport(BuildContext context, WidgetRef ref, ExportKind kind, 
   }
 }
 
+/// The auditor pack of a period ([from] inclusive to [to] exclusive): every bill and its items, GST by rate, HSN summary, credit notes, cancelled
+/// bills, purchases and a bill-number check. Excel: one sheet each; PDF: all in one file.
+Future<String?> runAuditExport(BuildContext context, WidgetRef ref, DateTime from, DateTime to, String label, ExportFormat format) async {
+  final l = tr(context);
+  try {
+    final shop = ref.read(shopProvider);
+    toast(context, l.auditWorking);
+    final pack = await ref.read(appDataProvider).audit.pack(from, to, label: label, shopName: shop.name, shopGstin: shop.gstin);
+    if (!context.mounted) return null;
+    final now = ref.read(clockProvider);
+    final Uint8List bytes;
+    final String ext;
+    if (format == ExportFormat.pdf) {
+      bytes = await encodePdfBook(pack.tables, title: 'Auditor pack  -  $label', shopName: shop.name, now: now, shop: shop, sectionTitles: true, headerLines: pack.headerLines);
+      ext = 'pdf';
+    } else {
+      bytes = encodeXlsxBook(pack.tables);
+      ext = 'xlsx';
+    }
+    final safe = label.replaceAll(RegExp(r'[^A-Za-z0-9-]+'), ' ').trim();
+    final where = await ref.read(fileSaverProvider).save('Auditor pack $safe.$ext', bytes);
+    if (!context.mounted) return where;
+    toast(context, where == null ? l.exportFailed : l.exportSaved(ext.toUpperCase(), where));
+    return where;
+  } catch (_) {
+    if (context.mounted) toast(context, l.exportFailed);
+    return null;
+  }
+}
+
 enum GstReturnKind { gstr1, gstr3b, hsn }
 
 /// A month's GST return (GSTR-1 with its parts, GSTR-3B, or the HSN summary) as Excel (one sheet for each part) or PDF (all parts in one file), saved like the other exports.

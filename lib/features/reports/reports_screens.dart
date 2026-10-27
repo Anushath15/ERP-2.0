@@ -298,6 +298,7 @@ class ExportScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 24),
           child: Wrap(spacing: 12, runSpacing: 12, children: [
             SizedBox(width: bc.maxWidth, child: const _GstReturnsCard()),
+            SizedBox(width: bc.maxWidth, child: const _AuditPackCard()),
             for (final it in items)
               SizedBox(
                 width: w,
@@ -321,6 +322,54 @@ class ExportScreen extends ConsumerWidget {
           ]),
         );
       }),
+    );
+  }
+}
+
+/// The auditor pack: every bill and the GST figures of a financial year or a month, for the auditor or the accountant filing GST.
+class _AuditPackCard extends ConsumerStatefulWidget {
+  const _AuditPackCard();
+  @override
+  ConsumerState<_AuditPackCard> createState() => _AuditPackCardState();
+}
+
+class _AuditPackCardState extends ConsumerState<_AuditPackCard> {
+  int _pick = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = tr(context);
+    final th = Theme.of(context).textTheme;
+    final now = ref.watch(clockProvider);
+    // financial years (April to March) first, then the last 18 months
+    final fyNow = now.month >= 4 ? now.year : now.year - 1;
+    final periods = <(String, DateTime, DateTime)>[
+      for (var i = 0; i < 4; i++) ('${l.auditFy} ${fyNow - i}-${((fyNow - i + 1) % 100).toString().padLeft(2, '0')}', DateTime(fyNow - i, 4, 1), DateTime(fyNow - i + 1, 4, 1)),
+      for (var i = 0; i < 18; i++) (monthLabel(DateTime(now.year, now.month - i, 1)), DateTime(now.year, now.month - i, 1), DateTime(now.year, now.month - i + 1, 1)),
+    ];
+    final p = periods[_pick.clamp(0, periods.length - 1)];
+    return SectionCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [Icon(Icons.fact_check_rounded, color: context.c.primary), const SizedBox(width: 10), Expanded(child: Text(l.auditTitle, style: th.titleMedium))]),
+        const SizedBox(height: 6),
+        Text(l.auditHelp, style: th.bodySmall),
+        const SizedBox(height: 12),
+        Wrap(spacing: 16, runSpacing: 12, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          SizedBox(
+            width: 300,
+            child: DropdownButtonFormField<int>(
+              isExpanded: true,
+              key: const ValueKey('audit-period'),
+              initialValue: _pick,
+              decoration: InputDecoration(labelText: l.auditPeriod, isDense: true),
+              items: [for (var i = 0; i < periods.length; i++) DropdownMenuItem(value: i, child: Text(periods[i].$1))],
+              onChanged: (v) => setState(() => _pick = v ?? 0),
+            ),
+          ),
+          OutlinedButton.icon(key: const ValueKey('audit-excel'), onPressed: () => runAuditExport(context, ref, p.$2, p.$3, p.$1, ExportFormat.excel), icon: const Icon(Icons.table_chart_rounded), label: const Text('Excel')),
+          OutlinedButton.icon(key: const ValueKey('audit-pdf'), onPressed: () => runAuditExport(context, ref, p.$2, p.$3, p.$1, ExportFormat.pdf), icon: const Icon(Icons.picture_as_pdf_rounded), label: const Text('PDF')),
+        ]),
+      ]),
     );
   }
 }

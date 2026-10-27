@@ -1647,6 +1647,11 @@ gstRetMonth | Month
 gstRet1 | GSTR-1 (sales)
 gstRet3b | GSTR-3B (summary)
 gstRetHsn | HSN summary
+auditTitle | Auditor pack (all bills)
+auditHelp | Everything for the auditor or the accountant filing GST, in one file: every bill with customer, GSTIN, taxable value, CGST, SGST, IGST and total; every item with HSN; GST by rate; HSN summary; credit notes; cancelled bills with reasons; purchases; and a check for missing bill numbers. Excel has one sheet for each part.
+auditPeriod | Period
+auditFy | Financial year
+auditWorking | Making the auditor pack...
 orderPlace | Place order
 dealerOrdersTitle | Orders to this dealer
 billAgain | Bill again
