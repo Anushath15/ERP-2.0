@@ -3,6 +3,7 @@
 library;
 
 import '../domain/bank.dart';
+import '../domain/message_templates.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/credit/reminder.dart';
@@ -62,6 +63,7 @@ class ShopProfile {
     this.billDesign = 'classic',
     this.billAccent = 0xFF1F4E79,
     this.billHideCols = const [],
+    this.messageTemplates = const {},
   });
 
   /// The made-up shop of the demo mode (never used for a real shop, whose profile starts empty and is filled in by the set-up).
@@ -108,6 +110,9 @@ class ShopProfile {
   /// Item columns the shop does not print: any of 'mrp', 'hsn', 'disc'.
   final List<String> billHideCols;
 
+  /// The shop's own text of the WhatsApp messages (by [MessageKind] name); a kind that is not here uses the default text.
+  final Map<String, String> messageTemplates;
+
   /// Cash in the drawer at the start of each day (the day closing starts from it).
   final int openingCashPaise;
 
@@ -140,6 +145,7 @@ class ShopProfile {
         'billDesign': billDesign,
         'billAccent': billAccent,
         'billHideCols': billHideCols,
+        'messageTemplates': messageTemplates,
       };
 
   /// Tolerant: anything missing or of the wrong type keeps the default (a damaged value never stops the program from starting).
@@ -178,6 +184,12 @@ class ShopProfile {
       billDesign: const ['classic', 'modern', 'compact'].contains(m['billDesign']) ? m['billDesign'] as String : base.billDesign,
       billAccent: m['billAccent'] is int ? (m['billAccent'] as int) | 0xFF000000 : base.billAccent,
       billHideCols: m['billHideCols'] is List ? [for (final x in m['billHideCols'] as List) if (const ['mrp', 'hsn', 'disc'].contains(x)) x as String] : base.billHideCols,
+      messageTemplates: m['messageTemplates'] is Map
+          ? {
+              for (final e in (m['messageTemplates'] as Map).entries)
+                if (MessageKind.values.any((k) => k.name == e.key) && e.value is String && (e.value as String).trim().isNotEmpty && (e.value as String).length <= maxMessageLength) e.key as String: e.value as String,
+            }
+          : base.messageTemplates,
       openingCashPaise: m['openingCashPaise'] is int && (m['openingCashPaise'] as int) >= 0 && (m['openingCashPaise'] as int) <= 100000000000 ? m['openingCashPaise'] as int : base.openingCashPaise,
     );
   }
@@ -213,6 +225,7 @@ class ShopProfile {
     String? billDesign,
     int? billAccent,
     List<String>? billHideCols,
+    Map<String, String>? messageTemplates,
   }) =>
       ShopProfile(
         name: name ?? this.name,
@@ -243,6 +256,7 @@ class ShopProfile {
         billDesign: billDesign ?? this.billDesign,
         billAccent: billAccent ?? this.billAccent,
         billHideCols: billHideCols ?? this.billHideCols,
+        messageTemplates: messageTemplates ?? this.messageTemplates,
       );
 }
 

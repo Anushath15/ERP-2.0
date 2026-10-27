@@ -236,6 +236,143 @@ class SalesRegisterScreen extends ConsumerWidget {
   }
 }
 
+/// The badge of an estimate: made into a bill, edited, or still open.
+Widget estimateStatusBadge(EstimationDoc e, Strings l) => e.convertedTo != null ? StatusBadge(l.statusConverted, kind: BadgeKind.success, icon: Icons.check_rounded) : (e.editedOn != null ? StatusBadge(l.statusEdited, kind: BadgeKind.info, icon: Icons.edit_rounded) : StatusBadge(l.statusOpen, kind: BadgeKind.neutral));
+
+/// The popup of one saved estimate: Print, Download PDF, Send on WhatsApp (PDF), Edit, Make a copy, Make into bill and Delete. Used by All estimates and
+/// by the customer's page. [backTo] is where the Back button of the print page returns (and reopens this popup).
+void showEstimatePopup(BuildContext context, WidgetRef ref, EstimationDoc e, {String? backTo}) {
+  final ctx = context;
+  final l = tr(context);
+  final th = Theme.of(context).textTheme;
+  final products = ref.read(productsProvider);
+  final customers = ref.read(customersProvider);
+
+  Future<List<CartLine>> cartLines(EstimationDoc e) async {
+    final ls = await ref.read(appDataProvider).estimations.lines(e.number);
+    final byId = {for (final p in products) p.id: p};
+    return [
+      for (final x in ls)
+        CartLine(product: byId[x.productId] ?? Product(id: x.productId, name: x.name, category: '', unit: x.unit, pricePaise: x.ratePaise, costPaise: 0, stockMilli: 0, gstBp: 1800, barcode: ''), qtyMilli: x.qtyMilli, discountBp: x.discountBp, ratePaise: x.ratePaise),
+    ];
+  }
+
+  Future<PrintDoc> estimateDoc(EstimationDoc e) async {
+    final lines = await cartLines(e);
+    final inclusive = ref.read(shopProvider).pricesIncludeGst;
+    final estCust = ref.read(customersProvider).where((c) => c.name == e.customer).firstOrNull;
+    return PrintDoc(mode: DocMode.estimation, number: e.number, date: e.date, editedOn: e.editedOn, customer: e.customer.isEmpty ? l.walkInCustomer : e.customer, customerPhone: estCust?.phone ?? '', lines: lines, calc: calcBill(lines, inclusive: inclusive, extraDiscountPaise: e.extraDiscountPaise, extraDiscountBp: e.extraDiscountBp), pay: PayMode.cash, extraDiscountBp: e.extraDiscountBp, backTo: backTo ?? '/estimates?open=${Uri.encodeQueryComponent(e.number)}');
+  }
+
+  Future<void> printIt() async {
+    Navigator.of(ctx, rootNavigator: true).pop();
+    final doc = await estimateDoc(e);
+    ref.read(printDocProvider.notifier).set(doc);
+    if (context.mounted) unawaited(context.push('/print'));
+  }
+
+  final converted = e.convertedTo != null;
+  showDetail(ctx, onPrint: () => unawaited(printIt()), title: e.number, subtitle: '${e.customer.isEmpty ? l.walkInCustomer : e.customer}  ·  ${formatDate(e.date)}', body: [
+    KeyValue(l.colDate, formatDate(e.date)),
+    if (e.editedOn != null) KeyValue(l.rcEditedOn, formatDate(e.editedOn!)),
+    KeyValue(l.statItems, '${e.lines}'),
+    KeyValue(l.grandTotal, '₹ ${formatPaise(e.totalPaise)}', bold: true),
+    if (converted) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(l.convertedTo(e.convertedTo!), kind: BadgeKind.success, icon: Icons.check_rounded)),
+    const SizedBox(height: 8),
+    Text(l.estimateNoStock, style: th.bodySmall),
+  ], actions: [
+    OutlinedButton.icon(
+      key: const ValueKey('est-print'),
+      onPressed: printIt,
+      icon: const Icon(Icons.print_rounded),
+      label: Text(l.print),
+    ),
+    // the estimate as a PDF: saved as a file, or sent to the customer on WhatsApp
+    OutlinedButton.icon(
+      key: const ValueKey('est-download-pdf'),
+      onPressed: () async {
+        final doc = await estimateDoc(e);
+        if (context.mounted) await downloadDocPdf(context, ref, doc);
+      },
+      icon: const Icon(Icons.picture_as_pdf_rounded),
+      label: Text(l.docDownloadPdf),
+    ),
+    OutlinedButton.icon(
+      key: const ValueKey('est-whatsapp'),
+      onPressed: () async {
+        final doc = await estimateDoc(e);
+        if (context.mounted) await shareDocOnWhatsapp(context, ref, doc);
+      },
+      icon: const Icon(Icons.send_rounded),
+      label: Text(l.docSendWhatsapp),
+    ),
+    OutlinedButton.icon(
+      onPressed: () async {
+        Navigator.of(ctx, rootNavigator: true).pop();
+        await ref.read(cartProvider(DocMode.estimation).notifier).loadForEdit(e, products, customers);
+        if (context.mounted) context.go('/estimate');
+      },
+      icon: const Icon(Icons.edit_rounded),
+      label: Text(l.edit),
+    ),
+    OutlinedButton.icon(
+      onPressed: () async {
+        Navigator.of(ctx, rootNavigator: true).pop();
+        final ls = await ref.read(appDataProvider).estimations.lines(e.number);
+        final custId = await ref.read(appDataProvider).estimations.customerIdOf(e.number);
+        await ref.read(estimationsProvider.notifier).save(lines: ls, totalPaise: e.totalPaise, customerName: e.customer, customerId: custId, at: ref.read(clockProvider), extraDiscountPaise: e.extraDiscountPaise, extraDiscountBp: e.extraDiscountBp);
+        if (context.mounted) toast(context, l.duplicated);
+      },
+      icon: const Icon(Icons.copy_rounded),
+      label: Text(l.duplicate),
+    ),
+    FilledButton.icon(
+      onPressed: converted
+          ? null
+          : () async {
+              Navigator.of(ctx, rootNavigator: true).pop();
+              final no = ref.read(nextNumbersProvider).invoice;
+              final ok = await confirmDialog(context, title: l.convertTitle, message: l.convertText(e.number, no), confirmLabel: l.convertToInvoice);
+              if (!ok) return;
+              final d = ref.read(appDataProvider);
+              final ls = await d.estimations.lines(e.number);
+              final custId = await d.estimations.customerIdOf(e.number);
+              final bill = await ref.read(billActionsProvider).save(SaveBillInput(
+                idemKey: 'convert-${e.number}',
+                at: ref.read(clockProvider),
+                lines: [for (final x in ls) _lineInput(x, products)],
+                customerId: custId,
+                customerName: e.customer,
+                pricesIncludeGst: ref.read(shopProvider).pricesIncludeGst,
+                roundOff: ref.read(shopProvider).roundOff,
+                extraDiscountPaise: e.extraDiscountPaise,
+                extraDiscountBp: e.extraDiscountBp,
+                fromEstimate: e.number,
+              ));
+              await ref.read(estimationsProvider.notifier).reload();
+              if (context.mounted) toast(context, l.convertedToast(e.number, bill.number));
+            },
+      icon: const Icon(Icons.receipt_long_rounded),
+      label: Text(l.convertToInvoice),
+    ),
+    OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(foregroundColor: context.c.danger),
+      onPressed: () async {
+        Navigator.of(ctx, rootNavigator: true).pop();
+        final v = await showFormSheet(context, title: l.deleteEstimateTitle(e.number), saveLabel: l.continueLabel, fields: [FieldSpec('reason', l.fieldReason, type: FieldType.multiline, required: true, autofocus: true)]);
+        if (v == null || !context.mounted) return;
+        final ok = await confirmDialog(context, title: l.deleteEstimateConfirmTitle, message: l.deleteEstimateConfirmText(e.number, formatPaise(e.totalPaise, symbol: true)), confirmLabel: l.delete, danger: true);
+        if (ok) {
+          await ref.read(estimationsProvider.notifier).remove(e.number, reason: v['reason']!);
+          if (context.mounted) toast(context, l.deleted);
+        }
+      },
+      icon: const Icon(Icons.delete_outline_rounded),
+      label: Text(l.delete),
+    ),
+  ]);
+}
+
 class EstimationsScreen extends ConsumerWidget {
   const EstimationsScreen({super.key, this.openNumber});
 
@@ -245,135 +382,10 @@ class EstimationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = tr(context);
     final items = ref.watch(estimationsProvider);
-    final products = ref.watch(productsProvider);
-    final customers = ref.watch(customersProvider);
-    final th = Theme.of(context).textTheme;
-    Widget status(EstimationDoc e) => e.convertedTo != null ? StatusBadge(l.statusConverted, kind: BadgeKind.success, icon: Icons.check_rounded) : (e.editedOn != null ? StatusBadge(l.statusEdited, kind: BadgeKind.info, icon: Icons.edit_rounded) : StatusBadge(l.statusOpen, kind: BadgeKind.neutral));
-
-    Future<List<CartLine>> cartLines(EstimationDoc e) async {
-      final ls = await ref.read(appDataProvider).estimations.lines(e.number);
-      final byId = {for (final p in products) p.id: p};
-      return [
-        for (final x in ls)
-          CartLine(product: byId[x.productId] ?? Product(id: x.productId, name: x.name, category: '', unit: x.unit, pricePaise: x.ratePaise, costPaise: 0, stockMilli: 0, gstBp: 1800, barcode: ''), qtyMilli: x.qtyMilli, discountBp: x.discountBp, ratePaise: x.ratePaise),
-      ];
-    }
-
-    Future<PrintDoc> estimateDoc(EstimationDoc e) async {
-      final lines = await cartLines(e);
-      final inclusive = ref.read(shopProvider).pricesIncludeGst;
-      final estCust = ref.read(customersProvider).where((c) => c.name == e.customer).firstOrNull;
-      return PrintDoc(mode: DocMode.estimation, number: e.number, date: e.date, editedOn: e.editedOn, customer: e.customer.isEmpty ? l.walkInCustomer : e.customer, customerPhone: estCust?.phone ?? '', lines: lines, calc: calcBill(lines, inclusive: inclusive, extraDiscountPaise: e.extraDiscountPaise, extraDiscountBp: e.extraDiscountBp), pay: PayMode.cash, extraDiscountBp: e.extraDiscountBp, backTo: '/estimates?open=${Uri.encodeQueryComponent(e.number)}');
-    }
-
-    void showEstimate(BuildContext ctx, EstimationDoc e) {
-        final converted = e.convertedTo != null;
-        showDetail(ctx, title: e.number, subtitle: '${e.customer.isEmpty ? l.walkInCustomer : e.customer}  ·  ${formatDate(e.date)}', body: [
-          KeyValue(l.colDate, formatDate(e.date)),
-          if (e.editedOn != null) KeyValue(l.rcEditedOn, formatDate(e.editedOn!)),
-          KeyValue(l.statItems, '${e.lines}'),
-          KeyValue(l.grandTotal, '₹ ${formatPaise(e.totalPaise)}', bold: true),
-          if (converted) Padding(padding: const EdgeInsets.only(top: 8), child: StatusBadge(l.convertedTo(e.convertedTo!), kind: BadgeKind.success, icon: Icons.check_rounded)),
-          const SizedBox(height: 8),
-          Text(l.estimateNoStock, style: th.bodySmall),
-        ], actions: [
-          OutlinedButton.icon(
-            onPressed: () async {
-              Navigator.of(ctx, rootNavigator: true).pop();
-              final lines = await cartLines(e);
-              final inclusive = ref.read(shopProvider).pricesIncludeGst;
-              final estCust = ref.read(customersProvider).where((c) => c.name == e.customer).firstOrNull;
-              ref.read(printDocProvider.notifier).set(PrintDoc(mode: DocMode.estimation, number: e.number, date: e.date, editedOn: e.editedOn, customer: e.customer.isEmpty ? l.walkInCustomer : e.customer, customerPhone: estCust?.phone ?? '', lines: lines, calc: calcBill(lines, inclusive: inclusive, extraDiscountPaise: e.extraDiscountPaise, extraDiscountBp: e.extraDiscountBp), pay: PayMode.cash, extraDiscountBp: e.extraDiscountBp, backTo: '/estimates?open=${Uri.encodeQueryComponent(e.number)}'));
-              if (context.mounted) unawaited(context.push('/print'));
-            },
-            icon: const Icon(Icons.print_rounded),
-            label: Text(l.print),
-          ),
-          // the estimate as a PDF: saved as a file, or sent to the customer on WhatsApp
-          OutlinedButton.icon(
-            key: const ValueKey('est-download-pdf'),
-            onPressed: () async {
-              final doc = await estimateDoc(e);
-              if (context.mounted) await downloadDocPdf(context, ref, doc);
-            },
-            icon: const Icon(Icons.picture_as_pdf_rounded),
-            label: Text(l.docDownloadPdf),
-          ),
-          OutlinedButton.icon(
-            key: const ValueKey('est-whatsapp'),
-            onPressed: () async {
-              final doc = await estimateDoc(e);
-              if (context.mounted) await shareDocOnWhatsapp(context, ref, doc);
-            },
-            icon: const Icon(Icons.send_rounded),
-            label: Text(l.docSendWhatsapp),
-          ),
-          OutlinedButton.icon(
-            onPressed: () async {
-              Navigator.of(ctx, rootNavigator: true).pop();
-              await ref.read(cartProvider(DocMode.estimation).notifier).loadForEdit(e, products, customers);
-              if (context.mounted) context.go('/estimate');
-            },
-            icon: const Icon(Icons.edit_rounded),
-            label: Text(l.edit),
-          ),
-          OutlinedButton.icon(
-            onPressed: () async {
-              Navigator.of(ctx, rootNavigator: true).pop();
-              final ls = await ref.read(appDataProvider).estimations.lines(e.number);
-              final custId = await ref.read(appDataProvider).estimations.customerIdOf(e.number);
-              await ref.read(estimationsProvider.notifier).save(lines: ls, totalPaise: e.totalPaise, customerName: e.customer, customerId: custId, at: ref.read(clockProvider), extraDiscountPaise: e.extraDiscountPaise, extraDiscountBp: e.extraDiscountBp);
-              if (context.mounted) toast(context, l.duplicated);
-            },
-            icon: const Icon(Icons.copy_rounded),
-            label: Text(l.duplicate),
-          ),
-          FilledButton.icon(
-            onPressed: converted
-                ? null
-                : () async {
-                    Navigator.of(ctx, rootNavigator: true).pop();
-                    final no = ref.read(nextNumbersProvider).invoice;
-                    final ok = await confirmDialog(context, title: l.convertTitle, message: l.convertText(e.number, no), confirmLabel: l.convertToInvoice);
-                    if (!ok) return;
-                    final d = ref.read(appDataProvider);
-                    final ls = await d.estimations.lines(e.number);
-                    final custId = await d.estimations.customerIdOf(e.number);
-                    final bill = await ref.read(billActionsProvider).save(SaveBillInput(
-                      idemKey: 'convert-${e.number}',
-                      at: ref.read(clockProvider),
-                      lines: [for (final x in ls) _lineInput(x, products)],
-                      customerId: custId,
-                      customerName: e.customer,
-                      pricesIncludeGst: ref.read(shopProvider).pricesIncludeGst,
-                      roundOff: ref.read(shopProvider).roundOff,
-                      extraDiscountPaise: e.extraDiscountPaise,
-                      extraDiscountBp: e.extraDiscountBp,
-                      fromEstimate: e.number,
-                    ));
-                    await ref.read(estimationsProvider.notifier).reload();
-                    if (context.mounted) toast(context, l.convertedToast(e.number, bill.number));
-                  },
-            icon: const Icon(Icons.receipt_long_rounded),
-            label: Text(l.convertToInvoice),
-          ),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(foregroundColor: context.c.danger),
-            onPressed: () async {
-              Navigator.of(ctx, rootNavigator: true).pop();
-              final v = await showFormSheet(context, title: l.deleteEstimateTitle(e.number), saveLabel: l.continueLabel, fields: [FieldSpec('reason', l.fieldReason, type: FieldType.multiline, required: true, autofocus: true)]);
-              if (v == null || !context.mounted) return;
-              final ok = await confirmDialog(context, title: l.deleteEstimateConfirmTitle, message: l.deleteEstimateConfirmText(e.number, formatPaise(e.totalPaise, symbol: true)), confirmLabel: l.delete, danger: true);
-              if (ok) {
-                await ref.read(estimationsProvider.notifier).remove(e.number, reason: v['reason']!);
-                if (context.mounted) toast(context, l.deleted);
-              }
-            },
-            icon: const Icon(Icons.delete_outline_rounded),
-            label: Text(l.delete),
-          ),
-        ]);
-    }
+    ref.watch(productsProvider);
+    ref.watch(customersProvider);
+    Widget status(EstimationDoc e) => estimateStatusBadge(e, l);
+    void showEstimate(BuildContext ctx, EstimationDoc e) => showEstimatePopup(ctx, ref, e);
 
     final list = DataListScreen<EstimationDoc>(
       title: l.navSavedEstimates,

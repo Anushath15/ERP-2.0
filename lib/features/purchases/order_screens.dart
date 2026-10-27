@@ -8,6 +8,7 @@ import '../../core/money.dart';
 import '../../data/ids.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
+import '../../domain/message_templates.dart';
 import '../../domain/models.dart';
 import '../../domain/orders.dart';
 import '../../fake/data_providers.dart';
@@ -206,7 +207,7 @@ class _OrderFormState extends ConsumerState<OrderFormScreen> {
         context,
         title: s.orderTitle(doc.number),
         phone: phone,
-        message: orderMessage(dealerName: doc.dealerName, shopName: shop.name, shopPhone: shop.phone, number: doc.number, lines: doc.lines, note: doc.note, qty: formatQty),
+        message: orderMessage(dealerName: doc.dealerName, shopName: shop.name, shopPhone: shop.phone, number: doc.number, lines: doc.lines, note: doc.note, qty: formatQty, template: messageTemplateOf(shop.messageTemplates, MessageKind.order)),
         fileName: 'Order ${doc.number} ${doc.dealerName}.pdf'.replaceAll(RegExp(r'[\\/:*?"<>|]'), '-'),
         pdf: () => buildOrderPdf(order: doc, dealerPhone: dealer?.s('phone') ?? '', shop: shop, now: now),
         onNumber: (p) {

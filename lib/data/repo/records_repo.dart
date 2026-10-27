@@ -86,6 +86,15 @@ class EstimationRepo {
         extraDiscountBp: r.read<int>('extra_discount_bp'),
       );
 
+  /// One customer's estimates, newest first: those saved for this customer, and those saved with only their name (an estimate typed for them before
+  /// they were a saved customer, or imported from the old program).
+  Future<List<EstimationDoc>> forCustomer(String customerId, String name, {int limit = 200}) async => [
+        for (final r in await _db.rows(
+            "SELECT * FROM estimations WHERE deleted_at IS NULL AND (customer_id = ? OR (customer_id IS NULL AND ? <> '' AND customer_name = ? COLLATE NOCASE)) ORDER BY at DESC, id DESC LIMIT ?",
+            [customerId, name.trim(), name.trim(), limit]))
+          _doc(r),
+      ];
+
   Future<List<EstimationDoc>> list({int limit = 5000}) async => [for (final r in await _db.rows('SELECT * FROM estimations WHERE deleted_at IS NULL ORDER BY at DESC, id DESC LIMIT ?', [limit])) _doc(r)];
 
   /// Saves a new estimate (a new number) or, with [editNumber], saves changes in place (the number and its date stay).

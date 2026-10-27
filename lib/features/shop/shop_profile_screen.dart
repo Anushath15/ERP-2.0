@@ -13,6 +13,7 @@ import '../../design/form_sheet.dart' show textProblemMessage;
 import '../../design/app_logo.dart';
 import '../../design/widgets.dart';
 import '../../fake/shop_profile.dart';
+import '../system/message_templates_card.dart';
 import '../system/reminder_settings.dart';
 
 /// The shop's own details, in one place (not in Settings): printed bills and estimates read from here. It belongs to the
@@ -182,6 +183,7 @@ class ShopProfileScreen extends ConsumerWidget {
     );
 
     const reminders = RemindersCard();
+    const messages = MessageTemplatesCard();
     const credit = CreditSettingsCard();
     return PageFrame(
       title: l.navShop,
@@ -201,10 +203,10 @@ class ShopProfileScreen extends ConsumerWidget {
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Expanded(child: Column(children: [for (final c in [details, tax, look]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
-                Expanded(child: Column(children: [for (final c in [estimate, reminders, credit]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [estimate, reminders, messages, credit]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),
             )
-          : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in [details, tax, look, estimate, reminders, credit]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),
+          : ListView(padding: const EdgeInsets.only(bottom: 24), children: [for (final c in [details, tax, look, estimate, reminders, messages, credit]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)]),
     );
   }
 }

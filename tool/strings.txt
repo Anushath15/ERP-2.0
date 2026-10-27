@@ -758,6 +758,15 @@ remFailed | Could not open WhatsApp. Use Copy message instead.
 remSending | Opening WhatsApp
 # ---- settings: reminders and credit
 setReminders | Reminders
+msgTplTitle | WhatsApp messages
+msgTplHelp | The words of each WhatsApp message. Pick a message, change the text, and put the details in with the buttons below. A line whose detail is empty (no UPI ID, no balance) is left out. Payment reminders are in the card above.
+msgTplWhich | Message
+msgTplBill | Bill (with its PDF)
+msgTplEstimate | Estimate (with its PDF)
+msgTplStatement | Customer statement
+msgTplOrder | Order to a dealer
+msgTplReset | Back to the standard text
+msgTplPreview | How it will look
 setRemNote | The program never sends WhatsApp messages by itself. It opens WhatsApp with your message ready, and you press Send. Each opening is counted as a reminder.
 setRemTone | Message style
 setRemTemplate | Message text
@@ -1179,6 +1188,9 @@ custReturnedHint | {n} returns
 custBillsTitle | Their bills
 custNoBills | No bills for this customer yet.
 custBillsCapped | Showing the newest {n} bills. Use All bills to search all of them.
+custEstimatesTitle | Their estimates
+custNoEstimates | No estimates for this customer yet.
+custEstimatesCapped | Showing the newest {n} estimates. Use All estimates to search all of them.
 retReturned | Given back so far
 signOutConfirmTitle | Sign out?
 signOutConfirmText | You will need to sign in again to use the program.

@@ -738,6 +738,15 @@ class Strings {
   String get remFailed => 'Could not open WhatsApp. Use Copy message instead.';
   String get remSending => 'Opening WhatsApp';
   String get setReminders => 'Reminders';
+  String get msgTplTitle => 'WhatsApp messages';
+  String get msgTplHelp => 'The words of each WhatsApp message. Pick a message, change the text, and put the details in with the buttons below. A line whose detail is empty (no UPI ID, no balance) is left out. Payment reminders are in the card above.';
+  String get msgTplWhich => 'Message';
+  String get msgTplBill => 'Bill (with its PDF)';
+  String get msgTplEstimate => 'Estimate (with its PDF)';
+  String get msgTplStatement => 'Customer statement';
+  String get msgTplOrder => 'Order to a dealer';
+  String get msgTplReset => 'Back to the standard text';
+  String get msgTplPreview => 'How it will look';
   String get setRemNote => 'The program never sends WhatsApp messages by itself. It opens WhatsApp with your message ready, and you press Send. Each opening is counted as a reminder.';
   String get setRemTone => 'Message style';
   String get setRemTemplate => 'Message text';
@@ -1144,6 +1153,9 @@ class Strings {
   String get custBillsTitle => 'Their bills';
   String get custNoBills => 'No bills for this customer yet.';
   String custBillsCapped(String n) => 'Showing the newest ${n} bills. Use All bills to search all of them.';
+  String get custEstimatesTitle => 'Their estimates';
+  String get custNoEstimates => 'No estimates for this customer yet.';
+  String custEstimatesCapped(String n) => 'Showing the newest ${n} estimates. Use All estimates to search all of them.';
   String get retReturned => 'Given back so far';
   String get signOutConfirmTitle => 'Sign out?';
   String get signOutConfirmText => 'You will need to sign in again to use the program.';

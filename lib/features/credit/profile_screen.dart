@@ -19,7 +19,7 @@ import '../../fake/data_providers.dart';
 import '../../fake/stats.dart';
 import '../../domain/orders.dart';
 import '../purchases/purchase_screens.dart' show dealerPurchasesProvider, dealerSummaryProvider, showPurchasePopup;
-import '../sales/sales_screens.dart' show showBillPopup, statusInfo, billStatus;
+import '../sales/sales_screens.dart' show showBillPopup, showEstimatePopup, estimateStatusBadge, statusInfo, billStatus;
 import '../../fake/models.dart';
 import '../../fake/store.dart';
 import '../../fake/shop_profile.dart';
@@ -40,6 +40,13 @@ final customerSummaryProvider = FutureProvider.autoDispose.family<CustomerSummar
 
 /// The customer's newest bills.
 const customerBillsShown = 200;
+/// A customer's estimates (refreshed whenever an estimate is saved, changed, made into a bill or deleted).
+final customerEstimatesProvider = FutureProvider.autoDispose.family<List<EstimationDoc>, String>((ref, id) {
+  ref.watch(estimationsProvider);
+  final name = ref.watch(customersProvider).where((c) => c.id == id).firstOrNull?.name ?? '';
+  return ref.read(appDataProvider).estimations.forCustomer(id, name, limit: customerBillsShown);
+});
+
 final customerBillsProvider = FutureProvider.autoDispose.family<List<BillRow>, String>((ref, id) {
   ref.watch(statsProvider);
   ref.watch(returnsVersionProvider);
@@ -47,7 +54,7 @@ final customerBillsProvider = FutureProvider.autoDispose.family<List<BillRow>, S
 });
 
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({super.key, required this.partyId, required this.kind, this.openBillId, this.accountView = false});
+  const ProfileScreen({super.key, required this.partyId, required this.kind, this.openBillId, this.openEstimate, this.accountView = false});
   final String partyId;
   final PartyKind kind;
 
@@ -56,6 +63,9 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
   /// Opens this bill's popup at once (the Back button of the print page returns here).
   final String? openBillId;
+
+  /// Opens this estimate's popup at once (the Back button of the print page returns here).
+  final String? openEstimate;
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
@@ -261,6 +271,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 if (b != bills.last) const Divider(height: 1),
               ],
               if (bills.length >= customerBillsShown) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.custBillsCapped('$customerBillsShown'), style: th.bodySmall)),
+            ]),
+          );
+
+    // a customer's estimates, like their bills (a click opens the estimate: print, PDF, WhatsApp, edit, make into a bill)
+    final estimates = _customer ? ref.watch(customerEstimatesProvider(widget.partyId)).asData?.value : null;
+    final estimatesList = estimates == null
+        ? null
+        : SectionCard(
+            key: const ValueKey('cust-estimates'),
+            title: l.custEstimatesTitle,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              if (estimates.isEmpty) Text(l.custNoEstimates, key: const ValueKey('cust-no-estimates'), style: th.bodyMedium),
+              for (final e in estimates) ...[
+                InkWell(
+                  key: ValueKey('cust-est-${e.number}'),
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => showEstimatePopup(context, ref, e, backTo: '/customers/${widget.partyId}?openEstimate=${Uri.encodeQueryComponent(e.number)}'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(e.number, style: th.titleSmall),
+                          Text('${formatDate(e.date)}  ·  ${l.itemsCount('${e.lines}')}', style: th.bodySmall),
+                        ]),
+                      ),
+                      estimateStatusBadge(e, l),
+                      const SizedBox(width: 12),
+                      SizedBox(width: 110, child: Text('₹ ${formatPaise(e.totalPaise)}', textAlign: TextAlign.right, style: th.titleSmall)),
+                      const Icon(Icons.chevron_right_rounded, size: 20),
+                    ]),
+                  ),
+                ),
+                if (e != estimates.last) const Divider(height: 1),
+              ],
+              if (estimates.length >= customerBillsShown) Padding(padding: const EdgeInsets.only(top: 8), child: Text(l.custEstimatesCapped('$customerBillsShown'), style: th.bodySmall)),
             ]),
           );
 
@@ -482,6 +528,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ] else if (_customer) ...[
         if (purchaseStats != null) ...[purchaseStats, const SizedBox(height: 12)],
         if (billsList != null) ...[billsList, const SizedBox(height: 12)],
+        if (estimatesList != null) ...[estimatesList, const SizedBox(height: 12)],
         if (profileActions != null) ...[profileActions, const SizedBox(height: 12)],
         details,
         if (accountCard != null) ...[const SizedBox(height: 12), accountCard],
@@ -512,7 +559,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 final d = await ref.read(appDataProvider).bills.detail(widget.openBillId!);
                 if (d != null && context.mounted) await showBillPopup(context, ref, d.row, backTo: '/customers/${widget.partyId}?openBill=${Uri.encodeQueryComponent(d.row.id)}');
               },
-        child: content,
+        child: OpenOnce(
+          key: ValueKey('open-estimate-${widget.openEstimate ?? ''}'),
+          run: widget.openEstimate == null
+              ? null
+              : () async {
+                  final list = await ref.read(customerEstimatesProvider(widget.partyId).future);
+                  final e = list.where((x) => x.number == widget.openEstimate).firstOrNull;
+                  if (e != null && context.mounted) showEstimatePopup(context, ref, e, backTo: '/customers/${widget.partyId}?openEstimate=${Uri.encodeQueryComponent(e.number)}');
+                },
+          child: content,
+        ),
       ),
     );
   }

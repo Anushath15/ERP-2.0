@@ -348,8 +348,10 @@ void main() {
     testWidgets('template, tones, placeholders, UPI, guard hours, country code; credit limit mode (now on the Shop profile page)', (tester) async {
       final c = await app(tester, '/shop', size: const ScreenSpec('tall', 1920, 3000));
       expect(find.text('Reminders'), findsWidgets);
-      expect(find.text('{amount_due}'), findsOneWidget);
-      expect(find.text('{upi_id}'), findsOneWidget);
+      // the Reminders card's own detail buttons (the WhatsApp messages card below has buttons of the same names)
+      final reminders = find.ancestor(of: find.byKey(const ValueKey('templateField')), matching: find.byWidgetPredicate((w) => w.runtimeType.toString() == 'SectionCard'));
+      expect(find.descendant(of: reminders, matching: find.text('{amount_due}')), findsOneWidget);
+      expect(find.descendant(of: reminders, matching: find.text('{upi_id}')), findsOneWidget);
       expect(find.text('UPI ID (shown in the message)'), findsOneWidget);
       expect(find.text('Ask before reminding again within (hours)'), findsOneWidget);
       expect(find.text('Default country code'), findsOneWidget);

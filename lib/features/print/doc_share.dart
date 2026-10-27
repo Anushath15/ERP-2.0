@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/date_fmt.dart';
 import '../../core/file_saver.dart';
 import '../../core/money.dart';
+import '../../domain/message_templates.dart';
 import '../../design/widgets.dart' show tr, toast;
 import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
@@ -18,15 +19,19 @@ PaperSize shareablePaper(PaperSize p) => p == PaperSize.a5 ? PaperSize.a5 : Pape
 String docFileName(PrintDoc doc, {required String bill, required String estimate}) => '${doc.mode == DocMode.estimation ? estimate : bill} ${doc.number}.pdf'.replaceAll(RegExp(r'[\\/:*?"<>|]'), '-');
 
 /// The words that go with the PDF on WhatsApp.
-String docMessage(PrintDoc doc, {required String shopName, required String shopPhone}) {
+String docMessage(PrintDoc doc, {required String shopName, required String shopPhone, String upiId = '', Map<String, String> templates = const {}}) {
   final est = doc.mode == DocMode.estimation;
-  final b = StringBuffer('Hello ${doc.customer},\nThis is $shopName.');
-  b.write('\nYour ${est ? 'estimate' : 'bill'} ${doc.number} dated ${formatDate(doc.date)} for ${formatPaise(doc.calc.grandTotal, symbol: true)} is attached.');
-  if (!est && doc.balancePaise > 0) b.write('\nBalance to pay: ${formatPaise(doc.balancePaise, symbol: true)}');
-  if (est) b.write('\nThis is an estimate, not a bill. Prices may change.');
-  if (shopPhone.trim().isNotEmpty) b.write('\nFor any question: ${shopPhone.trim()}');
-  b.write('\nThank you.');
-  return b.toString();
+  final due = !est && doc.balancePaise > 0;
+  return fillMessage(messageTemplateOf(templates, est ? MessageKind.estimate : MessageKind.bill), {
+    '{customer_name}': doc.customer.trim(),
+    '{shop_name}': shopName.trim(),
+    '{shop_phone}': shopPhone.trim(),
+    '{number}': doc.number,
+    '{date}': formatDate(doc.date),
+    '{amount}': formatPaise(doc.calc.grandTotal, symbol: true),
+    '{balance_due}': due ? formatPaise(doc.balancePaise, symbol: true) : '',
+    '{upi_id}': due ? upiId.trim() : '',
+  });
 }
 
 /// Download PDF: makes the PDF of a bill or an estimate and saves it like the other downloads (the same page the printed copy has).
@@ -52,7 +57,7 @@ Future<void> shareDocOnWhatsapp(BuildContext context, WidgetRef ref, PrintDoc do
     context,
     title: '${doc.mode == DocMode.estimation ? l.rcEstimate : l.rcTaxInvoice} ${doc.number}',
     phone: doc.customerPhone,
-    message: docMessage(doc, shopName: shop.name, shopPhone: shop.phone),
+    message: docMessage(doc, shopName: shop.name, shopPhone: shop.phone, upiId: shop.upiId, templates: shop.messageTemplates),
     fileName: docFileName(doc, bill: 'Bill', estimate: 'Estimate'),
     pdf: () => buildDocPdf(doc: doc, paper: shareablePaper(st.paper), shop: shop, size: st.printSize, l: l),
   );

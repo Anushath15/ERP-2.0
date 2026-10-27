@@ -2,6 +2,7 @@
 /// rates can still be changed there). Pure Dart. An order is one small record (kind `orders`): number, date, dealer, status, note, items.
 library;
 
+import 'message_templates.dart';
 import 'models.dart';
 
 enum OrderStatus { open, sent, converted, cancelled }
@@ -75,23 +76,27 @@ class OrderDoc {
 
 /// The WhatsApp text of an order: who it is from, the numbered items with quantities, the note. WhatsApp links get unreliable beyond a couple of thousand
 /// characters, so a very long list is cut and the PDF carries the rest.
-String orderMessage({required String dealerName, required String shopName, required String shopPhone, required String number, required List<OrderLine> lines, String note = '', String Function(int milli)? qty}) {
+String orderMessage({required String dealerName, required String shopName, required String shopPhone, required String number, required List<OrderLine> lines, String note = '', String Function(int milli)? qty, String? template}) {
   String q(int m) => qty != null ? qty(m) : (m % 1000 == 0 ? '${m ~/ 1000}' : (m / 1000).toString());
-  final head = StringBuffer('Hello $dealerName,\nThis is $shopName. Please send these items ($number):\n');
-  final tail = StringBuffer();
-  if (note.trim().isNotEmpty) tail.write('\n${note.trim()}');
-  tail.write('\nPlease confirm the rates and when you can deliver. The order is also in the PDF.');
-  if (shopPhone.trim().isNotEmpty) tail.write('\n${shopPhone.trim()}');
-  tail.write('\nThank you.');
-  const limit = 1500;
+  final t = template ?? defaultOrderMessage;
+  Map<String, String> values(String items) => {
+        '{dealer_name}': dealerName.trim(),
+        '{shop_name}': shopName.trim(),
+        '{shop_phone}': shopPhone.trim(),
+        '{number}': number,
+        '{item_list}': items,
+        '{note}': note.trim(),
+      };
+  // the items get what is left of the message length once the rest of the words are in
+  final room = maxMessageLength - fillMessage(t, values('#')).length - 40;
   final body = StringBuffer();
   var shown = 0;
   for (var i = 0; i < lines.length; i++) {
     final line = '${i + 1}. ${lines[i].name} - ${q(lines[i].qtyMilli)} ${lines[i].unit}\n';
-    if (head.length + body.length + line.length + tail.length > limit) break;
+    if (body.length + line.length > room) break;
     body.write(line);
     shown++;
   }
   if (shown < lines.length) body.write('... and ${lines.length - shown} more (see the PDF)\n');
-  return '$head$body$tail';
+  return fillMessage(t, values(body.toString().trimRight()));
 }
