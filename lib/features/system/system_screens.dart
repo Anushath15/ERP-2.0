@@ -457,6 +457,8 @@ class _PrinterPickerState extends ConsumerState<PrinterPicker> {
   @override
   Widget build(BuildContext context) {
     final l = tr(context);
+    // a phone has no printer list: it prints through its own print window
+    if (isPhone) return Text(l.printPhoneWindow, key: const ValueKey('printPhoneWindow'), style: Theme.of(context).textTheme.bodySmall);
     final st = ref.watch(settingsProvider);
     final name = widget.labels ? st.labelPrinterName : st.printerName;
     return FutureBuilder<List<PrinterInfo>>(

@@ -346,6 +346,11 @@ class Strings {
   String get closingOpening => 'Cash at start of day';
   String get closingExpenses => 'Expenses paid in cash';
   String get waSendPdf => 'Save PDF and open WhatsApp';
+  String get waPdfHelpPhone => 'The PDF and the message go straight into this person\'s WhatsApp chat. Check them there and press Send.';
+  String get waPhoneChat => 'WhatsApp opened the chat with the PDF and the message. Check them and press Send.';
+  String get waPhoneMenu => 'Pick WhatsApp, then the person: the PDF and the message go with it. Then press Send.';
+  String get waPhoneNone => 'WhatsApp could not be opened on this phone.';
+  String get printPhoneWindow => 'This phone prints through its own print window: a Wi-Fi printer, or Save as PDF.';
   String get docDownloadPdf => 'Download PDF';
   String get docSendWhatsapp => 'Send on WhatsApp (PDF)';
   String get waPdfHelp => 'The PDF is made and copied for you, and the chat opens with the message. In WhatsApp press Ctrl+V: the PDF is attached. Then press Send.';

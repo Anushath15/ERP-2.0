@@ -99,3 +99,22 @@ In Supabase > SQL Editor run, in this order, once: `supabase/migrations/0001_syn
 The program looks for a newer version on the GitHub page about 25 seconds after it starts (About page: **Check for updates**). It finds
 one only after a release is published there with the Setup .exe attached, for example:
 `gh release create v2.1.0 ASK-ERP-2.0-Setup.exe --title "ASK ERP 2.1.0" --notes "..."`. The repository is public, so the release is public.
+
+## 11. The phone app (Android)
+
+**Install** (no Play Store needed):
+1. Copy `ASK-ERP-2.0.apk` to the phone: by USB cable, from the pen drive with an OTG adapter, or send it to yourself on WhatsApp or Google Drive.
+2. On the phone, tap the file. Android asks to allow installing apps from this source (Files, WhatsApp or Drive): allow it once, then tap
+   **Install**. If Play Protect warns that the app is unknown, choose **Install anyway** (the app is the shop's own, not from the Play Store).
+3. Open **ASK ERP 2.0**, sign in with the shop account, and on the shop computer approve the phone (Settings > Security > Devices).
+   The phone then fills itself from the cloud copy.
+
+**On the phone**: Download PDF / Excel saves into the phone's Downloads/ASK ERP 2.0 folder (the Files app shows it). Send on WhatsApp opens
+the customer's chat with the PDF and the message already attached: check and press Send. Print opens the phone's own print window (a Wi-Fi
+printer, or Save as PDF). The thermal printer works only by its network address on a phone.
+
+**Updates**: install the new APK over the old one; the data stays. Android installs an update only when it is signed with the SAME key:
+`android/ask-erp-release.jks` with `android/key.properties` (both kept out of git). Keep a safe copy of these two files; without them an update
+cannot be installed over the old app (it would have to be removed first, and the phone would sign in and fill itself again).
+Every new APK also needs a higher build number than the one on the phone: raise the number after the `+` in `version:` of `pubspec.yaml`
+(now `2.1.0+1`) before building, or Android refuses to install it as an update.

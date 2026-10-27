@@ -1,5 +1,6 @@
 import 'dart:io';
 import '../domain/credit/reminder.dart';
+import 'android_bridge.dart';
 import 'link_launcher.dart';
 
 LinkLauncher createLauncher() => _IoLauncher();
@@ -32,7 +33,8 @@ class _IoLauncher implements LinkLauncher {
       }
       if (Platform.isMacOS) return (await Process.run('open', [url])).exitCode == 0;
       if (Platform.isLinux) return (await Process.run('xdg-open', [url])).exitCode == 0;
-      return false; // Android and iOS: needs the url_launcher plugin (Phase 2)
+      if (Platform.isAndroid) return await const ChannelAndroidBridge().openUrl(url); // the program's own Android code (MainActivity.kt)
+      return false; // iPhone: not made yet
     } catch (_) {
       return false;
     }

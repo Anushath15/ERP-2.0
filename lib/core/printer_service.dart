@@ -7,6 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'askprint_stub.dart' if (dart.library.io) 'askprint_io.dart';
+import 'os.dart';
 
 /// A printer the computer knows (as Windows lists it). [driver] is the Windows driver's name (for the diagnostics file and to tell a
 /// paper printer from a virtual one).
@@ -73,6 +74,9 @@ abstract class PrinterService {
 
 final printerServiceProvider = Provider<PrinterService>((ref) => PackagePrinterService());
 
+/// An Android phone or an iPhone (they print through their own print window).
+bool get isPhone => onAndroid || onIos;
+
 /// Direct printing with the `printing` package (Windows: the printer's own driver, no print dialog). In a browser there is no
 /// direct printing, so the browser's own print window opens instead.
 class PackagePrinterService implements PrinterService {
@@ -91,7 +95,8 @@ class PackagePrinterService implements PrinterService {
   Future<PrintOutcome> printPdf(Uint8List bytes, {required String jobName, String printerName = '', bool viaDialog = false, bool asPicture = false}) async {
     try {
       if (asPicture) bytes = await pdfAsPictures(bytes);
-      if (kIsWeb) {
+      // a browser or a phone has no direct printing: its own print window opens (on a phone: Wi-Fi printers, or Save as PDF)
+      if (kIsWeb || isPhone) {
         final ok = await Printing.layoutPdf(onLayout: (_) async => bytes, name: jobName);
         return PrintOutcome(ok ? PrintStatus.sent : PrintStatus.failed);
       }

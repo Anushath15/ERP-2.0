@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'app_info.dart';
+import 'os.dart';
 
 const updateRepo = 'Anushath15/ERP-2.0';
 
@@ -39,7 +40,7 @@ bool isNewerVersion(String a, String b) {
 }
 
 /// Reads GitHub's answer for the latest release. Null when there is no usable release.
-UpdateInfo? parseRelease(String body) {
+UpdateInfo? parseRelease(String body, {String installer = '.exe'}) {
   try {
     final j = jsonDecode(body);
     if (j is! Map || j['draft'] == true || j['prerelease'] == true) return null;
@@ -50,7 +51,7 @@ UpdateInfo? parseRelease(String body) {
     final assets = j['assets'];
     if (assets is List) {
       for (final a in assets) {
-        if (a is Map && '${a['name']}'.toLowerCase().endsWith('.exe')) {
+        if (a is Map && '${a['name']}'.toLowerCase().endsWith(installer)) {
           final u = '${a['browser_download_url'] ?? ''}';
           if (u.startsWith('https://github.com/')) download = u; // SECURITY: only GitHub's own download address is ever opened
         }
@@ -69,8 +70,10 @@ Future<UpdateInfo?> checkForUpdate({http.Client? client, String current = appVer
   try {
     final r = await c.get(Uri.parse('https://api.github.com/repos/$updateRepo/releases/latest'), headers: {'Accept': 'application/vnd.github+json', 'User-Agent': 'ASK-ERP-2'}).timeout(const Duration(seconds: 12));
     if (r.statusCode != 200 || r.bodyBytes.length > 512 * 1024) return null;
-    final info = parseRelease(utf8.decode(r.bodyBytes, allowMalformed: true));
+    final phone = onAndroid;
+    final info = parseRelease(utf8.decode(r.bodyBytes, allowMalformed: true), installer: phone ? '.apk' : '.exe');
     if (info == null || !isNewerVersion(info.version, current)) return null;
+    if (phone && info.downloadUrl.isEmpty) return null; // a release with no phone app: nothing to offer on the phone
     return info;
   } catch (_) {
     return null;

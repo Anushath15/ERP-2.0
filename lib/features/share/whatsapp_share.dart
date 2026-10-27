@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/android_bridge.dart';
 import '../../core/file_saver.dart';
 import '../../core/link_launcher.dart';
 import '../../core/reveal_file.dart';
@@ -54,6 +55,9 @@ class _ShareDialogState extends ConsumerState<_ShareDialog> {
   String? _saved;
   bool _copied = false, _opened = false;
 
+  /// On a phone: "whatsapp" (the chat opened with the PDF) or "menu" (the Share menu opened); null on a computer.
+  String? _phoneWay;
+
   @override
   void dispose() {
     _phone.dispose();
@@ -74,6 +78,19 @@ class _ShareDialogState extends ConsumerState<_ShareDialog> {
     });
     try {
       final bytes = await widget.pdf();
+      final android = ref.read(androidBridgeProvider);
+      if (android.available) {
+        // a phone CAN hand the file to WhatsApp: the person's chat opens with the PDF and the message attached
+        final way = await android.share(bytes, name: widget.fileName, mime: 'application/pdf', text: _msg.text, phone: digits);
+        if (_phone.text.trim() != widget.phone.trim()) widget.onNumber?.call(_phone.text.trim());
+        if (!mounted) return;
+        setState(() {
+          _saved = widget.fileName;
+          _opened = way != null;
+          _phoneWay = way;
+        });
+        return;
+      }
       final where = await ref.read(fileSaverProvider).save(widget.fileName, bytes);
       if (where == null) {
         if (mounted) setState(() => _error = l.pdfFailed);
@@ -103,6 +120,21 @@ class _ShareDialogState extends ConsumerState<_ShareDialog> {
   /// After WhatsApp opened: what to do there (Ctrl+V, Send), with the PDF ready to copy again or to find in its folder.
   Widget _done(Strings l, TextTheme th) {
     final where = _saved!;
+    if (_phoneWay != null || ref.read(androidBridgeProvider).available) {
+      return AlertDialog(
+        key: const ValueKey('wa-done'),
+        title: Text(_opened ? l.waOpenedTitle : l.waNotOpenedTitle),
+        content: SizedBox(
+          width: 460,
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.send_rounded),
+            const SizedBox(width: 10),
+            Expanded(child: Text(_phoneWay == 'whatsapp' ? l.waPhoneChat : (_phoneWay == 'menu' ? l.waPhoneMenu : l.waPhoneNone), style: th.titleMedium)),
+          ]),
+        ),
+        actions: [FilledButton(key: const ValueKey('wa-close'), onPressed: () => Navigator.pop(context, _opened), child: Text(l.close))],
+      );
+    }
     return AlertDialog(
       key: const ValueKey('wa-done'),
       title: Text(_opened ? l.waOpenedTitle : l.waNotOpenedTitle),
@@ -147,7 +179,7 @@ class _ShareDialogState extends ConsumerState<_ShareDialog> {
         width: 460,
         child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(l.waPdfHelp, style: th.bodySmall),
+            Text(ref.read(androidBridgeProvider).available ? l.waPdfHelpPhone : l.waPdfHelp, style: th.bodySmall),
             const SizedBox(height: 12),
             TextField(
               key: const ValueKey('wa-phone'),

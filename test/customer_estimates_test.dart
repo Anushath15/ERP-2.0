@@ -1,6 +1,5 @@
 import 'package:erp2/data/repo/records_repo.dart' show EstimateLine;
 import 'package:erp2/design/motion_level.dart';
-import 'package:erp2/fake/data_providers.dart';
 import 'package:erp2/fake/store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

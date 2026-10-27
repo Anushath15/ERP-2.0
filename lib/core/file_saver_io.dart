@@ -1,9 +1,26 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'android_bridge.dart';
 import 'file_saver.dart';
 import 'safe_name.dart';
 
-FileSaver createSaver() => IoFileSaver();
+FileSaver createSaver() => Platform.isAndroid ? AndroidFileSaver(const ChannelAndroidBridge()) : IoFileSaver();
+
+/// An Android phone: the file goes into Downloads/ASK ERP 2.0, where the phone's Files app shows it. On Android 9 and older (no such folder
+/// for apps) the phone's Share menu opens instead, so the person can keep it in Drive, Files or WhatsApp.
+class AndroidFileSaver implements FileSaver {
+  AndroidFileSaver(this.bridge);
+  final AndroidBridge bridge;
+
+  @override
+  Future<String?> save(String fileName, Uint8List bytes) async {
+    final name = safeFileName(fileName);
+    final mime = mimeFor(name);
+    final where = await bridge.saveToDownloads(bytes, name: name, mime: mime);
+    if (where != null) return where;
+    return await bridge.share(bytes, name: name, mime: mime) == null ? null : name;
+  }
+}
 
 /// Saves into ONE fixed folder (Downloads/ASK ERP 2.0, or [folder] in tests). The name is cleaned by [safeFileName], the final path
 /// is checked to be inside the folder, and a file is never overwritten: a second file with the same name gets a number.

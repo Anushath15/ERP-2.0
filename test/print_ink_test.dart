@@ -141,7 +141,7 @@ void main() {
     expect(back.getPixel(2, 2).r, greaterThan(240), reason: 'the see-through corner is white, not black');
     final bill = await buildDocPdf(doc: samplePrintDoc(products, now), paper: PaperSize.a4, shop: shop, size: PrintTextSize.small, l: l);
     expect(latin1.decode(bill).contains('/SMask'), isFalse);
-    final report = await encodePdf(ExportTable(name: 'X', headers: const ['A'], rows: const [['1']]), shopName: shop.name, now: now, shop: shop);
+    final report = await encodePdf(const ExportTable(name: 'X', headers: ['A'], rows: [['1']]), shopName: shop.name, now: now, shop: shop);
     expect(latin1.decode(report).contains('/SMask'), isFalse);
     // the logo picker itself lays a see-through logo on white before it is saved
     final saved = base64Decode(prepareLogo(img.encodePng(pic))!);

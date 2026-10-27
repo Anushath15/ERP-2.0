@@ -353,6 +353,11 @@ closingCreditGiven | Given on credit
 closingOpening | Cash at start of day
 closingExpenses | Expenses paid in cash
 waSendPdf | Save PDF and open WhatsApp
+waPdfHelpPhone | The PDF and the message go straight into this person's WhatsApp chat. Check them there and press Send.
+waPhoneChat | WhatsApp opened the chat with the PDF and the message. Check them and press Send.
+waPhoneMenu | Pick WhatsApp, then the person: the PDF and the message go with it. Then press Send.
+waPhoneNone | WhatsApp could not be opened on this phone.
+printPhoneWindow | This phone prints through its own print window: a Wi-Fi printer, or Save as PDF.
 docDownloadPdf | Download PDF
 docSendWhatsapp | Send on WhatsApp (PDF)
 waPdfHelp | The PDF is made and copied for you, and the chat opens with the message. In WhatsApp press Ctrl+V: the PDF is attached. Then press Send.

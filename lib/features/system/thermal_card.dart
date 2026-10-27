@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/printer_service.dart' show isPhone;
 import '../../design/widgets.dart';
 import '../../fake/store.dart';
 import '../print/escpos.dart' show parsePrinterAddress;
@@ -61,7 +62,7 @@ class _ThermalCardState extends ConsumerState<ThermalCard> {
           showSelectedIcon: false,
           segments: [
             ButtonSegment(value: ThermalLink.off, label: Text(l.thermalOff, key: const ValueKey('thermal-off'))),
-            ButtonSegment(value: ThermalLink.windows, label: Text(l.thermalWindows, key: const ValueKey('thermal-windows'))),
+            if (!isPhone) ButtonSegment(value: ThermalLink.windows, label: Text(l.thermalWindows, key: const ValueKey('thermal-windows'))), // needs a Windows printer queue
             ButtonSegment(value: ThermalLink.network, label: Text(l.thermalNetwork, key: const ValueKey('thermal-network'))),
           ],
           selected: {s.thermal},
