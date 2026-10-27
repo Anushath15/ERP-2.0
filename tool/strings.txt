@@ -353,6 +353,8 @@ closingCreditGiven | Given on credit
 closingOpening | Cash at start of day
 closingExpenses | Expenses paid in cash
 waSendPdf | Save PDF and open WhatsApp
+docDownloadPdf | Download PDF
+docSendWhatsapp | Send on WhatsApp (PDF)
 waPdfHelp | The PDF is made and copied for you, and the chat opens with the message. In WhatsApp press Ctrl+V: the PDF is attached. Then press Send.
 waOpenedTitle | WhatsApp is open: attach the PDF
 waNotOpenedTitle | The PDF is ready

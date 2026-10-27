@@ -22,6 +22,7 @@ import '../../fake/shop_profile.dart';
 import '../../fake/store.dart';
 import '../../strings.dart';
 import '../billing/cart.dart';
+import '../print/doc_share.dart';
 
 (String, BadgeKind) statusInfo(DocStatus s, Strings l) => switch (s) {
       DocStatus.paid => (l.statusPaid, BadgeKind.success),
@@ -87,10 +88,11 @@ Future<void> showBillPopup(BuildContext context, WidgetRef ref, BillRow b, {Stri
   final cancelledNow = b.cancelled;
   final pay = payModeOf(b.payMode);
   final cust = b.customerId == null ? null : ref.read(customersProvider).where((c) => c.id == b.customerId).firstOrNull;
+  PrintDoc billDoc() => PrintDoc(extraDiscountBp: d.extraDiscountBp, mode: DocMode.invoice, number: b.number, date: b.at, customer: custName(b), customerPhone: cust?.phone ?? '', customerGstin: cust?.gstin ?? '', lines: lines, calc: calc, pay: pay, receivedPaise: d.received, changePaise: d.change, advanceKeptPaise: d.advanceKept, backTo: backTo ?? '/sales?open=${Uri.encodeQueryComponent(b.id)}');
   // Print again (the button and Ctrl+P)
   void printAgain() {
     Navigator.of(ctx, rootNavigator: true).pop();
-    ref.read(printDocProvider.notifier).set(PrintDoc(extraDiscountBp: d.extraDiscountBp, mode: DocMode.invoice, number: b.number, date: b.at, customer: custName(b), customerPhone: cust?.phone ?? '', customerGstin: cust?.gstin ?? '', lines: lines, calc: calc, pay: pay, receivedPaise: d.received, changePaise: d.change, advanceKeptPaise: d.advanceKept, backTo: backTo ?? '/sales?open=${Uri.encodeQueryComponent(b.id)}'));
+    ref.read(printDocProvider.notifier).set(billDoc());
     unawaited(context.push('/print'));
   }
 
@@ -118,6 +120,9 @@ Future<void> showBillPopup(BuildContext context, WidgetRef ref, BillRow b, {Stri
       icon: const Icon(Icons.print_rounded),
       label: Text(l.printAgain),
     ),
+    // the bill as a PDF: saved as a file, or sent to the customer on WhatsApp
+    OutlinedButton.icon(key: const ValueKey('bill-download-pdf'), onPressed: () => unawaited(downloadDocPdf(context, ref, billDoc())), icon: const Icon(Icons.picture_as_pdf_rounded), label: Text(l.docDownloadPdf)),
+    OutlinedButton.icon(key: const ValueKey('bill-whatsapp'), onPressed: () => unawaited(shareDocOnWhatsapp(context, ref, billDoc())), icon: const Icon(Icons.send_rounded), label: Text(l.docSendWhatsapp)),
     // a regular customer's usual order: the same items again on a new bill, at today's prices
     OutlinedButton.icon(
       key: const ValueKey('bill-again'),
@@ -254,6 +259,13 @@ class EstimationsScreen extends ConsumerWidget {
       ];
     }
 
+    Future<PrintDoc> estimateDoc(EstimationDoc e) async {
+      final lines = await cartLines(e);
+      final inclusive = ref.read(shopProvider).pricesIncludeGst;
+      final estCust = ref.read(customersProvider).where((c) => c.name == e.customer).firstOrNull;
+      return PrintDoc(mode: DocMode.estimation, number: e.number, date: e.date, editedOn: e.editedOn, customer: e.customer.isEmpty ? l.walkInCustomer : e.customer, customerPhone: estCust?.phone ?? '', lines: lines, calc: calcBill(lines, inclusive: inclusive, extraDiscountPaise: e.extraDiscountPaise, extraDiscountBp: e.extraDiscountBp), pay: PayMode.cash, extraDiscountBp: e.extraDiscountBp, backTo: '/estimates?open=${Uri.encodeQueryComponent(e.number)}');
+    }
+
     void showEstimate(BuildContext ctx, EstimationDoc e) {
         final converted = e.convertedTo != null;
         showDetail(ctx, title: e.number, subtitle: '${e.customer.isEmpty ? l.walkInCustomer : e.customer}  ·  ${formatDate(e.date)}', body: [
@@ -276,6 +288,25 @@ class EstimationsScreen extends ConsumerWidget {
             },
             icon: const Icon(Icons.print_rounded),
             label: Text(l.print),
+          ),
+          // the estimate as a PDF: saved as a file, or sent to the customer on WhatsApp
+          OutlinedButton.icon(
+            key: const ValueKey('est-download-pdf'),
+            onPressed: () async {
+              final doc = await estimateDoc(e);
+              if (context.mounted) await downloadDocPdf(context, ref, doc);
+            },
+            icon: const Icon(Icons.picture_as_pdf_rounded),
+            label: Text(l.docDownloadPdf),
+          ),
+          OutlinedButton.icon(
+            key: const ValueKey('est-whatsapp'),
+            onPressed: () async {
+              final doc = await estimateDoc(e);
+              if (context.mounted) await shareDocOnWhatsapp(context, ref, doc);
+            },
+            icon: const Icon(Icons.send_rounded),
+            label: Text(l.docSendWhatsapp),
           ),
           OutlinedButton.icon(
             onPressed: () async {

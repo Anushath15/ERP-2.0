@@ -346,6 +346,8 @@ class Strings {
   String get closingOpening => 'Cash at start of day';
   String get closingExpenses => 'Expenses paid in cash';
   String get waSendPdf => 'Save PDF and open WhatsApp';
+  String get docDownloadPdf => 'Download PDF';
+  String get docSendWhatsapp => 'Send on WhatsApp (PDF)';
   String get waPdfHelp => 'The PDF is made and copied for you, and the chat opens with the message. In WhatsApp press Ctrl+V: the PDF is attached. Then press Send.';
   String get waOpenedTitle => 'WhatsApp is open: attach the PDF';
   String get waNotOpenedTitle => 'The PDF is ready';
