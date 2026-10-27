@@ -134,3 +134,15 @@ Still true (cannot be fixed inside the program, or a decision for the owner):
   (Supabase > shop_members, `active = false`), not only the computer.
 * Routine backups (`.sqlite`) are not encrypted; the Telegram copies are (`.askbak`). Keep the backup folder on the shop computer or a pen drive you hold.
 * The installer is not code-signed, so Windows shows "unknown publisher".
+
+## Thermal printer, direct (ESC/POS), October 2026
+
+* **Text can never become a printer command.** Every piece of text on a thermal bill (product names, the customer, the shop footer) has
+  its control bytes removed before it is sent (`printableText` in `lib/features/print/escpos.dart`): a name typed or imported with ESC or
+  GS bytes in it cannot open the cash drawer, cut the paper or change the printer's settings. Letters the printer's character table cannot
+  show print as `?`. Test: `test/thermal_escpos_test.dart` reads the bytes back and fails on any command that is not the program's own.
+* **Bills stay in the shop.** A network printer must have an IPv4 address in the shop's own network (10.x, 172.16-31.x, 192.168.x, 169.254.x,
+  or this computer); any other address is refused when typed and again when printing (`parsePrinterAddress`).
+* **The cash drawer** opens only for a cash bill right after Save and print, or with the Open drawer button in Settings; never on a reprint.
+* The Windows RAW job loads `winspool.drv` by its full System32 path (`systemDll`) and runs on its own thread with a time limit, so a
+  printer that does not answer cannot freeze the counter; the bill then prints the normal way and the person is told.

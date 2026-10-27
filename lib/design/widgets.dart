@@ -198,7 +198,7 @@ Future<bool> confirmDialog(BuildContext context, {required String title, require
 
 void toast(BuildContext context, String message) {
   final m = ScaffoldMessenger.of(context);
-  m.hideCurrentSnackBar();
+  m.clearSnackBars(); // the newest message replaces the shown one AND any still waiting (an old "Sending..." must never come after "Sent")
   m.showSnackBar(SnackBar(content: Text(message), duration: const Duration(seconds: 3)));
 }
 

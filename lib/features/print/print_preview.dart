@@ -18,6 +18,7 @@ import 'bill_template_paper.dart';
 import 'doc_pdf.dart';
 import 'print_action.dart';
 import 'print_layout.dart';
+import 'thermal_action.dart';
 
 /// A sample document so the preview works from the menu too (no bill needed).
 PrintDoc samplePrintDoc(List<Product> products, DateTime now, {DocMode mode = DocMode.invoice, bool edited = false}) {
@@ -60,14 +61,21 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
         if (!mounted) return;
         ref.read(autoPrintProvider.notifier).set(false); // once only (a provider cannot be changed while the page is being built)
         final doc = ref.read(printDocProvider);
-        if (doc != null && ref.read(settingsProvider).printAfterSave) _print(doc);
+        if (doc != null && ref.read(settingsProvider).printAfterSave) _print(doc, justSaved: true);
       });
     }
   }
 
-  /// Makes the page and sends it to the printer; any failure is said in words (never silent).
-  Future<void> _print(PrintDoc doc) async {
+  /// Makes the page and sends it to the printer; any failure is said in words (never silent). On roll paper with the thermal printer switched
+  /// on, the bill goes straight to it in its own language; when it does not answer, the bill is printed the normal way and the person is told.
+  Future<void> _print(PrintDoc doc, {bool justSaved = false}) async {
     final l = tr(context);
+    String? note;
+    if (useThermal(ref.read(settingsProvider), _paper)) {
+      if (await printThermalNow(context, ref, doc, _paper, justSaved: justSaved)) return;
+      note = l.thermalFailed;
+      if (!mounted) return;
+    }
     final Uint8List bytes;
     try {
       bytes = await buildDocPdf(doc: doc, paper: _paper, shop: ref.read(shopProvider), size: ref.read(settingsProvider).printSize, l: l);
@@ -76,7 +84,7 @@ class _PrintPreviewScreenState extends ConsumerState<PrintPreviewScreen> {
       return;
     }
     final kind = doc.mode == DocMode.estimation ? l.rcEstimate : l.rcTaxInvoice;
-    if (mounted) await printPdfNow(context, ref, bytes, '$kind ${doc.number}');
+    if (mounted) await printPdfNow(context, ref, bytes, '$kind ${doc.number}', note: note);
   }
 
   @override

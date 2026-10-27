@@ -1396,6 +1396,30 @@ labelsNoneCan | Nothing to print: the barcodes of these products cannot be print
 labelsTooMany | That is too many stickers at once. The most is {n}
 makeBarcode | Make a barcode
 barcodeHelp | Leave empty, or press the button to make one for a loose item
+setThermal | Thermal printer, direct
+setThermalHelp | For 80 mm and 58 mm roll printers. The bill goes straight to the printer in its own language (ESC/POS): quicker, sharp letters, the paper is cut and the cash drawer can open. If the printer does not answer, the bill prints the normal way.
+thermalOff | Off
+thermalWindows | Bill printer
+thermalNetwork | Network
+thermalHow | How it is connected
+thermalHowHelp | Bill printer: the printer chosen above (USB or shared). Network: a printer with its own address in the shop network.
+thermalAddress | Printer address
+thermalAddressHint | 192.168.1.50:9100
+thermalAddressBad | Type the address of a printer in the shop network, like 192.168.1.50 or 192.168.1.50:9100
+thermalChars | Letters per line
+thermalCharsHelp | Auto: 48 on 80 mm paper, 32 on 58 mm. Pick 42 if the test slip ruler is cut off on an 80 mm printer.
+thermalCharsAuto | Auto
+thermalCut | Cut the paper after each bill
+thermalDrawer | Open the cash drawer for cash bills
+thermalDrawerHelp | Only right after Save and print, not on a reprint. The drawer must be plugged into the printer.
+thermalTest | Print a test slip
+thermalOpenDrawer | Open drawer
+thermalNeedsRoll | Used only when the paper is 80 mm or 58 mm. Now the paper is {paper}, so bills print the normal way.
+thermalSent | Sent to the thermal printer
+thermalFailed | The thermal printer did not answer, so the bill was printed the normal way.
+thermalTestFailed | The thermal printer did not answer. Check the cable, the printer chosen above or the address.
+thermalTestTitle | Test slip
+thermalTestLine | If you can read this, the thermal printer works. The numbers above must fill one line.
 setLabelPrinter | Sticker printer
 setLabelPrinterHelp | The printer for barcode stickers. Leave as it is to use the bill printer
 labelPrinterSame | Same as the bill printer

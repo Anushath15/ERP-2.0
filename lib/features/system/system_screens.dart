@@ -24,6 +24,7 @@ import 'diagnostics_card.dart';
 import 'features_card.dart';
 import 'sync_details.dart';
 import 'lan_card.dart';
+import 'thermal_card.dart';
 import 'security_card.dart';
 import '../../data/db/integrity.dart';
 import '../../data/repo/rebuild.dart';
@@ -132,9 +133,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (ok) await ref.read(modeSwitcherProvider)(v ? DataMode.demo : DataMode.real);
     })));
     const lan = LanCard();
+    const thermal = ThermalCard();
     const diag = DiagnosticsCard();
     const features = FeaturesCard();
-    final cards = [look, anim, printing, sounds, backup, sync, if (s.featureOn(AppFeature.counterLink)) lan, security, people, features, diag, demo];
+    final cards = [look, anim, printing, thermal, sounds, backup, sync, if (s.featureOn(AppFeature.counterLink)) lan, security, people, features, diag, demo];
     return PageFrame(
       title: l.navSettings,
       actions: [if (context.canPop()) TextButton.icon(key: const ValueKey('settings-back'), onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded), label: Text(l.back))],
@@ -142,7 +144,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(children: [for (final c in [printing, security, people, backup, diag, demo]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
+                Expanded(child: Column(children: [for (final c in [printing, thermal, security, people, backup, diag, demo]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
                 const SizedBox(width: 12),
                 Expanded(child: Column(children: [for (final c in [look, anim, sounds, sync, if (s.featureOn(AppFeature.counterLink)) lan, features]) Padding(padding: const EdgeInsets.only(bottom: 12), child: c)])),
               ]),

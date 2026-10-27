@@ -214,6 +214,10 @@ enum PrintTextSize { smaller, small, normal }
 
 enum SyncState { synced, syncing, offline, attention, paused }
 
+/// How roll bills reach a thermal receipt printer: the normal way (a PDF through the printer's driver), or straight in the printer's own
+/// language (ESC/POS) to the bill printer Windows knows, or to a network printer by its address.
+enum ThermalLink { off, windows, network }
+
 /// What to do when a bill would take a customer over their credit limit (the owner chooses in Settings).
 enum CreditLimitMode { off, warn, block }
 
@@ -244,6 +248,11 @@ class AppSettings {
     this.labelPrinterName = '',
     this.printViaDialog = false,
     this.printAfterSave = true,
+    this.thermal = ThermalLink.off,
+    this.thermalAddress = '',
+    this.thermalChars = 0,
+    this.thermalCut = true,
+    this.thermalDrawer = false,
     this.featuresOff = const {},
     this.sync = SyncState.synced,
     this.firstRunDone = true,
@@ -270,6 +279,13 @@ class AppSettings {
 
   /// Print through the Windows print window (for printers whose driver refuses direct jobs), and print at once after Save and print.
   final bool printViaDialog, printAfterSave;
+
+  /// Thermal receipt printer, direct (used only when the paper is 80 mm or 58 mm): how it is reached, the network printer's address
+  /// (192.168.1.50:9100), letters per line (0 = by the paper: 48 on 80 mm, 32 on 58 mm), cut the paper, open the cash drawer for cash bills.
+  final ThermalLink thermal;
+  final String thermalAddress;
+  final int thermalChars;
+  final bool thermalCut, thermalDrawer;
 
   /// Features switched off on this computer (see [AppFeature]); empty = everything on.
   final Set<String> featuresOff;
@@ -299,6 +315,11 @@ class AppSettings {
     String? labelPrinterName,
     bool? printViaDialog,
     bool? printAfterSave,
+    ThermalLink? thermal,
+    String? thermalAddress,
+    int? thermalChars,
+    bool? thermalCut,
+    bool? thermalDrawer,
     Set<String>? featuresOff,
     bool? pricesIncludeGst,
     CreditLimitMode? creditLimitMode,
@@ -336,6 +357,11 @@ class AppSettings {
         labelPrinterName: labelPrinterName ?? this.labelPrinterName,
         printViaDialog: printViaDialog ?? this.printViaDialog,
         printAfterSave: printAfterSave ?? this.printAfterSave,
+        thermal: thermal ?? this.thermal,
+        thermalAddress: thermalAddress ?? this.thermalAddress,
+        thermalChars: thermalChars ?? this.thermalChars,
+        thermalCut: thermalCut ?? this.thermalCut,
+        thermalDrawer: thermalDrawer ?? this.thermalDrawer,
         featuresOff: featuresOff ?? this.featuresOff,
         sync: sync ?? this.sync,
         firstRunDone: firstRunDone ?? this.firstRunDone,
@@ -363,6 +389,11 @@ class AppSettings {
         'labelPrinterName': labelPrinterName,
         'printViaDialog': printViaDialog,
         'printAfterSave': printAfterSave,
+        'thermal': thermal.name,
+        'thermalAddress': thermalAddress,
+        'thermalChars': thermalChars,
+        'thermalCut': thermalCut,
+        'thermalDrawer': thermalDrawer,
         'featuresOff': featuresOff.toList()..sort(),
       };
 
@@ -399,6 +430,11 @@ class AppSettings {
       labelPrinterName: name_(j['labelPrinterName'], d.labelPrinterName),
       printViaDialog: bool_(j['printViaDialog'], d.printViaDialog),
       printAfterSave: bool_(j['printAfterSave'], d.printAfterSave),
+      thermal: pick(ThermalLink.values, j['thermal'], d.thermal),
+      thermalAddress: name_(j['thermalAddress'], d.thermalAddress),
+      thermalChars: const [0, 32, 42, 48].contains(j['thermalChars']) ? j['thermalChars'] as int : d.thermalChars,
+      thermalCut: bool_(j['thermalCut'], d.thermalCut),
+      thermalDrawer: bool_(j['thermalDrawer'], d.thermalDrawer),
       featuresOff: {for (final x in (j['featuresOff'] is List ? j['featuresOff'] as List : const [])) if (x is String && AppFeature.values.any((f) => f.name == x)) x},
     );
   }

@@ -7,7 +7,8 @@ import '../../design/widgets.dart';
 import '../../fake/store.dart';
 
 /// The Print button: sends the PDF to the printer chosen in Settings (or the computer's default one) and says in plain words what happened.
-Future<void> printPdfNow(BuildContext context, WidgetRef ref, Uint8List bytes, String jobName, {bool forLabels = false}) async {
+/// [note] goes before that message (for example why the thermal printer was not used).
+Future<void> printPdfNow(BuildContext context, WidgetRef ref, Uint8List bytes, String jobName, {bool forLabels = false, String? note}) async {
   final l = tr(context);
   toast(context, l.printSending);
   final started = DateTime.now();
@@ -21,12 +22,10 @@ Future<void> printPdfNow(BuildContext context, WidgetRef ref, Uint8List bytes, S
   }
   ref.read(diagProvider).event('print', 'result', {'status': out.status.name, 'printer': out.printer, 'viaWindow': out.viaWindow, 'viaDialogSetting': st.printViaDialog, 'ms': DateTime.now().difference(started).inMilliseconds, 'bytes': bytes.length});
   if (!context.mounted) return;
-  toast(
-    context,
-    switch (out.status) {
-      PrintStatus.sent => out.printer.isEmpty ? l.printSentBrowser : (out.viaWindow && !st.printViaDialog ? '${l.printSent(out.printer)} ${l.printUsedWindow}' : l.printSent(out.printer)),
-      PrintStatus.noPrinter => l.printNoPrinter,
-      PrintStatus.failed => l.printFailed,
-    },
-  );
+  final said = switch (out.status) {
+    PrintStatus.sent => out.printer.isEmpty ? l.printSentBrowser : (out.viaWindow && !st.printViaDialog ? '${l.printSent(out.printer)} ${l.printUsedWindow}' : l.printSent(out.printer)),
+    PrintStatus.noPrinter => l.printNoPrinter,
+    PrintStatus.failed => l.printFailed,
+  };
+  toast(context, note == null ? said : '$note $said');
 }
