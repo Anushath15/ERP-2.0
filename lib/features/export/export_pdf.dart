@@ -94,7 +94,7 @@ class _Ready {
       if (t.rows.length > shown.length) ...[
         pw.Text(
           'Only the first $maxPdfRows of ${t.rows.length} rows are in this PDF. Excel or CSV holds all of them.',
-          style: kit.st(size: 8, color: pdfSoft),
+          style: kit.st(b: true, size: 8.5, color: pdfInk),
         ),
         pw.SizedBox(height: 6),
       ],

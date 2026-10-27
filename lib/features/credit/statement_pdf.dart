@@ -41,7 +41,7 @@ Future<Uint8List> buildStatementPdf({
       pw.SizedBox(height: 10),
       pw.Container(
         padding: const pw.EdgeInsets.all(8),
-        decoration: pw.BoxDecoration(border: pw.Border.all(color: pdfLine, width: 0.6), borderRadius: pw.BorderRadius.circular(4)),
+        decoration: pw.BoxDecoration(border: pw.Border.all(color: pdfFrame, width: 0.75)),
         child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
           pw.Text(customer.name, style: kit.st(b: true, size: 12, color: pdfInk)),
           if (customer.phone.trim().isNotEmpty) pw.Text('Phone: ${customer.phone.trim()}', style: kit.st(size: 9, color: pdfSoft)),
@@ -79,7 +79,7 @@ Future<Uint8List> buildStatementPdf({
         pw.Expanded(
           child: pw.Container(
             padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-            decoration: pw.BoxDecoration(color: pdfBand, borderRadius: pw.BorderRadius.circular(4), border: pw.Border.all(color: pdfInk, width: 0.8)),
+            decoration: pw.BoxDecoration(border: pw.Border.all(color: pdfInk, width: 1)),
             child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
               pw.Text(due < 0 ? l.custAdvance : l.stClosing, style: kit.st(b: true, size: 12, color: pdfInk)),
               pw.SizedBox(height: 4),
@@ -92,8 +92,7 @@ Future<Uint8List> buildStatementPdf({
           pw.SizedBox(width: 12),
           pw.Column(children: [
             pw.Container(
-              padding: const pw.EdgeInsets.all(5),
-              decoration: pw.BoxDecoration(color: PdfColors.white, border: pw.Border.all(color: pdfLine, width: 0.6), borderRadius: pw.BorderRadius.circular(4)),
+              padding: const pw.EdgeInsets.all(10), // a wide white margin round the QR: phones read it from paper more easily
               child: pw.BarcodeWidget(barcode: pw.Barcode.qrCode(errorCorrectLevel: pw.BarcodeQRCorrectionLevel.medium), data: upi, width: 92, height: 92, drawText: false),
             ),
             pw.SizedBox(height: 3),

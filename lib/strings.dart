@@ -419,7 +419,7 @@ class Strings {
   String get setPaper => 'Paper size';
   String get setPaperHelp => 'Saved only on this computer';
   String get setPrinter => 'Printer';
-  String get setPrinterHelp => 'Choose the printer once. The Print button sends the bill straight to it';
+  String get setPrinterHelp => 'Choose the printer once. The Print button sends the bill straight to it. Default never means OneNote, Print to PDF or Fax';
   String get setLook => 'How it looks';
   String get deviceOnlyNote => 'Colours, text size and printer are saved only on this device.';
   String get setBackup => 'Backup';
@@ -1314,12 +1314,13 @@ class Strings {
   String get printSending => 'Sending to the printer...';
   String printSent(String printer) => 'Sent to ${printer}';
   String get printSentBrowser => 'The print window is open';
-  String get printNoPrinter => 'No printer found. Connect a printer in Windows, then press Print again.';
+  String get printNoPrinter => 'No paper printer found. Switch the printer on and connect it, then press Print again. (OneNote, Print to PDF and Fax are used only when you pick them in Settings.)';
   String get printFailed => 'Could not print. Check that the printer is on and connected.';
   String get printDefault => 'Default printer (Windows)';
   String get printTest => 'Test print';
   String get printTestTitle => 'Printer test page';
   String get printTestBody => 'If you can read this and the frame is complete, the printer is ready.';
+  String get printTestGrey => 'The box above is a bill heading row: it must be LIGHT grey with black words, and the small numbers must be clear.';
   String get printersNone => 'No printer found';
   String get printersRefresh => 'Look for printers again';
   String get authWrongLogin => 'Wrong email or password.';
@@ -1530,6 +1531,12 @@ class Strings {
   String xlMore(String n) => 'and ${n} more';
   String get setPrintViaWindow => 'Use the Windows print window';
   String get setPrintViaWindowHelp => 'Switch this on if the printer does nothing when you press Print (some printer drivers refuse the direct way). The program then opens the Windows print window to print.';
+  String get setPrintAsPicture => 'Print as a picture';
+  String get setPrintAsPictureHelp => 'Switch this on only if the printer takes the bill but prints nothing or an empty page (some HP drivers do this). Each page goes as one picture: a little slower, the same look on paper.';
+  String get printerNoPaper => 'makes no paper';
+  String get printPickPrinter => 'Several printers are connected and the Windows default makes no paper. Choose the bill printer once in Settings > Printing, then press Print again.';
+  String get printSentWindow => 'Sent through the Windows print window.';
+  String get printPaperShort => 'The paper set for this printer in Windows is smaller than the page, so the bottom may be cut off: set A4 in the Printing preferences of the printer.';
   String get setPrintAfterSave => 'Print straight after Save and print';
   String get setPrintAfterSaveHelp => 'On: Save and print also sends the bill to the printer at once. Off: it opens the Print page and you press Print.';
   String get printUsedWindow => 'The printer did not accept the direct way, so the Windows print window was used.';

@@ -12,8 +12,8 @@ import 'bill_template_pdf.dart';
 import 'print_layout.dart';
 
 /// The printed bill or estimate as a real PDF (pure Dart, no plugin), from the same layout the on-screen paper uses.
-///  * A4 and A5 tax invoices: a normal page (several pages when the bill is long).
-///  * Roll paper (80 mm, 58 mm) and ESTIMATES: the page is exactly as long as the content, so there is no big blank space at the bottom.
+///  * A4 and A5, bills AND estimates: a normal A4 or A5 page in the shop template (several pages when the document is long).
+///  * Roll paper (80 mm, 58 mm) only: the page is exactly as long as the content, so a receipt printer feeds no blank paper.
 Future<Uint8List> buildDocPdf({
   required PrintDoc doc,
   required PaperSize paper,
@@ -37,7 +37,7 @@ Future<Uint8List> buildDocPdf({
   pw.Widget txt(String t, {bool b = false, double? fs, pw.TextAlign? align}) => pw.Text(t, style: s(b: b, fs: fs), textAlign: align);
 
   pw.Widget text(PrintText t, {pw.TextAlign? align}) => txt(t.text, b: t.bold, fs: t.id == 'shopName' ? m.shop : null, align: align);
-  final line = pw.Divider(height: roll ? 9 : 12, thickness: 0.6);
+  final line = pw.Divider(height: roll ? 9 : 12, thickness: 1, color: PdfColors.black); // 1 pt: about 3 dots on a 203 dpi receipt printer
 
   const wNum = 22.0, wQty = 56.0, wRate = 58.0, wAmt = 68.0;
   pw.Widget cell(String t, double w, {bool b = false}) => pw.SizedBox(width: w, child: txt(t, b: b, align: pw.TextAlign.right));
@@ -66,8 +66,8 @@ Future<Uint8List> buildDocPdf({
       ]);
 
   final children = <pw.Widget>[
-    if (!roll && logoBytes(shop.logoPng) != null) ...[
-      pw.Align(alignment: pw.Alignment.centerLeft, child: pw.Image(pw.MemoryImage(logoBytes(shop.logoPng)!), height: 44)),
+    if (!roll && pdfLogoBytes(shop.logoPng) != null) ...[
+      pw.Align(alignment: pw.Alignment.centerLeft, child: pw.Image(pw.MemoryImage(pdfLogoBytes(shop.logoPng)!), height: 44)),
       pw.SizedBox(height: 4),
     ],
     if (lay.header.isNotEmpty) ...[

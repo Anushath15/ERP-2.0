@@ -24,11 +24,11 @@ class TemplatePaper extends StatelessWidget {
     final a5 = paper == PaperSize.a5;
     // small rows, so that many products fit on one page (paper is not wasted)
     final look = BillLook.of(shop);
-    final fs = (a5 ? m.row - 3.5 : m.row - 2.0).clamp(6.0, 12.0).toDouble() + look.fontDelta;
+    final fs = ((a5 ? m.row - 3.5 : m.row - 2.0) + look.fontDelta).clamp(a5 ? 6.5 : 7.0, 12.0).toDouble(); // as the printed page
     // on paper the classic and compact lines are the paper's ink; the modern design has its own colour and light grey lines
     final ink = look.design == 'modern' ? Color(look.lineColor) : c.onPaper;
     final accent = Color(look.accent);
-    final headInk = look.band ? Colors.white : null;
+    const Color? headInk = null; // black words everywhere, as on the printed page
     final margin = paperMarginPt(paper);
     TextStyle st({bool b = false, double? size, Color? color}) => TextStyle(fontFamily: 'Inter', color: color ?? c.onPaper, fontSize: size ?? fs, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
     Widget txt(String s, {bool b = false, double? size, TextAlign? align, Key? key, Color? color}) => Text(s, key: key, style: st(b: b, size: size, color: color), textAlign: align);
@@ -36,8 +36,8 @@ class TemplatePaper extends StatelessWidget {
     final thin = BorderSide(color: ink, width: look.grid);
     final border = TableBorder(left: line, right: line, top: line, bottom: line, horizontalInside: thin, verticalInside: thin);
     Widget cell(String s, {bool b = false, TextAlign align = TextAlign.left, Key? key, Color? color}) => Padding(padding: EdgeInsets.symmetric(horizontal: 3, vertical: look.padV), child: txt(s, b: b, align: align, key: key, color: color));
-    final shade = look.band ? accent.withValues(alpha: 0.15) : c.onPaper.withValues(alpha: 0.08);
-    final headFill = BoxDecoration(color: look.band ? accent : shade);
+    final shade = Color(look.tint); // the same solid tint as the printed page
+    final headFill = BoxDecoration(color: shade);
     final logo = t.showShop ? logoBytes(shop.logoPng) : null;
 
     TableRow totalRow(String label, {String qty = '', String mid = '', required String amount, bool b = false, bool shaded = false, Key? key}) => TableRow(
@@ -49,17 +49,17 @@ class TemplatePaper extends StatelessWidget {
     final cols = <int, TableColumnWidth>{for (var k = 0; k < t.cols.length; k++) k: t.cols[k] == 1 ? const FlexColumnWidth() : FixedColumnWidth(templateColWidths[t.cols[k]] * (a5 ? 0.8 : 1))};
     final body = Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (t.heading.isNotEmpty) ...[
-        Center(child: Text(t.heading, key: const ValueKey('paperHeading'), style: st(b: true, size: m.title + look.fontDelta, color: look.band ? accent : null).copyWith(decoration: look.band ? TextDecoration.none : TextDecoration.underline, decorationColor: c.onPaper))),
+        Center(child: Text(t.heading, key: const ValueKey('paperHeading'), style: st(b: true, size: m.title + look.fontDelta).copyWith(decoration: TextDecoration.underline, decorationColor: c.onPaper))),
         const SizedBox(height: 4),
       ],
       if (t.showShop)
         Container(
           key: const ValueKey('paperShopBlock'),
-          decoration: look.band ? BoxDecoration(color: accent) : BoxDecoration(border: Border.all(color: ink, width: look.line)),
+          decoration: BoxDecoration(border: Border(top: look.band ? BorderSide(color: accent, width: 2.5) : line, left: line, right: line, bottom: line)),
           padding: EdgeInsets.all(look.band ? 8 : 6),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (logo != null) ...[Container(color: look.band ? Colors.white : null, padding: look.band ? const EdgeInsets.all(2) : null, child: Image.memory(logo, height: look.design == 'compact' ? 28 : 40, fit: BoxFit.contain)), const SizedBox(width: 8)],
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [for (var i = 0; i < t.shopLeft.length; i++) txt(t.shopLeft[i], b: i == 0, size: i == 0 ? m.shop + 1 + look.fontDelta + (look.band ? 2 : 0) : null, key: i == 0 ? const ValueKey('shopName') : null, color: headInk)])),
+            if (logo != null) ...[Image.memory(logo, height: look.design == 'compact' ? 28 : 40, fit: BoxFit.contain), const SizedBox(width: 8)],
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [for (var i = 0; i < t.shopLeft.length; i++) txt(t.shopLeft[i], b: i == 0, size: i == 0 ? m.shop + 1 + look.fontDelta + (look.band ? 2 : 0) : null, key: i == 0 ? const ValueKey('shopName') : null, color: i == 0 && look.band ? accent : headInk)])),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [for (final r in t.shopRight) txt(r, b: true, align: TextAlign.right, color: headInk)]),
           ]),
         ),
@@ -148,7 +148,7 @@ class TemplatePaper extends StatelessWidget {
             child: t.upiData.isEmpty
                 ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [for (final b in t.bankLines) txt(b)])
                 : Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                    QrView(key: const ValueKey('paperUpiQr'), data: t.upiData, size: 64),
+                    QrView(key: const ValueKey('paperUpiQr'), data: t.upiData, size: 72),
                     const SizedBox(width: 8),
                     Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [txt(t.upiLabel, b: true, key: const ValueKey('paperUpi')), txt(t.upiAnyApp)])),
                   ]),

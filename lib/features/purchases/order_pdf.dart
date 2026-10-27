@@ -22,7 +22,7 @@ Future<Uint8List> buildOrderPdf({required OrderDoc order, required String dealer
       pw.SizedBox(height: 10),
       pw.Container(
         padding: const pw.EdgeInsets.all(8),
-        decoration: pw.BoxDecoration(border: pw.Border.all(color: pdfLine, width: 0.6), borderRadius: pw.BorderRadius.circular(4)),
+        decoration: pw.BoxDecoration(border: pw.Border.all(color: pdfFrame, width: 0.75)),
         child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
           pw.Text('To', style: kit.st(size: 8, color: pdfSoft)),
           pw.Text(order.dealerName, style: kit.st(b: true, size: 12, color: pdfInk)),

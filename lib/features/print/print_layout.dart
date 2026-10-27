@@ -187,7 +187,7 @@ double paperWidthPt(PaperSize p) => switch (p) { PaperSize.a4 => 595.0, PaperSiz
 bool isRoll(PaperSize p) => p == PaperSize.mm80 || p == PaperSize.mm58;
 
 /// Margins around the printout in points.
-double paperMarginPt(PaperSize p) => switch (p) { PaperSize.a4 => 24.0, PaperSize.a5 => 20.0, PaperSize.mm80 => 8.0, PaperSize.mm58 => 6.0 };
+double paperMarginPt(PaperSize p) => switch (p) { PaperSize.a4 => 24.0, PaperSize.a5 => 20.0, PaperSize.mm80 => 12.0, PaperSize.mm58 => 14.0 };
 
 /// Font sizes in points for each "Print text size" choice. Small is the default: item rows about 9.5 pt, title 12 pt, total 11 pt.
 class PrintMetrics {

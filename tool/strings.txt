@@ -428,7 +428,7 @@ setPrinting | Printing
 setPaper | Paper size
 setPaperHelp | Saved only on this computer
 setPrinter | Printer
-setPrinterHelp | Choose the printer once. The Print button sends the bill straight to it
+setPrinterHelp | Choose the printer once. The Print button sends the bill straight to it. Default never means OneNote, Print to PDF or Fax
 setLook | How it looks
 deviceOnlyNote | Colours, text size and printer are saved only on this device.
 setBackup | Backup
@@ -1353,12 +1353,13 @@ purCostSame | Buying price stays {price}
 printSending | Sending to the printer...
 printSent | Sent to {printer}
 printSentBrowser | The print window is open
-printNoPrinter | No printer found. Connect a printer in Windows, then press Print again.
+printNoPrinter | No paper printer found. Switch the printer on and connect it, then press Print again. (OneNote, Print to PDF and Fax are used only when you pick them in Settings.)
 printFailed | Could not print. Check that the printer is on and connected.
 printDefault | Default printer (Windows)
 printTest | Test print
 printTestTitle | Printer test page
 printTestBody | If you can read this and the frame is complete, the printer is ready.
+printTestGrey | The box above is a bill heading row: it must be LIGHT grey with black words, and the small numbers must be clear.
 printersNone | No printer found
 printersRefresh | Look for printers again
 authWrongLogin | Wrong email or password.
@@ -1569,6 +1570,12 @@ xlButton | Excel
 xlMore | and {n} more
 setPrintViaWindow | Use the Windows print window
 setPrintViaWindowHelp | Switch this on if the printer does nothing when you press Print (some printer drivers refuse the direct way). The program then opens the Windows print window to print.
+setPrintAsPicture | Print as a picture
+setPrintAsPictureHelp | Switch this on only if the printer takes the bill but prints nothing or an empty page (some HP drivers do this). Each page goes as one picture: a little slower, the same look on paper.
+printerNoPaper | makes no paper
+printPickPrinter | Several printers are connected and the Windows default makes no paper. Choose the bill printer once in Settings > Printing, then press Print again.
+printSentWindow | Sent through the Windows print window.
+printPaperShort | The paper set for this printer in Windows is smaller than the page, so the bottom may be cut off: set A4 in the Printing preferences of the printer.
 setPrintAfterSave | Print straight after Save and print
 setPrintAfterSaveHelp | On: Save and print also sends the bill to the printer at once. Off: it opens the Print page and you press Print.
 printUsedWindow | The printer did not accept the direct way, so the Windows print window was used.

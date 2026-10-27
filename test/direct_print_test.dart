@@ -55,7 +55,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('printNow')));
     await tester.pumpAndSettle();
     expect(fake.jobs, isEmpty);
-    expect(find.textContaining('No printer found'), findsOneWidget);
+    expect(find.textContaining('No paper printer found'), findsOneWidget);
   });
 
   testWidgets('the printer failed: a plain message', (tester) async {

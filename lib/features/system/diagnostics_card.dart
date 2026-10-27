@@ -37,9 +37,11 @@ Future<String> collectDiagnostics(WidgetRef ref) async {
   facts['printer chosen'] = s.printerName.isEmpty ? '(Windows default)' : s.printerName;
   facts['use Windows print window'] = s.printViaDialog;
   facts['print after save'] = s.printAfterSave;
+  facts['print as a picture'] = s.printAsPicture;
+  facts['thermal printer'] = s.thermal.name;
   try {
     final printers = await ref.read(printerServiceProvider).printers();
-    facts['printers found'] = printers.map((p) => '${p.name}${p.isDefault ? ' (default)' : ''}').join('; ');
+    facts['printers found'] = printers.map((p) => '${p.name} [${p.driver}]${p.isDefault ? ' (default)' : ''}${p.isPaper ? '' : ' (no paper)'}').join('; ');
   } catch (e) {
     facts['printers found'] = 'could not be listed: ${e.runtimeType}';
   }

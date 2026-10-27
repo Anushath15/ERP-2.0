@@ -15,8 +15,8 @@ class LabelSpec {
   static const mm = 72 / 25.4;
 
   static LabelSpec of(LabelSize s) => switch (s) {
-        LabelSize.roll50x25 => const LabelSpec(width: 50 * mm, height: 25 * mm, margin: 3, name: 6.5, price: 8, code: 5.5, bars: 24, quiet: 9),
-        LabelSize.roll38x25 => const LabelSpec(width: 38 * mm, height: 25 * mm, margin: 2.5, name: 5.8, price: 7.5, code: 5, bars: 24, quiet: 7),
+        LabelSize.roll50x25 => const LabelSpec(width: 50 * mm, height: 25 * mm, margin: 3, name: 7, price: 9, code: 7, bars: 24, quiet: 9),
+        LabelSize.roll38x25 => const LabelSpec(width: 38 * mm, height: 25 * mm, margin: 2.5, name: 7, price: 9, code: 7, bars: 24, quiet: 7),
         // the common 3 x 7 sticker sheet: 63.5 x 38.1 mm each
         LabelSize.sheetA4 => const LabelSpec(width: 63.5 * mm, height: 38.1 * mm, margin: 5, name: 8.5, price: 11, code: 7, bars: 44, quiet: 14),
       };
@@ -36,8 +36,7 @@ class LabelItem {
 /// All labels as one PDF. Roll sizes: one page per sticker, exactly the sticker's size (the printer's driver feeds one sticker per page).
 /// A4 sheet: 21 stickers on a page, in the positions of the sticker sheet.
 Future<Uint8List> buildLabelsPdf({required List<LabelItem> items, required LabelSize size, String title = 'Barcode labels'}) async {
-  final font = pw.Font.ttf(await rootBundle.load('assets/fonts/Inter-Variable.ttf'));
-  final bold = pw.Font.ttf(await rootBundle.load('assets/fonts/Inter-Bold.ttf'));
+  final bold = pw.Font.ttf(await rootBundle.load('assets/fonts/Inter-Bold.ttf')); // every word on a sticker is bold
   final spec = LabelSpec.of(size);
   final all = [for (final i in items) for (var c = 0; c < i.copies; c++) i];
 
@@ -50,7 +49,7 @@ Future<Uint8List> buildLabelsPdf({required List<LabelItem> items, required Label
           // the blank space at both ends of the bars (the "quiet zone") is what lets a scanner find where the barcode starts
           pw.Padding(
             padding: pw.EdgeInsets.symmetric(horizontal: spec.quiet),
-            child: pw.BarcodeWidget(barcode: pw.Barcode.code128(), data: i.barcode, height: spec.bars, drawText: true, textStyle: pw.TextStyle(font: font, fontSize: spec.code)),
+            child: pw.BarcodeWidget(barcode: pw.Barcode.code128(), data: i.barcode, height: spec.bars, drawText: true, textStyle: pw.TextStyle(font: bold, fontSize: spec.code)),
           ),
           pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text(i.priceText, style: pw.TextStyle(font: bold, fontSize: spec.price))),
         ]),

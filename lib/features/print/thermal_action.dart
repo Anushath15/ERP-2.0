@@ -34,10 +34,13 @@ Future<ThermalResult> sendThermal(WidgetRef ref, Uint8List bytes, String jobName
       target = st.thermalAddress;
       r = a == null ? ThermalResult.badAddress : (await raw.toNetwork(a.host, a.port, bytes) ? ThermalResult.sent : ThermalResult.failed);
     } else {
+      // the bill printer picked in Settings, by its name even when Windows calls it offline (cheap receipt printers often look offline
+      // and still print; a queued job prints when it is switched on). Nothing picked: the Windows default, only when it makes paper.
+      // Never a guess among other printers (receipt-printer bytes on an inkjet print junk) and never OneNote (it would open on the desk).
       target = st.printerName;
       if (target.isEmpty) {
         final all = await ref.read(printerServiceProvider).printers();
-        target = all.where((p) => p.isDefault).firstOrNull?.name ?? all.firstOrNull?.name ?? '';
+        target = all.where((p) => p.isDefault && p.isPaper).firstOrNull?.name ?? '';
       }
       r = target.isEmpty ? ThermalResult.noPrinter : (await raw.toWindowsPrinter(target, bytes, jobName: jobName) ? ThermalResult.sent : ThermalResult.failed);
     }

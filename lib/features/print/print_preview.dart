@@ -194,7 +194,7 @@ class Paper extends StatelessWidget {
     TextStyle s({bool b = false, double? fs}) => TextStyle(fontFamily: 'Inter', color: c.onPaper, fontSize: fs ?? m.row, fontWeight: b ? FontWeight.w700 : FontWeight.w400, height: 1.3);
     Widget text(PrintText t, {TextAlign? align}) => Text(t.text, key: t.id == null ? null : ValueKey<String>(t.id!), style: s(b: t.bold, fs: t.id == 'shopName' ? m.shop : null), textAlign: align);
     final cross = roll ? CrossAxisAlignment.center : CrossAxisAlignment.start;
-    final divider = Divider(color: c.onPaper.withValues(alpha: 0.5), height: roll ? 9 : 12, thickness: 0.8);
+    final divider = Divider(color: c.onPaper, height: roll ? 9 : 12, thickness: 1); // as the printed slip: solid black, 1 pt
 
     final header = lay.header.isEmpty ? null : Column(crossAxisAlignment: cross, children: [for (final h in lay.header) text(h, align: roll ? TextAlign.center : TextAlign.left)]);
 

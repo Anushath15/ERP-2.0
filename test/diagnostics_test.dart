@@ -78,7 +78,8 @@ void main() {
     expect(text, contains('program: $appVersionLabel'));
     expect(text, contains('data version:'));
     expect(text, contains('products:'));
-    expect(text, contains('printers found: HP LaserJet A4 (default); Epson Receipt'));
+    expect(text, contains('printers found: HP LaserJet A4 [] (default); Epson Receipt []'), reason: 'each printer with its Windows driver (none in the stand-in)');
+    expect(text, contains('print as a picture: false'));
     expect(text, contains('sync | round | ok=true | pushed=3'));
     expect(text, contains('no customer names'));
     // the demo shop has customers with names; none of them may be in the file

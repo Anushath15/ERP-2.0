@@ -111,7 +111,7 @@ void main() {
     expect(smallestFont(compact), lessThan(smallestFont(classic)));
   });
 
-  testWidgets('the on-screen paper uses the same look: the Modern shop band is filled with the chosen colour', (tester) async {
+  testWidgets('the on-screen paper uses the same look: Modern has a thick line in the chosen colour over a WHITE shop block (no filled band: it printed as a dark block)', (tester) async {
     final doc = samplePrintDoc(products, now);
     Future<BoxDecoration?> band(ShopProfile s) async {
       await tester.pumpWidget(MaterialApp(
@@ -121,7 +121,9 @@ void main() {
       return tester.widget<Container>(find.byKey(const ValueKey('paperShopBlock'))).decoration as BoxDecoration?;
     }
 
-    expect((await band(shop.copyWith(billDesign: 'modern', billAccent: 0xFF5B3A8C)))!.color, const Color(0xFF5B3A8C));
+    final modern = (await band(shop.copyWith(billDesign: 'modern', billAccent: 0xFF5B3A8C)))!;
+    expect(modern.color, isNull, reason: 'white, never filled');
+    expect((modern.border! as Border).top, const BorderSide(color: Color(0xFF5B3A8C), width: 2.5));
     final classic = (await band(shop))!;
     expect(classic.color, isNull, reason: 'Classic is a plain box with a black line');
     expect(classic.border, isNotNull);

@@ -133,7 +133,7 @@ void main() {
       for (final size in PrintTextSize.values) {
         final used = fontSizes(await make(invoice(), PaperSize.a4, size, 'invoice_a4_${size.name}'));
         final m = PrintMetrics.of(size);
-        expect(used, containsAll([(m.row - 2.0).clamp(6.0, 12.0), m.shop + 1]), reason: size.name);
+        expect(used, containsAll([(m.row - 2.0).clamp(7.0, 12.0), m.shop + 1]), reason: size.name); // never below 7 pt on A4 (printer-safe)
         expect(used.every((x) => x <= m.shop + 1.01), isTrue, reason: '${size.name}: sizes $used');
       }
     });

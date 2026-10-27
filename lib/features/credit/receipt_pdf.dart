@@ -25,7 +25,7 @@ Future<Uint8List> buildPaymentReceiptPdf({
   final slipWidth = roll ? paperWidthPt(paper) - 2 * paperMarginPt(paper) : 250.0;
   pw.TextStyle s({bool b = false, double size = 9.5}) => pw.TextStyle(font: b ? boldFont : regular, fontSize: size, lineSpacing: 1.5);
   String mode(String m) => switch (m) { 'upi' => l.payUpi, 'card' => l.payCard, _ => l.payCash };
-  pw.Widget line() => pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 4), child: pw.Divider(height: 1, thickness: 0.6));
+  pw.Widget line() => pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 4), child: pw.Divider(height: 1, thickness: 0.8, color: PdfColors.black));
   pw.Widget two(String a, String b, {bool bold = false, double size = 9.5}) => pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text(a, style: s(b: bold, size: size)), pw.Text(b, style: s(b: bold, size: size))]);
 
   final r = receipt;
@@ -61,7 +61,9 @@ Future<Uint8List> buildPaymentReceiptPdf({
     final m = paperMarginPt(paper);
     pdf.addPage(pw.Page(pageFormat: PdfPageFormat(paperWidthPt(paper), double.infinity, marginAll: m), build: (_) => slip));
   } else {
-    pdf.addPage(pw.Page(pageFormat: PdfPageFormat.a5.applyMargin(left: 28, top: 28, right: 28, bottom: 28), build: (_) => pw.Align(alignment: pw.Alignment.topCenter, child: slip)));
+    // the page is the paper itself (A4 or A5): it is printed from the paper's corner, so a smaller page would land off-centre
+    final page = paper == PaperSize.a5 ? PdfPageFormat.a5 : PdfPageFormat.a4;
+    pdf.addPage(pw.Page(pageFormat: page.applyMargin(left: 28, top: 28, right: 28, bottom: 28), build: (_) => pw.Align(alignment: pw.Alignment.topCenter, child: slip)));
   }
   return pdf.save();
 }

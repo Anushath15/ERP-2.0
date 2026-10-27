@@ -19,17 +19,19 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
   final a5 = paper == PaperSize.a5;
   // small rows, so that many products fit on one page (paper is not wasted)
   final look = BillLook.of(shop);
-  final fs = (a5 ? m.row - 3.5 : m.row - 2.0).clamp(6.0, 12.0).toDouble() + look.fontDelta;
+  // never below 7 pt on A4 and 6.5 pt on A5 (smaller figures blur on an inkjet: 3/8 and 6/0 get mixed up in rates and totals);
+  // 6.5 on A5 keeps the shop rule of 20 products on one A5 sheet
+  final fs = ((a5 ? m.row - 3.5 : m.row - 2.0) + look.fontDelta).clamp(a5 ? 6.5 : 7.0, 12.0).toDouble();
   final ink = PdfColor.fromInt(look.lineColor), accent = PdfColor.fromInt(look.accent), tint = PdfColor.fromInt(look.tint);
-  // the column heads: filled with the colour (white writing) in the modern design, a light tint otherwise
-  final headFill = pw.BoxDecoration(color: look.band ? accent : tint);
+  // the column heads: a light SOLID tint with black bold words, in every design
+  final headFill = pw.BoxDecoration(color: tint);
   final margin = paperMarginPt(paper);
   pw.TextStyle st({bool b = false, double? size, PdfColor? color}) => pw.TextStyle(font: b ? bold : font, fontSize: size ?? fs, lineSpacing: 1.3, color: color);
   pw.Widget txt(String s, {bool b = false, double? size, pw.TextAlign? align, PdfColor? color}) => pw.Text(s, style: st(b: b, size: size, color: color), textAlign: align);
   final outer = pw.BorderSide(width: look.line, color: ink), inner = pw.BorderSide(width: look.grid, color: ink);
   final border = pw.TableBorder(left: outer, right: outer, top: outer, bottom: outer, horizontalInside: inner, verticalInside: inner);
-  pw.Widget cell(String s, {bool b = false, pw.TextAlign align = pw.TextAlign.left, PdfColor? color}) => pw.Padding(padding: pw.EdgeInsets.symmetric(horizontal: 3, vertical: look.padV), child: txt(s, b: b, align: align, color: color));
-  final headInk = look.band ? PdfColors.white : null;
+  pw.Widget cell(String s, {bool b = false, pw.TextAlign align = pw.TextAlign.left, PdfColor? color}) => pw.Padding(padding: pw.EdgeInsets.symmetric(horizontal: 3, vertical: a5 ? look.padV / 3 : look.padV), child: txt(s, b: b, align: align, color: color)); // A5: tighter rows, the same letters
+  const PdfColor? headInk = null; // black words everywhere
   pw.TableRow totalRow(String label, {String qty = '', String mid = '', required String amount, bool b = false, bool shaded = false}) => pw.TableRow(
         decoration: shaded ? pw.BoxDecoration(color: tint) : null,
         children: [
@@ -37,26 +39,27 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
         ],
       );
 
-  final logo = t.showShop ? logoBytes(shop.logoPng) : null;
+  final logo = t.showShop ? pdfLogoBytes(shop.logoPng) : null;
   final children = <pw.Widget>[
     if (t.heading.isNotEmpty) ...[
-      pw.Center(child: pw.Text(t.heading, style: st(b: true, size: m.title + look.fontDelta, color: look.band ? accent : null).copyWith(decoration: look.band ? pw.TextDecoration.none : pw.TextDecoration.underline))),
+      pw.Center(child: pw.Text(t.heading, style: st(b: true, size: m.title + look.fontDelta).copyWith(decoration: pw.TextDecoration.underline))),
       pw.SizedBox(height: 4),
     ],
     if (t.showShop)
       pw.Container(
-        decoration: look.band ? pw.BoxDecoration(color: accent) : pw.BoxDecoration(border: pw.Border.all(width: look.line, color: ink)),
+        // white, framed; the modern design adds a thick coloured line on top (no filled block)
+        decoration: pw.BoxDecoration(border: pw.Border(top: look.band ? pw.BorderSide(width: 2.5, color: accent) : outer, left: outer, right: outer, bottom: outer)),
         padding: pw.EdgeInsets.all(look.band ? 8 : 6),
         child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-          if (logo != null) ...[pw.Container(color: look.band ? PdfColors.white : null, padding: look.band ? const pw.EdgeInsets.all(2) : null, child: pw.Image(pw.MemoryImage(logo), height: look.design == 'compact' ? 28 : 40)), pw.SizedBox(width: 8)],
+          if (logo != null) ...[pw.Image(pw.MemoryImage(logo), height: look.design == 'compact' ? 28 : 40), pw.SizedBox(width: 8)],
           pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-            for (var i = 0; i < t.shopLeft.length; i++) txt(t.shopLeft[i], b: i == 0, size: i == 0 ? m.shop + 1 + look.fontDelta + (look.band ? 2 : 0) : null, color: headInk),
+            for (var i = 0; i < t.shopLeft.length; i++) txt(t.shopLeft[i], b: i == 0, size: i == 0 ? m.shop + 1 + look.fontDelta + (look.band ? 2 : 0) : null, color: i == 0 && look.band ? accent : null),
           ])),
           pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [for (final r in t.shopRight) txt(r, b: true, align: pw.TextAlign.right, color: headInk)]),
         ]),
       ),
     pw.Container(
-      decoration: pw.BoxDecoration(border: pw.Border(left: outer, right: outer, bottom: outer, top: outer)),
+      decoration: pw.BoxDecoration(border: pw.Border(left: outer, right: outer, bottom: outer, top: t.showShop ? pw.BorderSide.none : outer)), // the shop block's bottom line is its top
       padding: const pw.EdgeInsets.all(6),
       child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
         pw.Expanded(
@@ -131,24 +134,24 @@ Future<Uint8List> buildTemplatePdf({required BillTemplate t, required String num
           ]),
       ],
     ),
-    pw.SizedBox(height: 8),
+    pw.SizedBox(height: a5 ? 4 : 8),
     txt(t.words, b: true),
     if (t.showShop) ...[
-      pw.SizedBox(height: 10),
+      pw.SizedBox(height: a5 ? 6 : 10),
       pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.end, mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
         pw.Expanded(
           child: t.upiData.isEmpty
               ? pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [for (final b in t.bankLines) txt(b)])
               : pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
-                  pw.BarcodeWidget(barcode: pw.Barcode.qrCode(errorCorrectLevel: pw.BarcodeQRCorrectionLevel.medium), data: t.upiData, width: 64, height: 64, drawText: false),
+                  pw.BarcodeWidget(barcode: pw.Barcode.qrCode(errorCorrectLevel: pw.BarcodeQRCorrectionLevel.medium), data: t.upiData, width: a5 ? 56 : 72, height: a5 ? 56 : 72, drawText: false),
                   pw.SizedBox(width: 8),
                   pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [txt(t.upiLabel, b: true), txt(t.upiAnyApp)]),
                 ]),
         ),
-        pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [txt(t.forShop, b: true), pw.SizedBox(height: 34), txt(t.signatory)]),
+        pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [txt(t.forShop, b: true), pw.SizedBox(height: a5 ? 22 : 34), txt(t.signatory)]),
       ]),
     ],
-    if (t.note.isNotEmpty) ...[pw.SizedBox(height: 10), pw.Center(child: txt(t.note, align: pw.TextAlign.center))],
+    if (t.note.isNotEmpty) ...[pw.SizedBox(height: a5 ? 4 : 10), pw.Center(child: txt(t.note, align: pw.TextAlign.center))],
   ];
 
   final pdf = pw.Document(title: '${t.title.isNotEmpty ? t.title : t.status} $number', author: shop.name, creator: 'ASK ERP 2.0', producer: 'ASK ERP 2.0');

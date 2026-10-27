@@ -74,6 +74,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       row(l.setPrintSize, l.setPrintSizeHelp, SegmentedButton<PrintTextSize>(key: const ValueKey('printSize'), showSelectedIcon: false, segments: [ButtonSegment(value: PrintTextSize.smaller, label: Text(l.printSmaller)), ButtonSegment(value: PrintTextSize.small, label: Text(l.printSmall)), ButtonSegment(value: PrintTextSize.normal, label: Text(l.printNormal))], selected: {s.printSize}, onSelectionChanged: (v) => set((x) => x.copyWith(printSize: v.first)))),
       row(l.setPrinter, l.setPrinterHelp, const PrinterPicker()),
       row(l.setPrintViaWindow, l.setPrintViaWindowHelp, Switch(key: const ValueKey('printViaDialog'), value: s.printViaDialog, onChanged: (v) => set((x) => x.copyWith(printViaDialog: v)))),
+      row(l.setPrintAsPicture, l.setPrintAsPictureHelp, Switch(key: const ValueKey('printAsPicture'), value: s.printAsPicture, onChanged: (v) => set((x) => x.copyWith(printAsPicture: v)))),
       row(l.setPrintAfterSave, l.setPrintAfterSaveHelp, Switch(key: const ValueKey('printAfterSave'), value: s.printAfterSave, onChanged: (v) => set((x) => x.copyWith(printAfterSave: v)))),
       row(l.setLabelPrinter, l.setLabelPrinterHelp, const PrinterPicker(labels: true)),
     ]));
@@ -470,7 +471,7 @@ class _PrinterPickerState extends ConsumerState<PrinterPicker> {
               value: known ? name : '',
               items: [
                 DropdownMenuItem(value: '', child: Text(widget.labels ? l.labelPrinterSame : l.printDefault, overflow: TextOverflow.ellipsis)),
-                for (final p in all) DropdownMenuItem(value: p.name, child: Text(p.name, overflow: TextOverflow.ellipsis)),
+                for (final p in all) DropdownMenuItem(value: p.name, child: Text(p.isPaper ? p.name : '${p.name}  (${l.printerNoPaper})', overflow: TextOverflow.ellipsis)),
               ],
               onChanged: (v) => ref.read(settingsProvider.notifier).set((x) => widget.labels ? x.copyWith(labelPrinterName: v ?? '') : x.copyWith(printerName: v ?? '')),
             ),

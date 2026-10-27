@@ -29,17 +29,27 @@ class BillLook {
   final double padV, line, grid;
   final int lineColor;
 
-  /// The shop block and the column heads filled with the colour, white writing on them.
+  /// The modern design's colour touches: the shop name in the colour, a thick coloured line over the shop block, and the light tint
+  /// made from the colour. Everything stays printer-safe: black words on white or on a light solid tint, never a dark fill or white words
+  /// (a filled colour band printed as a dark block on the shop's inkjet).
   final bool band;
 
+  // lines of 0.5 pt and more (thinner ones break up or vanish on inkjets); neutral greys so the printer uses its black ink only
   factory BillLook.of(ShopProfile shop) => switch (shop.billDesign) {
-        'modern' => BillLook(design: 'modern', accent: shop.billAccent, fontDelta: 0, padV: 1.6, line: 0.5, grid: 0.3, lineColor: 0xFFB0B7C3, band: true),
-        'compact' => const BillLook(design: 'compact', accent: 0xFF000000, fontDelta: -1, padV: 0.3, line: 0.5, grid: 0.3, lineColor: 0xFF000000, band: false),
-        _ => const BillLook(design: 'classic', accent: 0xFF000000, fontDelta: 0, padV: 0.8, line: 0.6, grid: 0.4, lineColor: 0xFF000000, band: false),
+        'modern' => BillLook(design: 'modern', accent: shop.billAccent | 0xFF000000, fontDelta: 0, padV: 1.6, line: 0.75, grid: 0.5, lineColor: 0xFF555555, band: true),
+        'compact' => const BillLook(design: 'compact', accent: 0xFF000000, fontDelta: -1, padV: 0.3, line: 0.75, grid: 0.5, lineColor: 0xFF000000, band: false),
+        _ => const BillLook(design: 'classic', accent: 0xFF000000, fontDelta: 0, padV: 0.8, line: 0.8, grid: 0.5, lineColor: 0xFF000000, band: false),
       };
 
-  /// The light tint used under the column heads and the net total (the colour at 15%, or light grey).
-  int get tint => band ? (accent & 0x00FFFFFF) | 0x26000000 : 0x14000000;
+  /// The light tint used under the column heads and the net total: the colour at 15% (or black at 9%) mixed onto white, as ONE
+  /// SOLID colour. Never a see-through colour: some printers drop the see-through part and print the row solid black over its words.
+  int get tint => solidOnWhite(band ? accent : 0xFF000000, band ? 0.15 : 0.09);
+}
+
+/// [argb] at [strength] (0 to 1) laid on white paper, as a solid colour (alpha 255).
+int solidOnWhite(int argb, double strength) {
+  int ch(int shift) => (255 - (255 - ((argb >> shift) & 0xFF)) * strength).round().clamp(0, 255);
+  return 0xFF000000 | ch(16) << 16 | ch(8) << 8 | ch(0);
 }
 
 /// Item columns by the name the shop profile keeps them under.

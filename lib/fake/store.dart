@@ -248,6 +248,7 @@ class AppSettings {
     this.labelPrinterName = '',
     this.printViaDialog = false,
     this.printAfterSave = true,
+    this.printAsPicture = false,
     this.thermal = ThermalLink.off,
     this.thermalAddress = '',
     this.thermalChars = 0,
@@ -279,6 +280,9 @@ class AppSettings {
 
   /// Print through the Windows print window (for printers whose driver refuses direct jobs), and print at once after Save and print.
   final bool printViaDialog, printAfterSave;
+
+  /// Send each page as one picture (for printer drivers that take the bill but print nothing). Slower; the same look on paper.
+  final bool printAsPicture;
 
   /// Thermal receipt printer, direct (used only when the paper is 80 mm or 58 mm): how it is reached, the network printer's address
   /// (192.168.1.50:9100), letters per line (0 = by the paper: 48 on 80 mm, 32 on 58 mm), cut the paper, open the cash drawer for cash bills.
@@ -315,6 +319,7 @@ class AppSettings {
     String? labelPrinterName,
     bool? printViaDialog,
     bool? printAfterSave,
+    bool? printAsPicture,
     ThermalLink? thermal,
     String? thermalAddress,
     int? thermalChars,
@@ -357,6 +362,7 @@ class AppSettings {
         labelPrinterName: labelPrinterName ?? this.labelPrinterName,
         printViaDialog: printViaDialog ?? this.printViaDialog,
         printAfterSave: printAfterSave ?? this.printAfterSave,
+        printAsPicture: printAsPicture ?? this.printAsPicture,
         thermal: thermal ?? this.thermal,
         thermalAddress: thermalAddress ?? this.thermalAddress,
         thermalChars: thermalChars ?? this.thermalChars,
@@ -389,6 +395,7 @@ class AppSettings {
         'labelPrinterName': labelPrinterName,
         'printViaDialog': printViaDialog,
         'printAfterSave': printAfterSave,
+        'printAsPicture': printAsPicture,
         'thermal': thermal.name,
         'thermalAddress': thermalAddress,
         'thermalChars': thermalChars,
@@ -430,6 +437,7 @@ class AppSettings {
       labelPrinterName: name_(j['labelPrinterName'], d.labelPrinterName),
       printViaDialog: bool_(j['printViaDialog'], d.printViaDialog),
       printAfterSave: bool_(j['printAfterSave'], d.printAfterSave),
+      printAsPicture: bool_(j['printAsPicture'], d.printAsPicture),
       thermal: pick(ThermalLink.values, j['thermal'], d.thermal),
       thermalAddress: name_(j['thermalAddress'], d.thermalAddress),
       thermalChars: const [0, 32, 42, 48].contains(j['thermalChars']) ? j['thermalChars'] as int : d.thermalChars,

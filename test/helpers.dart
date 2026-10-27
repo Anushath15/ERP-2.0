@@ -118,14 +118,15 @@ class FakePrinter implements PrinterService {
   FakePrinter({this.list = const [PrinterInfo(name: 'HP LaserJet A4', isDefault: true), PrinterInfo(name: 'Epson Receipt', isDefault: false)], this.status = PrintStatus.sent});
   final List<PrinterInfo> list;
   PrintStatus status;
-  bool lastViaDialog = false;
+  bool lastViaDialog = false, lastAsPicture = false;
   final jobs = <({String name, String printer, Uint8List bytes})>[];
   @override
   Future<List<PrinterInfo>> printers() async => list;
   @override
-  Future<PrintOutcome> printPdf(Uint8List bytes, {required String jobName, String printerName = '', bool viaDialog = false}) async {
+  Future<PrintOutcome> printPdf(Uint8List bytes, {required String jobName, String printerName = '', bool viaDialog = false, bool asPicture = false}) async {
     lastViaDialog = viaDialog;
-    final target = list.where((p) => p.name == printerName).firstOrNull ?? list.where((p) => p.isDefault).firstOrNull;
+    lastAsPicture = asPicture;
+    final target = choosePrinter(list, printerName); // the same choice as the real service
     if (status == PrintStatus.sent && target == null) return const PrintOutcome(PrintStatus.noPrinter);
     if (status == PrintStatus.sent) jobs.add((name: jobName, printer: target!.name, bytes: bytes));
     return PrintOutcome(status, printer: target?.name ?? '');

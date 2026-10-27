@@ -25,6 +25,18 @@ Future<Uint8List> buildTestPagePdf({required String shopName, required DateTime 
           pw.Text(l.printTestBody, style: pw.TextStyle(font: font, fontSize: 11)),
           pw.SizedBox(height: 10),
           pw.Text('${formatDateTime(now)}   ${printerName.isEmpty ? l.printDefault : printerName}', style: pw.TextStyle(font: font, fontSize: 10)),
+          pw.SizedBox(height: 18),
+          pw.Container(
+            width: 360,
+            decoration: pw.BoxDecoration(border: pw.Border.all(width: 0.8)),
+            child: pw.Column(children: [
+              pw.Container(color: const PdfColor.fromInt(0xFFE8E8E8), padding: const pw.EdgeInsets.all(4), child: pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [for (final h in ['Sl.No', 'Goods', 'Qty', 'Rate', 'Total']) pw.Text(h, style: pw.TextStyle(font: bold, fontSize: 8))])),
+              pw.Divider(height: 0.5, thickness: 0.5),
+              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('0123456789   Rs. 1,23,456.78   (7 pt)', style: pw.TextStyle(font: font, fontSize: 7))),
+            ]),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(l.printTestGrey, style: pw.TextStyle(font: font, fontSize: 9)),
         ]),
       ),
     ),
