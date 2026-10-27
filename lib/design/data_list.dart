@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/responsive.dart';
+import '../core/search_rank.dart';
 import 'tokens.dart';
 import 'widgets.dart';
 
@@ -223,13 +224,11 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
       final f = widget.filters[_filter - 1];
       r = r.where(f.test);
     }
-    if (tokens.isNotEmpty) {
-      r = r.where((e) {
-        final s = widget.searchText(e).toLowerCase();
-        return tokens.every(s.contains);
-      });
-    }
     var list = r.toList(growable: false);
+    if (tokens.isNotEmpty) {
+      // every typed word must be there, then BEST MATCH FIRST (a whole word beats a part of another number); a chosen sort overrides it
+      list = rankedSearch(list, q, widget.searchText);
+    }
     if (widget.sorts.isNotEmpty && _sort > 0) {
       list = [...list]..sort(widget.sorts[_sort - 1].$2);
     }

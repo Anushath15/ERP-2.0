@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../../core/validators.dart';
 import 'package:flutter/material.dart';
+import '../../core/search_rank.dart';
 import 'package:flutter/services.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
@@ -55,26 +56,14 @@ class _ProductPickerState extends State<ProductPicker> {
 
   /// What a typed word is looked for in: name, barcode, product code, brand and category (all in memory already, so every key press answers at once:
   /// measured 2 ms for 10,000 products and 10 ms for 50,000, faster than asking the database through a delay would be).
-  void _reindex() => _lower = [for (final p in widget.products) '${p.name} ${p.barcode} ${p.code} ${p.brand} ${p.category}'.toLowerCase()];
+  void _reindex() => _lower = [for (final p in widget.products) normalizeForSearch('${p.name} ${p.barcode} ${p.code} ${p.brand} ${p.category}')];
 
   void _filter() {
-    final tokens = _q.trim().toLowerCase().split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
-    if (tokens.isEmpty) {
+    if (_q.trim().isEmpty) {
       _rows = widget.products;
     } else {
-      final out = <Product>[];
-      for (var i = 0; i < widget.products.length; i++) {
-        final s = _lower[i];
-        var ok = true;
-        for (final t in tokens) {
-          if (!s.contains(t)) {
-            ok = false;
-            break;
-          }
-        }
-        if (ok) out.add(widget.products[i]);
-      }
-      _rows = out;
+      // best match first, forgiving of spelling (4 inch = 4" = 4.00INCH, a slip like "tea" for "tee"); the text is made comparable once
+      _rows = rankedSearch(List<int>.generate(widget.products.length, (i) => i), _q, (i) => _lower[i], textNormalized: true).map((i) => widget.products[i]).toList(growable: false);
     }
     _sel = 0;
     // A new result list is a NEW list view. Reusing the old one is slow: when someone has scrolled far down a long list and then types a

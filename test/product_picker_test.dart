@@ -1,3 +1,4 @@
+import 'package:erp2/core/search_rank.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,7 +75,8 @@ void main() {
     final c = await pumpApp(tester, size: desktop1366, location: '/bill');
     await tester.enterText(find.byType(TextField).first, 'tower bolt');
     await tester.pumpAndSettle();
-    final matches = c.read(productsProvider).where((p) => p.name.toLowerCase().contains('tower') && p.name.toLowerCase().contains('bolt')).toList();
+    // the list is best match first (see search_rank.dart), so the second match is the second best
+    final matches = rankedSearch(c.read(productsProvider).where((p) => p.name.toLowerCase().contains('tower') && p.name.toLowerCase().contains('bolt')), 'tower bolt', (p) => '${p.name} ${p.barcode} ${p.code} ${p.brand} ${p.category}');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
     await tester.testTextInput.receiveAction(TextInputAction.done);
