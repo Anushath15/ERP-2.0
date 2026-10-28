@@ -43,7 +43,7 @@ dependencies:
   crypto: ^3.0.6
   file_selector: ^1.0.3
   drift: ^2.35.2
-  sqlite3: ^3.7.1
+  sqlite3: ^3.8.0
   path: ^1.9.1
   uuid: ^4.6.0
   ffi: ^2.2.0
