@@ -1726,3 +1726,4 @@ backupDoneAndCopy | Backup made and checked. Copy saved in {place}
 backupSendNone | Nothing on this phone could open the backup. Use Save a copy in Downloads instead.
 wizSeriesPhone | This phone joins a shop that already has a main computer. The letter {letters} belongs to that computer, so it is not offered here. Choose another letter, for example B.
 wizSeriesReserved | The letter {letters} is kept for the main computer of the shop. Please choose a different one.
+payCardShort | Card

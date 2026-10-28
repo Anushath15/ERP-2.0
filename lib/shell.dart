@@ -7,6 +7,7 @@ import 'core/cloud/sync_controller.dart';
 import 'core/date_fmt.dart';
 import 'core/nav_history.dart';
 import 'core/os.dart';
+import 'core/touch_device.dart';
 import 'core/lock/pin_lock.dart';
 import 'core/responsive.dart';
 import 'design/effects.dart';
@@ -19,10 +20,6 @@ import 'design/app_logo.dart';
 import 'fake/store.dart';
 import 'fake/shop_profile.dart';
 import 'nav.dart';
-
-/// True on a real phone or tablet (Android, iPhone). A computer window that is narrow, or shows big text, also gets the phone layout, but it is not a
-/// touch device and keeps its pages exactly as they were. Tests switch it on to try the phone-only parts.
-final touchDeviceProvider = Provider<bool>((ref) => onAndroid || onIos);
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.location, required this.child});
@@ -68,7 +65,9 @@ class AppShell extends ConsumerWidget {
           body: Column(children: [const ProblemBanner(), Expanded(child: child)]),
           bottomNavigationBar: hideBar
               ? null
-              : NavigationBar(
+              : _TabBarTheme(
+                  touch: touch,
+                  child: NavigationBar(
                   labelBehavior: context.textFactor >= 1.4 ? NavigationDestinationLabelBehavior.onlyShowSelected : NavigationDestinationLabelBehavior.alwaysShow,
                   selectedIndex: idx >= 0 ? idx : 4,
                   onDestinationSelected: (i) => context.go(i < 4 ? phoneTabs[i] : '/more'),
@@ -80,16 +79,19 @@ class AppShell extends ConsumerWidget {
                     NavigationDestination(icon: const Icon(Icons.apps_rounded), label: l.navMore),
                   ],
                 ),
+                ),
         ),
       ),
       );
     }
 
     final wide = ref.watch(navExpandedProvider) ?? size == ScreenSize.desktop;
+    final touch = ref.watch(touchDeviceProvider);
     final desktop = CallbackShortcuts(
       bindings: shortcuts,
       child: Scaffold(
-        body: Row(children: [
+        // a tablet or a phone turned sideways: the status bar and the gesture bar are not the program's to draw on
+        body: _SafeIfTouch(touch: touch, child: Row(children: [
           SideNav(location: location, wide: wide),
           VerticalDivider(width: 1, color: context.c.border.withValues(alpha: 0.6)),
           Expanded(
@@ -100,12 +102,51 @@ class AppShell extends ConsumerWidget {
               Expanded(child: child),
             ]),
           ),
-        ]),
+        ])),
       ),
     );
     // a computer has no Back button; an Android tablet or a phone turned sideways has one
     return onAndroid || onIos ? _BackGuard(location: location, child: desktop) : desktop;
   }
+}
+
+/// The bottom tab bar on a real phone: the selected icon gets a colour that can be seen on its pill (the Material default was white on pale blue in the
+/// Light theme and near-black on dark blue in the Dark theme: 1.2 to 1 and 1.4 to 1). A computer window keeps the default.
+class _TabBarTheme extends StatelessWidget {
+  const _TabBarTheme({required this.touch, required this.child});
+  final bool touch;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    if (!touch) return child;
+    final c = context.c;
+    final selected = tabIconColor(c.primary, c.rowSelected, c.text);
+    return NavigationBarTheme(
+      data: NavigationBarTheme.of(context).copyWith(
+        iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(color: s.contains(WidgetState.selected) ? selected : c.textMuted)),
+        labelTextStyle: WidgetStateProperty.resolveWith((s) => Theme.of(context).textTheme.labelMedium?.copyWith(color: s.contains(WidgetState.selected) ? c.text : c.textMuted, fontWeight: s.contains(WidgetState.selected) ? FontWeight.w700 : null)),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// The colour for the selected tab icon: the accent when it stands out from the pill (3 to 1, the minimum for icons), else the plain text colour.
+Color tabIconColor(Color accent, Color pill, Color text) => _contrast(accent, pill) >= 3 ? accent : text;
+
+double _contrast(Color a, Color b) {
+  final la = a.computeLuminance(), lb = b.computeLuminance();
+  final hi = la > lb ? la : lb, lo = la > lb ? lb : la;
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/// Keeps the page out of the status bar and the gesture bar on a real phone or tablet.
+class _SafeIfTouch extends StatelessWidget {
+  const _SafeIfTouch({required this.touch, required this.child});
+  final bool touch;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => touch ? SafeArea(child: child) : child;
 }
 
 /// The Android Back button (and the back swipe). Screens are opened with `go`, which leaves nothing for the system to pop, so Back used to

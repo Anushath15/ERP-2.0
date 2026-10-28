@@ -347,7 +347,10 @@ class _QtyStepper extends StatelessWidget {
 /// With very large text the GST detail collapses into one short row and the buttons stack, but Grand total and the
 /// three buttons are always fully visible.
 class BillFooter extends StatelessWidget {
-  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, this.customerBalance, this.onShowQr, required this.onSave, required this.onSavePrint, required this.onClear});
+  const BillFooter({super.key, required this.mode, required this.cart, required this.calc, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.customerName, this.customerBalance, this.onShowQr, required this.onSave, required this.onSavePrint, required this.onClear, this.touch = false});
+
+  /// A real phone or tablet: with big text the footer takes less of the screen so the products keep their room.
+  final bool touch;
 
   /// Shows the UPI QR code (set only while UPI is the chosen way to pay).
   final VoidCallback? onShowQr;
@@ -371,7 +374,8 @@ class BillFooter extends StatelessWidget {
     final invoice = mode == DocMode.invoice;
     final big = context.textFactor >= 1.4;
     // very large text on a short window: the GST detail line is dropped so Grand total, Received and the buttons keep their room
-    final tight = big && MediaQuery.sizeOf(context).height <= 800;
+    final compact = touch && big; // a phone with big text: no GST line, a smaller total, Save and a print icon on one row
+    final tight = compact || (big && MediaQuery.sizeOf(context).height <= 800);
 
     // One line, always the same height (so the footer never moves), shrinking to fit instead of wrapping or clipping.
     final lineH = MediaQuery.textScalerOf(context).scale(th.bodySmall!.fontSize ?? 12) * 1.5;
@@ -384,7 +388,7 @@ class BillFooter extends StatelessWidget {
       child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(detailText, style: th.bodySmall, maxLines: 1, softWrap: false)),
     );
 
-    final totalH = MediaQuery.textScalerOf(context).scale(th.displaySmall?.fontSize ?? 28) * 1.45;
+    final totalH = MediaQuery.textScalerOf(context).scale(th.displaySmall?.fontSize ?? 28) * 1.45 * (compact ? 0.72 : 1);
     final total = SizedBox(height: totalH, child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
       Flexible(flex: 0, child: Text(l.grandTotal, style: th.titleMedium)),
       const SizedBox(width: 8),
@@ -401,7 +405,7 @@ class BillFooter extends StatelessWidget {
     ]));
 
     final Widget pay = invoice
-        ? PaymentArea(cart: cart, calc: calc, customerName: customerName, customerBalance: customerBalance, onPay: onPay, onReceived: onReceived, onKeepAdvance: onKeepAdvance, onShowQr: onShowQr)
+        ? PaymentArea(cart: cart, calc: calc, customerName: customerName, customerBalance: customerBalance, onPay: onPay, onReceived: onReceived, onKeepAdvance: onKeepAdvance, onShowQr: onShowQr, touch: touch)
         : Row(children: [Icon(Icons.info_outline_rounded, size: 18, color: c.textMuted), const SizedBox(width: 8), Expanded(child: Text(l.estimateNoStock, style: th.bodySmall))]);
 
     final saveLabel = invoice ? l.saveBill : l.saveEstimate;
@@ -413,6 +417,13 @@ class BillFooter extends StatelessWidget {
       Widget? ic(IconData i) => narrow ? null : Icon(i);
       final save = Tooltip(message: 'Ctrl+S', child: PressScale(child: FilledButton.icon(onPressed: empty ? null : onSave, icon: ic(Icons.save_rounded), label: lbl(saveLabel))));
       final savePrint = Tooltip(message: 'F9', child: PressScale(child: FilledButton.tonalIcon(onPressed: empty ? null : onSavePrint, icon: ic(Icons.print_rounded), label: lbl(l.saveAndPrint))));
+      if (compact) {
+        return Row(children: [
+          Expanded(child: save),
+          const SizedBox(width: 8),
+          Tooltip(message: 'F9', child: IconButton.filledTonal(key: const ValueKey('savePrintIcon'), onPressed: empty ? null : onSavePrint, icon: const Icon(Icons.print_rounded), tooltip: l.saveAndPrint)),
+        ]);
+      }
       if (stacked) {
         return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           save,
@@ -450,7 +461,10 @@ class BillFooter extends StatelessWidget {
 /// happens to any balance or change, and the payment mode for the part that was received. Every row has a fixed height, so the
 /// footer never moves when the message changes.
 class PaymentArea extends StatefulWidget {
-  const PaymentArea({super.key, required this.cart, required this.calc, required this.customerName, this.customerBalance, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.onShowQr});
+  const PaymentArea({super.key, required this.cart, required this.calc, required this.customerName, this.customerBalance, required this.onPay, required this.onReceived, required this.onKeepAdvance, this.onShowQr, this.touch = false});
+
+  /// A real phone or tablet: a short label for the card button, so it does not shrink to a few pixels beside the other three.
+  final bool touch;
 
   /// Shows the UPI QR code for the amount being received (only while UPI is the chosen way to pay).
   final VoidCallback? onShowQr;
@@ -613,7 +627,7 @@ class _PaymentAreaState extends State<PaymentArea> {
         options: [
               (PayMode.cash, l.payCash, Icons.payments_rounded),
               (PayMode.upi, l.payUpi, Icons.qr_code_2_rounded),
-              (PayMode.card, l.payCard, Icons.credit_card_rounded),
+              (PayMode.card, widget.touch ? l.payCardShort : l.payCard, Icons.credit_card_rounded),
               (PayMode.credit, l.payCredit, Icons.schedule_rounded),
         ],
         selected: widget.cart.pay,

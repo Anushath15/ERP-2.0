@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/responsive.dart';
+import '../core/touch_device.dart';
 import '../strings.dart';
 import 'effects.dart';
 import 'motion.dart';
 import 'tokens.dart';
 
-Strings tr(BuildContext context) => const Strings();
+/// The words of the program: the phone version on a real phone or tablet (no "computer", no Windows, no keyboard keys), the normal one elsewhere.
+Strings tr(BuildContext context) => isTouchDevice(context) ? const PhoneStrings() : const Strings();
 
 enum BadgeKind { success, warning, danger, info, neutral }
 
@@ -93,6 +96,25 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final th = Theme.of(context).textTheme;
+    if (context.dependOnInheritedWidgetOfExactType<_CompactStats>() != null) {
+      // two to a row on a phone: the small icon sits beside the label, the figure gets the whole width
+      final tc = tone ?? context.c.primary;
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Row(children: [
+              Icon(icon, size: 16, color: tc),
+              const SizedBox(width: 6),
+              Expanded(child: Text(label, style: th.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            ]),
+            const SizedBox(height: 2),
+            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: th.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
+            if (hint != null) Text(hint!, style: th.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ]),
+        ),
+      );
+    }
     return HoverLift(child: Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -114,6 +136,39 @@ class StatCard extends StatelessWidget {
         ]),
       ),
     ));
+  }
+}
+
+class _CompactStats extends InheritedWidget {
+  const _CompactStats({required super.child});
+  @override
+  bool updateShouldNotify(_CompactStats oldWidget) => false;
+}
+
+/// A row of summary cards. On a computer, or in a narrow window, the number of columns is what it always was (4 / 2 / 1 by width). On a real phone or
+/// tablet, where one card per line pushed the list to the bottom half of the screen, two compact cards sit side by side.
+class StatGrid extends ConsumerWidget {
+  const StatGrid({super.key, required this.cards, this.wideColumns = 4, this.twoColumnsAbove = 520});
+  final List<Widget> cards;
+  final int wideColumns;
+  final double twoColumnsAbove;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final touch = ref.watch(touchDeviceProvider);
+    return LayoutBuilder(builder: (ctx, bc) {
+      final scaled = bc.maxWidth / ctx.textFactor;
+      var cols = scaled > 900 ? wideColumns : (scaled > twoColumnsAbove ? 2 : 1);
+      var compact = false;
+      if (touch && cols == 1 && scaled > 300) {
+        cols = 2;
+        compact = true;
+      }
+      final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
+      final box = [for (final k in cards) SizedBox(width: w, child: k)];
+      final grid = Wrap(spacing: 12, runSpacing: compact ? 8 : 12, children: box);
+      return compact ? _CompactStats(child: grid) : grid;
+    });
   }
 }
 

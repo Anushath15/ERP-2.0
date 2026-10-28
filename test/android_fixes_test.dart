@@ -2,7 +2,7 @@ import 'package:erp2/design/motion_level.dart';
 import 'package:erp2/fake/backup_controller.dart';
 import 'package:erp2/fake/data_providers.dart';
 import 'package:erp2/fake/store.dart';
-import 'package:erp2/shell.dart' show touchDeviceProvider;
+import 'package:erp2/core/touch_device.dart';
 import 'package:erp2/features/auth/auth_screens.dart';
 import 'package:erp2/features/billing/cart.dart';
 import 'package:flutter/material.dart';

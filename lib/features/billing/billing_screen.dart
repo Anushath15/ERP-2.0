@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/touch_device.dart';
 import '../../core/validators.dart';
 import 'package:flutter/material.dart';
 import '../../design/qr_view.dart';
@@ -306,7 +307,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
     final discountBar = DiscountProfitBar(mode: mode, cart: cart, calc: calc, onAmount: notifier.setExtraDiscountAmount, onPercent: notifier.setExtraDiscountPercent);
     Widget lines() => TextScaleBy(factor: settings.billingScale, child: BillLines(mode: mode, cart: cart, calc: calc, onQty: notifier.setQty, onRemove: notifier.remove, onRate: notifier.setRate, onDiscount: notifier.setDiscount, trailing: discountBar, variants: settings.featureOn(AppFeature.brandSwitch) ? ref.watch(productVariantsProvider) : const {}, onBrand: notifier.swapProduct));
-    final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, customerBalance: cart.customer == null ? null : ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0, onShowQr: mode == DocMode.invoice && cart.pay == PayMode.upi ? () => _showUpiQr(calc) : null, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear);
+    final footer = BillFooter(mode: mode, cart: cart, calc: calc, onPay: notifier.setPay, onReceived: notifier.setReceived, onKeepAdvance: notifier.setKeepAdvance, customerName: cart.customer?.name, customerBalance: cart.customer == null ? null : ref.watch(creditProvider)[cart.customer!.id]?.balance ?? 0, onShowQr: mode == DocMode.invoice && cart.pay == PayMode.upi ? () => _showUpiQr(calc) : null, onSave: _save, onSavePrint: () => _save(print: true), onClear: _clear, touch: ref.watch(touchDeviceProvider));
 
     final shortcuts = <ShortcutActivator, VoidCallback>{
       const SingleActivator(LogicalKeyboardKey.keyS, control: true): () {

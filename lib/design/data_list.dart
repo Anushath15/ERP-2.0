@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/responsive.dart';
 import '../core/search_rank.dart';
+import '../core/touch_device.dart';
 import 'hotkeys.dart';
 import 'tokens.dart';
 import 'widgets.dart';
@@ -259,11 +260,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
     final tiny = MediaQuery.sizeOf(context).height / context.textFactor < 380;
     final toolbar = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       if (widget.stats.isNotEmpty && !tiny) ...[
-        LayoutBuilder(builder: (ctx, bc) {
-          final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 560 ? 2 : 1);
-          final w = (bc.maxWidth - (cols - 1) * 12) / cols;
-          return Wrap(spacing: 12, runSpacing: 12, children: [for (final s in widget.stats) SizedBox(width: w.floorToDouble(), child: s)]);
-        }),
+        StatGrid(cards: widget.stats, twoColumnsAbove: 560),
         const SizedBox(height: 12),
       ],
       Row(children: [
@@ -287,7 +284,7 @@ class _DataListScreenState<T> extends State<DataListScreen<T>> {
       if (widget.filters.isNotEmpty) ...[
         const SizedBox(height: 10),
         SizedBox(
-          height: 40,
+          height: isTouchDevice(context) ? 48 : 40, // a phone: a chip is 48 high, and its edge is not cut
           child: ListView(scrollDirection: Axis.horizontal, children: [
             for (var i = 0; i <= widget.filters.length; i++)
               Padding(

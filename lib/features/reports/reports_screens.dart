@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/date_fmt.dart';
+import '../../core/touch_device.dart';
 import '../../core/money.dart';
 import '../../core/responsive.dart';
 import '../../design/tokens.dart';
@@ -182,7 +183,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       ]);
     }
 
-    final stats = Wrap(spacing: 12, runSpacing: 12, children: [
+    final statCards = [
       for (final s in [
         StatCard(label: l.statSales, value: '₹ ${formatPaise(total)}', icon: Icons.trending_up_rounded, tone: context.c.success),
         StatCard(label: l.statBills, value: '${r.bills}', icon: Icons.receipt_long_rounded),
@@ -190,7 +191,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         StatCard(label: l.statProfit, value: profit == null ? '—' : '₹ ${formatPaise(profit)}', icon: Icons.savings_rounded, tone: context.c.success, hint: profit == null ? l.profitUnknown : l.profitEstimate),
       ])
         SizedBox(width: context.isPhone ? double.infinity : 230, child: s),
-    ]);
+    ];
+    final stats = context.isPhone && isTouchDevice(context)
+        ? StatGrid(cards: [for (final s in statCards) s.child!])
+        : Wrap(spacing: 12, runSpacing: 12, children: statCards);
     final charts = [
       SectionCard(title: l.salesOverTime, child: BarChart(values: values, labels: labels, height: 160)),
       SectionCard(title: l.byPayMode, child: share(modes, context.c.primary)),

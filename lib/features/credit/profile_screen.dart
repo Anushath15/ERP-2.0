@@ -227,9 +227,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final summary = _customer ? ref.watch(customerSummaryProvider(widget.partyId)).asData?.value : null;
     final purchaseStats = summary == null
         ? null
-        : LayoutBuilder(builder: (ctx, bc) {
-            final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 4 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
-            final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
+        : Builder(builder: (ctx) {
             final cards = <Widget>[
               StatCard(key: const ValueKey('cust-bought'), label: l.custBought, value: '₹ ${formatPaise(summary.boughtPaise)}', icon: Icons.shopping_bag_rounded, tone: c.success, hint: l.custBoughtHint),
               StatCard(key: const ValueKey('cust-bills'), label: l.custBillsCount, value: '${summary.bills}', icon: Icons.receipt_long_rounded, hint: summary.cancelledBills > 0 ? l.custBillsCancelledHint('${summary.cancelledBills}') : null),
@@ -237,7 +235,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               StatCard(key: const ValueKey('cust-last-bill'), label: l.custLastBill, value: summary.lastBillAt == null ? l.profNone : formatDate(summary.lastBillAt!), icon: Icons.event_rounded),
               if (summary.returns > 0) StatCard(key: const ValueKey('cust-returned'), label: l.custReturnedLabel, value: '₹ ${formatPaise(summary.returnedPaise)}', icon: Icons.assignment_return_rounded, tone: c.warning, hint: l.custReturnedHint('${summary.returns}')),
             ];
-            return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
+            return StatGrid(cards: cards);
           });
 
     final bills = _customer ? ref.watch(customerBillsProvider(widget.partyId)).asData?.value : null;
@@ -314,15 +312,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final dsum = !_customer ? ref.watch(dealerSummaryProvider(widget.partyId)).asData?.value : null;
     final dealerStats = dsum == null
         ? null
-        : LayoutBuilder(builder: (ctx, bc) {
-            final cols = (bc.maxWidth / ctx.textFactor) > 900 ? 3 : ((bc.maxWidth / ctx.textFactor) > 520 ? 2 : 1);
-            final w = ((bc.maxWidth - (cols - 1) * 12) / cols).floorToDouble();
+        : Builder(builder: (ctx) {
             final cards = <Widget>[
               StatCard(key: const ValueKey('dealer-bought'), label: l.dealerBought, value: '₹ ${formatPaise(dsum.boughtPaise)}', icon: Icons.shopping_cart_checkout_rounded, tone: c.success, hint: l.dealerPaidHint(formatPaise(dsum.paidPaise, symbol: true))),
               StatCard(key: const ValueKey('dealer-purchases'), label: l.dealerPurchasesCount, value: '${dsum.purchases}', icon: Icons.receipt_long_rounded, hint: dsum.pending > 0 ? l.dealerPendingHint('${dsum.pending}') : null),
               StatCard(key: const ValueKey('dealer-last'), label: l.dealerLastPurchase, value: dsum.lastAt == null ? l.profNone : formatDate(dsum.lastAt!), icon: Icons.event_rounded),
             ];
-            return Wrap(spacing: 12, runSpacing: 12, children: [for (final k in cards) SizedBox(width: w, child: k)]);
+            return StatGrid(cards: cards, wideColumns: 3);
           });
     final dpurchases = !_customer ? ref.watch(dealerPurchasesProvider(widget.partyId)).asData?.value : null;
     final purchasesList = dpurchases == null

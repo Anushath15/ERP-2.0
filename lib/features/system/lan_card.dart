@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data_mode.dart';
 import '../../core/lan/lan_controller.dart';
+import '../../core/touch_device.dart';
 import '../../data/sync/lan_link.dart';
 import '../../design/tokens.dart';
 import '../../design/widgets.dart';
@@ -19,12 +20,25 @@ class LanCard extends ConsumerStatefulWidget {
 class _LanCardState extends ConsumerState<LanCard> {
   final _address = TextEditingController();
   final _key = TextEditingController();
+  final _keyFocus = FocusNode();
+  final _errorKey = GlobalKey();
   String? _error;
+
+  /// Shows a problem under the form. On a phone the keyboard covers that spot, so the page is scrolled until the message is in view.
+  void _fail(String message) {
+    setState(() => _error = message);
+    if (!isTouchDevice(context)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final c = _errorKey.currentContext;
+      if (c != null && mounted) Scrollable.ensureVisible(c, duration: const Duration(milliseconds: 200));
+    });
+  }
 
   @override
   void dispose() {
     _address.dispose();
     _key.dispose();
+    _keyFocus.dispose();
     super.dispose();
   }
 
@@ -35,24 +49,25 @@ class _LanCardState extends ConsumerState<LanCard> {
     final s = ref.watch(lanProvider);
     final ctl = ref.read(lanProvider.notifier);
     if (ref.watch(appModeProvider) != DataMode.real) return const SizedBox.shrink();
-    if (_key.text != s.key && !FocusScope.of(context).hasFocus) _key.text = s.key;
+    // on a phone only the key box itself being typed in keeps its text (the whole page counted as focused there, so the key never appeared)
+    if (_key.text != s.key && !(isTouchDevice(context) ? _keyFocus.hasFocus : FocusScope.of(context).hasFocus)) _key.text = s.key;
 
     Future<void> link() async {
       setState(() => _error = null);
       try {
         if (_key.text.trim().isNotEmpty && _key.text.trim() != s.key && !await ctl.setKey(_key.text)) {
-          setState(() => _error = s.peers.isNotEmpty ? l.lanKeyLocked : l.lanErrKeyBad);
+          _fail(s.peers.isNotEmpty ? l.lanKeyLocked : l.lanErrKeyBad);
           return;
         }
         await ctl.addPeer(_address.text);
         _address.clear();
       } on LanLinkException catch (e) {
-        setState(() => _error = switch (e.problem) {
-              LanLinkProblem.badAddress => l.lanErrBad,
-              LanLinkProblem.unreachable => l.lanErrUnreachable,
-              LanLinkProblem.wrongKey => l.lanErrWrongKey,
-              LanLinkProblem.thisComputer => l.lanErrSelf,
-            });
+        _fail(switch (e.problem) {
+          LanLinkProblem.badAddress => l.lanErrBad,
+          LanLinkProblem.unreachable => l.lanErrUnreachable,
+          LanLinkProblem.wrongKey => l.lanErrWrongKey,
+          LanLinkProblem.thisComputer => l.lanErrSelf,
+        });
       }
     }
 
@@ -75,7 +90,7 @@ class _LanCardState extends ConsumerState<LanCard> {
           Text('${l.lanAddress}: ${s.addresses.isEmpty ? '-' : s.addresses.join(', ')}', key: const ValueKey('lanAddress'), style: th.titleSmall),
           const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: TextField(key: const ValueKey('lanKey'), controller: _key, readOnly: s.peers.isNotEmpty, decoration: InputDecoration(labelText: l.lanKeyLabel, helperText: l.lanKeyHelp, helperMaxLines: 3))),
+            Expanded(child: TextField(key: const ValueKey('lanKey'), controller: _key, focusNode: _keyFocus, readOnly: s.peers.isNotEmpty, decoration: InputDecoration(labelText: l.lanKeyLabel, helperText: l.lanKeyHelp, helperMaxLines: 3))),
             IconButton(tooltip: l.lanCopy, onPressed: () => Clipboard.setData(ClipboardData(text: s.key)), icon: const Icon(Icons.copy_rounded)),
           ]),
           const SizedBox(height: 8),
@@ -96,7 +111,7 @@ class _LanCardState extends ConsumerState<LanCard> {
             const SizedBox(width: 8),
             Padding(padding: const EdgeInsets.only(top: 6), child: FilledButton(key: const ValueKey('lanLinkBtn'), onPressed: s.busy ? null : () => unawaited(link()), child: Text(l.lanLink))),
           ]),
-          if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, key: const ValueKey('lanError'), style: th.bodyMedium?.copyWith(color: context.c.danger))),
+          if (_error != null) Padding(key: _errorKey, padding: const EdgeInsets.only(top: 8), child: Text(_error!, key: const ValueKey('lanError'), style: th.bodyMedium?.copyWith(color: context.c.danger))),
         ],
       ]),
     );

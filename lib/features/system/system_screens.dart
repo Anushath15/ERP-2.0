@@ -1,3 +1,4 @@
+import '../../core/touch_device.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -317,10 +318,12 @@ class HelpScreen extends StatelessWidget {
         SectionCard(title: l.helpQuickStart, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           for (var i = 0; i < steps.length; i++) Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [CircleAvatar(radius: 13, backgroundColor: context.c.primary, child: Text('${i + 1}', style: TextStyle(color: context.c.onPrimary, fontWeight: FontWeight.w700))), const SizedBox(width: 10), Expanded(child: Text(steps[i], style: th.bodyLarge))])),
         ])),
+        if (!isTouchDevice(context)) ...[
         const SizedBox(height: 12),
         SectionCard(title: l.helpShortcuts, child: Column(children: [
           for (final k in keys) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(children: [SizedBox(width: 130, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: context.c.surfaceAlt, borderRadius: BorderRadius.circular(6), border: Border.all(color: context.c.border)), child: Text(k.$1, style: th.labelMedium))), const SizedBox(width: 12), Expanded(child: Text(k.$2))])),
         ])),
+        ],
         const SizedBox(height: 12),
         SectionCard(title: l.helpFaq, padding: const EdgeInsets.all(6), child: Column(children: [
           for (final f in faq) ExpansionTile(title: Text(f.$1, style: th.titleSmall), childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12), shape: const Border(), collapsedShape: const Border(), children: [Align(alignment: Alignment.centerLeft, child: Text(f.$2, style: th.bodyMedium))]),
@@ -400,8 +403,8 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         const SizedBox(height: 12),
         SectionCard(title: l.aboutPrivacy, child: Text(l.aboutPrivacyText, style: th.bodyMedium)),
         const SizedBox(height: 12),
-        OutlinedButton.icon(key: const ValueKey('shortcuts-open'), onPressed: () => showShortcutsDialog(context), icon: const Icon(Icons.keyboard_rounded), label: const Text('Keyboard shortcuts (F1)')),
-        const SizedBox(height: 8),
+        if (!isTouchDevice(context)) OutlinedButton.icon(key: const ValueKey('shortcuts-open'), onPressed: () => showShortcutsDialog(context), icon: const Icon(Icons.keyboard_rounded), label: const Text('Keyboard shortcuts (F1)')),
+        if (!isTouchDevice(context)) const SizedBox(height: 8),
         OutlinedButton.icon(onPressed: () => showLicensePage(context: context, applicationName: l.appName, applicationVersion: appVersionLabel), icon: const Icon(Icons.description_rounded), label: Text(l.aboutLicenses)),
       ])))),
     );
