@@ -15,8 +15,12 @@ import 'widgets.dart';
 enum FieldType { text, number, money, multiline, dropdown, choice, combo, date, phone, email }
 
 class FieldSpec {
-  const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check, this.kind, this.suffix, this.obscure = false, this.digits});
+  const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check, this.kind, this.suffix, this.obscure = false, this.digits, this.percentOf, this.fills});
   final String key, label;
+
+  /// A percent field: it is a percent of the field [percentOf] and fills the field [fills] (typing 50 with the MRP at 100 makes the price 50); typing the price or
+  /// changing the MRP updates the percent. The percent itself is not saved.
+  final String? percentOf, fills;
   final FieldType type;
   final List<(String, String)> options; // (value, label)
   final String initial;
@@ -92,6 +96,50 @@ class _FormBodyState extends State<_FormBody> {
   final _shake = GlobalKey<ShakeState>();
   late final Map<String, TextEditingController> _ctl = {for (final f in widget.fields) f.key: TextEditingController(text: f.initial)};
   late final Map<String, String> _drop = {for (final f in widget.fields.where((f) => f.type == FieldType.dropdown || f.type == FieldType.choice)) f.key: f.initial.isNotEmpty ? f.initial : (f.options.isNotEmpty ? f.options.first.$1 : '')};
+
+  bool _busyPct = false;
+
+  @override
+  void initState() {
+    super.initState();
+    for (final f in widget.fields.where((f) => f.percentOf != null && f.fills != null)) {
+      final pct = _ctl[f.key]!, base = _ctl[f.percentOf!]!, tgt = _ctl[f.fills!]!;
+      String pctOf(double t, double b) => (t / b * 100).toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
+      void fillTarget() {
+        final b = double.tryParse(base.text), p = double.tryParse(pct.text);
+        if (b == null || p == null) return;
+        _busyPct = true;
+        tgt.text = (b * p / 100).toStringAsFixed(2);
+        _busyPct = false;
+      }
+      void fillPercent() {
+        final b = double.tryParse(base.text), t = double.tryParse(tgt.text);
+        if (b == null || b <= 0 || t == null) return;
+        _busyPct = true;
+        pct.text = pctOf(t, b);
+        _busyPct = false;
+      }
+      // only a real change of the text counts (a tap into the box also notifies); each watcher remembers the text it last saw
+      void watch(TextEditingController c, void Function() act) {
+        var seen = c.text;
+        c.addListener(() {
+          if (_busyPct || seen == c.text) return;
+          seen = c.text;
+          act();
+        });
+      }
+      watch(pct, fillTarget);
+      watch(tgt, fillPercent);
+      watch(base, () {
+        if (pct.text.isNotEmpty) {
+          fillTarget();
+        } else {
+          fillPercent();
+        }
+      });
+      if (pct.text.isEmpty && base.text.isNotEmpty && tgt.text.isNotEmpty) fillPercent();
+    }
+  }
 
   @override
   void dispose() {
@@ -180,7 +228,7 @@ class _FormBodyState extends State<_FormBody> {
           autofocus: f.autofocus,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-          decoration: InputDecoration(labelText: f.label, hintText: f.hint, prefixText: f.type == FieldType.money ? '₹ ' : null),
+          decoration: InputDecoration(labelText: f.label, hintText: f.hint, prefixText: f.type == FieldType.money && f.percentOf == null ? '₹ ' : null, suffixText: f.percentOf != null ? '%' : null),
           validator: validate,
         );
       case FieldType.phone:
