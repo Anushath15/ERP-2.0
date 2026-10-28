@@ -16,18 +16,18 @@ void main() {
 
   testWidgets('order MRP, buying price, selling price; percent fields fill the prices both ways', (tester) async {
     await pumpApp(tester, size: const ScreenSpec('tall', 1366, 1800), location: '/products?add=1', motion: MotionLevel.off, followSystemMotion: false);
-    final y = [for (final l in ['MRP (printed price, GST included)', 'Buying price', 'Buying price as % of MRP', 'Selling price', 'Selling price as % of MRP']) tester.getTopLeft(box(l)).dy];
+    final y = [for (final l in ['MRP (printed price, GST included)', 'Buying price', 'Buying discount % from MRP', 'Selling price', 'Selling discount % from MRP']) tester.getTopLeft(box(l)).dy];
     expect(y, orderedEquals([...y]..sort()), reason: 'top to bottom: MRP, buying price, buying %, selling price, selling %');
     expect(y.toSet(), hasLength(5));
 
     await type(tester, 'MRP (printed price, GST included)', '100');
-    await type(tester, 'Buying price as % of MRP', '50');
+    await type(tester, 'Buying discount % from MRP', '50');
     expect(text(tester, 'Buying price'), '50.00');
-    await type(tester, 'Selling price as % of MRP', '75');
+    await type(tester, 'Selling discount % from MRP', '25');
     expect(text(tester, 'Selling price'), '75.00');
 
     await type(tester, 'Buying price', '60');
-    expect(text(tester, 'Buying price as % of MRP'), '60');
+    expect(text(tester, 'Buying discount % from MRP'), '40');
     await type(tester, 'MRP (printed price, GST included)', '200');
     expect(text(tester, 'Buying price'), '120.00', reason: 'the percent stays, the price follows the MRP');
     expect(text(tester, 'Selling price'), '150.00');

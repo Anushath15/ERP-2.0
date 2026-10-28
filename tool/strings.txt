@@ -1729,8 +1729,8 @@ wizSeriesReserved | The letter {letters} is kept for the main computer of the sh
 payCardShort | Card
 
 # ---- product form: price as a percent of the MRP
-fieldCostPct | Buying price as % of MRP
-fieldSellPct | Selling price as % of MRP
+fieldCostPct | Buying discount % from MRP
+fieldSellPct | Selling discount % from MRP
 
 # ---- dealer details
 fieldDealerShop | Shop or organization name

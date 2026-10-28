@@ -19,7 +19,7 @@ class FieldSpec {
   const FieldSpec(this.key, this.label, {this.type = FieldType.text, this.options = const [], this.initial = '', this.required = false, this.hint, this.autofocus = false, this.check, this.kind, this.suffix, this.obscure = false, this.digits, this.percentOf, this.fills});
   final String key, label;
 
-  /// A percent field: it is a percent of the field [percentOf] and fills the field [fills] (typing 50 with the MRP at 100 makes the price 50); typing the price or
+  /// A percent field: it is a percent of the field [percentOf] and fills the field [fills] (a discount from the MRP: 50 with the MRP at 100 makes the price 50, 25 makes it 75); typing the price or
   /// changing the MRP updates the percent. The percent itself is not saved.
   final String? percentOf, fills;
   final FieldType type;

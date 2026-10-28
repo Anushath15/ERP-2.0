@@ -1688,8 +1688,8 @@ class Strings {
   String wizSeriesPhone(String letters) => 'This phone joins a shop that already has a main computer. The letter ${letters} belongs to that computer, so it is not offered here. Choose another letter, for example B.';
   String wizSeriesReserved(String letters) => 'The letter ${letters} is kept for the main computer of the shop. Please choose a different one.';
   String get payCardShort => 'Card';
-  String get fieldCostPct => 'Buying price as % of MRP';
-  String get fieldSellPct => 'Selling price as % of MRP';
+  String get fieldCostPct => 'Buying discount % from MRP';
+  String get fieldSellPct => 'Selling discount % from MRP';
   String get fieldDealerShop => 'Shop or organization name';
   String get fieldContact => 'Contact person';
   String get fieldAccountNo => 'Bank account number';

@@ -40,7 +40,7 @@ Future<Product?> showProductForm(BuildContext context, {String initialName = '',
       FieldSpec('category', l.fieldCategory, type: FieldType.dropdown, initial: p?.category ?? categoryList.first, options: [for (final c in categoryList) (c, c)]),
       FieldSpec('unit', l.fieldUnit, type: FieldType.dropdown, initial: p?.unit ?? unitList.first, options: [for (final u in unitList) (u, u)]),
       FieldSpec('gst', l.fieldGst, type: FieldType.dropdown, initial: '${p?.gstBp ?? 1800}', options: const [('0', '0%'), ('500', '5%'), ('1200', '12%'), ('1800', '18%'), ('2800', '28%')]),
-      // the order of work: the printed price (MRP), what it costs (buying price), what it is sold for (selling price); each price can also be set as a percent of the MRP
+      // the order of work: the printed price (MRP), what it costs (buying price), what it is sold for (selling price); each price can also be set as a discount percent from the MRP
       FieldSpec('mrp', l.fieldMrp, type: FieldType.money, initial: p == null || p.mrpPaise == 0 ? '' : two(p.mrpPaise)),
       FieldSpec('cost', l.fieldCostPrice, type: FieldType.money, initial: p == null ? '' : two(p.costPaise), required: true),
       FieldSpec('costPct', l.fieldCostPct, type: FieldType.money, percentOf: 'mrp', fills: 'cost'),
