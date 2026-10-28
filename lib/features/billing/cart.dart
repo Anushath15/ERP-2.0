@@ -248,6 +248,12 @@ class CartNotifier extends Notifier<CartState> {
 
   void setKeepAdvance(bool v) => state = state.copyWith(keepAdvance: v);
 
+  /// The product's prices were changed (from the Change price box): the lines of that product take the new product, so the profit follows.
+  void refreshProduct(Product p) {
+    if (!state.lines.any((l) => l.product.id == p.id)) return;
+    state = state.copyWith(lines: [for (final l in state.lines) l.product.id == p.id ? CartLine(product: p, qtyMilli: l.qtyMilli, discountBp: l.discountBp, ratePaise: l.ratePaise < 0 ? null : l.ratePaise) : l]);
+  }
+
   void clear() => state = const CartState();
 
   /// "Bill again": a new bill with the items and quantities of an old one, for the same customer. Each item takes today's selling price from the

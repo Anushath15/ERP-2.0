@@ -1699,6 +1699,9 @@ class Strings {
   String get fieldAgentPhone => 'Collection agent phone';
   String get purMrp => 'MRP';
   String get purSellBox => 'New selling price';
+  String get linePriceNote => 'Save changes the price on this bill only. Save to product also keeps the MRP, buying price and selling price on the product.';
+  String get linePriceSaveProduct => 'Save to product';
+  String get linePriceSaved => 'Prices saved on the product';
 }
 
 /// The words for a real phone or tablet (see `isTouchDevice`): the same texts with the computer and Windows wording rewritten by `phoneWords`.

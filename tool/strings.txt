@@ -1744,3 +1744,8 @@ fieldAgentPhone | Collection agent phone
 # ---- Add purchase: MRP and prices per item
 purMrp | MRP
 purSellBox | New selling price
+
+# ---- Change price box on a bill or estimate
+linePriceNote | Save changes the price on this bill only. Save to product also keeps the MRP, buying price and selling price on the product.
+linePriceSaveProduct | Save to product
+linePriceSaved | Prices saved on the product

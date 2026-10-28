@@ -1,3 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../fake/store.dart' show productsProvider;
+import 'line_price_dialog.dart';
+import 'discount_profit_bar.dart' show showProfitProvider;
 import 'package:flutter/material.dart';
 import '../../core/date_fmt.dart';
 import 'package:flutter/services.dart';
@@ -231,12 +235,18 @@ class _LineBody extends StatelessWidget {
     final amount = Text(formatPaise(calc.total), style: th.titleSmall, textAlign: TextAlign.right);
     final del = IconButton(tooltip: l.removeLine, onPressed: onRemove, icon: Icon(Icons.delete_outline_rounded, color: c.danger));
     Future<void> editRate() async {
-      final v = await showFormSheet(context, title: l.changeRate, saveLabel: l.save, fields: [FieldSpec('rate', l.colRate, type: FieldType.money, initial: (line.rate / 100).toStringAsFixed(2), required: true, autofocus: true), FieldSpec('disc', l.discountPercentLabel, type: FieldType.number, initial: (line.discountBp / 100).toString())]);
-      if (v == null) return;
-      final r = double.tryParse(v['rate'] ?? '');
-      final d = double.tryParse(v['disc'] ?? '');
-      if (r != null) onRate((r * 100).round());
-      if (d != null) onDiscount((d * 100).round());
+      final box = ProviderScope.containerOf(context);
+      final current = box.read(productsProvider).where((x) => x.id == p.id).firstOrNull ?? p;
+      final r = await showLinePriceDialog(context, line: line, product: current, showCost: box.read(showProfitProvider));
+      if (r == null) return;
+      onRate(r.ratePaise);
+      onDiscount(r.discountBp);
+      if (!r.saveToProduct) return;
+      final saved = current.copyWith(pricePaise: r.ratePaise, mrpPaise: r.mrpPaise, costPaise: r.costPaise);
+      box.read(productsProvider.notifier).update(saved);
+      box.read(cartProvider(DocMode.invoice).notifier).refreshProduct(saved);
+      box.read(cartProvider(DocMode.estimation).notifier).refreshProduct(saved);
+      if (context.mounted) toast(context, l.linePriceSaved);
     }
 
     if (phone) {
