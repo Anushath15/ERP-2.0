@@ -1697,6 +1697,8 @@ class Strings {
   String get fieldIfsc => 'IFSC code';
   String get fieldAgentName => 'Collection agent name';
   String get fieldAgentPhone => 'Collection agent phone';
+  String get purMrp => 'MRP';
+  String get purSellBox => 'New selling price';
 }
 
 /// The words for a real phone or tablet (see `isTouchDevice`): the same texts with the computer and Windows wording rewritten by `phoneWords`.

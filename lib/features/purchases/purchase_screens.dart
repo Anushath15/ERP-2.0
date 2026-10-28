@@ -1,3 +1,4 @@
+import '../../design/percent_link.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -127,13 +128,32 @@ Future<void> showPurchasePopup(BuildContext context, WidgetRef ref, PurchaseRow 
 class _FormLine {
   _FormLine(this.product, {String rate = '', String qty = ''})
       : rate = TextEditingController(text: rate),
-        qty = TextEditingController(text: qty);
+        qty = TextEditingController(text: qty),
+        mrp = TextEditingController(text: product.mrpPaise > 0 ? (product.mrpPaise / 100).toStringAsFixed(2) : '');
   final Product product;
   final TextEditingController qty;
   final TextEditingController rate;
+
+  /// The printed price, the buying price and the new selling price as percents of it; the selling price is empty until typed (then it follows the buying price by the old margin).
+  final TextEditingController mrp;
+  final buyPct = TextEditingController();
+  final sell = TextEditingController();
+  final sellPct = TextEditingController();
+
+  /// Ties the percent boxes to the MRP and the prices (see linkPercent). [changed] runs when the program moved a price.
+  _FormLine link(VoidCallback changed) {
+    linkPercent(base: mrp, pct: buyPct, target: rate, onChanged: changed);
+    linkPercent(base: mrp, pct: sellPct, target: sell, onChanged: changed);
+    return this;
+  }
+
   void dispose() {
     qty.dispose();
     rate.dispose();
+    mrp.dispose();
+    buyPct.dispose();
+    sell.dispose();
+    sellPct.dispose();
   }
 }
 
@@ -198,7 +218,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
       for (final l in order.lines) {
         final p = products.where((x) => x.id == l.productId).firstOrNull;
         if (p == null) continue;
-        _lines.add(_FormLine(p, rate: p.costPaise == 0 ? '' : (p.costPaise / 100).toStringAsFixed(2), qty: formatQty(l.qtyMilli)));
+        _lines.add(_FormLine(p, rate: p.costPaise == 0 ? '' : (p.costPaise / 100).toStringAsFixed(2), qty: formatQty(l.qtyMilli)).link(_relink));
       }
     });
   }
@@ -232,7 +252,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
         final p = products.where((x) => x.id == l.productId).firstOrNull ??
             Product(id: l.productId, name: l.name, category: '', unit: l.unit, pricePaise: l.sellingPaise, costPaise: l.ratePaise, stockMilli: 0, gstBp: l.gstBp, barcode: '');
         final shown = _ratesInclude ? l.totalPaise * 1000 ~/ l.qtyMilli : l.ratePaise;
-        _lines.add(_FormLine(p, rate: (shown / 100).toStringAsFixed(2), qty: formatQty(l.qtyMilli)));
+        _lines.add(_FormLine(p, rate: (shown / 100).toStringAsFixed(2), qty: formatQty(l.qtyMilli)).link(_relink));
       }
       _loaded = true;
     });
@@ -247,6 +267,11 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
       x.dispose();
     }
     super.dispose();
+  }
+
+  /// A price the program moved (from the MRP and a percent): the totals follow.
+  void _relink() {
+    if (mounted) setState(() => _error = null);
   }
 
   static int _paise(String s) => ((double.tryParse(s.trim()) ?? 0) * 100).round();
@@ -265,6 +290,8 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
       ratePaise: _exRate(x),
       gstBp: x.product.gstBp,
       grossPaise: _ratesInclude ? lineAmount(_paise(x.rate.text), q) : null, // 10 x 3.13 with GST is 31.30, not what 10 x 2.65 plus GST makes
+      sellPaise: double.tryParse(x.sell.text.trim()) == null ? null : _paise(x.sell.text),
+      mrpPaise: double.tryParse(x.mrp.text.trim()) == null ? null : _paise(x.mrp.text),
     );
   }
 
@@ -290,7 +317,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
     if (!mounted) return;
     final made = ref.read(productsProvider).where((x) => x.id == p.id).firstOrNull ?? p;
     setState(() {
-      _lines.add(_FormLine(made, rate: made.costPaise == 0 ? '' : (made.costPaise / 100).toStringAsFixed(2)));
+      _lines.add(_FormLine(made, rate: made.costPaise == 0 ? '' : (made.costPaise / 100).toStringAsFixed(2)).link(_relink));
       _error = null;
     });
   }
@@ -378,7 +405,7 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
         return products.where((p) => '${p.name} ${p.code} ${p.brand} ${p.barcode}'.toLowerCase().contains(q)).take(8);
       },
       onSelected: (p) => setState(() {
-        _lines.add(_FormLine(p, rate: _ratesInclude || p.costPaise == 0 ? '' : (p.costPaise / 100).toStringAsFixed(2)));
+        _lines.add(_FormLine(p, rate: _ratesInclude || p.costPaise == 0 ? '' : (p.costPaise / 100).toStringAsFixed(2)).link(_relink));
         _error = null;
       }),
       fieldViewBuilder: (ctx, ctl, focus, submit) => TextField(
@@ -452,7 +479,8 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
             // what the selling price becomes when this purchase is received (the margin on the old buying price is kept)
             if (_updateCost && rateEx > 0 && x.product.costPaise > 0 && x.product.pricePaise > 0)
               () {
-                final now = sellingPriceKeepingMargin(oldCost: x.product.costPaise, newCost: rateEx, oldSell: x.product.pricePaise);
+                final typedSell = double.tryParse(x.sell.text.trim());
+                final now = typedSell != null ? _paise(x.sell.text) : sellingPriceKeepingMargin(oldCost: x.product.costPaise, newCost: rateEx, oldSell: x.product.pricePaise);
                 final changed = now != x.product.pricePaise;
                 final above = x.product.mrpPaise > 0 && now > x.product.mrpPaise;
                 final bold = th.bodySmall?.copyWith(fontWeight: FontWeight.w600);
@@ -470,6 +498,26 @@ class _PurchaseFormState extends ConsumerState<PurchaseFormScreen> {
                   ),
                 ]);
               }(),
+          ]),
+          const SizedBox(height: 8),
+          Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            for (final b in [
+              ('mrp', x.mrp, s.purMrp, true, 130.0),
+              ('buypct', x.buyPct, s.fieldCostPct, false, 250.0),
+              ('sellbox', x.sell, s.purSellBox, true, 160.0),
+              ('sellpct', x.sellPct, s.fieldSellPct, false, 250.0),
+            ])
+              SizedBox(
+                width: b.$5,
+                child: TextField(
+                  key: ValueKey('pur-${b.$1}-${x.product.id}'),
+                  controller: b.$2,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')), LengthLimitingTextInputFormatter(13)],
+                  decoration: InputDecoration(labelText: b.$3, prefixText: b.$4 ? '₹ ' : null, suffixText: b.$4 ? null : '%', hintText: b.$1 == 'sellbox' && x.product.pricePaise > 0 ? (x.product.pricePaise / 100).toStringAsFixed(2) : null, isDense: true),
+                  onChanged: (_) => setState(() => _error = null),
+                ),
+              ),
           ]),
           if (_dealer != null) _RateHints(key: ValueKey('hints-${x.product.id}-$_dealer-$rateEx'), productId: x.product.id, dealerId: _dealer!, ratePaise: rateEx),
         ]),

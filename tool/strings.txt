@@ -1740,3 +1740,7 @@ fieldBank | Bank name
 fieldIfsc | IFSC code
 fieldAgentName | Collection agent name
 fieldAgentPhone | Collection agent phone
+
+# ---- Add purchase: MRP and prices per item
+purMrp | MRP
+purSellBox | New selling price

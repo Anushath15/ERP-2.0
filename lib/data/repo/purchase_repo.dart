@@ -18,8 +18,12 @@ import '../ids.dart';
 import 'ledger_repo.dart';
 
 class PurchaseLineInput {
-  const PurchaseLineInput({required this.productId, required this.name, required this.unit, required this.qtyMilli, required this.ratePaise, required this.gstBp, this.grossPaise});
+  const PurchaseLineInput({required this.productId, required this.name, required this.unit, required this.qtyMilli, required this.ratePaise, required this.gstBp, this.grossPaise, this.sellPaise, this.mrpPaise});
   final String productId, name, unit;
+
+  /// A selling price and an MRP the person typed for this item (null = leave it: the selling price then follows the buying price by the old margin). They are
+  /// set on the product when the purchase is received.
+  final int? sellPaise, mrpPaise;
   final int qtyMilli, ratePaise, gstBp;
 
   /// What the line costs WITH GST, exactly as typed (quantity x the rate typed with GST), when the rates were typed with GST. The rate kept without GST is
@@ -163,7 +167,10 @@ class PurchaseRepo {
           [newId(), id, i + 1, l.productId, l.name, l.unit, l.qtyMilli, l.ratePaise, l.gstBp, l.taxable, l.tax, l.total],
         );
       }
-      if (input.received) await _receive(id, input.at);
+      if (input.received) {
+        await _receive(id, input.at);
+        await _applyPrices(input.lines);
+      }
       await enqueue(cx, _db, 'purchases', id);
       await _db.exec(
         'INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
@@ -203,6 +210,27 @@ class PurchaseRepo {
     if (next == row.read<int>('avg_c')) return;
     await _db.exec('UPDATE products SET avg_cost_paise = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [next, cx.nowMs(), cx.hlc.next(), cx.deviceId, pid]);
     await enqueue(cx, _db, 'products', pid);
+  }
+
+  /// The selling price and the MRP typed on the purchase become the product's own (after the buying price has moved the selling price by the old margin,
+  /// so what was typed wins). Each change is written to the audit trail.
+  Future<void> _applyPrices(List<PurchaseLineInput> lines) async {
+    for (final l in lines) {
+      if (l.sellPaise == null && l.mrpPaise == null) continue;
+      final row = await _db.row('SELECT price_paise, mrp_paise FROM products WHERE id = ?', [l.productId]);
+      if (row == null) continue;
+      var changed = false;
+      Future<void> set(String col, String field, int old, int? now) async {
+        if (now == null || now < 0 || now == old) return;
+        await _db.exec('UPDATE products SET $col = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [now, cx.nowMs(), cx.hlc.next(), cx.deviceId, l.productId]);
+        await _db.exec('INSERT INTO audit(id, what, entity, entity_id, field, old_value, new_value, by_name, at, device_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId(), field, 'product', l.productId, field, '$old', '$now', cx.actor.name, cx.nowMs(), cx.deviceId]);
+        changed = true;
+      }
+
+      await set('price_paise', 'price', row.read<int>('price_paise'), l.sellPaise);
+      await set('mrp_paise', 'mrp', row.read<int>('mrp_paise'), l.mrpPaise);
+      if (changed) await enqueue(cx, _db, 'products', l.productId);
+    }
   }
 
   /// The product's buying price becomes [rate] (without GST) and its selling price follows by the same ratio, so the margin stays what it was. Does nothing when
@@ -299,6 +327,7 @@ class PurchaseRepo {
             if (was[n.productId] != n.ratePaise) await _applyCost(n.productId, n.ratePaise);
           }
         }
+        await _applyPrices(input.lines);
         // the dealer's account: what is still owed changes by the difference
         final delta = (newTotal - input.paidPaise) - (oldTotal - oldPaid);
         await ledger.changeCredit(_db, PartyKind.dealer, partyId: dealerId, billNo: number, at: cx.now(), delta: delta, newTotal: newTotal, billDate: when);

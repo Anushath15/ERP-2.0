@@ -1,3 +1,4 @@
+import 'percent_link.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/date_fmt.dart';
@@ -97,47 +98,11 @@ class _FormBodyState extends State<_FormBody> {
   late final Map<String, TextEditingController> _ctl = {for (final f in widget.fields) f.key: TextEditingController(text: f.initial)};
   late final Map<String, String> _drop = {for (final f in widget.fields.where((f) => f.type == FieldType.dropdown || f.type == FieldType.choice)) f.key: f.initial.isNotEmpty ? f.initial : (f.options.isNotEmpty ? f.options.first.$1 : '')};
 
-  bool _busyPct = false;
-
   @override
   void initState() {
     super.initState();
     for (final f in widget.fields.where((f) => f.percentOf != null && f.fills != null)) {
-      final pct = _ctl[f.key]!, base = _ctl[f.percentOf!]!, tgt = _ctl[f.fills!]!;
-      String pctOf(double t, double b) => (t / b * 100).toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
-      void fillTarget() {
-        final b = double.tryParse(base.text), p = double.tryParse(pct.text);
-        if (b == null || p == null) return;
-        _busyPct = true;
-        tgt.text = (b * p / 100).toStringAsFixed(2);
-        _busyPct = false;
-      }
-      void fillPercent() {
-        final b = double.tryParse(base.text), t = double.tryParse(tgt.text);
-        if (b == null || b <= 0 || t == null) return;
-        _busyPct = true;
-        pct.text = pctOf(t, b);
-        _busyPct = false;
-      }
-      // only a real change of the text counts (a tap into the box also notifies); each watcher remembers the text it last saw
-      void watch(TextEditingController c, void Function() act) {
-        var seen = c.text;
-        c.addListener(() {
-          if (_busyPct || seen == c.text) return;
-          seen = c.text;
-          act();
-        });
-      }
-      watch(pct, fillTarget);
-      watch(tgt, fillPercent);
-      watch(base, () {
-        if (pct.text.isNotEmpty) {
-          fillTarget();
-        } else {
-          fillPercent();
-        }
-      });
-      if (pct.text.isEmpty && base.text.isNotEmpty && tgt.text.isNotEmpty) fillPercent();
+      linkPercent(base: _ctl[f.percentOf!]!, pct: _ctl[f.key]!, target: _ctl[f.fills!]!);
     }
   }
 
