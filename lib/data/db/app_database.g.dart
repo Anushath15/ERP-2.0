@@ -3213,6 +3213,94 @@ class Dealers extends Table with TableInfo<Dealers, DbDealer> {
     $customConstraints: 'NOT NULL DEFAULT \'\'',
     defaultValue: const CustomExpression('\'\''),
   );
+  static const VerificationMeta _contactMeta = const VerificationMeta(
+    'contact',
+  );
+  late final GeneratedColumn<String> contact = GeneratedColumn<String>(
+    'contact',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _accountNoMeta = const VerificationMeta(
+    'accountNo',
+  );
+  late final GeneratedColumn<String> accountNo = GeneratedColumn<String>(
+    'account_no',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _bankMeta = const VerificationMeta('bank');
+  late final GeneratedColumn<String> bank = GeneratedColumn<String>(
+    'bank',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _ifscMeta = const VerificationMeta('ifsc');
+  late final GeneratedColumn<String> ifsc = GeneratedColumn<String>(
+    'ifsc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _agentNameMeta = const VerificationMeta(
+    'agentName',
+  );
+  late final GeneratedColumn<String> agentName = GeneratedColumn<String>(
+    'agent_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _agentPhoneMeta = const VerificationMeta(
+    'agentPhone',
+  );
+  late final GeneratedColumn<String> agentPhone = GeneratedColumn<String>(
+    'agent_phone',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT \'\'',
+    defaultValue: const CustomExpression('\'\''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3228,6 +3316,14 @@ class Dealers extends Table with TableInfo<Dealers, DbDealer> {
     deviceId,
     version,
     hlc,
+    contact,
+    email,
+    accountNo,
+    bank,
+    ifsc,
+    agentName,
+    agentPhone,
+    notes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3326,6 +3422,54 @@ class Dealers extends Table with TableInfo<Dealers, DbDealer> {
         hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
       );
     }
+    if (data.containsKey('contact')) {
+      context.handle(
+        _contactMeta,
+        contact.isAcceptableOrUnknown(data['contact']!, _contactMeta),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('account_no')) {
+      context.handle(
+        _accountNoMeta,
+        accountNo.isAcceptableOrUnknown(data['account_no']!, _accountNoMeta),
+      );
+    }
+    if (data.containsKey('bank')) {
+      context.handle(
+        _bankMeta,
+        bank.isAcceptableOrUnknown(data['bank']!, _bankMeta),
+      );
+    }
+    if (data.containsKey('ifsc')) {
+      context.handle(
+        _ifscMeta,
+        ifsc.isAcceptableOrUnknown(data['ifsc']!, _ifscMeta),
+      );
+    }
+    if (data.containsKey('agent_name')) {
+      context.handle(
+        _agentNameMeta,
+        agentName.isAcceptableOrUnknown(data['agent_name']!, _agentNameMeta),
+      );
+    }
+    if (data.containsKey('agent_phone')) {
+      context.handle(
+        _agentPhoneMeta,
+        agentPhone.isAcceptableOrUnknown(data['agent_phone']!, _agentPhoneMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
     return context;
   }
 
@@ -3387,6 +3531,38 @@ class Dealers extends Table with TableInfo<Dealers, DbDealer> {
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
       )!,
+      contact: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      accountNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_no'],
+      )!,
+      bank: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank'],
+      )!,
+      ifsc: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ifsc'],
+      )!,
+      agentName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}agent_name'],
+      )!,
+      agentPhone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}agent_phone'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      )!,
     );
   }
 
@@ -3413,6 +3589,14 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
   final String deviceId;
   final int version;
   final String hlc;
+  final String contact;
+  final String email;
+  final String accountNo;
+  final String bank;
+  final String ifsc;
+  final String agentName;
+  final String agentPhone;
+  final String notes;
   const DbDealer({
     required this.id,
     required this.name,
@@ -3427,6 +3611,14 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
     required this.deviceId,
     required this.version,
     required this.hlc,
+    required this.contact,
+    required this.email,
+    required this.accountNo,
+    required this.bank,
+    required this.ifsc,
+    required this.agentName,
+    required this.agentPhone,
+    required this.notes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3448,6 +3640,14 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
     map['device_id'] = Variable<String>(deviceId);
     map['version'] = Variable<int>(version);
     map['hlc'] = Variable<String>(hlc);
+    map['contact'] = Variable<String>(contact);
+    map['email'] = Variable<String>(email);
+    map['account_no'] = Variable<String>(accountNo);
+    map['bank'] = Variable<String>(bank);
+    map['ifsc'] = Variable<String>(ifsc);
+    map['agent_name'] = Variable<String>(agentName);
+    map['agent_phone'] = Variable<String>(agentPhone);
+    map['notes'] = Variable<String>(notes);
     return map;
   }
 
@@ -3470,6 +3670,14 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
       deviceId: Value(deviceId),
       version: Value(version),
       hlc: Value(hlc),
+      contact: Value(contact),
+      email: Value(email),
+      accountNo: Value(accountNo),
+      bank: Value(bank),
+      ifsc: Value(ifsc),
+      agentName: Value(agentName),
+      agentPhone: Value(agentPhone),
+      notes: Value(notes),
     );
   }
 
@@ -3492,6 +3700,14 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
       deviceId: serializer.fromJson<String>(json['device_id']),
       version: serializer.fromJson<int>(json['version']),
       hlc: serializer.fromJson<String>(json['hlc']),
+      contact: serializer.fromJson<String>(json['contact']),
+      email: serializer.fromJson<String>(json['email']),
+      accountNo: serializer.fromJson<String>(json['account_no']),
+      bank: serializer.fromJson<String>(json['bank']),
+      ifsc: serializer.fromJson<String>(json['ifsc']),
+      agentName: serializer.fromJson<String>(json['agent_name']),
+      agentPhone: serializer.fromJson<String>(json['agent_phone']),
+      notes: serializer.fromJson<String>(json['notes']),
     );
   }
   @override
@@ -3511,6 +3727,14 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
       'device_id': serializer.toJson<String>(deviceId),
       'version': serializer.toJson<int>(version),
       'hlc': serializer.toJson<String>(hlc),
+      'contact': serializer.toJson<String>(contact),
+      'email': serializer.toJson<String>(email),
+      'account_no': serializer.toJson<String>(accountNo),
+      'bank': serializer.toJson<String>(bank),
+      'ifsc': serializer.toJson<String>(ifsc),
+      'agent_name': serializer.toJson<String>(agentName),
+      'agent_phone': serializer.toJson<String>(agentPhone),
+      'notes': serializer.toJson<String>(notes),
     };
   }
 
@@ -3528,6 +3752,14 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
     String? deviceId,
     int? version,
     String? hlc,
+    String? contact,
+    String? email,
+    String? accountNo,
+    String? bank,
+    String? ifsc,
+    String? agentName,
+    String? agentPhone,
+    String? notes,
   }) => DbDealer(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -3542,6 +3774,14 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
     deviceId: deviceId ?? this.deviceId,
     version: version ?? this.version,
     hlc: hlc ?? this.hlc,
+    contact: contact ?? this.contact,
+    email: email ?? this.email,
+    accountNo: accountNo ?? this.accountNo,
+    bank: bank ?? this.bank,
+    ifsc: ifsc ?? this.ifsc,
+    agentName: agentName ?? this.agentName,
+    agentPhone: agentPhone ?? this.agentPhone,
+    notes: notes ?? this.notes,
   );
   DbDealer copyWithCompanion(DealersCompanion data) {
     return DbDealer(
@@ -3558,6 +3798,16 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
       version: data.version.present ? data.version.value : this.version,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      contact: data.contact.present ? data.contact.value : this.contact,
+      email: data.email.present ? data.email.value : this.email,
+      accountNo: data.accountNo.present ? data.accountNo.value : this.accountNo,
+      bank: data.bank.present ? data.bank.value : this.bank,
+      ifsc: data.ifsc.present ? data.ifsc.value : this.ifsc,
+      agentName: data.agentName.present ? data.agentName.value : this.agentName,
+      agentPhone: data.agentPhone.present
+          ? data.agentPhone.value
+          : this.agentPhone,
+      notes: data.notes.present ? data.notes.value : this.notes,
     );
   }
 
@@ -3576,13 +3826,21 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
           ..write('deletedAt: $deletedAt, ')
           ..write('deviceId: $deviceId, ')
           ..write('version: $version, ')
-          ..write('hlc: $hlc')
+          ..write('hlc: $hlc, ')
+          ..write('contact: $contact, ')
+          ..write('email: $email, ')
+          ..write('accountNo: $accountNo, ')
+          ..write('bank: $bank, ')
+          ..write('ifsc: $ifsc, ')
+          ..write('agentName: $agentName, ')
+          ..write('agentPhone: $agentPhone, ')
+          ..write('notes: $notes')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     phone,
@@ -3596,7 +3854,15 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
     deviceId,
     version,
     hlc,
-  );
+    contact,
+    email,
+    accountNo,
+    bank,
+    ifsc,
+    agentName,
+    agentPhone,
+    notes,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3613,7 +3879,15 @@ class DbDealer extends DataClass implements Insertable<DbDealer> {
           other.deletedAt == this.deletedAt &&
           other.deviceId == this.deviceId &&
           other.version == this.version &&
-          other.hlc == this.hlc);
+          other.hlc == this.hlc &&
+          other.contact == this.contact &&
+          other.email == this.email &&
+          other.accountNo == this.accountNo &&
+          other.bank == this.bank &&
+          other.ifsc == this.ifsc &&
+          other.agentName == this.agentName &&
+          other.agentPhone == this.agentPhone &&
+          other.notes == this.notes);
 }
 
 class DealersCompanion extends UpdateCompanion<DbDealer> {
@@ -3630,6 +3904,14 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
   final Value<String> deviceId;
   final Value<int> version;
   final Value<String> hlc;
+  final Value<String> contact;
+  final Value<String> email;
+  final Value<String> accountNo;
+  final Value<String> bank;
+  final Value<String> ifsc;
+  final Value<String> agentName;
+  final Value<String> agentPhone;
+  final Value<String> notes;
   final Value<int> rowid;
   const DealersCompanion({
     this.id = const Value.absent(),
@@ -3645,6 +3927,14 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
     this.deviceId = const Value.absent(),
     this.version = const Value.absent(),
     this.hlc = const Value.absent(),
+    this.contact = const Value.absent(),
+    this.email = const Value.absent(),
+    this.accountNo = const Value.absent(),
+    this.bank = const Value.absent(),
+    this.ifsc = const Value.absent(),
+    this.agentName = const Value.absent(),
+    this.agentPhone = const Value.absent(),
+    this.notes = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DealersCompanion.insert({
@@ -3661,6 +3951,14 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
     required String deviceId,
     this.version = const Value.absent(),
     this.hlc = const Value.absent(),
+    this.contact = const Value.absent(),
+    this.email = const Value.absent(),
+    this.accountNo = const Value.absent(),
+    this.bank = const Value.absent(),
+    this.ifsc = const Value.absent(),
+    this.agentName = const Value.absent(),
+    this.agentPhone = const Value.absent(),
+    this.notes = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -3681,6 +3979,14 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
     Expression<String>? deviceId,
     Expression<int>? version,
     Expression<String>? hlc,
+    Expression<String>? contact,
+    Expression<String>? email,
+    Expression<String>? accountNo,
+    Expression<String>? bank,
+    Expression<String>? ifsc,
+    Expression<String>? agentName,
+    Expression<String>? agentPhone,
+    Expression<String>? notes,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3697,6 +4003,14 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
       if (deviceId != null) 'device_id': deviceId,
       if (version != null) 'version': version,
       if (hlc != null) 'hlc': hlc,
+      if (contact != null) 'contact': contact,
+      if (email != null) 'email': email,
+      if (accountNo != null) 'account_no': accountNo,
+      if (bank != null) 'bank': bank,
+      if (ifsc != null) 'ifsc': ifsc,
+      if (agentName != null) 'agent_name': agentName,
+      if (agentPhone != null) 'agent_phone': agentPhone,
+      if (notes != null) 'notes': notes,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3715,6 +4029,14 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
     Value<String>? deviceId,
     Value<int>? version,
     Value<String>? hlc,
+    Value<String>? contact,
+    Value<String>? email,
+    Value<String>? accountNo,
+    Value<String>? bank,
+    Value<String>? ifsc,
+    Value<String>? agentName,
+    Value<String>? agentPhone,
+    Value<String>? notes,
     Value<int>? rowid,
   }) {
     return DealersCompanion(
@@ -3731,6 +4053,14 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
       deviceId: deviceId ?? this.deviceId,
       version: version ?? this.version,
       hlc: hlc ?? this.hlc,
+      contact: contact ?? this.contact,
+      email: email ?? this.email,
+      accountNo: accountNo ?? this.accountNo,
+      bank: bank ?? this.bank,
+      ifsc: ifsc ?? this.ifsc,
+      agentName: agentName ?? this.agentName,
+      agentPhone: agentPhone ?? this.agentPhone,
+      notes: notes ?? this.notes,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3777,6 +4107,30 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
+    if (contact.present) {
+      map['contact'] = Variable<String>(contact.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (accountNo.present) {
+      map['account_no'] = Variable<String>(accountNo.value);
+    }
+    if (bank.present) {
+      map['bank'] = Variable<String>(bank.value);
+    }
+    if (ifsc.present) {
+      map['ifsc'] = Variable<String>(ifsc.value);
+    }
+    if (agentName.present) {
+      map['agent_name'] = Variable<String>(agentName.value);
+    }
+    if (agentPhone.present) {
+      map['agent_phone'] = Variable<String>(agentPhone.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3799,6 +4153,14 @@ class DealersCompanion extends UpdateCompanion<DbDealer> {
           ..write('deviceId: $deviceId, ')
           ..write('version: $version, ')
           ..write('hlc: $hlc, ')
+          ..write('contact: $contact, ')
+          ..write('email: $email, ')
+          ..write('accountNo: $accountNo, ')
+          ..write('bank: $bank, ')
+          ..write('ifsc: $ifsc, ')
+          ..write('agentName: $agentName, ')
+          ..write('agentPhone: $agentPhone, ')
+          ..write('notes: $notes, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -24735,6 +25097,14 @@ typedef $DealersCreateCompanionBuilder = DealersCompanion Function({
   required String deviceId,
   Value<int> version,
   Value<String> hlc,
+  Value<String> contact,
+  Value<String> email,
+  Value<String> accountNo,
+  Value<String> bank,
+  Value<String> ifsc,
+  Value<String> agentName,
+  Value<String> agentPhone,
+  Value<String> notes,
   Value<int> rowid,
 });
 typedef $DealersUpdateCompanionBuilder = DealersCompanion Function({
@@ -24751,6 +25121,14 @@ typedef $DealersUpdateCompanionBuilder = DealersCompanion Function({
   Value<String> deviceId,
   Value<int> version,
   Value<String> hlc,
+  Value<String> contact,
+  Value<String> email,
+  Value<String> accountNo,
+  Value<String> bank,
+  Value<String> ifsc,
+  Value<String> agentName,
+  Value<String> agentPhone,
+  Value<String> notes,
   Value<int> rowid,
 });
 
@@ -24868,6 +25246,46 @@ class $DealersFilterComposer extends Composer<_$AppDatabase, Dealers> {
 
   ColumnFilters<String> get hlc => $composableBuilder(
     column: $table.hlc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contact => $composableBuilder(
+    column: $table.contact,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountNo => $composableBuilder(
+    column: $table.accountNo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bank => $composableBuilder(
+    column: $table.bank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ifsc => $composableBuilder(
+    column: $table.ifsc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get agentName => $composableBuilder(
+    column: $table.agentName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get agentPhone => $composableBuilder(
+    column: $table.agentPhone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -24994,6 +25412,46 @@ class $DealersOrderingComposer extends Composer<_$AppDatabase, Dealers> {
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get contact => $composableBuilder(
+    column: $table.contact,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountNo => $composableBuilder(
+    column: $table.accountNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bank => $composableBuilder(
+    column: $table.bank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ifsc => $composableBuilder(
+    column: $table.ifsc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get agentName => $composableBuilder(
+    column: $table.agentName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get agentPhone => $composableBuilder(
+    column: $table.agentPhone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $DealersAnnotationComposer extends Composer<_$AppDatabase, Dealers> {
@@ -25042,6 +25500,32 @@ class $DealersAnnotationComposer extends Composer<_$AppDatabase, Dealers> {
 
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<String> get contact =>
+      $composableBuilder(column: $table.contact, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get accountNo =>
+      $composableBuilder(column: $table.accountNo, builder: (column) => column);
+
+  GeneratedColumn<String> get bank =>
+      $composableBuilder(column: $table.bank, builder: (column) => column);
+
+  GeneratedColumn<String> get ifsc =>
+      $composableBuilder(column: $table.ifsc, builder: (column) => column);
+
+  GeneratedColumn<String> get agentName =>
+      $composableBuilder(column: $table.agentName, builder: (column) => column);
+
+  GeneratedColumn<String> get agentPhone => $composableBuilder(
+    column: $table.agentPhone,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
 
   Expression<T> purchasesRefs<T extends Object>(
     Expression<T> Function($PurchasesAnnotationComposer a) f,
@@ -25135,6 +25619,14 @@ class $DealersTableManager
                 Value<String> deviceId = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
+                Value<String> contact = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String> accountNo = const Value.absent(),
+                Value<String> bank = const Value.absent(),
+                Value<String> ifsc = const Value.absent(),
+                Value<String> agentName = const Value.absent(),
+                Value<String> agentPhone = const Value.absent(),
+                Value<String> notes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DealersCompanion(
                 id: id,
@@ -25150,6 +25642,14 @@ class $DealersTableManager
                 deviceId: deviceId,
                 version: version,
                 hlc: hlc,
+                contact: contact,
+                email: email,
+                accountNo: accountNo,
+                bank: bank,
+                ifsc: ifsc,
+                agentName: agentName,
+                agentPhone: agentPhone,
+                notes: notes,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -25167,6 +25667,14 @@ class $DealersTableManager
                 required String deviceId,
                 Value<int> version = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
+                Value<String> contact = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String> accountNo = const Value.absent(),
+                Value<String> bank = const Value.absent(),
+                Value<String> ifsc = const Value.absent(),
+                Value<String> agentName = const Value.absent(),
+                Value<String> agentPhone = const Value.absent(),
+                Value<String> notes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DealersCompanion.insert(
                 id: id,
@@ -25182,6 +25690,14 @@ class $DealersTableManager
                 deviceId: deviceId,
                 version: version,
                 hlc: hlc,
+                contact: contact,
+                email: email,
+                accountNo: accountNo,
+                bank: bank,
+                ifsc: ifsc,
+                agentName: agentName,
+                agentPhone: agentPhone,
+                notes: notes,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

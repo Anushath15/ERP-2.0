@@ -1731,3 +1731,12 @@ payCardShort | Card
 # ---- product form: price as a percent of the MRP
 fieldCostPct | Buying price as % of MRP
 fieldSellPct | Selling price as % of MRP
+
+# ---- dealer details
+fieldDealerShop | Shop or organization name
+fieldContact | Contact person
+fieldAccountNo | Bank account number
+fieldBank | Bank name
+fieldIfsc | IFSC code
+fieldAgentName | Collection agent name
+fieldAgentPhone | Collection agent phone

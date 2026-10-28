@@ -1,3 +1,4 @@
+import '../credit/party_dialogs.dart' show dealerFormFields, dealerFromForm;
 import '../../data/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,15 +79,15 @@ class DealersScreen extends ConsumerWidget {
       title: l.navDealers,
       subtitle: l.dealersSubtitle,
       items: items,
-      searchText: (r) => '${r.s('name')} ${r.s('phone')} ${r.s('city')}',
+      searchText: (r) => '${r.s('name')} ${r.s('phone')} ${r.s('city')} ${r.s('gstin')} ${r.s('contact')} ${r.s('agentName')} ${r.s('agentPhone')}',
       stats: [
         StatCard(label: l.statTotalWeOwe, value: '₹ ${formatPaise(items.fold<int>(0, (s, r) => owe(r) > 0 ? s + owe(r) : s))}', icon: Icons.north_east_rounded, tone: context.c.danger),
         StatCard(label: l.statDealersOwed, value: items.where((r) => owe(r) > 0).length.toString(), icon: Icons.local_shipping_rounded),
       ],
       addLabel: l.addDealer,
       onAdd: () async {
-        final v = await showFormSheet(context, title: l.addDealer, saveLabel: l.save, fields: [FieldSpec('name', l.fieldName, required: true, autofocus: true), FieldSpec('phone', l.fieldPhone, type: FieldType.phone), FieldSpec('city', l.fieldCity), FieldSpec('address', l.fieldAddress)]);
-        if (v != null) ref.read(recsProvider('dealers').notifier).add(Rec(newId(), {'name': v['name']!, 'phone': v['phone'] ?? '', 'city': v['city'] ?? '', 'address': v['address'] ?? '', 'balance': 0}));
+        final v = await showFormSheet(context, title: l.addDealer, saveLabel: l.save, fields: dealerFormFields(l));
+        if (v != null) ref.read(recsProvider('dealers').notifier).add(Rec(newId(), {...dealerFromForm(v), 'balance': 0}));
       },
       filters: [FilterSpec(l.filterWeOwe, (r) => owe(r) > 0)],
       sorts: [(l.sortOwedHigh, (a, b) => owe(b).compareTo(owe(a)))],

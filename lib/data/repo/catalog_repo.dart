@@ -275,20 +275,29 @@ class CatalogRepo {
 
   Future<int> customerCount() => _db.scalarInt('SELECT COUNT(*) FROM customers WHERE deleted_at IS NULL');
 
-  // ---------------------------------------------------------------- dealers (a record with name, phone, city and the balance we owe)
+  // ---------------------------------------------------------------- dealers (a record with the shop's details, the contact and collection agent, and the balance we owe)
+
+  /// The details kept for a dealer, as record keys, with their column names.
+  static const dealerFields = {
+    'name': 'name', 'phone': 'phone', 'city': 'city', 'address': 'address', 'gstin': 'gstin', 'contact': 'contact', 'email': 'email', 'account': 'account_no', 'bank': 'bank', 'ifsc': 'ifsc', 'agentName': 'agent_name', 'agentPhone': 'agent_phone', 'notes': 'notes',
+  };
 
   Future<List<Rec>> dealers() async {
     final r = await _db.rows('SELECT d.*, COALESCE(b.balance_paise, 0) AS balance FROM dealers d LEFT JOIN party_balance b ON b.party_id = d.id WHERE d.deleted_at IS NULL ORDER BY d.created_at DESC, d.rowid DESC');
-    return [for (final x in r) Rec(x.read<String>('id'), {'name': x.read<String>('name'), 'phone': x.read<String>('phone'), 'city': x.read<String>('city'), 'balance': x.read<int>('balance')})];
+    return [
+      for (final x in r) Rec(x.read<String>('id'), {for (final e in dealerFields.entries) e.key: x.read<String>(e.value), 'balance': x.read<int>('balance')})
+    ];
   }
 
   Future<void> saveDealer(Rec d, {required bool create}) {
     return _db.transaction(() async {
       final now = cx.nowMs();
+      final cols = dealerFields.values.toList();
+      final vals = [for (final k in dealerFields.keys) d.s(k)];
       if (create) {
-        await _db.exec('INSERT INTO dealers(id, name, phone, city, created_at, updated_at, device_id, version, hlc) VALUES (?,?,?,?,?,?,?,1,?)', [d.id, d.s('name'), d.s('phone'), d.s('city'), now, now, cx.deviceId, cx.hlc.next()]);
+        await _db.exec('INSERT INTO dealers(id, ${cols.join(', ')}, created_at, updated_at, device_id, version, hlc) VALUES (?,${List.filled(cols.length, '?').join(',')},?,?,?,1,?)', [d.id, ...vals, now, now, cx.deviceId, cx.hlc.next()]);
       } else {
-        await _db.exec('UPDATE dealers SET name = ?, phone = ?, city = ?, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [d.s('name'), d.s('phone'), d.s('city'), now, cx.hlc.next(), cx.deviceId, d.id]);
+        await _db.exec('UPDATE dealers SET ${cols.map((c) => '$c = ?').join(', ')}, updated_at = ?, version = version + 1, hlc = ?, device_id = ? WHERE id = ?', [...vals, now, cx.hlc.next(), cx.deviceId, d.id]);
       }
       await enqueue(cx, _db, 'dealers', d.id);
     });

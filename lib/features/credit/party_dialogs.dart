@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../strings.dart';
 import '../../core/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -117,6 +118,32 @@ Future<void> showAddCreditCustomer(BuildContext context) async {
 }
 
 /// Edit a customer's or dealer's details.
+/// The fields of a dealer, for adding and for editing. Only the shop or organization name and its phone must be filled in; every other detail
+/// (GST number, bank account, contact person, collection agent and his phone, e-mail, notes) is optional.
+List<FieldSpec> dealerFormFields(Strings l, {Rec? r}) {
+  String v(String k) => r?.s(k) ?? '';
+  return [
+    FieldSpec('name', l.fieldDealerShop, initial: v('name'), required: true, autofocus: true),
+    FieldSpec('phone', l.fieldPhone, type: FieldType.phone, initial: v('phone'), required: true),
+    FieldSpec('gstin', l.fieldGstinOptional, initial: v('gstin'), kind: TextKind.gstin),
+    FieldSpec('contact', l.fieldContact, initial: v('contact')),
+    FieldSpec('agentName', l.fieldAgentName, initial: v('agentName')),
+    FieldSpec('agentPhone', l.fieldAgentPhone, type: FieldType.phone, initial: v('agentPhone')),
+    FieldSpec('account', l.fieldAccountNo, initial: v('account')),
+    FieldSpec('bank', l.fieldBank, initial: v('bank')),
+    FieldSpec('ifsc', l.fieldIfsc, initial: v('ifsc')),
+    FieldSpec('email', l.fieldEmail, type: FieldType.email, initial: v('email')),
+    FieldSpec('city', l.fieldCity, initial: v('city')),
+    FieldSpec('address', l.fieldAddress, initial: v('address')),
+    FieldSpec('notes', l.fieldNote, type: FieldType.multiline, initial: v('notes')),
+  ];
+}
+
+/// The record map of a dealer from what the form returned.
+Map<String, Object> dealerFromForm(Map<String, String> v) => {for (final k in dealerFormKeys) k: (v[k] ?? '').trim()};
+
+const dealerFormKeys = ['name', 'phone', 'gstin', 'contact', 'agentName', 'agentPhone', 'account', 'bank', 'ifsc', 'email', 'city', 'address', 'notes'];
+
 Future<void> showEditParty(BuildContext context, PartyRef party) async {
   final l = tr(context);
   final container = ProviderScope.containerOf(context);
@@ -134,14 +161,9 @@ Future<void> showEditParty(BuildContext context, PartyRef party) async {
     container.read(customersProvider.notifier).update(c.copyWith(name: v['name'], phone: v['phone'], city: v['city'], address: v['address'], gstin: v['gstin'], creditLimitPaise: parseRupeesToPaise(v['limit'] ?? '') ?? c.creditLimitPaise));
   } else {
     final r = container.read(recsProvider('dealers')).firstWhere((x) => x.id == party.id);
-    final v = await showFormSheet(context, title: l.editParty, saveLabel: l.save, fields: [
-      FieldSpec('name', l.fieldName, initial: r.s('name'), required: true, autofocus: true),
-      FieldSpec('phone', l.fieldPhone, type: FieldType.phone, initial: r.s('phone')),
-      FieldSpec('city', l.fieldCity, initial: r.s('city')),
-      FieldSpec('address', l.fieldAddress, initial: r.s('address')),
-    ]);
+    final v = await showFormSheet(context, title: l.editParty, saveLabel: l.save, fields: dealerFormFields(l, r: r));
     if (v == null || !context.mounted) return;
-    container.read(recsProvider('dealers').notifier).replace(r.with_({'name': v['name']!, 'phone': v['phone'] ?? '', 'city': v['city'] ?? '', 'address': v['address'] ?? ''}));
+    container.read(recsProvider('dealers').notifier).replace(r.with_(dealerFromForm(v)));
   }
   if (context.mounted) toast(context, l.partyEdited);
 }

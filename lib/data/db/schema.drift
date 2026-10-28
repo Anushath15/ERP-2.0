@@ -98,7 +98,15 @@ CREATE TABLE dealers (
   deleted_at INTEGER,
   device_id TEXT NOT NULL,
   version INTEGER NOT NULL DEFAULT 1,
-  hlc TEXT NOT NULL DEFAULT ''
+  hlc TEXT NOT NULL DEFAULT '',
+  contact TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  account_no TEXT NOT NULL DEFAULT '',
+  bank TEXT NOT NULL DEFAULT '',
+  ifsc TEXT NOT NULL DEFAULT '',
+  agent_name TEXT NOT NULL DEFAULT '',
+  agent_phone TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT ''
 ) AS DbDealer;
 CREATE INDEX dealers_name ON dealers(name COLLATE NOCASE);
 CREATE UNIQUE INDEX dealers_old_id ON dealers(old_id) WHERE old_id IS NOT NULL;

@@ -1690,6 +1690,13 @@ class Strings {
   String get payCardShort => 'Card';
   String get fieldCostPct => 'Buying price as % of MRP';
   String get fieldSellPct => 'Selling price as % of MRP';
+  String get fieldDealerShop => 'Shop or organization name';
+  String get fieldContact => 'Contact person';
+  String get fieldAccountNo => 'Bank account number';
+  String get fieldBank => 'Bank name';
+  String get fieldIfsc => 'IFSC code';
+  String get fieldAgentName => 'Collection agent name';
+  String get fieldAgentPhone => 'Collection agent phone';
 }
 
 /// The words for a real phone or tablet (see `isTouchDevice`): the same texts with the computer and Windows wording rewritten by `phoneWords`.

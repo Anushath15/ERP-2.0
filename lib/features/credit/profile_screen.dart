@@ -154,11 +154,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       title: l.profDetails,
       trailing: TextButton.icon(key: const ValueKey('editParty'), onPressed: () => showEditParty(context, party), icon: const Icon(Icons.edit_rounded, size: 18), label: Text(l.editParty)),
       child: Column(children: [
-        KeyValue(l.fieldName, name),
+        KeyValue(_customer ? l.fieldName : l.fieldDealerShop, name),
         KeyValue(l.fieldPhone, phone.isEmpty ? l.custNoNumber : phone),
+        if (!_customer)
+          for (final e in [(l.fieldGstinOptional, 'gstin'), (l.fieldContact, 'contact'), (l.fieldAgentName, 'agentName'), (l.fieldAgentPhone, 'agentPhone'), (l.fieldAccountNo, 'account'), (l.fieldBank, 'bank'), (l.fieldIfsc, 'ifsc'), (l.fieldEmail, 'email')])
+            KeyValue(e.$1, deal!.s(e.$2).isEmpty ? '-' : deal.s(e.$2)),
         if (_customer) KeyValue(l.custWhatsapp, waNumber),
         KeyValue(l.fieldCity, city.isEmpty ? '-' : city),
         KeyValue(l.fieldAddress, address.isEmpty ? '-' : address),
+        if (!_customer && deal!.s('notes').isNotEmpty) KeyValue(l.fieldNote, deal.s('notes')),
         if (_customer) KeyValue(l.custLimit, '₹ ${formatPaise(limit)}'),
       ]),
     );
